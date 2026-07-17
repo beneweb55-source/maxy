@@ -13,6 +13,7 @@ export default function FormulaireLot() {
 
   const [fournisseur, setFournisseur] = useState("");
   const [description, setDescription] = useState("");
+  const [calculCoutAuto, setCalculCoutAuto] = useState(false);
   const [coutDeclare, setCoutDeclare] = useState("");
   const [quantiteAttendue, setQuantiteAttendue] = useState("");
   const [fournisseurs, setFournisseurs] = useState<string[]>([]);
@@ -55,7 +56,8 @@ export default function FormulaireLot() {
         body: JSON.stringify({
           fournisseur: fournisseur.trim(),
           description: description.trim() || undefined,
-          cout_global_declare: coutDeclare.trim() ? declare : undefined,
+          cout_global_declare: !calculCoutAuto && coutDeclare.trim() ? declare : undefined,
+          calcul_cout_auto: calculCoutAuto,
           quantite_attendue: attendus,
         }),
       });
@@ -148,20 +150,55 @@ export default function FormulaireLot() {
         </div>
 
         <div>
-          <label htmlFor="cout" className="libelle mb-1.5">
-            Coût global déclaré (DA) — optionnel
-          </label>
-          <input
-            id="cout"
-            type="number"
-            min={0}
-            step={1}
-            value={coutDeclare}
-            onChange={(e) => setCoutDeclare(e.target.value)}
-            placeholder="Montant payé au fournisseur"
-            className="champ"
-          />
+          <label className="libelle mb-1.5">Mode de calcul du coût</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="calculCoutAuto"
+                checked={!calculCoutAuto}
+                onChange={() => setCalculCoutAuto(false)}
+                className="accent-brand-orange"
+              />
+              Saisie manuelle
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="calculCoutAuto"
+                checked={calculCoutAuto}
+                onChange={() => setCalculCoutAuto(true)}
+                className="accent-brand-orange"
+              />
+              Calcul automatique
+            </label>
+          </div>
         </div>
+
+        {!calculCoutAuto ? (
+          <div>
+            <label htmlFor="cout" className="libelle mb-1.5">
+              Coût global déclaré (DA) — optionnel
+            </label>
+            <input
+              id="cout"
+              type="number"
+              min={0}
+              step={1}
+              value={coutDeclare}
+              onChange={(e) => setCoutDeclare(e.target.value)}
+              placeholder="Montant payé au fournisseur"
+              className="champ"
+            />
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-brand-warm-grey bg-brand-light-grey/25 p-3 rounded-lg border border-brand-light-grey/50">
+              Le coût global déclaré sera calculé automatiquement en additionnant le prix d'achat
+              des produits au fur et à mesure qu'ils sont ajoutés au lot.
+            </p>
+          </div>
+        )}
 
         <div className="text-right pt-2">
           <button

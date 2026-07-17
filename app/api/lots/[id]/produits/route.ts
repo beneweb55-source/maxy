@@ -36,6 +36,7 @@ export async function POST(
 
     await prisma.$transaction(async (tx) => {
       const codes = await genererCodesInternes(tx, lignes.length);
+      let totalPrixAchat = 0;
       for (let i = 0; i < lignes.length; i++) {
         const ligne = lignes[i];
         const code = codes[i];
@@ -50,12 +51,22 @@ export async function POST(
             image_url: ligne.image_url ?? null,
           },
         });
+        totalPrixAchat += ligne.prix_achat;
         await tx.historiqueStatut.create({
           data: {
             produit_id: produit.id,
             user_id: user.id,
             statut_avant: null,
             statut_apres: "recu",
+          },
+        });
+      }
+
+      if (lot.calcul_cout_auto && totalPrixAchat > 0) {
+        await tx.lot.update({
+          where: { id: lot.id },
+          data: {
+            cout_global_declare: (lot.cout_global_declare ?? 0) + totalPrixAchat,
           },
         });
       }

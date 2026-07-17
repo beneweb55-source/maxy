@@ -44,6 +44,8 @@ export async function GET(
       description: lot.description,
       quantite_attendue: lot.quantite_attendue,
       cout_global_declare: lot.cout_global_declare,
+      calcul_cout_auto: lot.calcul_cout_auto,
+      paye: lot.paye,
       produits: lot.produits.map((p) => ({
         id: p.id,
         code_interne: p.code_interne,
@@ -86,11 +88,12 @@ export async function PATCH(
     return erreur(400, "Requête invalide.");
   }
   const user = acces.user;
-  const { fournisseur, description, quantite_attendue, cout_global_declare } = (corps ?? {}) as {
+  const { fournisseur, description, quantite_attendue, cout_global_declare, calcul_cout_auto } = (corps ?? {}) as {
     fournisseur?: unknown;
     description?: unknown;
     quantite_attendue?: unknown;
     cout_global_declare?: unknown;
+    calcul_cout_auto?: unknown;
   };
 
   const donnees: {
@@ -98,6 +101,7 @@ export async function PATCH(
     description?: string | null;
     quantite_attendue?: number;
     cout_global_declare?: number | null;
+    calcul_cout_auto?: boolean;
   } = {};
   if (fournisseur !== undefined) {
     if (typeof fournisseur !== "string" || !fournisseur.trim()) {
@@ -126,9 +130,16 @@ export async function PATCH(
   }
 
   let coutFourni = false;
+  if (calcul_cout_auto !== undefined) {
+    if (typeof calcul_cout_auto !== "boolean") {
+      return erreur(400, "calcul_cout_auto doit être un booléen.");
+    }
+    donnees.calcul_cout_auto = calcul_cout_auto;
+  }
+
   if (cout_global_declare !== undefined) {
     if (user.role !== "gerant") {
-      return erreur(403, "Seul le gérant peut corriger le coût déclaré (impact caisse).");
+      return erreur(403, "Seul le gérant peut corriger le coût déclaré.");
     }
     if (cout_global_declare === null) {
       donnees.cout_global_declare = null;
@@ -152,23 +163,7 @@ export async function PATCH(
     const lot = await prisma.lot.findUnique({ where: { id: lotId } });
     if (!lot) return erreur(404, "Lot introuvable.");
 
-    const ancienCout = lot.cout_global_declare ?? 0;
-    const nouveauCout = coutFourni ? (donnees.cout_global_declare ?? 0) : ancienCout;
-    const delta = coutFourni ? nouveauCout - ancienCout : 0;
-
-    const maj = await prisma.$transaction(async (tx) => {
-      const lotMaj = await tx.lot.update({ where: { id: lotId }, data: donnees });
-      if (delta !== 0) {
-        await ajouterMouvement(tx, {
-          montant: Math.abs(delta),
-          type: delta > 0 ? "frais" : "apport_associe",
-          user_id: user.id,
-          lot_id: lotId,
-          description: `Correction du coût déclaré du lot n°${lotId} : de ${formaterDA(ancienCout)} à ${formaterDA(nouveauCout)}`,
-        });
-      }
-      return lotMaj;
-    });
+    const maj = await prisma.lot.update({ where: { id: lotId }, data: donnees });
 
     return NextResponse.json({
       ok: true,
@@ -177,7 +172,7 @@ export async function PATCH(
       description: maj.description,
       quantite_attendue: maj.quantite_attendue,
       cout_global_declare: maj.cout_global_declare,
-      correction_caisse: delta !== 0 ? delta : undefined,
+      calcul_cout_auto: maj.calcul_cout_auto,
     });
   } catch (e) {
     console.error("PATCH /api/lots/[id]", e);
