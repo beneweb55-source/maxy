@@ -190,8 +190,8 @@ export default function VentesClient({ role }: { role: Role }) {
   }
 
   return (
-    <div className="space-y-4">
-      <h1>Ventes</h1>
+    <div className="space-y-6 animate-entree">
+      <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Ventes</h1>
 
       <div className="flex gap-1 border-b border-brand-light-grey">
         {(
@@ -363,9 +363,9 @@ export default function VentesClient({ role }: { role: Role }) {
                     {estGerant && <th className="entete-table" />}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-brand-light-grey/50">
+                <tbody className="">
                   {historique.ventes.map((v) => (
-                    <tr key={v.id} className={v.annulee ? "text-brand-grey" : ""}>
+                    <tr key={v.id} className={`ligne-table border-b border-brand-light-grey/30 last:border-0 ${v.annulee ? "text-brand-grey" : ""}`}>
                       <td className="px-3 py-2">
                         <Link
                           href={`/produits/${v.produit_id}`}

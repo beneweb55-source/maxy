@@ -155,9 +155,9 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 print:max-w-none">
-      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
-        <h1>Rapport du lot n°{rapport.lot.id}</h1>
+    <div className="mx-auto max-w-3xl space-y-6 animate-entree print:max-w-none print:animate-none">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50 print:hidden">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Rapport du lot n°{rapport.lot.id}</h1>
         <div className="flex items-center gap-2">
           <Link href="/rapports" className="lien inline-flex items-center gap-1.5 text-sm">
             <IconeFlecheGauche taille={14} />
@@ -222,9 +222,9 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
         <section className="carte print:border-0 print:p-0">
           <h3 className="libelle text-brand-smooth">Résumé par statut</h3>
           <table className="mt-2 w-full text-sm">
-            <tbody className="divide-y divide-brand-light-grey/50">
+            <tbody className="">
               {rapport.resume_par_statut.map((r) => (
-                <tr key={r.statut}>
+                <tr key={r.statut} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                   <td className="py-1.5">
                     <BadgeStatut statut={r.statut} />
                   </td>
@@ -240,9 +240,9 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
         <section className="carte print:border-0 print:p-0">
           <h3 className="libelle text-brand-smooth">Valeur d'achat par catégorie</h3>
           <table className="mt-2 w-full text-sm">
-            <tbody className="divide-y divide-brand-light-grey/50">
+            <tbody className="">
               {rapport.resume_par_categorie.map((r) => (
-                <tr key={r.categorie}>
+                <tr key={r.categorie} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                   <td className="py-1.5">{r.categorie}</td>
                   <td className="py-1.5 text-right">{r.nombre}</td>
                   <td className="py-1.5 text-right font-semibold">
@@ -269,9 +269,9 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
         {STATUTS_DECISION.some(s => rapport.produits.some(p => p.statut === s)) && (
           <div className="mt-4">
             <h4 className="font-bold mb-2">Décisions requises (À réparer, Manque pièce, HS)</h4>
-            <ul className="divide-y divide-brand-light-grey/50">
+            <ul className="">
               {rapport.produits.filter(p => STATUTS_DECISION.includes(p.statut)).map((p) => (
-                <li key={p.id} className="py-3">
+                <li key={p.id} className="py-3 ligne-table border-b border-brand-light-grey/30 last:border-0">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <Link
@@ -329,9 +329,9 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
         {['ok', 'en_vente', 'vendu'].some(s => rapport.produits.some(p => p.statut === s)) && (
           <div className="mt-6 border-t pt-4">
             <h4 className="font-bold mb-2">Produits OK (Aucune décision requise)</h4>
-            <ul className="divide-y divide-brand-light-grey/50 text-sm">
+            <ul className="text-sm">
               {rapport.produits.filter(p => !STATUTS_DECISION.includes(p.statut)).map((p) => (
-                <li key={p.id} className="py-2 flex justify-between items-center">
+                <li key={p.id} className="py-2 flex justify-between items-center ligne-table border-b border-brand-light-grey/30 last:border-0">
                   <div>
                     <span className="font-mono text-xs text-brand-warm-grey mr-2">{p.code_interne}</span>
                     <span className="font-semibold">{p.reference}</span>

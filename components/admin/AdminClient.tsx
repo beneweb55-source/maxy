@@ -237,9 +237,9 @@ export default function AdminClient() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1>Administration</h1>
+    <div className="space-y-6 animate-entree">
+      <div className="pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Administration</h1>
         <p className="mt-1 text-sm text-brand-warm-grey">
           Pilotage des chiffres clés, des paramètres métier, des comptes et des données.
         </p>
@@ -468,9 +468,9 @@ export default function AdminClient() {
                 <th className="entete-table" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-light-grey/50">
+            <tbody className="">
               {donnees.utilisateurs.map((u) => (
-                <tr key={u.id}>
+                <tr key={u.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                   <td className="px-3 py-2.5 font-semibold">{u.username}</td>
                   <td className="px-3 py-2.5">
                     <span className="rounded-full bg-brand-light-grey/50 px-2.5 py-0.5 text-xs font-semibold text-brand-smooth">

@@ -78,12 +78,12 @@ export default function ListeRapports() {
               <th className="entete-table text-right">Décisions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-brand-light-grey/50">
+          <tbody className="">
             {lignes.map((r) => (
               <tr
                 key={r.lot_id}
                 onClick={() => router.push(`/rapports/${r.lot_id}`)}
-                className="cursor-pointer transition hover:bg-brand-glow/15"
+                className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
               >
                 <td className="px-3 py-2.5 font-semibold">
                   n°{r.lot_id} — Clôturé le {new Date(r.date_entree).toLocaleDateString("fr-FR")}
@@ -126,8 +126,10 @@ export default function ListeRapports() {
     );
 
   return (
-    <div className="space-y-6">
-      <h1>Rapports</h1>
+    <div className="space-y-6 animate-entree">
+      <div className="pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Rapports</h1>
+      </div>
       <section className="space-y-2">
         <h2 className="libelle text-brand-orange">À valider</h2>
         <Tableau lignes={aValider} vide="Aucun rapport en attente de validation." />

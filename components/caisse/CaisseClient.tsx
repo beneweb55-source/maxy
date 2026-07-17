@@ -209,9 +209,9 @@ export default function CaisseClient({ role }: { role: Role }) {
   const reinvest = benefice - decoupe.reserve - decoupe.parts - decoupe.frais;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1>Caisse</h1>
+    <div className="space-y-6 animate-entree">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Caisse</h1>
         <div className="flex gap-2">
           <Link href="/caisse/rapport" className="btn btn-primaire">
             Créer un rapport
@@ -428,9 +428,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <th className="entete-table text-right">Solde après</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-light-grey/50">
+            <tbody className="">
               {donnees.mouvements.length === 0 && (
-                <tr>
+                <tr className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                   <td colSpan={6} className="px-3 py-6 text-center text-brand-warm-grey">
                     Aucun mouvement pour le moment. La caisse démarre à 0 DA — enregistrez un
                     apport associé pour l'alimenter.
@@ -440,7 +440,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               {donnees.mouvements.map((m) => {
                 const sens = sensMouvement(m.type);
                 return (
-                  <tr key={m.id}>
+                  <tr key={m.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                     <td className="px-3 py-2 text-xs">
                       {new Date(m.date).toLocaleString("fr-FR", {
                         day: "2-digit",

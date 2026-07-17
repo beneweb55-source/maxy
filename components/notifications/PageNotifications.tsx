@@ -69,9 +69,9 @@ export default function PageNotifications() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="flex items-center gap-2">
+    <div className="mx-auto max-w-2xl space-y-6 animate-entree">
+      <div className="flex items-center justify-between pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black flex items-center gap-2">
           Notifications
           {nonLues > 0 && (
             <span className="rounded-full bg-brand-orange px-2 py-0.5 text-xs font-bold text-brand-white">
@@ -92,13 +92,13 @@ export default function PageNotifications() {
           Aucune notification.
         </p>
       ) : (
-        <ul className="divide-y divide-brand-light-grey/50 overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white">
+        <ul className="overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white">
           {notifications.map((n) => (
-            <li key={n.id}>
+            <li key={n.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
               <button
                 type="button"
                 onClick={() => void ouvrir(n)}
-                className={`flex w-full items-start gap-2 px-4 py-3 text-left text-sm transition hover:bg-brand-glow/15 ${
+                className={`flex w-full items-start gap-2 px-4 py-3 text-left text-sm ${
                   n.lu ? "text-brand-warm-grey" : "font-medium text-brand-black"
                 }`}
               >

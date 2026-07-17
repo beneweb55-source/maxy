@@ -81,9 +81,9 @@ export default function FormulaireLot() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1>Nouveau lot (Arrivage)</h1>
+    <div className="mx-auto max-w-xl space-y-6 animate-entree">
+      <div className="flex items-center justify-between pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Nouveau lot (Arrivage)</h1>
         <Link href="/arrivages" className="lien inline-flex items-center gap-1.5 text-sm">
           <IconeFlecheGauche taille={14} />
           Retour aux arrivages

@@ -329,7 +329,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const categoriesExistantes = Array.from(new Set(lot.produits.map((p) => p.categorie))).sort();
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-24">
+    <div className="mx-auto max-w-2xl space-y-6 animate-entree pb-24">
       <Link href="/arrivages" className="lien inline-flex items-center gap-1.5 text-sm">
         <IconeFlecheGauche taille={14} />
         Arrivages
@@ -338,7 +338,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       <div className="carte">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-lg font-bold">
+            <h1 className="text-2xl font-extrabold tracking-tight text-brand-black pb-1">
               Lot n°{lot.id} — {lot.fournisseur}
             </h1>
             <p className="text-xs text-brand-warm-grey">

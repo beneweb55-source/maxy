@@ -171,9 +171,9 @@ export default function ListeLots({ role }: { role: Role }) {
   }, [lots, rechercheFournisseur, triOrdre, filtreStatut]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1>Arrivages</h1>
+    <div className="space-y-6 animate-entree">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Arrivages</h1>
         {role === "gerant" && (
           <Link href="/arrivages/nouveau" className="btn btn-primaire">
             <IconePlus taille={15} />
@@ -251,7 +251,7 @@ export default function ListeLots({ role }: { role: Role }) {
                 <th className="entete-table" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-light-grey/50">
+            <tbody className="">
               {lotsFiltres.map((lot) => {
                 const pct =
                   lot.nb_produits > 0 ? Math.round((lot.nb_testes / lot.nb_produits) * 100) : 0;
@@ -260,7 +260,7 @@ export default function ListeLots({ role }: { role: Role }) {
                   <tr
                     key={lot.id}
                     onClick={() => router.push(`/lots/${lot.id}`)}
-                    className="cursor-pointer transition hover:bg-brand-glow/15"
+                    className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
                   >
                     <td className="px-3 py-2.5 font-bold">n°{lot.id}</td>
                     <td className="px-3 py-2.5">

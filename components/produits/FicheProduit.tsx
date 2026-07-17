@@ -188,10 +188,10 @@ export default function FicheProduit({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-bold">
-          <span className="font-mono text-base text-brand-warm-grey">{produit.code_interne}</span>{" "}
+    <div className="mx-auto max-w-3xl space-y-6 animate-entree">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">
+          <span className="font-mono text-xl text-brand-warm-grey">{produit.code_interne}</span>{" "}
           {produit.reference}
         </h1>
         <Link href="/inventaire" className="lien inline-flex items-center gap-1.5 text-sm">
@@ -398,9 +398,9 @@ export default function FicheProduit({
       {produit.ventes.length > 0 && (
         <section className="carte">
           <h2 className="libelle text-brand-smooth">Ventes</h2>
-          <ul className="mt-2.5 divide-y divide-brand-light-grey/50 text-sm">
+          <ul className="mt-2.5 text-sm">
             {produit.ventes.map((v) => (
-              <li key={v.id} className="flex items-center justify-between py-1.5">
+              <li key={v.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0 flex items-center justify-between py-2 px-1">
                 <span className={v.annulee ? "text-brand-grey line-through" : ""}>
                   {new Date(v.date_vente).toLocaleDateString("fr-FR")} —{" "}
                   {formaterDA(v.prix_vente_reel)}

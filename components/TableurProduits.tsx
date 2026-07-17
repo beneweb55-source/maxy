@@ -75,9 +75,9 @@ export default function TableurProduits({
               <th className="w-10" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-brand-light-grey/50">
+          <tbody className="">
             {lignes.map((ligne, i) => (
-              <tr key={i}>
+              <tr key={i} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                 <td className="px-2 py-1 text-xs text-brand-grey">{i + 1}</td>
                 <td>
                   <input

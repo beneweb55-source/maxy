@@ -374,9 +374,9 @@ export default function Inventaire({ role }: { role: Role }) {
   const groupes = donnees ? grouperDoublons(donnees.produits) : [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1>Inventaire</h1>
+    <div className="space-y-6 animate-entree">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Inventaire</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -667,12 +667,12 @@ export default function Inventaire({ role }: { role: Role }) {
                 <th className="entete-table" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-light-grey/50">
+            <tbody className="">
               {donnees.produits.map((p) => (
                 <tr
                   key={p.id}
                   onClick={() => router.push(`/produits/${p.id}`)}
-                  className="cursor-pointer transition hover:bg-brand-glow/15"
+                  className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
                 >
                   <td className="px-3 py-2 font-mono text-xs text-brand-warm-grey">
                     {p.code_interne}

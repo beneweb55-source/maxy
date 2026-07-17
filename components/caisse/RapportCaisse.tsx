@@ -32,7 +32,7 @@ export default function RapportCaisse() {
   const { soldes, repartition, graphique_soldes } = donnees;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto bg-brand-white p-8 rounded-xl shadow print:shadow-none print:p-0">
+    <div className="space-y-6 max-w-4xl mx-auto carte animate-entree print:shadow-none print:border-none print:bg-transparent print:p-0">
       <div className="flex justify-between items-start print:hidden">
         <Link href="/caisse" className="btn btn-secondaire">
           <IconeChevronGauche taille={15} />
@@ -91,7 +91,7 @@ export default function RapportCaisse() {
           </thead>
           <tbody>
             {graphique_soldes?.mois?.map((s: any) => (
-              <tr key={s.label}>
+              <tr key={s.label} className="ligne-table">
                 <td className="py-2 px-4 border border-brand-light-grey">{s.label}</td>
                 <td className="py-2 px-4 border border-brand-light-grey text-right font-semibold">{formaterDA(s.solde)}</td>
               </tr>
