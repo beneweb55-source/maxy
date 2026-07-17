@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { urlPhotoProduit } from "@/lib/images";
+import { ajouterMouvement } from "@/lib/caisse-db";
+import { formaterDA } from "@/lib/caisse";
 
 export async function GET(
   _request: Request,
@@ -83,14 +85,20 @@ export async function PATCH(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { fournisseur, description, quantite_attendue } = (corps ?? {}) as {
+  const user = acces.user;
+  const { fournisseur, description, quantite_attendue, cout_global_declare } = (corps ?? {}) as {
     fournisseur?: unknown;
     description?: unknown;
     quantite_attendue?: unknown;
+    cout_global_declare?: unknown;
   };
 
-  const donnees: { fournisseur?: string; description?: string | null; quantite_attendue?: number } =
-    {};
+  const donnees: {
+    fournisseur?: string;
+    description?: string | null;
+    quantite_attendue?: number;
+    cout_global_declare?: number | null;
+  } = {};
   if (fournisseur !== undefined) {
     if (typeof fournisseur !== "string" || !fournisseur.trim()) {
       return erreur(400, "Le fournisseur est obligatoire.");
@@ -116,6 +124,26 @@ export async function PATCH(
     }
     donnees.quantite_attendue = quantite_attendue;
   }
+
+  let coutFourni = false;
+  if (cout_global_declare !== undefined) {
+    if (user.role !== "gerant") {
+      return erreur(403, "Seul le gérant peut corriger le coût déclaré (impact caisse).");
+    }
+    if (cout_global_declare === null) {
+      donnees.cout_global_declare = null;
+    } else if (
+      typeof cout_global_declare === "number" &&
+      Number.isInteger(cout_global_declare) &&
+      cout_global_declare >= 0
+    ) {
+      donnees.cout_global_declare = cout_global_declare;
+    } else {
+      return erreur(400, "Le coût global déclaré doit être un entier positif en DA.");
+    }
+    coutFourni = true;
+  }
+
   if (Object.keys(donnees).length === 0) {
     return erreur(400, "Aucune modification fournie.");
   }
@@ -124,13 +152,32 @@ export async function PATCH(
     const lot = await prisma.lot.findUnique({ where: { id: lotId } });
     if (!lot) return erreur(404, "Lot introuvable.");
 
-    const maj = await prisma.lot.update({ where: { id: lotId }, data: donnees });
+    const ancienCout = lot.cout_global_declare ?? 0;
+    const nouveauCout = coutFourni ? (donnees.cout_global_declare ?? 0) : ancienCout;
+    const delta = coutFourni ? nouveauCout - ancienCout : 0;
+
+    const maj = await prisma.$transaction(async (tx) => {
+      const lotMaj = await tx.lot.update({ where: { id: lotId }, data: donnees });
+      if (delta !== 0) {
+        await ajouterMouvement(tx, {
+          montant: Math.abs(delta),
+          type: delta > 0 ? "frais" : "apport_associe",
+          user_id: user.id,
+          lot_id: lotId,
+          description: `Correction du coût déclaré du lot n°${lotId} : de ${formaterDA(ancienCout)} à ${formaterDA(nouveauCout)}`,
+        });
+      }
+      return lotMaj;
+    });
+
     return NextResponse.json({
       ok: true,
       id: maj.id,
       fournisseur: maj.fournisseur,
       description: maj.description,
       quantite_attendue: maj.quantite_attendue,
+      cout_global_declare: maj.cout_global_declare,
+      correction_caisse: delta !== 0 ? delta : undefined,
     });
   } catch (e) {
     console.error("PATCH /api/lots/[id]", e);

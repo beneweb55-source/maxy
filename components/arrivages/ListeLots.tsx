@@ -38,7 +38,10 @@ export default function ListeLots({ role }: { role: Role }) {
   const [editFournisseur, setEditFournisseur] = useState("");
   const [editQuantite, setEditQuantite] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editCout, setEditCout] = useState("");
   const [modalSuppr, setModalSuppr] = useState<LigneLot | null>(null);
+
+  const estGerant = role === "gerant";
 
   const charger = useCallback(async () => {
     try {
@@ -63,6 +66,7 @@ export default function ListeLots({ role }: { role: Role }) {
     setEditFournisseur(lot.fournisseur);
     setEditQuantite(lot.quantite_attendue !== null ? String(lot.quantite_attendue) : "");
     setEditDescription(lot.description ?? "");
+    setEditCout(lot.cout_global_declare !== null ? String(lot.cout_global_declare) : "");
     setModalEdit(lot);
   }
 
@@ -77,23 +81,43 @@ export default function ListeLots({ role }: { role: Role }) {
       afficher("La quantité attendue doit être un entier strictement positif.", "erreur");
       return;
     }
+    const donneesLot: Record<string, unknown> = {
+      fournisseur: editFournisseur.trim(),
+      quantite_attendue: quantite,
+      description: editDescription.trim() || null,
+    };
+    if (estGerant) {
+      if (editCout.trim()) {
+        const cout = Number(editCout);
+        if (!Number.isInteger(cout) || cout < 0) {
+          afficher("Le coût global déclaré doit être un entier positif en DA.", "erreur");
+          return;
+        }
+        donneesLot.cout_global_declare = cout;
+      } else {
+        donneesLot.cout_global_declare = null;
+      }
+    }
     setEnvoi(true);
     try {
       const res = await fetch(`/api/lots/${modalEdit.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fournisseur: editFournisseur.trim(),
-          quantite_attendue: quantite,
-          description: editDescription.trim() || null,
-        }),
+        body: JSON.stringify(donneesLot),
       });
-      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      const corps = (await res.json().catch(() => null)) as
+        | { error?: string; correction_caisse?: number }
+        | null;
       if (!res.ok) {
         afficher(corps?.error ?? "Erreur lors de la modification du lot.", "erreur");
         return;
       }
-      afficher(`Lot n°${modalEdit.id} modifié.`);
+      const correction = corps?.correction_caisse;
+      afficher(
+        correction
+          ? `Lot n°${modalEdit.id} modifié — caisse ajustée de ${correction > 0 ? "−" : "+"}${formaterDA(Math.abs(correction))}.`
+          : `Lot n°${modalEdit.id} modifié.`
+      );
       setModalEdit(null);
       await charger();
     } catch {
@@ -351,9 +375,31 @@ export default function ListeLots({ role }: { role: Role }) {
               className="champ"
             />
           </div>
-          <p className="text-xs text-brand-warm-grey">
-            Le coût global déclaré est lié à la caisse et reste inchangé.
-          </p>
+          {estGerant ? (
+            <div>
+              <label className="libelle mb-1.5" htmlFor="edit-cout-lot">
+                Coût global déclaré (DA)
+              </label>
+              <input
+                id="edit-cout-lot"
+                type="number"
+                min={0}
+                step={1}
+                value={editCout}
+                onChange={(e) => setEditCout(e.target.value)}
+                placeholder="Laisser vide si non déclaré"
+                className="champ"
+              />
+              <p className="mt-1.5 text-xs text-brand-warm-grey">
+                Corriger ce montant crée un mouvement d'ajustement tracé en caisse pour l'écart —
+                l'historique n'est jamais réécrit.
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-brand-warm-grey">
+              Le coût global déclaré est lié à la caisse ; seul le gérant peut le corriger.
+            </p>
+          )}
           <div className="pt-1 text-right">
             <button
               type="button"
