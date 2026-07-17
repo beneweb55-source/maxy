@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Role, StatutLot } from "@prisma/client";
+import Modale from "@/components/Modale";
+import { useToast } from "@/components/toast";
 import { INFOS_STATUT_LOT } from "@/lib/statuts";
 import { formaterDA } from "@/lib/caisse";
-import { IconePlus } from "@/components/icons";
+import { IconeCorbeille, IconeCrayon, IconePlus } from "@/components/icons";
 
 interface LigneLot {
   id: number;
@@ -23,34 +25,103 @@ interface LigneLot {
 
 export default function ListeLots({ role }: { role: Role }) {
   const router = useRouter();
+  const { afficher } = useToast();
   const [lots, setLots] = useState<LigneLot[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
-  
+  const [envoi, setEnvoi] = useState(false);
+
   const [rechercheFournisseur, setRechercheFournisseur] = useState("");
   const [triOrdre, setTriOrdre] = useState<"desc" | "asc">("desc");
   const [filtreStatut, setFiltreStatut] = useState<StatutLot | "tous">("tous");
 
-  useEffect(() => {
-    let annule = false;
-    fetch("/api/lots")
-      .then(async (res) => {
-        if (!res.ok) {
-          const corps = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(corps?.error ?? "Erreur lors du chargement des lots.");
-        }
-        return res.json() as Promise<{ lots: LigneLot[] }>;
-      })
-      .then((d) => {
-        if (!annule) setLots(d.lots);
-      })
-      .catch((e: Error) => {
-        if (!annule) setErreur(e.message);
-      });
+  const [modalEdit, setModalEdit] = useState<LigneLot | null>(null);
+  const [editFournisseur, setEditFournisseur] = useState("");
+  const [editQuantite, setEditQuantite] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [modalSuppr, setModalSuppr] = useState<LigneLot | null>(null);
 
-    return () => {
-      annule = true;
-    };
+  const charger = useCallback(async () => {
+    try {
+      const res = await fetch("/api/lots");
+      if (!res.ok) {
+        const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(corps?.error ?? "Erreur lors du chargement des lots.");
+      }
+      const d = (await res.json()) as { lots: LigneLot[] };
+      setLots(d.lots);
+      setErreur(null);
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
+    }
   }, []);
+
+  useEffect(() => {
+    void charger();
+  }, [charger]);
+
+  function ouvrirEdition(lot: LigneLot) {
+    setEditFournisseur(lot.fournisseur);
+    setEditQuantite(lot.quantite_attendue !== null ? String(lot.quantite_attendue) : "");
+    setEditDescription(lot.description ?? "");
+    setModalEdit(lot);
+  }
+
+  async function confirmerEdition() {
+    if (!modalEdit) return;
+    if (!editFournisseur.trim()) {
+      afficher("Le fournisseur est obligatoire.", "erreur");
+      return;
+    }
+    const quantite = Number(editQuantite);
+    if (!editQuantite.trim() || !Number.isInteger(quantite) || quantite <= 0) {
+      afficher("La quantité attendue doit être un entier strictement positif.", "erreur");
+      return;
+    }
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/lots/${modalEdit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fournisseur: editFournisseur.trim(),
+          quantite_attendue: quantite,
+          description: editDescription.trim() || null,
+        }),
+      });
+      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la modification du lot.", "erreur");
+        return;
+      }
+      afficher(`Lot n°${modalEdit.id} modifié.`);
+      setModalEdit(null);
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  async function confirmerSuppression() {
+    if (!modalSuppr) return;
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/lots/${modalSuppr.id}`, { method: "DELETE" });
+      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la suppression du lot.", "erreur");
+        return;
+      }
+      afficher(`Lot n°${modalSuppr.id} supprimé.`);
+      setModalSuppr(null);
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
 
   const lotsFiltres = useMemo(() => {
     if (!lots) return null;
@@ -152,6 +223,7 @@ export default function ListeLots({ role }: { role: Role }) {
                 <th className="entete-table">Progression</th>
                 <th className="entete-table">Statut</th>
                 <th className="entete-table text-right">Coût déclaré</th>
+                <th className="entete-table" />
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-light-grey/50">
@@ -197,6 +269,34 @@ export default function ListeLots({ role }: { role: Role }) {
                         ? formaterDA(lot.cout_global_declare)
                         : "—"}
                     </td>
+                    <td className="px-2 py-2.5">
+                      <span className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ouvrirEdition(lot);
+                          }}
+                          title="Modifier"
+                          aria-label={`Modifier le lot n°${lot.id}`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                        >
+                          <IconeCrayon taille={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalSuppr(lot);
+                          }}
+                          title="Supprimer"
+                          aria-label={`Supprimer le lot n°${lot.id}`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                        >
+                          <IconeCorbeille taille={14} />
+                        </button>
+                      </span>
+                    </td>
                   </tr>
                 );
               })}
@@ -204,6 +304,103 @@ export default function ListeLots({ role }: { role: Role }) {
           </table>
         </div>
       )}
+
+      <Modale
+        titre={modalEdit ? `Modifier le lot n°${modalEdit.id}` : ""}
+        ouverte={modalEdit !== null}
+        onFermer={() => setModalEdit(null)}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="libelle mb-1.5" htmlFor="edit-fournisseur">
+              Fournisseur *
+            </label>
+            <input
+              id="edit-fournisseur"
+              type="text"
+              value={editFournisseur}
+              onChange={(e) => setEditFournisseur(e.target.value)}
+              autoFocus
+              className="champ"
+            />
+          </div>
+          <div>
+            <label className="libelle mb-1.5" htmlFor="edit-quantite">
+              Quantité attendue *
+            </label>
+            <input
+              id="edit-quantite"
+              type="number"
+              min={1}
+              step={1}
+              value={editQuantite}
+              onChange={(e) => setEditQuantite(e.target.value)}
+              className="champ"
+            />
+          </div>
+          <div>
+            <label className="libelle mb-1.5" htmlFor="edit-desc-lot">
+              Description
+            </label>
+            <input
+              id="edit-desc-lot"
+              type="text"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Ex. Lot mixte bureautique"
+              className="champ"
+            />
+          </div>
+          <p className="text-xs text-brand-warm-grey">
+            Le coût global déclaré est lié à la caisse et reste inchangé.
+          </p>
+          <div className="pt-1 text-right">
+            <button
+              type="button"
+              disabled={envoi || !editFournisseur.trim() || !editQuantite.trim()}
+              onClick={() => void confirmerEdition()}
+              className="btn btn-primaire"
+            >
+              Enregistrer les modifications
+            </button>
+          </div>
+        </div>
+      </Modale>
+
+      <Modale
+        titre={modalSuppr ? `Supprimer le lot n°${modalSuppr.id}` : ""}
+        ouverte={modalSuppr !== null}
+        onFermer={() => setModalSuppr(null)}
+      >
+        {modalSuppr && (
+          <>
+            <p className="text-sm text-brand-warm-grey">
+              Le lot <strong className="text-brand-black">n°{modalSuppr.id} — {modalSuppr.fournisseur}</strong>{" "}
+              et ses {modalSuppr.nb_produits} produit{modalSuppr.nb_produits > 1 ? "s" : ""} seront
+              définitivement supprimés. Un lot ayant un historique de caisse (coût déclaré, réparation
+              ou vente) ne peut pas être supprimé. Cette action est irréversible.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setModalSuppr(null)}
+                className="btn btn-secondaire"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={() => void confirmerSuppression()}
+                className="btn btn-danger"
+              >
+                <IconeCorbeille taille={15} />
+                Supprimer définitivement
+              </button>
+            </div>
+          </>
+        )}
+      </Modale>
     </div>
   );
 }

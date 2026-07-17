@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { DecisionRapport, Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
+import ChampPhoto from "@/components/ChampPhoto";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
@@ -86,6 +87,8 @@ export default function FicheProduit({
   const [descReparation, setDescReparation] = useState("");
   const [modalEdition, setModalEdition] = useState(false);
   const [edition, setEdition] = useState({ reference: "", categorie: "", prix_achat: "" });
+  const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [editPhotoModifiee, setEditPhotoModifiee] = useState(false);
   const [modalSuppression, setModalSuppression] = useState(false);
 
   const peutModifierStatut = role === "technicien" || role === "gerant";
@@ -156,12 +159,7 @@ export default function FicheProduit({
 
   const cibles = peutModifierStatut ? (TRANSITIONS_MANUELLES[produit.statut] ?? []) : [];
   const vendu = produit.statut === "vendu";
-  const montrerActions =
-    !vendu &&
-    (cibles.length > 0 ||
-      peutModifierStatut ||
-      estGerant ||
-      (peutVendre && produit.statut === "en_vente"));
+  const montrerActions = !vendu;
 
   function demanderTransition(cible: StatutProduit) {
     if (STATUTS_NOTE_OBLIGATOIRE.includes(cible)) {
@@ -184,6 +182,8 @@ export default function FicheProduit({
       categorie: produit.categorie,
       prix_achat: String(produit.prix_achat),
     });
+    setEditPhoto(produit.image_url);
+    setEditPhotoModifiee(false);
     setModalEdition(true);
   }
 
@@ -369,7 +369,7 @@ export default function FicheProduit({
                 Réparation
               </button>
             )}
-            {estGerant && (
+            {!vendu && (
               <>
                 <button
                   type="button"
@@ -686,6 +686,21 @@ export default function FicheProduit({
               />
             </div>
           </div>
+          <div>
+            <label className="libelle mb-1.5">Photo du produit</label>
+            <ChampPhoto
+              apercu={editPhoto}
+              onCapturer={(data) => {
+                setEditPhoto(data);
+                setEditPhotoModifiee(true);
+              }}
+              onRetirer={() => {
+                setEditPhoto(null);
+                setEditPhotoModifiee(true);
+              }}
+              disabled={envoi}
+            />
+          </div>
           <div className="pt-1 text-right">
             <button
               type="button"
@@ -701,6 +716,7 @@ export default function FicheProduit({
                   reference: edition.reference.trim(),
                   categorie: edition.categorie.trim(),
                   prix_achat: Number(edition.prix_achat),
+                  ...(editPhotoModifiee ? { image_url: editPhoto ?? "" } : {}),
                 }).then((ok) => {
                   if (ok) {
                     afficher("Produit modifié.");

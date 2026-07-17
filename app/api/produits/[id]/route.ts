@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { urlPhotoProduit } from "@/lib/images";
+import { urlPhotoProduit, validerPhoto } from "@/lib/images";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -98,7 +98,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur(["gerant"]);
+  const acces = await exigerUtilisateur();
   if (acces.reponse) return acces.reponse;
 
   const { id } = await params;
@@ -111,13 +111,19 @@ export async function PUT(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { reference, categorie, prix_achat } = (corps ?? {}) as {
+  const { reference, categorie, prix_achat, image_url } = (corps ?? {}) as {
     reference?: unknown;
     categorie?: unknown;
     prix_achat?: unknown;
+    image_url?: unknown;
   };
 
-  const donnees: { reference?: string; categorie?: string; prix_achat?: number } = {};
+  const donnees: {
+    reference?: string;
+    categorie?: string;
+    prix_achat?: number;
+    image_url?: string | null;
+  } = {};
   if (reference !== undefined) {
     if (typeof reference !== "string" || !reference.trim()) {
       return erreur(400, "La référence est obligatoire.");
@@ -135,6 +141,17 @@ export async function PUT(
       return erreur(400, "Le prix d'achat doit être un entier positif en DA.");
     }
     donnees.prix_achat = prix_achat;
+  }
+  if (image_url !== undefined) {
+    if (image_url === null || (typeof image_url === "string" && !image_url.trim())) {
+      donnees.image_url = null;
+    } else if (typeof image_url === "string") {
+      const soucisPhoto = validerPhoto(image_url.trim());
+      if (soucisPhoto) return erreur(400, soucisPhoto);
+      donnees.image_url = image_url.trim();
+    } else {
+      return erreur(400, "Photo invalide.");
+    }
   }
   if (Object.keys(donnees).length === 0) {
     return erreur(400, "Aucune modification fournie.");
@@ -165,7 +182,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur(["gerant"]);
+  const acces = await exigerUtilisateur();
   if (acces.reponse) return acces.reponse;
 
   const { id } = await params;

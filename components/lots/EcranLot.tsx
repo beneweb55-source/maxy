@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
+import ChampPhoto from "@/components/ChampPhoto";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
-import { compresserPhoto } from "@/lib/photo-client";
 import { INFOS_STATUT, INFOS_STATUT_LOT } from "@/lib/statuts";
 import {
   PLACEHOLDERS_NOTE,
@@ -16,10 +16,10 @@ import {
 } from "@/lib/transitions";
 import {
   ICONES_STATUT,
-  IconeAppareilPhoto,
   IconeCle,
   IconeCoche,
   IconeCorbeille,
+  IconeCrayon,
   IconeFlecheGauche,
   IconeLancer,
   IconeNote,
@@ -112,8 +112,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [nouvCat, setNouvCat] = useState("");
   const [nouvPrix, setNouvPrix] = useState("");
   const [nouvPhoto, setNouvPhoto] = useState<string | null>(null);
-  const [photoEnCours, setPhotoEnCours] = useState(false);
-  const champPhoto = useRef<HTMLInputElement>(null);
+
+  const [modalEdit, setModalEdit] = useState<ProduitDto | null>(null);
+  const [editRef, setEditRef] = useState("");
+  const [editCat, setEditCat] = useState("");
+  const [editPrix, setEditPrix] = useState("");
+  const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [editPhotoModifiee, setEditPhotoModifiee] = useState(false);
+  const [modalSuppr, setModalSuppr] = useState<ProduitDto | null>(null);
 
   const peutAgir = role === "technicien" || role === "gerant";
   const estTechnicien = role === "technicien";
@@ -219,17 +225,63 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     }
   }
 
-  async function choisirPhoto(evenement: React.ChangeEvent<HTMLInputElement>) {
-    const fichier = evenement.target.files?.[0];
-    evenement.target.value = "";
-    if (!fichier) return;
-    setPhotoEnCours(true);
+  async function appelMethode(url: string, methode: string, corps?: unknown): Promise<boolean> {
+    setEnvoi(true);
     try {
-      setNouvPhoto(await compresserPhoto(fichier));
-    } catch (e) {
-      afficher(e instanceof Error ? e.message : "Photo illisible.", "erreur");
+      const res = await fetch(url, {
+        method: methode,
+        headers: corps === undefined ? undefined : { "Content-Type": "application/json" },
+        body: corps === undefined ? undefined : JSON.stringify(corps),
+      });
+      const reponse = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(reponse?.error ?? "Erreur lors de l'opération.", "erreur");
+        return false;
+      }
+      await rafraichir();
+      return true;
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+      return false;
     } finally {
-      setPhotoEnCours(false);
+      setEnvoi(false);
+    }
+  }
+
+  function ouvrirEdition(produit: ProduitDto) {
+    setEditRef(produit.reference);
+    setEditCat(produit.categorie);
+    setEditPrix(String(produit.prix_achat));
+    setEditPhoto(produit.image_url);
+    setEditPhotoModifiee(false);
+    setModalEdit(produit);
+  }
+
+  async function confirmerEdition() {
+    if (!modalEdit) return;
+    if (!editRef.trim() || !editCat.trim() || !editPrix.trim()) {
+      afficher("Veuillez remplir la référence, catégorie et prix.", "erreur");
+      return;
+    }
+    const corps: Record<string, unknown> = {
+      reference: editRef.trim(),
+      categorie: editCat.trim(),
+      prix_achat: Number(editPrix),
+    };
+    if (editPhotoModifiee) corps.image_url = editPhoto ?? "";
+    const ok = await appelMethode(`/api/produits/${modalEdit.id}`, "PUT", corps);
+    if (ok) {
+      afficher(`Produit ${modalEdit.code_interne} modifié.`);
+      setModalEdit(null);
+    }
+  }
+
+  async function confirmerSuppression() {
+    if (!modalSuppr) return;
+    const ok = await appelMethode(`/api/produits/${modalSuppr.id}`, "DELETE");
+    if (ok) {
+      afficher(`Produit ${modalSuppr.code_interne} supprimé.`);
+      setModalSuppr(null);
     }
   }
 
@@ -367,7 +419,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 </p>
               )}
 
-              {(cibles.length > 0 || (peutAgir && p.statut !== "vendu")) && (
+              {p.statut !== "vendu" && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {cibles.map((cible) => (
                     <button
@@ -380,7 +432,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                       <BoutonTransition avant={p.statut} cible={cible} />
                     </button>
                   ))}
-                  {peutAgir && p.statut !== "vendu" && (
+                  {peutAgir && (
                     <button
                       type="button"
                       disabled={envoi}
@@ -391,6 +443,24 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                       Réparation
                     </button>
                   )}
+                  <button
+                    type="button"
+                    disabled={envoi}
+                    onClick={() => ouvrirEdition(p)}
+                    className="btn btn-secondaire"
+                  >
+                    <IconeCrayon taille={14} />
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    disabled={envoi}
+                    onClick={() => setModalSuppr(p)}
+                    className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
+                  >
+                    <IconeCorbeille taille={14} />
+                    Supprimer
+                  </button>
                 </div>
               )}
             </li>
@@ -398,7 +468,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         })}
       </ul>
 
-      {estTechnicien && lot.statut_lot === "en_cours_de_test" && (
+      {lot.statut_lot === "en_cours_de_test" && (
         <div className="carte">
           <button
             type="button"
@@ -428,48 +498,12 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 </div>
                 <div>
                   <label className="libelle mb-1.5">Photo du produit</label>
-                  <input
-                    ref={champPhoto}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => void choisirPhoto(e)}
-                    className="hidden"
+                  <ChampPhoto
+                    apercu={nouvPhoto}
+                    onCapturer={setNouvPhoto}
+                    onRetirer={() => setNouvPhoto(null)}
+                    disabled={envoi}
                   />
-                  {nouvPhoto ? (
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={nouvPhoto}
-                        alt="Aperçu de la photo du produit"
-                        className="h-14 w-14 shrink-0 rounded-lg border border-brand-light-grey object-cover"
-                      />
-                      <button
-                        type="button"
-                        disabled={photoEnCours}
-                        onClick={() => champPhoto.current?.click()}
-                        className="btn btn-secondaire"
-                      >
-                        Remplacer
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNouvPhoto(null)}
-                        aria-label="Retirer la photo"
-                        className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
-                      >
-                        <IconeCorbeille taille={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={photoEnCours}
-                      onClick={() => champPhoto.current?.click()}
-                      className="btn btn-secondaire w-full justify-center"
-                    >
-                      <IconeAppareilPhoto taille={14} />
-                      {photoEnCours ? "Préparation de la photo…" : "Choisir une photo"}
-                    </button>
-                  )}
                 </div>
               </div>
               <div className="text-right">
@@ -656,6 +690,116 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             Clôturer
           </button>
         </div>
+      </Modale>
+
+      <Modale
+        titre={modalEdit ? `Modifier — ${modalEdit.code_interne}` : ""}
+        ouverte={modalEdit !== null}
+        onFermer={() => setModalEdit(null)}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="libelle mb-1.5" htmlFor="edit-ref-lot">
+              Référence *
+            </label>
+            <input
+              id="edit-ref-lot"
+              type="text"
+              value={editRef}
+              onChange={(e) => setEditRef(e.target.value)}
+              autoFocus
+              className="champ"
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="libelle mb-1.5" htmlFor="edit-cat-lot">
+                Catégorie *
+              </label>
+              <input
+                id="edit-cat-lot"
+                type="text"
+                list="cat-exist"
+                value={editCat}
+                onChange={(e) => setEditCat(e.target.value)}
+                className="champ"
+              />
+            </div>
+            <div className="w-40">
+              <label className="libelle mb-1.5" htmlFor="edit-prix-lot">
+                Prix achat (DA) *
+              </label>
+              <input
+                id="edit-prix-lot"
+                type="number"
+                min={0}
+                step={1}
+                value={editPrix}
+                onChange={(e) => setEditPrix(e.target.value)}
+                className="champ text-right"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="libelle mb-1.5">Photo du produit</label>
+            <ChampPhoto
+              apercu={editPhoto}
+              onCapturer={(data) => {
+                setEditPhoto(data);
+                setEditPhotoModifiee(true);
+              }}
+              onRetirer={() => {
+                setEditPhoto(null);
+                setEditPhotoModifiee(true);
+              }}
+              disabled={envoi}
+            />
+          </div>
+          <div className="pt-1 text-right">
+            <button
+              type="button"
+              disabled={envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim()}
+              onClick={() => void confirmerEdition()}
+              className="btn btn-primaire"
+            >
+              Enregistrer les modifications
+            </button>
+          </div>
+        </div>
+      </Modale>
+
+      <Modale
+        titre={modalSuppr ? `Supprimer — ${modalSuppr.code_interne}` : ""}
+        ouverte={modalSuppr !== null}
+        onFermer={() => setModalSuppr(null)}
+      >
+        {modalSuppr && (
+          <>
+            <p className="text-sm text-brand-warm-grey">
+              Le produit <strong className="text-brand-black">{modalSuppr.reference}</strong> sera
+              définitivement retiré du lot, avec son historique de statuts et ses réparations. Cette
+              action est irréversible.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setModalSuppr(null)}
+                className="btn btn-secondaire"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={() => void confirmerSuppression()}
+                className="btn btn-danger"
+              >
+                <IconeCorbeille taille={15} />
+                Supprimer définitivement
+              </button>
+            </div>
+          </>
+        )}
       </Modale>
     </div>
   );

@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const acces = await exigerUtilisateur(["gerant"]);
+  const acces = await exigerUtilisateur();
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 
@@ -86,16 +86,17 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { lot_id, reference, categorie, prix_achat } = (corps ?? {}) as {
+  const { lot_id, reference, categorie, prix_achat, image_url } = (corps ?? {}) as {
     lot_id?: unknown;
     reference?: unknown;
     categorie?: unknown;
     prix_achat?: unknown;
+    image_url?: unknown;
   };
 
   const lotId = Number(lot_id);
   if (!Number.isInteger(lotId)) return erreur(400, "Choisissez le lot de rattachement.");
-  const validation = validerLignesProduits([{ reference, categorie, prix_achat }]);
+  const validation = validerLignesProduits([{ reference, categorie, prix_achat, image_url }]);
   if (validation.erreur !== undefined) return erreur(400, validation.erreur);
   const ligne = validation.produits[0];
   if (!ligne) return erreur(400, "Produit invalide.");
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
           reference: ligne.reference,
           categorie: ligne.categorie,
           prix_achat: ligne.prix_achat,
+          image_url: ligne.image_url ?? null,
         },
       });
       await tx.historiqueStatut.create({

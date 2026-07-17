@@ -65,3 +65,117 @@ export async function GET(
     return erreur(500, "Erreur lors du chargement du lot.");
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const acces = await exigerUtilisateur();
+  if (acces.reponse) return acces.reponse;
+
+  const { id } = await params;
+  const lotId = Number(id);
+  if (!Number.isInteger(lotId)) return erreur(400, "Identifiant de lot invalide.");
+
+  let corps: unknown;
+  try {
+    corps = await request.json();
+  } catch {
+    return erreur(400, "Requête invalide.");
+  }
+  const { fournisseur, description, quantite_attendue } = (corps ?? {}) as {
+    fournisseur?: unknown;
+    description?: unknown;
+    quantite_attendue?: unknown;
+  };
+
+  const donnees: { fournisseur?: string; description?: string | null; quantite_attendue?: number } =
+    {};
+  if (fournisseur !== undefined) {
+    if (typeof fournisseur !== "string" || !fournisseur.trim()) {
+      return erreur(400, "Le fournisseur est obligatoire.");
+    }
+    donnees.fournisseur = fournisseur.trim();
+  }
+  if (description !== undefined) {
+    if (description === null || (typeof description === "string" && !description.trim())) {
+      donnees.description = null;
+    } else if (typeof description === "string") {
+      donnees.description = description.trim();
+    } else {
+      return erreur(400, "Description invalide.");
+    }
+  }
+  if (quantite_attendue !== undefined) {
+    if (
+      typeof quantite_attendue !== "number" ||
+      !Number.isInteger(quantite_attendue) ||
+      quantite_attendue <= 0
+    ) {
+      return erreur(400, "La quantité attendue doit être un entier strictement positif.");
+    }
+    donnees.quantite_attendue = quantite_attendue;
+  }
+  if (Object.keys(donnees).length === 0) {
+    return erreur(400, "Aucune modification fournie.");
+  }
+
+  try {
+    const lot = await prisma.lot.findUnique({ where: { id: lotId } });
+    if (!lot) return erreur(404, "Lot introuvable.");
+
+    const maj = await prisma.lot.update({ where: { id: lotId }, data: donnees });
+    return NextResponse.json({
+      ok: true,
+      id: maj.id,
+      fournisseur: maj.fournisseur,
+      description: maj.description,
+      quantite_attendue: maj.quantite_attendue,
+    });
+  } catch (e) {
+    console.error("PATCH /api/lots/[id]", e);
+    return erreur(500, "Erreur lors de la modification du lot.");
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const acces = await exigerUtilisateur();
+  if (acces.reponse) return acces.reponse;
+
+  const { id } = await params;
+  const lotId = Number(id);
+  if (!Number.isInteger(lotId)) return erreur(400, "Identifiant de lot invalide.");
+
+  try {
+    const lot = await prisma.lot.findUnique({ where: { id: lotId } });
+    if (!lot) return erreur(404, "Lot introuvable.");
+
+    const [mouvements, vendus] = await Promise.all([
+      prisma.mouvementCaisse.count({
+        where: { OR: [{ lot_id: lotId }, { produit: { lot_id: lotId } }] },
+      }),
+      prisma.produit.count({ where: { lot_id: lotId, statut: "vendu" } }),
+    ]);
+    if (mouvements > 0 || vendus > 0) {
+      return erreur(
+        400,
+        "Ce lot a un historique de caisse (coût déclaré, réparation ou vente) : il ne peut pas être supprimé."
+      );
+    }
+
+    await prisma.$transaction([
+      prisma.historiqueStatut.deleteMany({ where: { produit: { lot_id: lotId } } }),
+      prisma.reparation.deleteMany({ where: { produit: { lot_id: lotId } } }),
+      prisma.produit.deleteMany({ where: { lot_id: lotId } }),
+      prisma.lot.delete({ where: { id: lotId } }),
+    ]);
+
+    return NextResponse.json({ ok: true, supprime: lotId });
+  } catch (e) {
+    console.error("DELETE /api/lots/[id]", e);
+    return erreur(500, "Erreur lors de la suppression du lot.");
+  }
+}

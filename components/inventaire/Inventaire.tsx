@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
+import ChampPhoto from "@/components/ChampPhoto";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT, STATUTS_PRODUIT } from "@/lib/statuts";
 import {
+  IconeChevronBas,
   IconeChevronGauche,
   IconeChevronDroite,
   IconeCorbeille,
@@ -71,6 +73,43 @@ const FORMULAIRE_VIDE: FormulaireProduit = {
   lot_id: "",
 };
 
+interface GroupeProduits {
+  cle: string;
+  reference: string;
+  categorie: string;
+  image_url: string | null;
+  unites: LigneProduit[];
+  prixMin: number;
+  prixMax: number;
+  resumeStatuts: { statut: StatutProduit; n: number }[];
+}
+
+function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
+  const groupes = new Map<string, LigneProduit[]>();
+  for (const p of produits) {
+    const cle = `${p.reference.trim().toLowerCase()}|${p.categorie.trim().toLowerCase()}`;
+    const existant = groupes.get(cle);
+    if (existant) existant.push(p);
+    else groupes.set(cle, [p]);
+  }
+  return Array.from(groupes.entries()).map(([cle, unites]) => {
+    const prix = unites.map((u) => u.prix_achat);
+    const parStatut = new Map<StatutProduit, number>();
+    for (const u of unites) parStatut.set(u.statut, (parStatut.get(u.statut) ?? 0) + 1);
+    const premier = unites[0]!;
+    return {
+      cle,
+      reference: premier.reference,
+      categorie: premier.categorie,
+      image_url: unites.find((u) => u.image_url)?.image_url ?? null,
+      unites,
+      prixMin: Math.min(...prix),
+      prixMax: Math.max(...prix),
+      resumeStatuts: Array.from(parStatut.entries()).map(([statut, n]) => ({ statut, n })),
+    };
+  });
+}
+
 export default function Inventaire({ role }: { role: Role }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,6 +124,11 @@ export default function Inventaire({ role }: { role: Role }) {
   const [modalEdition, setModalEdition] = useState<LigneProduit | null>(null);
   const [modalSuppression, setModalSuppression] = useState<LigneProduit | null>(null);
   const [formulaire, setFormulaire] = useState<FormulaireProduit>(FORMULAIRE_VIDE);
+  const [formPhoto, setFormPhoto] = useState<string | null>(null);
+  const [formPhotoModifiee, setFormPhotoModifiee] = useState(false);
+
+  const [vueGroupee, setVueGroupee] = useState(true);
+  const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
 
   const estGerant = role === "gerant";
 
@@ -141,6 +185,8 @@ export default function Inventaire({ role }: { role: Role }) {
 
   function ouvrirAjout() {
     setFormulaire({ ...FORMULAIRE_VIDE, lot_id: String(donnees?.lots[0]?.id ?? "") });
+    setFormPhoto(null);
+    setFormPhotoModifiee(false);
     setModalAjout(true);
   }
 
@@ -151,7 +197,18 @@ export default function Inventaire({ role }: { role: Role }) {
       prix_achat: String(p.prix_achat),
       lot_id: String(p.lot_id),
     });
+    setFormPhoto(p.image_url);
+    setFormPhotoModifiee(false);
     setModalEdition(p);
+  }
+
+  function basculerGroupe(cle: string) {
+    setGroupesOuverts((prev) => {
+      const suivant = new Set(prev);
+      if (suivant.has(cle)) suivant.delete(cle);
+      else suivant.add(cle);
+      return suivant;
+    });
   }
 
   async function ajouterProduit() {
@@ -165,6 +222,7 @@ export default function Inventaire({ role }: { role: Role }) {
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
+          image_url: formPhoto ?? undefined,
         }),
       });
       const corps = (await res.json().catch(() => null)) as
@@ -196,6 +254,7 @@ export default function Inventaire({ role }: { role: Role }) {
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
+          ...(formPhotoModifiee ? { image_url: formPhoto ?? "" } : {}),
         }),
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -294,14 +353,38 @@ export default function Inventaire({ role }: { role: Role }) {
           />
         </div>
       </div>
+      <div>
+        <label className="libelle mb-1.5">Photo du produit</label>
+        <ChampPhoto
+          apercu={formPhoto}
+          onCapturer={(data) => {
+            setFormPhoto(data);
+            setFormPhotoModifiee(true);
+          }}
+          onRetirer={() => {
+            setFormPhoto(null);
+            setFormPhotoModifiee(true);
+          }}
+          disabled={envoi}
+        />
+      </div>
     </div>
   );
+
+  const groupes = donnees ? grouperDoublons(donnees.produits) : [];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1>Inventaire</h1>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setVueGroupee((v) => !v)}
+            className="btn btn-secondaire"
+          >
+            {vueGroupee ? "Vue détaillée" : "Vue groupée"}
+          </button>
           {estGerant && (
             <a
               href={`/api/produits/export?${searchParams?.toString() || ""}`}
@@ -311,12 +394,10 @@ export default function Inventaire({ role }: { role: Role }) {
               Export CSV
             </a>
           )}
-          {estGerant && (
-            <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
-              <IconePlus taille={15} />
-              Ajouter un produit
-            </button>
-          )}
+          <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
+            <IconePlus taille={15} />
+            Ajouter un produit
+          </button>
         </div>
       </div>
 
@@ -439,7 +520,7 @@ export default function Inventaire({ role }: { role: Role }) {
       {donnees && donnees.produits.length === 0 && (
         <div className="carte border-dashed p-8 text-center text-sm text-brand-warm-grey">
           <p>Aucun produit ne correspond à ces filtres.</p>
-          {estGerant && donnees.total === 0 && (
+          {donnees.total === 0 && (
             <button type="button" onClick={ouvrirAjout} className="btn btn-primaire mt-4">
               <IconePlus taille={15} />
               Ajouter le premier produit
@@ -448,7 +529,119 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
 
-      {donnees && donnees.produits.length > 0 && (
+      {donnees && donnees.produits.length > 0 && vueGroupee && (
+        <div className="space-y-2">
+          {groupes.map((g) => {
+            const ouvert = groupesOuverts.has(g.cle);
+            const multiple = g.unites.length > 1;
+            return (
+              <div
+                key={g.cle}
+                className="overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white"
+              >
+                <div className="flex items-center gap-3 px-4 py-3">
+                  {g.image_url ? (
+                    <img
+                      src={g.image_url}
+                      alt={`Photo de ${g.reference}`}
+                      loading="lazy"
+                      className="h-11 w-11 shrink-0 rounded-lg border border-brand-light-grey object-cover"
+                    />
+                  ) : (
+                    <div className="h-11 w-11 shrink-0 rounded-lg border border-dashed border-brand-light-grey" />
+                  )}
+                  <span
+                    className={`inline-flex h-7 shrink-0 items-center justify-center rounded-full px-2.5 text-sm font-bold ${
+                      multiple
+                        ? "bg-brand-orange text-brand-white"
+                        : "bg-brand-light-grey/60 text-brand-warm-grey"
+                    }`}
+                  >
+                    {g.unites.length}×
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold" title={g.reference}>
+                      {g.reference}
+                    </p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-brand-warm-grey">
+                      <span>{g.categorie}</span>
+                      {g.resumeStatuts.map((r) => (
+                        <span
+                          key={r.statut}
+                          className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${INFOS_STATUT[r.statut].badge}`}
+                        >
+                          {r.n}× {INFOS_STATUT[r.statut].libelle}
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                  <div className="hidden shrink-0 text-right text-sm sm:block">
+                    <span className="font-semibold">
+                      {g.prixMin === g.prixMax
+                        ? formaterDA(g.prixMin)
+                        : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
+                    </span>
+                    <span className="block text-xs text-brand-grey">achat unitaire</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => basculerGroupe(g.cle)}
+                    aria-label={ouvert ? "Réduire" : "Développer"}
+                    className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                  >
+                    <IconeChevronBas
+                      taille={16}
+                      className={`transition ${ouvert ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                </div>
+
+                {ouvert && (
+                  <ul className="divide-y divide-brand-light-grey/60 border-t border-brand-light-grey">
+                    {g.unites.map((p) => (
+                      <li key={p.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/produits/${p.id}`)}
+                          className="min-w-0 flex-1 text-left transition hover:text-brand-crystal"
+                        >
+                          <span className="font-mono text-xs text-brand-warm-grey">
+                            {p.code_interne}
+                          </span>{" "}
+                          <span className="text-xs text-brand-grey">
+                            lot n°{p.lot_id} · {formaterDA(p.prix_achat)} · {p.jours_stock} j
+                          </span>
+                        </button>
+                        <BadgeStatut statut={p.statut} />
+                        <button
+                          type="button"
+                          onClick={() => ouvrirEdition(p)}
+                          title="Modifier"
+                          aria-label={`Modifier ${p.code_interne}`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                        >
+                          <IconeCrayon taille={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModalSuppression(p)}
+                          title="Supprimer"
+                          aria-label={`Supprimer ${p.code_interne}`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                        >
+                          <IconeCorbeille taille={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {donnees && donnees.produits.length > 0 && !vueGroupee && (
         <div className="overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white">
           <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-brand-light-grey/25">
@@ -471,7 +664,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   </th>
                 ))}
                 <th className="entete-table text-right">Jours</th>
-                {estGerant && <th className="entete-table" />}
+                <th className="entete-table" />
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-light-grey/50">
@@ -509,36 +702,34 @@ export default function Inventaire({ role }: { role: Role }) {
                     {p.prix_vente_fixe !== null ? formaterDA(p.prix_vente_fixe) : "—"}
                   </td>
                   <td className="px-3 py-2 text-right">{p.jours_stock}</td>
-                  {estGerant && (
-                    <td className="px-2 py-2">
-                      <span className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            ouvrirEdition(p);
-                          }}
-                          title="Modifier"
-                          aria-label={`Modifier ${p.code_interne}`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                        >
-                          <IconeCrayon taille={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setModalSuppression(p);
-                          }}
-                          title="Supprimer"
-                          aria-label={`Supprimer ${p.code_interne}`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                        >
-                          <IconeCorbeille taille={14} />
-                        </button>
-                      </span>
-                    </td>
-                  )}
+                  <td className="px-2 py-2">
+                    <span className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          ouvrirEdition(p);
+                        }}
+                        title="Modifier"
+                        aria-label={`Modifier ${p.code_interne}`}
+                        className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                      >
+                        <IconeCrayon taille={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalSuppression(p);
+                        }}
+                        title="Supprimer"
+                        aria-label={`Supprimer ${p.code_interne}`}
+                        className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                      >
+                        <IconeCorbeille taille={14} />
+                      </button>
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
