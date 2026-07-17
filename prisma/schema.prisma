@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  gerant
+  technicien
+  dev
+}
+
+enum StatutLot {
+  en_cours_de_test
+  teste
+  valide
+}
+
+enum StatutProduit {
+  recu
+  en_test
+  ok
+  a_reparer
+  manque_piece
+  hs
+  en_vente
+  vendu
+}
+
+enum TypeMouvement {
+  achat_lot
+  vente
+  annulation_vente
+  apport_associe
+  achat_piece
+  frais
+  retrait_parts
+  transfert_reserve
+  reinvest
+}
+
+enum DecisionRapport {
+  reparer
+  vendre_en_etat
+  pieces_detachees
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  username       String    @unique
+  password_hash  String
+  role           Role
+  login_attempts Int       @default(0)
+  locked_until   DateTime?
+
+  reparations   Reparation[]
+  historiques   HistoriqueStatut[]
+  mouvements    MouvementCaisse[]
+  notifications Notification[]
+  ventes        Vente[]            @relation("ventes_effectuees")
+
+  @@map("users")
+}
+
+model Parametres {
+  id                Int      @id @default(1)
+  marge_minimum_pct Int      @default(20)
+  objectif_reserve  Int      @default(50000)
+  pct_reinvest      Int      @default(50)
+  pct_reserve       Int      @default(20)
+  pct_parts         Int      @default(20)
+  pct_frais         Int      @default(10)
+  updated_at        DateTime @updatedAt
+
+  @@map("parametres")
+}
+
+model Lot {
+  id                  Int       @id @default(autoincrement())
+  fournisseur         String
+  date_entree         DateTime  @default(now())
+  statut_lot          StatutLot @default(en_cours_de_test)
+  description         String?
+  quantite_attendue   Int?      @default(0)
+  cout_global_declare Int?
+
+  produits   Produit[]
+  mouvements MouvementCaisse[]
+
+  @@map("lots")
+}
+
+model Produit {
+  id               Int              @id @default(autoincrement())
+  lot_id           Int
+  code_interne     String           @unique
+  reference        String
+  categorie        String
+  statut           StatutProduit    @default(recu)
+  prix_achat       Int
+  prix_vente_fixe  Int?
+  prix_vente_reel  Int?
+  date_vente       DateTime?
+  notes            String?
+  image_url        String?
+  decision_rapport DecisionRapport?
+
+  lot         Lot                @relation(fields: [lot_id], references: [id])
+  reparations Reparation[]
+  historique  HistoriqueStatut[]
+  mouvements  MouvementCaisse[]
+  ventes      Vente[]
+
+  @@map("produits")
+}
+
+model Vente {
+  id               Int       @id @default(autoincrement())
+  produit_id       Int
+  vendu_par        Int
+  prix_vente_reel  Int
+  canal            String?
+  date_vente       DateTime  @default(now())
+  annulee          Boolean   @default(false)
+  motif_annulation String?
+  annulee_par      Int?
+  annulee_at       DateTime?
+
+  produit Produit @relation(fields: [produit_id], references: [id])
+  vendeur User    @relation("ventes_effectuees", fields: [vendu_par], references: [id])
+
+  @@map("ventes")
+}
+
+model Reparation {
+  id          Int      @id @default(autoincrement())
+  produit_id  Int
+  user_id     Int
+  cout        Int
+  description String
+  date        DateTime @default(now())
+
+  produit Produit @relation(fields: [produit_id], references: [id])
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@map("reparations")
+}
+
+model HistoriqueStatut {
+  id           Int            @id @default(autoincrement())
+  produit_id   Int
+  user_id      Int
+  statut_avant StatutProduit?
+  statut_apres StatutProduit
+  note         String?
+  created_at   DateTime       @default(now())
+
+  produit Produit @relation(fields: [produit_id], references: [id])
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@map("historique_statuts")
+}
+
+model MouvementCaisse {
+  id          Int           @id @default(autoincrement())
+  montant     Int
+  type        TypeMouvement
+  date        DateTime      @default(now())
+  produit_id  Int?
+  lot_id      Int?
+  user_id     Int
+  description String?
+  solde_apres Int
+
+  produit Produit? @relation(fields: [produit_id], references: [id])
+  lot     Lot?     @relation(fields: [lot_id], references: [id])
+  user    User     @relation(fields: [user_id], references: [id])
+
+  @@map("mouvements_caisse")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  message    String
+  lu         Boolean  @default(false)
+  lien       String?
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("notifications")
+}

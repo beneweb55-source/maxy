@@ -1,0 +1,178 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@theme {
+  --color-brand-orange: #F86822;
+  --color-brand-black: #000000;
+  --color-brand-white: #FFFFFF;
+  --color-brand-crystal: #1770E5;
+  --color-brand-smooth: #2E2D2D;
+  --color-brand-light-orange: #FC997E;
+  --color-brand-glow: #F9D7CD;
+  --color-brand-light-grey: #E6E6E6;
+  --color-brand-grey: #C2C3CC;
+  --color-brand-warm-grey: #7C7572;
+  --color-brand-paper: #FDF8F6;
+  --color-succes: #059669;
+  --color-danger: #DC2626;
+  --color-attention: #D97706;
+  --font-inter: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-inter);
+    background-color: var(--color-brand-paper);
+    color: var(--color-brand-black);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  h1, h2, h3 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+  h1 {
+    font-size: 26px;
+    letter-spacing: -0.03em;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  h3 {
+    font-size: 17px;
+  }
+  ::selection {
+    background-color: var(--color-brand-glow);
+    color: var(--color-brand-black);
+  }
+  @media print {
+    body {
+      background-color: var(--color-brand-white);
+    }
+  }
+}
+
+@layer components {
+  .carte {
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-brand-light-grey);
+    background-color: var(--color-brand-white);
+    padding: var(--spacing-5, 1.25rem);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2, 0.5rem);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-2, 0.5rem) var(--spacing-4, 1rem);
+    font-size: 14px;
+    font-weight: 700;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, filter 0.15s;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primaire {
+    background-color: var(--color-brand-orange);
+    color: var(--color-brand-white);
+  }
+  .btn-primaire:hover:not(:disabled) {
+    filter: brightness(0.92);
+  }
+  .btn-secondaire {
+    border: 1px solid var(--color-brand-light-grey);
+    background-color: var(--color-brand-white);
+    color: var(--color-brand-smooth);
+  }
+  .btn-secondaire:hover:not(:disabled) {
+    background-color: var(--color-brand-paper);
+    border-color: var(--color-brand-grey);
+  }
+  .btn-danger {
+    background-color: var(--color-danger);
+    color: var(--color-brand-white);
+  }
+  .btn-danger:hover:not(:disabled) {
+    filter: brightness(0.9);
+  }
+  .btn-crystal {
+    background-color: var(--color-brand-crystal);
+    color: var(--color-brand-white);
+  }
+  .btn-crystal:hover:not(:disabled) {
+    filter: brightness(0.92);
+  }
+  .champ {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-brand-light-grey);
+    background-color: var(--color-brand-white);
+    padding: var(--spacing-2, 0.5rem) var(--spacing-3, 0.75rem);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .champ:focus {
+    border-color: var(--color-brand-orange);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-orange) 18%, transparent);
+  }
+  .libelle {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-brand-warm-grey);
+  }
+  .entete-table {
+    padding: var(--spacing-2-5, 0.625rem) var(--spacing-3, 0.75rem);
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-brand-warm-grey);
+  }
+  .lien {
+    font-weight: 500;
+    color: var(--color-brand-crystal);
+  }
+  .lien:hover {
+    text-decoration: underline;
+  }
+  .alerte-erreur {
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in srgb, var(--color-danger) 7%, white);
+    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    font-size: 14px;
+    color: color-mix(in srgb, var(--color-danger) 88%, black);
+  }
+  .bandeau-info {
+    border-radius: var(--radius-lg);
+    border: 1px solid color-mix(in srgb, var(--color-brand-crystal) 22%, transparent);
+    background-color: color-mix(in srgb, var(--color-brand-crystal) 7%, white);
+    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    font-size: 14px;
+    color: color-mix(in srgb, var(--color-brand-crystal) 82%, black);
+  }
+  .bandeau-succes {
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in srgb, var(--color-succes) 8%, white);
+    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    font-size: 14px;
+    color: color-mix(in srgb, var(--color-succes) 85%, black);
+  }
+  .encart-marque {
+    border-radius: var(--radius-lg);
+    border: 1px solid color-mix(in srgb, var(--color-brand-orange) 25%, transparent);
+    background-color: color-mix(in srgb, var(--color-brand-glow) 45%, white);
+    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    font-size: 14px;
+    color: color-mix(in srgb, var(--color-brand-orange) 75%, black);
+  }
+}

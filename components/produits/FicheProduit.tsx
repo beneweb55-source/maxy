@@ -1,0 +1,758 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { DecisionRapport, Role, StatutLot, StatutProduit } from "@prisma/client";
+import BadgeStatut from "@/components/BadgeStatut";
+import Modale from "@/components/Modale";
+import { useToast } from "@/components/toast";
+import { formaterDA } from "@/lib/caisse";
+import { INFOS_STATUT } from "@/lib/statuts";
+import {
+  PLACEHOLDERS_NOTE,
+  STATUTS_NOTE_OBLIGATOIRE,
+  TRANSITIONS_MANUELLES,
+} from "@/lib/transitions";
+import {
+  ICONES_STATUT,
+  IconeBillet,
+  IconeCorbeille,
+  IconeCrayon,
+  IconeEtiquette,
+  IconeFlecheGauche,
+  IconeFlecheDroite,
+  IconeNote,
+  IconePlus,
+} from "@/components/icons";
+
+interface ProduitDto {
+  id: number;
+  code_interne: string;
+  reference: string;
+  categorie: string;
+  statut: StatutProduit;
+  notes: string | null;
+  image_url: string | null;
+  decision_rapport: DecisionRapport | null;
+  prix_achat: number;
+  cout_reparations: number;
+  prix_vente_fixe: number | null;
+  prix_vente_reel: number | null;
+  date_vente: string | null;
+  marge: number | null;
+  jours_stock: number;
+  lot: { id: number; fournisseur: string; date_entree: string; statut_lot: StatutLot };
+  reparations: { id: number; cout: number; description: string; date: string; par: string }[];
+  historique: {
+    id: number;
+    statut_avant: StatutProduit | null;
+    statut_apres: StatutProduit;
+    note: string | null;
+    quand: string;
+    par: string;
+  }[];
+  ventes: {
+    id: number;
+    prix_vente_reel: number;
+    canal: string | null;
+    date_vente: string;
+    vendeur: string;
+    annulee: boolean;
+    motif_annulation: string | null;
+  }[];
+}
+
+export default function FicheProduit({
+  produitId,
+  role,
+}: {
+  produitId: number;
+  role: Role;
+}) {
+  const router = useRouter();
+  const { afficher } = useToast();
+  const [produit, setProduit] = useState<ProduitDto | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [envoi, setEnvoi] = useState(false);
+
+  const [notes, setNotes] = useState("");
+  const [modalNote, setModalNote] = useState<StatutProduit | null>(null);
+  const [noteTexte, setNoteTexte] = useState("");
+  const [modalPrix, setModalPrix] = useState(false);
+  const [prixTexte, setPrixTexte] = useState("");
+  const [modalReparation, setModalReparation] = useState(false);
+  const [coutReparation, setCoutReparation] = useState("");
+  const [descReparation, setDescReparation] = useState("");
+  const [modalEdition, setModalEdition] = useState(false);
+  const [edition, setEdition] = useState({ reference: "", categorie: "", prix_achat: "" });
+  const [modalSuppression, setModalSuppression] = useState(false);
+
+  const peutModifierStatut = role === "technicien" || role === "gerant";
+  const estGerant = role === "gerant";
+  const peutVendre = role === "gerant" || role === "dev";
+
+  const rafraichir = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/produits/${produitId}`);
+      const corps = (await res.json().catch(() => null)) as
+        | ProduitDto
+        | { error?: string }
+        | null;
+      if (!res.ok || !corps || "error" in (corps as object)) {
+        setErreur((corps as { error?: string } | null)?.error ?? "Erreur de chargement.");
+        return;
+      }
+      const p = corps as ProduitDto;
+      setProduit(p);
+      setNotes(p.notes ?? "");
+      setErreur(null);
+    } catch {
+      setErreur("Impossible de joindre le serveur.");
+    }
+  }, [produitId]);
+
+  useEffect(() => {
+    void rafraichir();
+  }, [rafraichir]);
+
+  async function appel(
+    url: string,
+    methode: string,
+    corps: unknown
+  ): Promise<boolean> {
+    setEnvoi(true);
+    try {
+      const res = await fetch(url, {
+        method: methode,
+        headers: { "Content-Type": "application/json" },
+        body: corps === undefined ? undefined : JSON.stringify(corps),
+      });
+      const reponse = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(reponse?.error ?? "Erreur lors de l'opération.", "erreur");
+        return false;
+      }
+      return true;
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+      return false;
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  if (erreur && !produit) {
+    return (
+      <div className="alerte-erreur" role="alert">
+        {erreur}{" "}
+        <Link href="/inventaire" className="underline">
+          Retour à l'inventaire
+        </Link>
+      </div>
+    );
+  }
+  if (!produit) return <p className="p-4 text-sm text-brand-warm-grey">Chargement du produit…</p>;
+
+  const cibles = peutModifierStatut ? (TRANSITIONS_MANUELLES[produit.statut] ?? []) : [];
+  const vendu = produit.statut === "vendu";
+  const montrerActions =
+    !vendu &&
+    (cibles.length > 0 ||
+      peutModifierStatut ||
+      estGerant ||
+      (peutVendre && produit.statut === "en_vente"));
+
+  function demanderTransition(cible: StatutProduit) {
+    if (STATUTS_NOTE_OBLIGATOIRE.includes(cible)) {
+      setNoteTexte("");
+      setModalNote(cible);
+      return;
+    }
+    void appel(`/api/produits/${produitId}/statut`, "POST", { statut: cible }).then((ok) => {
+      if (ok) {
+        afficher(`Statut → ${INFOS_STATUT[cible].libelle}`);
+        void rafraichir();
+      }
+    });
+  }
+
+  function ouvrirEdition() {
+    if (!produit) return;
+    setEdition({
+      reference: produit.reference,
+      categorie: produit.categorie,
+      prix_achat: String(produit.prix_achat),
+    });
+    setModalEdition(true);
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-lg font-bold">
+          <span className="font-mono text-base text-brand-warm-grey">{produit.code_interne}</span>{" "}
+          {produit.reference}
+        </h1>
+        <Link href="/inventaire" className="lien inline-flex items-center gap-1.5 text-sm">
+          <IconeFlecheGauche taille={14} />
+          Inventaire
+        </Link>
+      </div>
+
+      {vendu && (
+        <div className="flex items-center gap-2 rounded-lg bg-brand-smooth px-4 py-2.5 text-sm text-brand-white">
+          <IconeBillet taille={16} />
+          Produit vendu — fiche verrouillée (seules les notes restent modifiables).
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <section className="carte">
+          <h2 className="libelle text-brand-smooth">Identité</h2>
+          {produit.image_url && (
+            <img
+              src={produit.image_url}
+              alt={`Photo de ${produit.reference}`}
+              className="mt-2.5 h-44 w-full rounded-lg border border-brand-light-grey object-cover"
+            />
+          )}
+          <dl className="mt-2.5 space-y-1.5 text-sm">
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Statut</dt>
+              <dd>
+                <BadgeStatut statut={produit.statut} />
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Catégorie</dt>
+              <dd className="font-semibold">{produit.categorie}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Lot d'origine</dt>
+              <dd>
+                <Link href={`/lots/${produit.lot.id}`} className="lien">
+                  n°{produit.lot.id} — {produit.lot.fournisseur}
+                </Link>
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Date d'entrée</dt>
+              <dd>{new Date(produit.lot.date_entree).toLocaleDateString("fr-FR")}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Jours en stock</dt>
+              <dd
+                className={
+                  produit.jours_stock > 30 && !vendu ? "font-bold text-brand-orange" : ""
+                }
+              >
+                {produit.jours_stock} jour{produit.jours_stock > 1 ? "s" : ""}
+              </dd>
+            </div>
+            {produit.decision_rapport && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-brand-warm-grey">Décision rapport</dt>
+                <dd className="font-semibold">
+                  {produit.decision_rapport === "reparer"
+                    ? "Réparer"
+                    : produit.decision_rapport === "vendre_en_etat"
+                      ? "Vendre en l'état"
+                      : "Pièces détachées"}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        <section className="carte">
+          <h2 className="libelle text-brand-smooth">Finances</h2>
+          <dl className="mt-2.5 space-y-1.5 text-sm">
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Prix d'achat</dt>
+              <dd className="font-semibold">{formaterDA(produit.prix_achat)}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Total réparations</dt>
+              <dd className="font-semibold">
+                {produit.cout_reparations > 0 ? formaterDA(produit.cout_reparations) : "—"}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Prix de vente fixé</dt>
+              <dd className="font-semibold">
+                {produit.prix_vente_fixe !== null ? formaterDA(produit.prix_vente_fixe) : "—"}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Prix de vente réel</dt>
+              <dd className="font-semibold">
+                {produit.prix_vente_reel !== null ? formaterDA(produit.prix_vente_reel) : "—"}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2 border-t border-brand-light-grey/70 pt-1.5">
+              <dt className="text-brand-warm-grey">Marge</dt>
+              <dd
+                className={`font-bold ${
+                  produit.marge === null
+                    ? "text-brand-grey"
+                    : produit.marge >= 0
+                      ? "text-succes"
+                      : "text-danger"
+                }`}
+              >
+                {produit.marge !== null ? formaterDA(produit.marge) : "— (pas encore vendu)"}
+              </dd>
+            </div>
+          </dl>
+
+          {produit.reparations.length > 0 && (
+            <ul className="mt-3 space-y-1 rounded-lg bg-brand-light-grey/25 p-2.5 text-xs text-brand-smooth">
+              {produit.reparations.map((r) => (
+                <li key={r.id}>
+                  {new Date(r.date).toLocaleDateString("fr-FR")} — {r.description} ·{" "}
+                  <strong>{formaterDA(r.cout)}</strong> ({r.par})
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      {montrerActions && (
+        <section className="carte">
+          <h2 className="libelle text-brand-smooth">Actions</h2>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {cibles.map((cible) => {
+              const Icone = ICONES_STATUT[cible];
+              return (
+                <button
+                  key={cible}
+                  type="button"
+                  disabled={envoi}
+                  onClick={() => demanderTransition(cible)}
+                  className="btn btn-secondaire"
+                >
+                  <Icone taille={14} />
+                  {INFOS_STATUT[cible].libelle}
+                </button>
+              );
+            })}
+            {estGerant && produit.statut === "ok" && (
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={() => {
+                  setPrixTexte("");
+                  setModalPrix(true);
+                }}
+                className="btn btn-primaire"
+              >
+                <IconeEtiquette taille={14} />
+                Fixer le prix — mettre en vente
+              </button>
+            )}
+            {peutVendre && produit.statut === "en_vente" && (
+              <Link href="/ventes" className="btn btn-crystal">
+                Vendre ce produit
+                <IconeFlecheDroite taille={14} />
+              </Link>
+            )}
+            {peutModifierStatut && (
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={() => setModalReparation(true)}
+                className="btn border border-dashed border-brand-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
+              >
+                <IconePlus taille={14} />
+                Réparation
+              </button>
+            )}
+            {estGerant && (
+              <>
+                <button
+                  type="button"
+                  disabled={envoi}
+                  onClick={ouvrirEdition}
+                  className="btn btn-secondaire"
+                >
+                  <IconeCrayon taille={14} />
+                  Modifier
+                </button>
+                <button
+                  type="button"
+                  disabled={envoi}
+                  onClick={() => setModalSuppression(true)}
+                  className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
+                >
+                  <IconeCorbeille taille={14} />
+                  Supprimer
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      {produit.ventes.length > 0 && (
+        <section className="carte">
+          <h2 className="libelle text-brand-smooth">Ventes</h2>
+          <ul className="mt-2.5 divide-y divide-brand-light-grey/50 text-sm">
+            {produit.ventes.map((v) => (
+              <li key={v.id} className="flex items-center justify-between py-1.5">
+                <span className={v.annulee ? "text-brand-grey line-through" : ""}>
+                  {new Date(v.date_vente).toLocaleDateString("fr-FR")} —{" "}
+                  {formaterDA(v.prix_vente_reel)}
+                  {v.canal ? ` (${v.canal})` : ""} · {v.vendeur}
+                </span>
+                {v.annulee && (
+                  <span className="rounded bg-danger/10 px-1.5 py-0.5 text-xs font-semibold text-danger">
+                    annulée{v.motif_annulation ? ` — ${v.motif_annulation}` : ""}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="carte">
+        <h2 className="libelle text-brand-smooth">Historique complet</h2>
+        <ol className="mt-3 space-y-0">
+          {produit.historique.map((h, i) => (
+            <li key={h.id} className="relative flex gap-3 pb-4">
+              {i < produit.historique.length - 1 && (
+                <span className="absolute left-[7px] top-5 h-full w-px bg-brand-light-grey" />
+              )}
+              <span className="relative mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-brand-white bg-brand-orange ring-1 ring-brand-light-grey" />
+              <div className="min-w-0 text-sm">
+                <p>
+                  {h.statut_avant === null ? (
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      Création
+                      <IconeFlecheDroite taille={12} className="text-brand-grey" />
+                      <BadgeStatut statut={h.statut_apres} />
+                    </span>
+                  ) : (
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      <BadgeStatut statut={h.statut_avant} />
+                      <IconeFlecheDroite taille={12} className="text-brand-grey" />
+                      <BadgeStatut statut={h.statut_apres} />
+                    </span>
+                  )}
+                </p>
+                {h.note && (
+                  <p className="mt-1 flex items-start gap-1.5 text-xs text-brand-smooth">
+                    <IconeNote taille={13} className="mt-0.5 shrink-0 text-brand-warm-grey" />
+                    {h.note}
+                  </p>
+                )}
+                <p className="mt-0.5 text-xs text-brand-grey">
+                  par {h.par} ·{" "}
+                  {new Date(h.quand).toLocaleString("fr-FR", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="carte">
+        <h2 className="libelle text-brand-smooth">Notes libres</h2>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+          placeholder="Ajouter une note libre…"
+          className="champ mt-2.5"
+        />
+        <div className="mt-2 text-right">
+          <button
+            type="button"
+            disabled={envoi || notes === (produit.notes ?? "")}
+            onClick={() =>
+              void appel(`/api/produits/${produitId}/notes`, "PATCH", { notes }).then((ok) => {
+                if (ok) {
+                  afficher("Note enregistrée.");
+                  void rafraichir();
+                }
+              })
+            }
+            className="btn btn-primaire"
+          >
+            Enregistrer la note
+          </button>
+        </div>
+      </section>
+
+      <Modale
+        titre={modalNote ? `Passage en « ${INFOS_STATUT[modalNote].libelle} »` : ""}
+        ouverte={modalNote !== null}
+        onFermer={() => setModalNote(null)}
+      >
+        <textarea
+          value={noteTexte}
+          onChange={(e) => setNoteTexte(e.target.value)}
+          rows={3}
+          autoFocus
+          placeholder={modalNote ? PLACEHOLDERS_NOTE[modalNote] : ""}
+          className="champ"
+        />
+        <div className="mt-3 text-right">
+          <button
+            type="button"
+            disabled={!noteTexte.trim() || envoi}
+            onClick={() => {
+              if (!modalNote) return;
+              void appel(`/api/produits/${produitId}/statut`, "POST", {
+                statut: modalNote,
+                note: noteTexte,
+              }).then((ok) => {
+                if (ok) {
+                  afficher(`Statut → ${INFOS_STATUT[modalNote].libelle}`);
+                  setModalNote(null);
+                  void rafraichir();
+                }
+              });
+            }}
+            className="btn btn-primaire"
+          >
+            Confirmer le changement
+          </button>
+        </div>
+      </Modale>
+
+      <Modale
+        titre="Fixer le prix de vente"
+        ouverte={modalPrix}
+        onFermer={() => setModalPrix(false)}
+      >
+        <p className="text-sm text-brand-warm-grey">
+          Coût total :{" "}
+          <strong className="text-brand-black">
+            {formaterDA(produit.prix_achat + produit.cout_reparations)}
+          </strong>{" "}
+          (achat {formaterDA(produit.prix_achat)}
+          {produit.cout_reparations > 0 &&
+            ` + réparations ${formaterDA(produit.cout_reparations)}`}
+          )
+        </p>
+        <input
+          type="number"
+          min={1}
+          step={1}
+          value={prixTexte}
+          onChange={(e) => setPrixTexte(e.target.value)}
+          autoFocus
+          placeholder="Prix de vente (DA)"
+          className="champ mt-3"
+        />
+        {Number(prixTexte) > 0 && (
+          <p className="mt-2 text-sm">
+            Marge prévue :{" "}
+            <strong
+              className={
+                Number(prixTexte) - produit.prix_achat - produit.cout_reparations >= 0
+                  ? "text-succes"
+                  : "text-danger"
+              }
+            >
+              {formaterDA(Number(prixTexte) - produit.prix_achat - produit.cout_reparations)}
+            </strong>
+          </p>
+        )}
+        <div className="mt-3 text-right">
+          <button
+            type="button"
+            disabled={envoi || !prixTexte.trim()}
+            onClick={() =>
+              void appel(`/api/produits/${produitId}/prix`, "POST", {
+                prix_vente_fixe: Number(prixTexte),
+              }).then((ok) => {
+                if (ok) {
+                  afficher("Prix fixé — produit en vente.");
+                  setModalPrix(false);
+                  void rafraichir();
+                }
+              })
+            }
+            className="btn btn-primaire"
+          >
+            Mettre en vente
+          </button>
+        </div>
+      </Modale>
+
+      <Modale
+        titre="Ajouter une réparation"
+        ouverte={modalReparation}
+        onFermer={() => setModalReparation(false)}
+      >
+        <div className="space-y-3">
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={coutReparation}
+            onChange={(e) => setCoutReparation(e.target.value)}
+            autoFocus
+            placeholder="Coût (DA) *"
+            className="champ"
+          />
+          <input
+            type="text"
+            value={descReparation}
+            onChange={(e) => setDescReparation(e.target.value)}
+            placeholder="Description *"
+            className="champ"
+          />
+          <div className="text-right">
+            <button
+              type="button"
+              disabled={envoi || !coutReparation.trim() || !descReparation.trim()}
+              onClick={() =>
+                void appel(`/api/produits/${produitId}/reparations`, "POST", {
+                  cout: Number(coutReparation),
+                  description: descReparation,
+                }).then((ok) => {
+                  if (ok) {
+                    afficher("Réparation ajoutée.");
+                    setModalReparation(false);
+                    setCoutReparation("");
+                    setDescReparation("");
+                    void rafraichir();
+                  }
+                })
+              }
+              className="btn btn-primaire"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      </Modale>
+
+      <Modale
+        titre={`Modifier — ${produit.code_interne}`}
+        ouverte={modalEdition}
+        onFermer={() => setModalEdition(false)}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="libelle mb-1.5" htmlFor="edit-ref">
+              Référence *
+            </label>
+            <input
+              id="edit-ref"
+              type="text"
+              value={edition.reference}
+              onChange={(e) => setEdition({ ...edition, reference: e.target.value })}
+              autoFocus
+              className="champ"
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="libelle mb-1.5" htmlFor="edit-cat">
+                Catégorie *
+              </label>
+              <input
+                id="edit-cat"
+                type="text"
+                value={edition.categorie}
+                onChange={(e) => setEdition({ ...edition, categorie: e.target.value })}
+                className="champ"
+              />
+            </div>
+            <div className="w-40">
+              <label className="libelle mb-1.5" htmlFor="edit-prix">
+                Prix achat (DA) *
+              </label>
+              <input
+                id="edit-prix"
+                type="number"
+                min={0}
+                step={1}
+                value={edition.prix_achat}
+                onChange={(e) => setEdition({ ...edition, prix_achat: e.target.value })}
+                className="champ text-right"
+              />
+            </div>
+          </div>
+          <div className="pt-1 text-right">
+            <button
+              type="button"
+              disabled={
+                envoi ||
+                !edition.reference.trim() ||
+                !edition.categorie.trim() ||
+                !Number.isInteger(Number(edition.prix_achat)) ||
+                Number(edition.prix_achat) < 0
+              }
+              onClick={() =>
+                void appel(`/api/produits/${produitId}`, "PUT", {
+                  reference: edition.reference.trim(),
+                  categorie: edition.categorie.trim(),
+                  prix_achat: Number(edition.prix_achat),
+                }).then((ok) => {
+                  if (ok) {
+                    afficher("Produit modifié.");
+                    setModalEdition(false);
+                    void rafraichir();
+                  }
+                })
+              }
+              className="btn btn-primaire"
+            >
+              Enregistrer les modifications
+            </button>
+          </div>
+        </div>
+      </Modale>
+
+      <Modale
+        titre={`Supprimer — ${produit.code_interne}`}
+        ouverte={modalSuppression}
+        onFermer={() => setModalSuppression(false)}
+      >
+        <p className="text-sm text-brand-warm-grey">
+          Le produit <strong className="text-brand-black">{produit.reference}</strong> sera
+          définitivement retiré de l'inventaire, avec son historique de statuts et ses
+          réparations. Cette action est irréversible.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setModalSuppression(false)}
+            className="btn btn-secondaire"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            disabled={envoi}
+            onClick={() =>
+              void appel(`/api/produits/${produitId}`, "DELETE", undefined).then((ok) => {
+                if (ok) {
+                  afficher(`Produit ${produit.code_interne} supprimé.`);
+                  router.push("/inventaire");
+                }
+              })
+            }
+            className="btn btn-danger"
+          >
+            <IconeCorbeille taille={15} />
+            Supprimer définitivement
+          </button>
+        </div>
+      </Modale>
+    </div>
+  );
+}

@@ -1,0 +1,662 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import type { Role, StatutLot, StatutProduit } from "@prisma/client";
+import BadgeStatut from "@/components/BadgeStatut";
+import Modale from "@/components/Modale";
+import { useToast } from "@/components/toast";
+import { formaterDA } from "@/lib/caisse";
+import { compresserPhoto } from "@/lib/photo-client";
+import { INFOS_STATUT, INFOS_STATUT_LOT } from "@/lib/statuts";
+import {
+  PLACEHOLDERS_NOTE,
+  STATUTS_NOTE_OBLIGATOIRE,
+  TRANSITIONS_MANUELLES,
+} from "@/lib/transitions";
+import {
+  ICONES_STATUT,
+  IconeAppareilPhoto,
+  IconeCle,
+  IconeCoche,
+  IconeCorbeille,
+  IconeFlecheGauche,
+  IconeLancer,
+  IconeNote,
+  IconePlus,
+} from "@/components/icons";
+
+interface ReparationDto {
+  id: number;
+  cout: number;
+  description: string;
+  date: string;
+}
+
+interface ProduitDto {
+  id: number;
+  code_interne: string;
+  reference: string;
+  categorie: string;
+  statut: StatutProduit;
+  prix_achat: number;
+  image_url: string | null;
+  derniere_note: string | null;
+  cout_reparations: number;
+  reparations: ReparationDto[];
+}
+
+interface LotDto {
+  id: number;
+  fournisseur: string;
+  date_entree: string;
+  statut_lot: StatutLot;
+  description: string | null;
+  cout_global_declare: number | null;
+  quantite_attendue: number | null;
+  produits: ProduitDto[];
+}
+
+function BoutonTransition({ avant, cible }: { avant: StatutProduit; cible: StatutProduit }) {
+  if (avant === "recu" && cible === "en_test") {
+    return (
+      <>
+        <IconeLancer taille={14} />
+        Commencer le test
+      </>
+    );
+  }
+  if (avant === "manque_piece" && cible === "a_reparer") {
+    return (
+      <>
+        <IconeCle taille={14} />
+        Pièce reçue — à réparer
+      </>
+    );
+  }
+  if (avant === "a_reparer" && cible === "ok") {
+    return (
+      <>
+        <IconeCoche taille={14} />
+        Réparé — OK
+      </>
+    );
+  }
+  const Icone = ICONES_STATUT[cible];
+  return (
+    <>
+      <Icone taille={14} />
+      {INFOS_STATUT[cible].libelle}
+    </>
+  );
+}
+
+export default function EcranLot({ lotId, role }: { lotId: number; role: Role }) {
+  const { afficher } = useToast();
+  const [lot, setLot] = useState<LotDto | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [envoi, setEnvoi] = useState(false);
+
+  const [modalNote, setModalNote] = useState<{ produit: ProduitDto; cible: StatutProduit } | null>(
+    null
+  );
+  const [noteTexte, setNoteTexte] = useState("");
+  const [modalReparation, setModalReparation] = useState<ProduitDto | null>(null);
+  const [coutReparation, setCoutReparation] = useState("");
+  const [descReparation, setDescReparation] = useState("");
+  const [modalCloture, setModalCloture] = useState(false);
+  const [modalManque, setModalManque] = useState(false);
+  const [msgManque, setMsgManque] = useState("");
+  const [ajoutOuvert, setAjoutOuvert] = useState(false);
+  const [nouvRef, setNouvRef] = useState("");
+  const [nouvCat, setNouvCat] = useState("");
+  const [nouvPrix, setNouvPrix] = useState("");
+  const [nouvPhoto, setNouvPhoto] = useState<string | null>(null);
+  const [photoEnCours, setPhotoEnCours] = useState(false);
+  const champPhoto = useRef<HTMLInputElement>(null);
+
+  const peutAgir = role === "technicien" || role === "gerant";
+  const estTechnicien = role === "technicien";
+
+  const rafraichir = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/lots/${lotId}`);
+      const corps = (await res.json().catch(() => null)) as LotDto | { error?: string } | null;
+      if (!res.ok || !corps || "error" in (corps as object)) {
+        setErreur((corps as { error?: string } | null)?.error ?? "Erreur de chargement du lot.");
+        return;
+      }
+      setLot(corps as LotDto);
+      setErreur(null);
+    } catch {
+      setErreur("Impossible de joindre le serveur.");
+    }
+  }, [lotId]);
+
+  useEffect(() => {
+    void rafraichir();
+  }, [rafraichir]);
+
+  async function appelApi(url: string, corps: unknown): Promise<boolean> {
+    setEnvoi(true);
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corps),
+      });
+      const reponse = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(reponse?.error ?? "Erreur lors de l'opération.", "erreur");
+        return false;
+      }
+      await rafraichir();
+      return true;
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+      return false;
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  function demanderTransition(produit: ProduitDto, cible: StatutProduit) {
+    if (STATUTS_NOTE_OBLIGATOIRE.includes(cible)) {
+      setNoteTexte("");
+      setModalNote({ produit, cible });
+      return;
+    }
+    void appelApi(`/api/produits/${produit.id}/statut`, { statut: cible }).then(
+      (ok) => ok && afficher(`${produit.code_interne} → ${INFOS_STATUT[cible].libelle}`)
+    );
+  }
+
+  async function confirmerNote() {
+    if (!modalNote) return;
+    const { produit, cible } = modalNote;
+    const ok = await appelApi(`/api/produits/${produit.id}/statut`, {
+      statut: cible,
+      note: noteTexte,
+    });
+    if (ok) {
+      afficher(`${produit.code_interne} → ${INFOS_STATUT[cible].libelle}`);
+      setModalNote(null);
+    }
+  }
+
+  async function confirmerReparation() {
+    if (!modalReparation) return;
+    const ok = await appelApi(`/api/produits/${modalReparation.id}/reparations`, {
+      cout: Number(coutReparation),
+      description: descReparation,
+    });
+    if (ok) {
+      afficher(`Réparation ajoutée sur ${modalReparation.code_interne}`);
+      setModalReparation(null);
+      setCoutReparation("");
+      setDescReparation("");
+    }
+  }
+
+  async function confirmerCloture() {
+    const ok = await appelApi(`/api/lots/${lotId}/cloture`, {});
+    if (ok) {
+      afficher("Lot clôturé — rapport généré, Imed a été notifié.");
+      setModalCloture(false);
+    }
+  }
+
+  async function signalerManque() {
+    if (!msgManque.trim()) {
+      afficher("Veuillez saisir un message.", "erreur");
+      return;
+    }
+    const ok = await appelApi(`/api/lots/${lotId}/signaler-manque`, { message: msgManque.trim() });
+    if (ok) {
+      afficher("Alerte envoyée à Imed.");
+      setModalManque(false);
+      setMsgManque("");
+    }
+  }
+
+  async function choisirPhoto(evenement: React.ChangeEvent<HTMLInputElement>) {
+    const fichier = evenement.target.files?.[0];
+    evenement.target.value = "";
+    if (!fichier) return;
+    setPhotoEnCours(true);
+    try {
+      setNouvPhoto(await compresserPhoto(fichier));
+    } catch (e) {
+      afficher(e instanceof Error ? e.message : "Photo illisible.", "erreur");
+    } finally {
+      setPhotoEnCours(false);
+    }
+  }
+
+  async function ajouterProduit() {
+    if (!nouvRef.trim() || !nouvCat.trim() || !nouvPrix.trim()) {
+      afficher("Veuillez remplir la référence, catégorie et prix.", "erreur");
+      return;
+    }
+    const ok = await appelApi(`/api/lots/${lotId}/produits`, {
+      produits: [{
+        reference: nouvRef.trim(),
+        categorie: nouvCat.trim(),
+        prix_achat: Number(nouvPrix),
+        image_url: nouvPhoto ?? undefined,
+      }],
+    });
+    if (ok) {
+      afficher("Produit ajouté au lot.");
+      setNouvRef("");
+      setNouvPrix("");
+      setNouvPhoto(null);
+      setAjoutOuvert(false);
+    }
+  }
+
+  if (erreur && !lot) {
+    return (
+      <div className="alerte-erreur" role="alert">
+        {erreur}{" "}
+        <Link href="/arrivages" className="underline">
+          Retour aux arrivages
+        </Link>
+      </div>
+    );
+  }
+  if (!lot) return <p className="p-4 text-sm text-brand-warm-grey">Chargement du lot…</p>;
+
+  const nbTestes = lot.produits.filter(
+    (p) => p.statut !== "recu" && p.statut !== "en_test"
+  ).length;
+  const nbRecus = lot.produits.filter((p) => p.statut === "recu").length;
+  const pct = lot.produits.length > 0 ? Math.round((nbTestes / lot.produits.length) * 100) : 0;
+  const infosLot = INFOS_STATUT_LOT[lot.statut_lot];
+  const totalAchat = lot.produits.reduce((s, p) => s + p.prix_achat, 0);
+  const categoriesExistantes = Array.from(new Set(lot.produits.map((p) => p.categorie))).sort();
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4 pb-24">
+      <Link href="/arrivages" className="lien inline-flex items-center gap-1.5 text-sm">
+        <IconeFlecheGauche taille={14} />
+        Arrivages
+      </Link>
+
+      <div className="carte">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 className="text-lg font-bold">
+              Lot n°{lot.id} — {lot.fournisseur}
+            </h1>
+            <p className="text-xs text-brand-warm-grey">
+              {new Date(lot.date_entree).toLocaleDateString("fr-FR")} · {lot.produits.length}{" "}
+              produit{lot.produits.length > 1 ? "s" : ""} · {formaterDA(totalAchat)}
+              {lot.description ? ` · ${lot.description}` : ""}
+            </p>
+          </div>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${infosLot.badge}`}>
+            {infosLot.libelle}
+          </span>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-brand-light-grey">
+            <div className="h-full rounded-full bg-brand-orange" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="text-xs font-semibold text-brand-warm-grey">
+            {nbTestes}/{lot.produits.length} testés
+          </span>
+        </div>
+      </div>
+
+      {lot.statut_lot === "teste" && (
+        <div className="bandeau-info">
+          Test clôturé — rapport prêt.{" "}
+          <Link href={`/rapports/${lot.id}`} className="font-semibold underline">
+            Voir le rapport
+          </Link>
+        </div>
+      )}
+      {lot.statut_lot === "valide" && (
+        <div className="bandeau-succes">
+          Rapport validé par le gérant.{" "}
+          <Link href={`/rapports/${lot.id}`} className="font-semibold underline">
+            Voir le rapport
+          </Link>
+        </div>
+      )}
+
+      <ul className="space-y-3">
+        {lot.produits.map((p) => {
+          const cibles = peutAgir ? (TRANSITIONS_MANUELLES[p.statut] ?? []) : [];
+          return (
+            <li key={p.id} className="carte">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-start gap-3">
+                  {p.image_url && (
+                    <img
+                      src={p.image_url}
+                      alt={`Photo de ${p.reference}`}
+                      loading="lazy"
+                      className="h-12 w-12 shrink-0 rounded-lg border border-brand-light-grey object-cover"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <Link
+                      href={`/produits/${p.id}`}
+                      className="block truncate text-sm font-semibold transition hover:text-brand-crystal hover:underline"
+                    >
+                      <span className="font-mono text-xs text-brand-warm-grey">
+                        {p.code_interne}
+                      </span>{" "}
+                      {p.reference}
+                    </Link>
+                    <p className="text-xs text-brand-warm-grey">
+                      {p.categorie} · achat {formaterDA(p.prix_achat)}
+                      {p.cout_reparations > 0 && ` · réparations ${formaterDA(p.cout_reparations)}`}
+                    </p>
+                  </div>
+                </div>
+                <BadgeStatut statut={p.statut} />
+              </div>
+
+              {p.derniere_note && (
+                <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-brand-light-grey/25 px-2.5 py-1.5 text-xs text-brand-smooth">
+                  <IconeNote taille={13} className="mt-0.5 shrink-0 text-brand-warm-grey" />
+                  {p.derniere_note}
+                </p>
+              )}
+
+              {(cibles.length > 0 || (peutAgir && p.statut !== "vendu")) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {cibles.map((cible) => (
+                    <button
+                      key={cible}
+                      type="button"
+                      disabled={envoi}
+                      onClick={() => demanderTransition(p, cible)}
+                      className="btn btn-secondaire"
+                    >
+                      <BoutonTransition avant={p.statut} cible={cible} />
+                    </button>
+                  ))}
+                  {peutAgir && p.statut !== "vendu" && (
+                    <button
+                      type="button"
+                      disabled={envoi}
+                      onClick={() => setModalReparation(p)}
+                      className="btn border border-dashed border-brand-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
+                    >
+                      <IconePlus taille={14} />
+                      Réparation
+                    </button>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {estTechnicien && lot.statut_lot === "en_cours_de_test" && (
+        <div className="carte">
+          <button
+            type="button"
+            onClick={() => setAjoutOuvert(!ajoutOuvert)}
+            className="lien inline-flex items-center gap-1.5 text-sm"
+          >
+            <IconePlus taille={14} />
+            {ajoutOuvert ? "Masquer l'ajout" : "Ajouter un produit"}
+          </button>
+          {ajoutOuvert && (
+            <div className="mt-3 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="libelle mb-1.5">Référence *</label>
+                  <input type="text" className="champ" value={nouvRef} onChange={e => setNouvRef(e.target.value)} />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5">Catégorie *</label>
+                  <input type="text" list="cat-exist" className="champ" value={nouvCat} onChange={e => setNouvCat(e.target.value)} />
+                  <datalist id="cat-exist">
+                    {categoriesExistantes.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+                <div>
+                  <label className="libelle mb-1.5">Prix d'achat (DA) *</label>
+                  <input type="number" min="0" step="1" className="champ" value={nouvPrix} onChange={e => setNouvPrix(e.target.value)} />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5">Photo du produit</label>
+                  <input
+                    ref={champPhoto}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => void choisirPhoto(e)}
+                    className="hidden"
+                  />
+                  {nouvPhoto ? (
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={nouvPhoto}
+                        alt="Aperçu de la photo du produit"
+                        className="h-14 w-14 shrink-0 rounded-lg border border-brand-light-grey object-cover"
+                      />
+                      <button
+                        type="button"
+                        disabled={photoEnCours}
+                        onClick={() => champPhoto.current?.click()}
+                        className="btn btn-secondaire"
+                      >
+                        Remplacer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNouvPhoto(null)}
+                        aria-label="Retirer la photo"
+                        className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
+                      >
+                        <IconeCorbeille taille={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={photoEnCours}
+                      onClick={() => champPhoto.current?.click()}
+                      className="btn btn-secondaire w-full justify-center"
+                    >
+                      <IconeAppareilPhoto taille={14} />
+                      {photoEnCours ? "Préparation de la photo…" : "Choisir une photo"}
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <button
+                  type="button"
+                  disabled={envoi || !nouvRef.trim() || !nouvCat.trim() || !nouvPrix.trim()}
+                  onClick={() => void ajouterProduit()}
+                  className="btn btn-primaire"
+                >
+                  Ajouter au lot
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {estTechnicien && lot.statut_lot === "en_cours_de_test" && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-light-grey bg-brand-white p-3 lg:pl-60">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+            <p className="text-xs text-brand-warm-grey">
+              {lot.quantite_attendue !== null && lot.produits.length !== lot.quantite_attendue ? `Erreur d'écart : ${lot.produits.length} produit(s) ajoutés, ${lot.quantite_attendue} attendus.` : (nbRecus > 0
+                ? `${nbRecus} produit${nbRecus > 1 ? "s" : ""} encore en « Reçu »`
+                : "Tous les produits sont testés, quantité conforme.")}
+            </p>
+            <div className="flex gap-2">
+              {(lot.quantite_attendue !== null && lot.produits.length !== lot.quantite_attendue) && (
+                <button
+                  type="button"
+                  onClick={() => setModalManque(true)}
+                  className="btn btn-danger"
+                >
+                  Signaler écart
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={nbRecus > 0 || envoi || (lot.quantite_attendue !== null && lot.produits.length !== lot.quantite_attendue)}
+                onClick={() => setModalCloture(true)}
+                className="btn btn-primaire"
+              >
+                <IconeCoche taille={15} />
+                Clôturer le test
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Modale
+        titre={
+          modalNote
+            ? `${modalNote.produit.code_interne} → ${INFOS_STATUT[modalNote.cible].libelle}`
+            : ""
+        }
+        ouverte={modalNote !== null}
+        onFermer={() => setModalNote(null)}
+      >
+        <textarea
+          value={noteTexte}
+          onChange={(e) => setNoteTexte(e.target.value)}
+          rows={3}
+          autoFocus
+          placeholder={modalNote ? PLACEHOLDERS_NOTE[modalNote.cible] : ""}
+          className="champ"
+        />
+        <div className="mt-3 text-right">
+          <button
+            type="button"
+            disabled={!noteTexte.trim() || envoi}
+            onClick={() => void confirmerNote()}
+            className="btn btn-primaire"
+          >
+            Confirmer le changement
+          </button>
+        </div>
+      </Modale>
+
+      <Modale
+        titre={modalReparation ? `Réparation — ${modalReparation.code_interne}` : ""}
+        ouverte={modalReparation !== null}
+        onFermer={() => setModalReparation(null)}
+      >
+        {modalReparation && modalReparation.reparations.length > 0 && (
+          <ul className="mb-3 space-y-1 rounded-lg bg-brand-light-grey/25 p-2.5 text-xs text-brand-smooth">
+            {modalReparation.reparations.map((r) => (
+              <li key={r.id}>
+                {new Date(r.date).toLocaleDateString("fr-FR")} — {r.description} ·{" "}
+                <strong>{formaterDA(r.cout)}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="space-y-3">
+          <div>
+            <label className="libelle mb-1.5" htmlFor="cout-rep">
+              Coût (DA) *
+            </label>
+            <input
+              id="cout-rep"
+              type="number"
+              min={1}
+              step={1}
+              value={coutReparation}
+              onChange={(e) => setCoutReparation(e.target.value)}
+              autoFocus
+              className="champ"
+            />
+          </div>
+          <div>
+            <label className="libelle mb-1.5" htmlFor="desc-rep">
+              Description *
+            </label>
+            <input
+              id="desc-rep"
+              type="text"
+              value={descReparation}
+              onChange={(e) => setDescReparation(e.target.value)}
+              placeholder="Ex. Remplacement de la dalle"
+              className="champ"
+            />
+          </div>
+          <div className="text-right">
+            <button
+              type="button"
+              disabled={envoi || !coutReparation.trim() || !descReparation.trim()}
+              onClick={() => void confirmerReparation()}
+              className="btn btn-primaire"
+            >
+              Enregistrer la réparation
+            </button>
+          </div>
+        </div>
+      </Modale>
+
+      <Modale
+        titre="Signaler un écart à Imed"
+        ouverte={modalManque}
+        onFermer={() => setModalManque(false)}
+      >
+        <p className="text-sm text-brand-warm-grey mb-3">
+          Précisez le problème rencontré (ex: "Il manque 2 produits par rapport à la quantité attendue").
+        </p>
+        <textarea
+          value={msgManque}
+          onChange={(e) => setMsgManque(e.target.value)}
+          rows={3}
+          className="champ mb-3"
+        />
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={() => setModalManque(false)} className="btn btn-secondaire">
+            Annuler
+          </button>
+          <button
+            type="button"
+            disabled={envoi || !msgManque.trim()}
+            onClick={() => void signalerManque()}
+            className="btn btn-danger"
+          >
+            Envoyer l'alerte
+          </button>
+        </div>
+      </Modale>
+
+      <Modale
+        titre="Clôturer le test du lot"
+        ouverte={modalCloture}
+        onFermer={() => setModalCloture(false)}
+      >
+        <p className="text-sm text-brand-warm-grey">
+          Le rapport sera généré et Imed notifié pour validation. Les statuts resteront
+          modifiables jusqu'à la validation du rapport.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" onClick={() => setModalCloture(false)} className="btn btn-secondaire">
+            Annuler
+          </button>
+          <button
+            type="button"
+            disabled={envoi}
+            onClick={() => void confirmerCloture()}
+            className="btn btn-primaire"
+          >
+            Clôturer
+          </button>
+        </div>
+      </Modale>
+    </div>
+  );
+}

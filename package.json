@@ -1,0 +1,56 @@
+{
+  "name": "gestion-maxy",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "next dev -p 3000 -H 0.0.0.0",
+    "build": "NODE_ENV=production next build",
+    "start": "next start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:start": "node scripts/dev-db.mjs",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "postinstall": "prisma generate",
+    "electron:start": "electron .",
+    "electron:build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.gestionmaxy.desktop",
+    "productName": "Gestion Maxy",
+    "directories": {
+      "output": "out"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@prisma/client": "^6.11.0",
+    "next": "^15.3.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.2",
+    "@tailwindcss/postcss": "^4.1.10",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "prisma": "^6.11.0",
+    "tailwindcss": "^4.1.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
