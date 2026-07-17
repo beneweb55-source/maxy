@@ -64,9 +64,9 @@ export default function Dashboard() {
   const { config, donnees } = reponse;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1>{config.titre}</h1>
+    <div className="space-y-6 animate-entree">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-brand-light-grey/50">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{config.titre}</h1>
         <p className="flex items-center gap-2 text-xs text-brand-grey">
           {actualiseA &&
             `Actualisé à ${actualiseA.toLocaleTimeString("fr-FR", {
@@ -76,28 +76,30 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => void charger(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-light-grey bg-brand-white px-2.5 py-1 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey/30"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-brand-light-grey bg-brand-white px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover-lift hover:text-brand-orange hover:border-brand-orange/30 shadow-sm"
           >
-            <IconeActualiser taille={12} />
+            <IconeActualiser taille={14} />
             Actualiser
           </button>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {config.widgets.map((widget) =>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {config.widgets.map((widget, index) =>
           widgetSansCarte(widget) ? (
-            <div key={widget.id} className={`col-span-1 ${CLASSE_TAILLE[widget.taille]}`}>
-              {widget.titre && <h2 className="libelle mb-2 text-brand-smooth">{widget.titre}</h2>}
+            <div key={widget.id} className={`col-span-1 ${CLASSE_TAILLE[widget.taille]} animate-entree`} style={{ animationDelay: `${index * 50}ms` }}>
+              {widget.titre && <h2 className="libelle mb-3 text-brand-smooth/80">{widget.titre}</h2>}
               <RenduWidget widget={widget} donnees={donnees} />
             </div>
           ) : (
             <section
               key={widget.id}
-              className={`carte col-span-1 ${CLASSE_TAILLE[widget.taille]}`}
+              className={`carte col-span-1 ${CLASSE_TAILLE[widget.taille]} animate-entree flex flex-col`} style={{ animationDelay: `${index * 50}ms` }}
             >
-              {widget.titre && <h2 className="libelle text-brand-smooth">{widget.titre}</h2>}
-              <RenduWidget widget={widget} donnees={donnees} />
+              {widget.titre && <h2 className="libelle mb-4 text-brand-smooth/80">{widget.titre}</h2>}
+              <div className="flex-1">
+                <RenduWidget widget={widget} donnees={donnees} />
+              </div>
             </section>
           )
         )}

@@ -85,8 +85,8 @@ function BlocKpis({
         const negative = v !== null && (inverse ? v > 0 : v < 0);
         return (
           <div key={cle} className="carte">
-            <p className="libelle">{def.libelle}</p>
-            <p className="mt-2 text-2xl font-bold tracking-tight">
+            <p className="libelle text-brand-warm-grey/80">{def.libelle}</p>
+            <p className="mt-3 text-3xl font-extrabold tracking-tight text-brand-black">
               {valeurFormatee(cle, kpi.valeur)}
             </p>
             {comparaison && (
@@ -119,7 +119,7 @@ function ActionsRapides({
       {actions.map((action) => {
         const compteur = action.badge ? (compteurs[action.badge] ?? 0) : null;
         return (
-          <Link key={action.href + action.libelle} href={action.href} className="btn btn-secondaire">
+          <Link key={action.href + action.libelle} href={action.href} className="btn btn-secondaire hover-lift shadow-sm">
             {action.libelle}
             {compteur !== null && compteur > 0 && (
               <span className="rounded-full bg-brand-orange px-1.5 py-0.5 text-xs font-bold text-brand-white">
@@ -199,13 +199,19 @@ function GraphiqueBarres({
       </div>
       <div className="overflow-x-auto pb-2">
         <svg viewBox={`0 0 ${largeur} ${hauteur}`} className="h-48 w-full min-w-[320px]" role="img">
+          <defs>
+            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#F86822" />
+              <stop offset="100%" stopColor="#FC997E" stopOpacity="0.6" />
+            </linearGradient>
+          </defs>
           {series.map((s, i) => {
             const h = maximum === 0 ? 0 : Math.round(((hauteur - margeBas - margeHaut) * s.valeur) / maximum);
             const x = i * pas + (pas - largeurBarre) / 2;
             const y = hauteur - margeBas - h;
             return (
-              <g key={s.label}>
-                <rect x={x} y={y} width={largeurBarre} height={h} rx={4} fill="#F86822" />
+              <g key={s.label} className="group cursor-default">
+                <rect x={x} y={y} width={largeurBarre} height={h} rx={6} fill="url(#barGradient)" className="transition-all duration-300 group-hover:opacity-80 group-hover:filter group-hover:brightness-110" />
                 {s.valeur > 0 && largeurBarre > 15 && (
                   <text x={x + largeurBarre / 2} y={y - 5} textAnchor="middle" fontSize={10} fill="#2E2D2D" className="hidden sm:block">
                     {formaterDA(s.valeur)}
@@ -272,7 +278,7 @@ function DonutStatuts({
 
   return (
     <div className="mt-3 flex flex-col items-center gap-4 sm:flex-row">
-      <svg viewBox="0 0 200 200" className="h-44 w-44 shrink-0" role="img">
+      <svg viewBox="0 0 200 200" className="h-44 w-44 shrink-0 drop-shadow-lg" role="img">
         {segments.map((s) => (
           <path
             key={s.statut}
@@ -446,9 +452,9 @@ function TableauEnVente({ lignes }: { lignes: LigneEnVente[] }) {
           <th className={CLASSE_ENTETE} />
         </tr>
       </thead>
-      <tbody className="divide-y divide-brand-light-grey/50">
+      <tbody className="">
         {lignes.map((l) => (
-          <tr key={l.id}>
+          <tr key={l.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
             <td className={CLASSE_CELLULE}>
               <span className="font-mono text-xs text-brand-warm-grey">{l.code_interne}</span>{" "}
               {l.reference}
@@ -489,9 +495,9 @@ function TableauRapports({ lignes }: { lignes: LigneRapport[] }) {
           <th className={CLASSE_ENTETE} />
         </tr>
       </thead>
-      <tbody className="divide-y divide-brand-light-grey/50">
+      <tbody className="">
         {lignes.map((l) => (
-          <tr key={l.lot_id}>
+          <tr key={l.lot_id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
             <td className={CLASSE_CELLULE}>
               n°{l.lot_id} —{" "}
               {new Date(l.date_entree).toLocaleDateString("fr-FR", {
@@ -534,9 +540,9 @@ function TableauATarifer({ lignes }: { lignes: LigneATarifer[] }) {
           <th className={CLASSE_ENTETE} />
         </tr>
       </thead>
-      <tbody className="divide-y divide-brand-light-grey/50">
+      <tbody className="">
         {lignes.map((l) => (
-          <tr key={l.id}>
+          <tr key={l.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
             <td className={CLASSE_CELLULE}>
               <span className="font-mono text-xs text-brand-warm-grey">{l.code_interne}</span>{" "}
               {l.reference}
@@ -570,9 +576,9 @@ function TableauVentes({ lignes }: { lignes: LigneVente[] }) {
           <th className={`${CLASSE_ENTETE} text-right`}>Date</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-brand-light-grey/50">
+      <tbody className="">
         {lignes.map((l) => (
-          <tr key={l.id} className={l.annulee ? "text-brand-grey line-through" : ""}>
+          <tr key={l.id} className={`ligne-table border-b border-brand-light-grey/30 last:border-0 ${l.annulee ? "text-brand-grey line-through" : ""}`}>
             <td className={CLASSE_CELLULE}>
               {l.reference}
               {l.annulee && (
