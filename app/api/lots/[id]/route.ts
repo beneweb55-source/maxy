@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { urlPhotoProduit } from "@/lib/images";
-import { ajouterMouvement } from "@/lib/caisse-db";
-import { formaterDA } from "@/lib/caisse";
 
 export async function GET(
   _request: Request,
@@ -44,6 +42,8 @@ export async function GET(
       description: lot.description,
       quantite_attendue: lot.quantite_attendue,
       cout_global_declare: lot.cout_global_declare,
+      cout_auto: lot.cout_auto,
+      paiement_valide: lot.paiement_valide,
       produits: lot.produits.map((p) => ({
         id: p.id,
         code_interne: p.code_interne,
@@ -86,11 +86,12 @@ export async function PATCH(
     return erreur(400, "Requête invalide.");
   }
   const user = acces.user;
-  const { fournisseur, description, quantite_attendue, cout_global_declare } = (corps ?? {}) as {
+  const { fournisseur, description, quantite_attendue, cout_global_declare, cout_auto } = (corps ?? {}) as {
     fournisseur?: unknown;
     description?: unknown;
     quantite_attendue?: unknown;
     cout_global_declare?: unknown;
+    cout_auto?: unknown;
   };
 
   const donnees: {
@@ -98,6 +99,7 @@ export async function PATCH(
     description?: string | null;
     quantite_attendue?: number;
     cout_global_declare?: number | null;
+    cout_auto?: boolean;
   } = {};
   if (fournisseur !== undefined) {
     if (typeof fournisseur !== "string" || !fournisseur.trim()) {
@@ -125,10 +127,16 @@ export async function PATCH(
     donnees.quantite_attendue = quantite_attendue;
   }
 
-  let coutFourni = false;
+  if (cout_auto !== undefined) {
+    if (typeof cout_auto !== "boolean") {
+      return erreur(400, "Le champ cout_auto doit être un booléen.");
+    }
+    donnees.cout_auto = cout_auto;
+  }
+
   if (cout_global_declare !== undefined) {
     if (user.role !== "gerant") {
-      return erreur(403, "Seul le gérant peut corriger le coût déclaré (impact caisse).");
+      return erreur(403, "Seul le gérant peut corriger le coût déclaré.");
     }
     if (cout_global_declare === null) {
       donnees.cout_global_declare = null;
@@ -141,7 +149,6 @@ export async function PATCH(
     } else {
       return erreur(400, "Le coût global déclaré doit être un entier positif en DA.");
     }
-    coutFourni = true;
   }
 
   if (Object.keys(donnees).length === 0) {
@@ -149,26 +156,32 @@ export async function PATCH(
   }
 
   try {
-    const lot = await prisma.lot.findUnique({ where: { id: lotId } });
+    const lot = await prisma.lot.findUnique({
+      where: { id: lotId },
+      include: { produits: { select: { prix_achat: true } } },
+    });
     if (!lot) return erreur(404, "Lot introuvable.");
 
-    const ancienCout = lot.cout_global_declare ?? 0;
-    const nouveauCout = coutFourni ? (donnees.cout_global_declare ?? 0) : ancienCout;
-    const delta = coutFourni ? nouveauCout - ancienCout : 0;
-
-    const maj = await prisma.$transaction(async (tx) => {
-      const lotMaj = await tx.lot.update({ where: { id: lotId }, data: donnees });
-      if (delta !== 0) {
-        await ajouterMouvement(tx, {
-          montant: Math.abs(delta),
-          type: delta > 0 ? "frais" : "apport_associe",
-          user_id: user.id,
-          lot_id: lotId,
-          description: `Correction du coût déclaré du lot n°${lotId} : de ${formaterDA(ancienCout)} à ${formaterDA(nouveauCout)}`,
-        });
+    // Bloquer la modification du coût et du mode si le paiement est déjà validé
+    if (lot.paiement_valide) {
+      if (cout_global_declare !== undefined || cout_auto !== undefined) {
+        return erreur(400, "Le coût et le mode ne peuvent plus être modifiés car le paiement est déjà validé.");
       }
-      return lotMaj;
-    });
+    }
+
+    // Si on passe en mode auto, calculer le coût depuis les produits
+    const passageAuto = donnees.cout_auto === true && !lot.cout_auto;
+    if (passageAuto) {
+      const somme = lot.produits.reduce((s, p) => s + p.prix_achat, 0);
+      donnees.cout_global_declare = somme > 0 ? somme : null;
+    }
+
+    // En mode auto, interdire la saisie manuelle du coût
+    if ((donnees.cout_auto ?? lot.cout_auto) && cout_global_declare !== undefined && !passageAuto) {
+      return erreur(400, "En mode automatique, le coût déclaré est calculé à partir des produits. Passez en mode manuel pour le saisir.");
+    }
+
+    const maj = await prisma.lot.update({ where: { id: lotId }, data: donnees });
 
     return NextResponse.json({
       ok: true,
@@ -177,13 +190,15 @@ export async function PATCH(
       description: maj.description,
       quantite_attendue: maj.quantite_attendue,
       cout_global_declare: maj.cout_global_declare,
-      correction_caisse: delta !== 0 ? delta : undefined,
+      cout_auto: maj.cout_auto,
+      paiement_valide: maj.paiement_valide,
     });
   } catch (e) {
     console.error("PATCH /api/lots/[id]", e);
     return erreur(500, "Erreur lors de la modification du lot.");
   }
 }
+
 
 export async function DELETE(
   _request: Request,

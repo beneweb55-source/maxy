@@ -15,6 +15,7 @@ export default function FormulaireLot() {
   const [description, setDescription] = useState("");
   const [coutDeclare, setCoutDeclare] = useState("");
   const [quantiteAttendue, setQuantiteAttendue] = useState("");
+  const [coutAuto, setCoutAuto] = useState(false);
   const [fournisseurs, setFournisseurs] = useState<string[]>([]);
 
   const [erreur, setErreur] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export default function FormulaireLot() {
     }
 
     const declare = Number(coutDeclare);
-    if (coutDeclare.trim() && (!Number.isInteger(declare) || declare < 0)) {
+    if (!coutAuto && coutDeclare.trim() && (!Number.isInteger(declare) || declare < 0)) {
       setErreur("Le coût global déclaré doit être un entier positif en DA.");
       return;
     }
@@ -55,8 +56,9 @@ export default function FormulaireLot() {
         body: JSON.stringify({
           fournisseur: fournisseur.trim(),
           description: description.trim() || undefined,
-          cout_global_declare: coutDeclare.trim() ? declare : undefined,
+          cout_global_declare: !coutAuto && coutDeclare.trim() ? declare : undefined,
           quantite_attendue: attendus,
+          cout_auto: coutAuto,
         }),
       });
 
@@ -148,20 +150,54 @@ export default function FormulaireLot() {
         </div>
 
         <div>
-          <label htmlFor="cout" className="libelle mb-1.5">
-            Coût global déclaré (DA) — optionnel
-          </label>
-          <input
-            id="cout"
-            type="number"
-            min={0}
-            step={1}
-            value={coutDeclare}
-            onChange={(e) => setCoutDeclare(e.target.value)}
-            placeholder="Montant payé au fournisseur"
-            className="champ"
-          />
+          <span className="libelle mb-1.5">Mode de calcul du coût</span>
+          <div className="mt-1.5 flex gap-2">
+            <button
+              type="button"
+              onClick={() => { setCoutAuto(false); }}
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                !coutAuto
+                  ? "border-brand-crystal bg-brand-glow/15 text-brand-crystal"
+                  : "border-brand-light-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
+              }`}
+            >
+              Manuel
+            </button>
+            <button
+              type="button"
+              onClick={() => { setCoutAuto(true); setCoutDeclare(""); }}
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                coutAuto
+                  ? "border-brand-crystal bg-brand-glow/15 text-brand-crystal"
+                  : "border-brand-light-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
+              }`}
+            >
+              Automatique
+            </button>
+          </div>
         </div>
+
+        {!coutAuto ? (
+          <div>
+            <label htmlFor="cout" className="libelle mb-1.5">
+              Coût global déclaré (DA) — optionnel
+            </label>
+            <input
+              id="cout"
+              type="number"
+              min={0}
+              step={1}
+              value={coutDeclare}
+              onChange={(e) => setCoutDeclare(e.target.value)}
+              placeholder="Montant payé au fournisseur"
+              className="champ"
+            />
+          </div>
+        ) : (
+          <p className="rounded-lg bg-brand-glow/10 px-3 py-2.5 text-xs text-brand-crystal">
+            Le coût sera calculé automatiquement en additionnant les prix d'achat des produits ajoutés au lot.
+          </p>
+        )}
 
         <div className="text-right pt-2">
           <button

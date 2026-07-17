@@ -24,6 +24,7 @@ import {
   IconeLancer,
   IconeNote,
   IconePlus,
+  IconePortefeuille,
 } from "@/components/icons";
 
 interface ReparationDto {
@@ -53,6 +54,8 @@ interface LotDto {
   statut_lot: StatutLot;
   description: string | null;
   cout_global_declare: number | null;
+  cout_auto: boolean;
+  paiement_valide: boolean;
   quantite_attendue: number | null;
   produits: ProduitDto[];
 }
@@ -120,9 +123,11 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
   const [editPhotoModifiee, setEditPhotoModifiee] = useState(false);
   const [modalSuppr, setModalSuppr] = useState<ProduitDto | null>(null);
+  const [modalPaiement, setModalPaiement] = useState(false);
 
   const peutAgir = role === "technicien" || role === "gerant";
   const estTechnicien = role === "technicien";
+  const estGerant = role === "gerant";
 
   const rafraichir = useCallback(async () => {
     try {
@@ -285,6 +290,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     }
   }
 
+  async function validerPaiement() {
+    const ok = await appelApi(`/api/lots/${lotId}/paiement`, {});
+    if (ok) {
+      afficher("Paiement du lot validé — retrait de caisse effectué.");
+      setModalPaiement(false);
+    }
+  }
+
   async function ajouterProduit() {
     if (!nouvRef.trim() || !nouvCat.trim() || !nouvPrix.trim()) {
       afficher("Veuillez remplir la référence, catégorie et prix.", "erreur");
@@ -346,6 +359,25 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               produit{lot.produits.length > 1 ? "s" : ""} · {formaterDA(totalAchat)}
               {lot.description ? ` · ${lot.description}` : ""}
             </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-brand-light-grey/50 px-2 py-0.5 text-[10px] font-semibold text-brand-warm-grey">
+                Coût : {lot.cout_auto ? "Auto" : "Manuel"}
+              </span>
+              {lot.paiement_valide ? (
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                  Payé
+                </span>
+              ) : lot.cout_global_declare !== null && lot.cout_global_declare > 0 ? (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                  Non payé
+                </span>
+              ) : null}
+              {lot.cout_global_declare !== null && (
+                <span className="text-[10px] font-medium text-brand-warm-grey">
+                  Coût déclaré : {formaterDA(lot.cout_global_declare)}
+                </span>
+              )}
+            </div>
           </div>
           <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${infosLot.badge}`}>
             {infosLot.libelle}
@@ -360,6 +392,18 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           </span>
         </div>
       </div>
+
+      {estGerant && !lot.paiement_valide && lot.cout_global_declare !== null && lot.cout_global_declare > 0 && (
+        <button
+          type="button"
+          disabled={envoi}
+          onClick={() => setModalPaiement(true)}
+          className="btn w-full justify-center gap-2 rounded-xl border-2 border-emerald-500 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+        >
+          <IconePortefeuille taille={18} />
+          Valider le paiement du lot — {formaterDA(lot.cout_global_declare)}
+        </button>
+      )}
 
       {lot.statut_lot === "teste" && (
         <div className="bandeau-info">
@@ -800,6 +844,35 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             </div>
           </>
         )}
+      </Modale>
+
+      <Modale
+        titre="Valider le paiement du lot"
+        ouverte={modalPaiement}
+        onFermer={() => setModalPaiement(false)}
+      >
+        <p className="text-sm text-brand-warm-grey">
+          Vous êtes sur le point de retirer{" "}
+          <strong className="text-brand-black">{lot.cout_global_declare !== null ? formaterDA(lot.cout_global_declare) : ""}</strong>{" "}
+          de la caisse pour le paiement du lot n°{lot.id} ({lot.fournisseur}).
+        </p>
+        <p className="mt-2 text-sm text-brand-warm-grey">
+          Cette action est irréversible. Le montant sera comptabilisé comme un achat de lot en caisse.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" onClick={() => setModalPaiement(false)} className="btn btn-secondaire">
+            Annuler
+          </button>
+          <button
+            type="button"
+            disabled={envoi}
+            onClick={() => void validerPaiement()}
+            className="btn gap-1.5 border-2 border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          >
+            <IconePortefeuille taille={15} />
+            Confirmer le paiement
+          </button>
+        </div>
       </Modale>
     </div>
   );

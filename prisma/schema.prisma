@@ -87,6 +87,8 @@ model Lot {
   description         String?
   quantite_attendue   Int?      @default(0)
   cout_global_declare Int?
+  cout_auto           Boolean   @default(false)
+  paiement_valide     Boolean   @default(false)
 
   produits   Produit[]
   mouvements MouvementCaisse[]
