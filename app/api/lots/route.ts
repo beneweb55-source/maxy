@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
+import { ajouterMouvement } from "@/lib/caisse-db";
 import { idsParRole, notifier } from "@/lib/notifs";
 
 export async function GET() {
@@ -24,8 +25,6 @@ export async function GET() {
         description: lot.description,
         quantite_attendue: lot.quantite_attendue,
         cout_global_declare: lot.cout_global_declare,
-        cout_auto: lot.cout_auto,
-        paiement_valide: lot.paiement_valide,
         nb_produits: lot.produits.length,
         nb_testes: lot.produits.filter((p) => p.statut !== "recu" && p.statut !== "en_test")
           .length,
@@ -55,13 +54,11 @@ export async function POST(request: NextRequest) {
     description,
     cout_global_declare,
     quantite_attendue,
-    cout_auto,
   } = (corps ?? {}) as {
     fournisseur?: unknown;
     description?: unknown;
     cout_global_declare?: unknown;
     quantite_attendue?: unknown;
-    cout_auto?: unknown;
   };
 
   if (typeof fournisseur !== "string" || !fournisseur.trim()) {
@@ -88,8 +85,6 @@ export async function POST(request: NextRequest) {
     return erreur(400, "La quantité attendue doit être un entier strictement positif.");
   }
 
-  const modeAuto = cout_auto === true;
-
   try {
     const lotCree = await prisma.$transaction(async (tx) => {
       const lot = await tx.lot.create({
@@ -97,15 +92,21 @@ export async function POST(request: NextRequest) {
           fournisseur: fournisseur.trim(),
           description:
             typeof description === "string" && description.trim() ? description.trim() : null,
-          cout_global_declare: modeAuto
-            ? null
-            : typeof cout_global_declare === "number"
-              ? cout_global_declare
-              : null,
+          cout_global_declare:
+            typeof cout_global_declare === "number" ? cout_global_declare : null,
           quantite_attendue,
-          cout_auto: modeAuto,
         },
       });
+
+      if (cout_global_declare && cout_global_declare > 0) {
+        await ajouterMouvement(tx, {
+          montant: cout_global_declare,
+          type: "achat_lot",
+          user_id: user.id,
+          lot_id: lot.id,
+          description: `Achat lot n°${lot.id} — ${lot.fournisseur}`,
+        });
+      }
 
       const techniciens = await idsParRole(tx, "technicien");
       await notifier(

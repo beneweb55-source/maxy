@@ -18,8 +18,6 @@ interface LigneLot {
   statut_lot: StatutLot;
   description: string | null;
   cout_global_declare: number | null;
-  cout_auto: boolean;
-  paiement_valide: boolean;
   quantite_attendue: number | null;
   nb_produits: number;
   nb_testes: number;
@@ -42,7 +40,6 @@ export default function ListeLots({ role }: { role: Role }) {
   const [editQuantite, setEditQuantite] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editCout, setEditCout] = useState("");
-  const [editCoutAuto, setEditCoutAuto] = useState(false);
   const [modalSuppr, setModalSuppr] = useState<LigneLot | null>(null);
 
   const estGerant = role === "gerant";
@@ -71,7 +68,6 @@ export default function ListeLots({ role }: { role: Role }) {
     setEditQuantite(lot.quantite_attendue !== null ? String(lot.quantite_attendue) : "");
     setEditDescription(lot.description ?? "");
     setEditCout(lot.cout_global_declare !== null ? String(lot.cout_global_declare) : "");
-    setEditCoutAuto(lot.cout_auto ?? false);
     setModalEdit(lot);
   }
 
@@ -90,20 +86,17 @@ export default function ListeLots({ role }: { role: Role }) {
       fournisseur: editFournisseur.trim(),
       quantite_attendue: quantite,
       description: editDescription.trim() || null,
-      cout_auto: editCoutAuto,
     };
-    if (estGerant && !modalEdit.paiement_valide) {
-      if (!editCoutAuto) {
-        if (editCout.trim()) {
-          const cout = Number(editCout);
-          if (!Number.isInteger(cout) || cout < 0) {
-            afficher("Le coût global déclaré doit être un entier positif en DA.", "erreur");
-            return;
-          }
-          donneesLot.cout_global_declare = cout;
-        } else {
-          donneesLot.cout_global_declare = null;
+    if (estGerant) {
+      if (editCout.trim()) {
+        const cout = Number(editCout);
+        if (!Number.isInteger(cout) || cout < 0) {
+          afficher("Le coût global déclaré doit être un entier positif en DA.", "erreur");
+          return;
         }
+        donneesLot.cout_global_declare = cout;
+      } else {
+        donneesLot.cout_global_declare = null;
       }
     }
     setEnvoi(true);
@@ -120,7 +113,12 @@ export default function ListeLots({ role }: { role: Role }) {
         afficher(corps?.error ?? "Erreur lors de la modification du lot.", "erreur");
         return;
       }
-      afficher(`Lot n°${modalEdit.id} modifié.`);
+      const correction = corps?.correction_caisse;
+      afficher(
+        correction
+          ? `Lot n°${modalEdit.id} modifié — caisse ajustée de ${correction > 0 ? "−" : "+"}${formaterDA(Math.abs(correction))}.`
+          : `Lot n°${modalEdit.id} modifié.`
+      );
       setModalEdit(null);
       await charger();
     } catch {
@@ -297,20 +295,9 @@ export default function ListeLots({ role }: { role: Role }) {
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-right">
-                      <div>
-                        {lot.cout_global_declare !== null
-                          ? formaterDA(lot.cout_global_declare)
-                          : "—"}
-                      </div>
-                      {lot.paiement_valide ? (
-                        <span className="mt-0.5 inline-block rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                          Payé
-                        </span>
-                      ) : lot.cout_global_declare !== null && lot.cout_global_declare > 0 ? (
-                        <span className="mt-0.5 inline-block rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-                          Non payé
-                        </span>
-                      ) : null}
+                      {lot.cout_global_declare !== null
+                        ? formaterDA(lot.cout_global_declare)
+                        : "—"}
                     </td>
                     <td className="px-2 py-2.5">
                       <span className="flex items-center justify-end gap-1">
@@ -394,66 +381,25 @@ export default function ListeLots({ role }: { role: Role }) {
               className="champ"
             />
           </div>
-          {estGerant && !modalEdit?.paiement_valide ? (
-            <>
-              <div>
-                <span className="libelle mb-1.5">Mode de calcul du coût</span>
-                <div className="mt-1.5 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditCoutAuto(false)}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                      !editCoutAuto
-                        ? "border-brand-crystal bg-brand-glow/15 text-brand-crystal"
-                        : "border-brand-light-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
-                    }`}
-                  >
-                    Manuel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setEditCoutAuto(true); setEditCout(""); }}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                      editCoutAuto
-                        ? "border-brand-crystal bg-brand-glow/15 text-brand-crystal"
-                        : "border-brand-light-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
-                    }`}
-                  >
-                    Automatique
-                  </button>
-                </div>
-              </div>
-              {!editCoutAuto ? (
-                <div>
-                  <label className="libelle mb-1.5" htmlFor="edit-cout-lot">
-                    Coût global déclaré (DA)
-                  </label>
-                  <input
-                    id="edit-cout-lot"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={editCout}
-                    onChange={(e) => setEditCout(e.target.value)}
-                    placeholder="Laisser vide si non déclaré"
-                    className="champ"
-                  />
-                </div>
-              ) : (
-                <p className="rounded-lg bg-brand-glow/10 px-3 py-2.5 text-xs text-brand-crystal">
-                  Le coût est calculé automatiquement à partir de la somme des prix d'achat des produits.
-                  {modalEdit?.cout_global_declare !== null && modalEdit?.cout_global_declare !== undefined
-                    ? ` Valeur actuelle : ${formaterDA(modalEdit.cout_global_declare)}`
-                    : ""}
-                </p>
-              )}
-            </>
-          ) : modalEdit?.paiement_valide ? (
-            <div className="rounded-lg bg-emerald-50 px-3 py-2.5 text-xs text-emerald-700">
-              <strong>Paiement validé</strong> — le coût déclaré et le mode ne sont plus modifiables.
-              {modalEdit?.cout_global_declare !== null && modalEdit?.cout_global_declare !== undefined
-                ? ` Montant : ${formaterDA(modalEdit.cout_global_declare)}`
-                : ""}
+          {estGerant ? (
+            <div>
+              <label className="libelle mb-1.5" htmlFor="edit-cout-lot">
+                Coût global déclaré (DA)
+              </label>
+              <input
+                id="edit-cout-lot"
+                type="number"
+                min={0}
+                step={1}
+                value={editCout}
+                onChange={(e) => setEditCout(e.target.value)}
+                placeholder="Laisser vide si non déclaré"
+                className="champ"
+              />
+              <p className="mt-1.5 text-xs text-brand-warm-grey">
+                Corriger ce montant crée un mouvement d'ajustement tracé en caisse pour l'écart —
+                l'historique n'est jamais réécrit.
+              </p>
             </div>
           ) : (
             <p className="text-xs text-brand-warm-grey">

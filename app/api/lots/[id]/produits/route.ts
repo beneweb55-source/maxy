@@ -59,17 +59,6 @@ export async function POST(
           },
         });
       }
-      // Si le lot est en mode auto et pas encore payé, recalculer le coût
-      if (lot.cout_auto && !lot.paiement_valide) {
-        const totalAchat = await tx.produit.aggregate({
-          where: { lot_id: lot.id },
-          _sum: { prix_achat: true },
-        });
-        await tx.lot.update({
-          where: { id: lot.id },
-          data: { cout_global_declare: totalAchat._sum.prix_achat ?? null },
-        });
-      }
     });
 
     return NextResponse.json({ ok: true, ajoutes: lignes.length }, { status: 201 });
