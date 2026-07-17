@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Role, StatutLot } from "@prisma/client";
 import Modale from "@/components/Modale";
+import BadgeDescription from "@/components/BadgeDescription";
 import { useToast } from "@/components/toast";
 import { INFOS_STATUT_LOT } from "@/lib/statuts";
 import { formaterDA } from "@/lib/caisse";
@@ -265,7 +266,12 @@ export default function ListeLots({ role }: { role: Role }) {
                     <td className="px-3 py-2.5">
                       {new Date(lot.date_entree).toLocaleDateString("fr-FR")}
                     </td>
-                    <td className="px-3 py-2.5 font-medium">{lot.fournisseur}</td>
+                    <td className="px-3 py-2.5">
+                      <div className="font-medium">{lot.fournisseur}</div>
+                      {lot.description && (
+                        <BadgeDescription description={lot.description} className="mt-1" />
+                      )}
+                    </td>
                     <td className="px-3 py-2.5 text-right font-bold">{lot.nb_produits}</td>
                     <td className="px-3 py-2.5 text-right text-brand-warm-grey">{lot.quantite_attendue ?? 0}</td>
                     <td className="px-3 py-2.5">
