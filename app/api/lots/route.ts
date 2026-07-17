@@ -25,8 +25,6 @@ export async function GET() {
         description: lot.description,
         quantite_attendue: lot.quantite_attendue,
         cout_global_declare: lot.cout_global_declare,
-        calcul_cout_auto: lot.calcul_cout_auto,
-        paye: lot.paye,
         nb_produits: lot.produits.length,
         nb_testes: lot.produits.filter((p) => p.statut !== "recu" && p.statut !== "en_test")
           .length,
@@ -56,23 +54,18 @@ export async function POST(request: NextRequest) {
     description,
     cout_global_declare,
     quantite_attendue,
-    calcul_cout_auto,
   } = (corps ?? {}) as {
     fournisseur?: unknown;
     description?: unknown;
     cout_global_declare?: unknown;
     quantite_attendue?: unknown;
-    calcul_cout_auto?: unknown;
   };
 
   if (typeof fournisseur !== "string" || !fournisseur.trim()) {
     return erreur(400, "Le fournisseur est obligatoire.");
   }
 
-  const isAuto = calcul_cout_auto === true;
-
   if (
-    !isAuto &&
     cout_global_declare !== undefined &&
     cout_global_declare !== null &&
     (typeof cout_global_declare !== "number" ||
@@ -100,12 +93,20 @@ export async function POST(request: NextRequest) {
           description:
             typeof description === "string" && description.trim() ? description.trim() : null,
           cout_global_declare:
-            !isAuto && typeof cout_global_declare === "number" ? cout_global_declare : null,
+            typeof cout_global_declare === "number" ? cout_global_declare : null,
           quantite_attendue,
-          calcul_cout_auto: isAuto,
-          paye: false,
         },
       });
+
+      if (cout_global_declare && cout_global_declare > 0) {
+        await ajouterMouvement(tx, {
+          montant: cout_global_declare,
+          type: "achat_lot",
+          user_id: user.id,
+          lot_id: lot.id,
+          description: `Achat lot n°${lot.id} — ${lot.fournisseur}`,
+        });
+      }
 
       const techniciens = await idsParRole(tx, "technicien");
       await notifier(

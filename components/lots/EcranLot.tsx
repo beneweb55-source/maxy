@@ -53,8 +53,6 @@ interface LotDto {
   statut_lot: StatutLot;
   description: string | null;
   cout_global_declare: number | null;
-  calcul_cout_auto: boolean;
-  paye: boolean;
   quantite_attendue: number | null;
   produits: ProduitDto[];
 }
@@ -227,14 +225,6 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     }
   }
 
-  async function confirmerPaiement() {
-    if (!confirm("Voulez-vous vraiment valider le paiement ? Un mouvement de caisse sera enregistré.")) return;
-    const ok = await appelApi(`/api/lots/${lotId}/paiement`, {});
-    if (ok) {
-      afficher("Paiement validé.");
-    }
-  }
-
   async function appelMethode(url: string, methode: string, corps?: unknown): Promise<boolean> {
     setEnvoi(true);
     try {
@@ -353,37 +343,13 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             </h1>
             <p className="text-xs text-brand-warm-grey">
               {new Date(lot.date_entree).toLocaleDateString("fr-FR")} · {lot.produits.length}{" "}
-              produit{lot.produits.length > 1 ? "s" : ""} · total estimé {formaterDA(totalAchat)}
+              produit{lot.produits.length > 1 ? "s" : ""} · {formaterDA(totalAchat)}
               {lot.description ? ` · ${lot.description}` : ""}
             </p>
-            {lot.cout_global_declare !== null && (
-              <p className="text-sm font-semibold mt-1">
-                Coût déclaré : {formaterDA(lot.cout_global_declare)}
-                <span className="text-xs font-normal text-brand-warm-grey ml-1">
-                  ({lot.calcul_cout_auto ? "Auto" : "Manuel"})
-                </span>
-              </p>
-            )}
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${infosLot.badge}`}>
-              {infosLot.libelle}
-            </span>
-            {role === "gerant" && lot.cout_global_declare !== null && !lot.paye && (
-              <button
-                type="button"
-                disabled={envoi}
-                onClick={() => void confirmerPaiement()}
-                className="btn btn-primaire px-3 py-1.5 text-xs"
-              >
-                <IconeCoche taille={14} />
-                Valider le paiement du lot
-              </button>
-            )}
-            {lot.paye && (
-              <span className="text-xs font-bold text-success">Paiement validé</span>
-            )}
-          </div>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${infosLot.badge}`}>
+            {infosLot.libelle}
+          </span>
         </div>
         <div className="mt-3 flex items-center gap-2">
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-brand-light-grey">

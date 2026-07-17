@@ -18,8 +18,6 @@ interface LigneLot {
   statut_lot: StatutLot;
   description: string | null;
   cout_global_declare: number | null;
-  calcul_cout_auto: boolean;
-  paye: boolean;
   quantite_attendue: number | null;
   nb_produits: number;
   nb_testes: number;
@@ -42,7 +40,6 @@ export default function ListeLots({ role }: { role: Role }) {
   const [editQuantite, setEditQuantite] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editCout, setEditCout] = useState("");
-  const [editCalculCoutAuto, setEditCalculCoutAuto] = useState(false);
   const [modalSuppr, setModalSuppr] = useState<LigneLot | null>(null);
 
   const estGerant = role === "gerant";
@@ -70,7 +67,6 @@ export default function ListeLots({ role }: { role: Role }) {
     setEditFournisseur(lot.fournisseur);
     setEditQuantite(lot.quantite_attendue !== null ? String(lot.quantite_attendue) : "");
     setEditDescription(lot.description ?? "");
-    setEditCalculCoutAuto(lot.calcul_cout_auto);
     setEditCout(lot.cout_global_declare !== null ? String(lot.cout_global_declare) : "");
     setModalEdit(lot);
   }
@@ -90,17 +86,16 @@ export default function ListeLots({ role }: { role: Role }) {
       fournisseur: editFournisseur.trim(),
       quantite_attendue: quantite,
       description: editDescription.trim() || null,
-      calcul_cout_auto: editCalculCoutAuto,
     };
     if (estGerant) {
-      if (!editCalculCoutAuto && editCout.trim()) {
+      if (editCout.trim()) {
         const cout = Number(editCout);
         if (!Number.isInteger(cout) || cout < 0) {
           afficher("Le coût global déclaré doit être un entier positif en DA.", "erreur");
           return;
         }
         donneesLot.cout_global_declare = cout;
-      } else if (!editCalculCoutAuto) {
+      } else {
         donneesLot.cout_global_declare = null;
       }
     }
@@ -118,7 +113,12 @@ export default function ListeLots({ role }: { role: Role }) {
         afficher(corps?.error ?? "Erreur lors de la modification du lot.", "erreur");
         return;
       }
-      afficher(`Lot n°${modalEdit.id} modifié.`);
+      const correction = corps?.correction_caisse;
+      afficher(
+        correction
+          ? `Lot n°${modalEdit.id} modifié — caisse ajustée de ${correction > 0 ? "−" : "+"}${formaterDA(Math.abs(correction))}.`
+          : `Lot n°${modalEdit.id} modifié.`
+      );
       setModalEdit(null);
       await charger();
     } catch {
@@ -295,19 +295,9 @@ export default function ListeLots({ role }: { role: Role }) {
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-right">
-                      <div className="font-medium">
-                        {lot.cout_global_declare !== null
-                          ? formaterDA(lot.cout_global_declare)
-                          : "—"}
-                      </div>
-                      {lot.calcul_cout_auto && (
-                        <div className="text-[10px] text-brand-warm-grey">Auto</div>
-                      )}
-                      {lot.paye ? (
-                        <div className="text-[10px] font-bold text-success">Payé</div>
-                      ) : (
-                        <div className="text-[10px] font-bold text-brand-orange">Non payé</div>
-                      )}
+                      {lot.cout_global_declare !== null
+                        ? formaterDA(lot.cout_global_declare)
+                        : "—"}
                     </td>
                     <td className="px-2 py-2.5">
                       <span className="flex items-center justify-end gap-1">
@@ -392,60 +382,24 @@ export default function ListeLots({ role }: { role: Role }) {
             />
           </div>
           {estGerant ? (
-            <div className="space-y-3">
-              <div>
-                <label className="libelle mb-1.5">Mode de calcul du coût</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="editCalculCoutAuto"
-                      checked={!editCalculCoutAuto}
-                      onChange={() => setEditCalculCoutAuto(false)}
-                      className="accent-brand-orange"
-                    />
-                    Saisie manuelle
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="editCalculCoutAuto"
-                      checked={editCalculCoutAuto}
-                      onChange={() => setEditCalculCoutAuto(true)}
-                      className="accent-brand-orange"
-                    />
-                    Calcul automatique
-                  </label>
-                </div>
-              </div>
-              
-              {!editCalculCoutAuto ? (
-                <div>
-                  <label className="libelle mb-1.5" htmlFor="edit-cout-lot">
-                    Coût global déclaré (DA)
-                  </label>
-                  <input
-                    id="edit-cout-lot"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={editCout}
-                    onChange={(e) => setEditCout(e.target.value)}
-                    placeholder="Laisser vide si non déclaré"
-                    className="champ"
-                  />
-                  <p className="mt-1.5 text-xs text-brand-warm-grey">
-                    Le paiement de ce coût sera validé manuellement.
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm text-brand-warm-grey bg-brand-light-grey/25 p-3 rounded-lg border border-brand-light-grey/50">
-                    Le coût global déclaré sera calculé automatiquement en additionnant le prix d'achat
-                    des produits.
-                  </p>
-                </div>
-              )}
+            <div>
+              <label className="libelle mb-1.5" htmlFor="edit-cout-lot">
+                Coût global déclaré (DA)
+              </label>
+              <input
+                id="edit-cout-lot"
+                type="number"
+                min={0}
+                step={1}
+                value={editCout}
+                onChange={(e) => setEditCout(e.target.value)}
+                placeholder="Laisser vide si non déclaré"
+                className="champ"
+              />
+              <p className="mt-1.5 text-xs text-brand-warm-grey">
+                Corriger ce montant crée un mouvement d'ajustement tracé en caisse pour l'écart —
+                l'historique n'est jamais réécrit.
+              </p>
             </div>
           ) : (
             <p className="text-xs text-brand-warm-grey">
