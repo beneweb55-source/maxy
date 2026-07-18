@@ -62,7 +62,7 @@ const COLONNES_TRI = [
   { cle: "statut", libelle: "Statut" },
   { cle: "date_entree", libelle: "Entrée" },
   { cle: "prix_achat", libelle: "Achat" },
-  { cle: "prix_vente_fixe", libelle: "Prix fixé" },
+  { cle: "prix_vente_fixe", libelle: "Prix vente" },
 ] as const;
 
 interface FormulaireProduit {
@@ -398,10 +398,10 @@ export default function Inventaire({ role }: { role: Role }) {
           autoFocus
         />
       </div>
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <label className="libelle mb-1.5" htmlFor="cat-produit">
-            Catégorie *
+      <div className="flex flex-wrap sm:flex-nowrap gap-3">
+        <div className="flex-1 min-w-[120px]">
+          <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="cat-produit">
+            Catégorie&nbsp;*
           </label>
           <input
             id="cat-produit"
@@ -418,9 +418,9 @@ export default function Inventaire({ role }: { role: Role }) {
             ))}
           </datalist>
         </div>
-        <div className="w-40">
-          <label className="libelle mb-1.5" htmlFor="prix-produit">
-            Prix achat (DA) *
+        <div className="flex-1 min-w-[120px]">
+          <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="prix-produit">
+            Prix achat (DA)&nbsp;*
           </label>
           <input
             id="prix-produit"
@@ -436,8 +436,8 @@ export default function Inventaire({ role }: { role: Role }) {
           />
         </div>
         {modalEdition !== null && (
-          <div className="w-40">
-            <label className="libelle mb-1.5" htmlFor="prix-vente-produit">
+          <div className="flex-1 min-w-[120px]">
+            <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="prix-vente-produit">
               Prix vente (DA)
             </label>
             <input
@@ -838,7 +838,13 @@ export default function Inventaire({ role }: { role: Role }) {
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    {p.prix_vente_fixe !== null ? formaterDA(p.prix_vente_fixe) : "—"}
+                    {p.statut === "vendu" && p.prix_vente_reel !== null ? (
+                      <span className="font-bold text-brand-orange">{formaterDA(p.prix_vente_reel)}</span>
+                    ) : p.prix_vente_fixe !== null ? (
+                      formaterDA(p.prix_vente_fixe)
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right">{p.jours_stock}</td>
                   <td className="px-2 py-2">
@@ -964,25 +970,26 @@ export default function Inventaire({ role }: { role: Role }) {
                 <BadgeStatut statut={modalEdition.statut} aJeter={modalEdition.a_jeter} />
               </div>
 
-              {(TRANSITIONS_MANUELLES[modalEdition.statut] ?? []).length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {(TRANSITIONS_MANUELLES[modalEdition.statut] ?? []).map((cible) => (
-                    <button
-                      key={cible}
-                      type="button"
-                      disabled={envoi}
-                      onClick={() => void changerStatut(cible)}
-                      className="btn btn-secondaire"
-                    >
-                      → {INFOS_STATUT[cible].libelle}
-                    </button>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <select
+                  value={cibleStatut || ""}
+                  onChange={(e) => {
+                    const val = e.target.value as StatutProduit;
+                    if (val) {
+                      void changerStatut(val);
+                    }
+                  }}
+                  disabled={envoi || cibleStatut !== null}
+                  className="champ text-sm py-1.5"
+                >
+                  <option value="">Changer le statut vers...</option>
+                  {STATUTS_PRODUIT.filter((s) => s !== modalEdition.statut).map((s) => (
+                    <option key={s} value={s}>
+                      {INFOS_STATUT[s].libelle}
+                    </option>
                   ))}
-                </div>
-              ) : (
-                <p className="text-xs text-brand-warm-grey">
-                  Aucun changement de statut manuel possible depuis « {INFOS_STATUT[modalEdition.statut].libelle} ».
-                </p>
-              )}
+                </select>
+              </div>
 
               {cibleStatut && (
                 <div className="space-y-2 rounded-lg bg-brand-white p-2.5">

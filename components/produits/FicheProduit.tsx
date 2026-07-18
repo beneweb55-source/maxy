@@ -658,10 +658,10 @@ export default function FicheProduit({
               className="champ"
             />
           </div>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="libelle mb-1.5" htmlFor="edit-cat">
-                Catégorie *
+          <div className="flex flex-wrap sm:flex-nowrap gap-3">
+            <div className="flex-1 min-w-[120px]">
+              <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="edit-cat">
+                Catégorie&nbsp;*
               </label>
               <input
                 id="edit-cat"
@@ -671,9 +671,9 @@ export default function FicheProduit({
                 className="champ"
               />
             </div>
-            <div className="w-40">
-              <label className="libelle mb-1.5" htmlFor="edit-prix">
-                Prix achat (DA) *
+            <div className="flex-1 min-w-[120px]">
+              <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="edit-prix">
+                Prix achat (DA)&nbsp;*
               </label>
               <input
                 id="edit-prix"
