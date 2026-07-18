@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { formaterDA } from "@/lib/caisse";
+import { useLangue } from "@/lib/i18n/contexte";
 import { IconeChevronGauche } from "@/components/icons";
 import Link from "next/link";
 
 export default function RapportCaisse() {
+  const { langue, t } = useLangue();
   const [donnees, setDonnees] = useState<any>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -15,19 +17,19 @@ export default function RapportCaisse() {
         const res = await fetch("/api/caisse");
         const corps = await res.json();
         if (!res.ok) {
-          setErreur(corps.error || "Erreur de chargement");
+          setErreur(corps.error || t("rapportCaisse.erreurChargement"));
           return;
         }
         setDonnees(corps);
       } catch {
-        setErreur("Erreur réseau");
+        setErreur(t("rapportCaisse.erreurReseau"));
       }
     }
     void charger();
-  }, []);
+  }, [t]);
 
   if (erreur) return <div className="p-4 text-danger">{erreur}</div>;
-  if (!donnees) return <div className="p-4 text-brand-warm-grey">Génération du rapport...</div>;
+  if (!donnees) return <div className="p-4 text-brand-warm-grey">{t("rapportCaisse.generation")}</div>;
 
   const { soldes, repartition, graphique_soldes } = donnees;
 
@@ -36,57 +38,59 @@ export default function RapportCaisse() {
       <div className="flex justify-between items-start print:hidden">
         <Link href="/caisse" className="btn btn-secondaire">
           <IconeChevronGauche taille={15} />
-          Retour à la caisse
+          {t("rapportCaisse.retourCaisse")}
         </Link>
         <button type="button" onClick={() => window.print()} className="btn btn-primaire">
-          Imprimer le rapport
+          {t("rapportCaisse.imprimer")}
         </button>
       </div>
 
       <div className="border-b-2 border-brand-black pb-4">
         <img src="/brand/solutionmaxi-logo-clair.svg" alt="SolutionMaxi" className="h-6 w-auto" />
-        <h1 className="text-3xl font-bold tracking-tight">Bilan Financier</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("rapportCaisse.titre")}</h1>
         <p className="text-brand-warm-grey mt-1">
-          Généré le {new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+          {t("rapportCaisse.genereLe", {
+            date: new Date().toLocaleDateString(langue === "en" ? "en-GB" : "fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+          })}
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
         <div className="p-4 border border-brand-light-grey rounded-lg">
-          <p className="text-sm font-semibold text-brand-warm-grey uppercase tracking-wider">Solde Total</p>
+          <p className="text-sm font-semibold text-brand-warm-grey uppercase tracking-wider">{t("rapportCaisse.soldeTotal")}</p>
           <p className="text-3xl font-bold mt-2">{formaterDA(soldes.total)}</p>
         </div>
         <div className="p-4 border border-brand-light-grey rounded-lg">
-          <p className="text-sm font-semibold text-brand-warm-grey uppercase tracking-wider">Fonds de Réserve</p>
+          <p className="text-sm font-semibold text-brand-warm-grey uppercase tracking-wider">{t("rapportCaisse.fondsReserve")}</p>
           <p className="text-3xl font-bold mt-2">{formaterDA(soldes.reserve)}</p>
         </div>
         <div className="p-4 border border-brand-light-grey rounded-lg">
-          <p className="text-sm font-semibold text-brand-warm-grey uppercase tracking-wider">Disponible</p>
+          <p className="text-sm font-semibold text-brand-warm-grey uppercase tracking-wider">{t("rapportCaisse.disponible")}</p>
           <p className="text-3xl font-bold mt-2">{formaterDA(soldes.disponible)}</p>
         </div>
       </div>
 
       <div className="mt-8">
-        <h2 className="text-xl font-bold border-b border-brand-light-grey pb-2 mb-4">Statistiques du mois en cours ({repartition.mois})</h2>
+        <h2 className="text-xl font-bold border-b border-brand-light-grey pb-2 mb-4">{t("rapportCaisse.statsMois", { mois: repartition.mois })}</h2>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-brand-warm-grey">Bénéfice (somme des marges)</span>
+            <span className="text-brand-warm-grey">{t("rapportCaisse.benefice")}</span>
             <span className="font-bold text-succes">{formaterDA(repartition.benefice_mois)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-brand-warm-grey">État de la répartition</span>
-            <span className="font-semibold">{repartition.deja_appliquee ? "Déjà appliquée" : "En attente"}</span>
+            <span className="text-brand-warm-grey">{t("rapportCaisse.etatRepartition")}</span>
+            <span className="font-semibold">{repartition.deja_appliquee ? t("rapportCaisse.dejaAppliquee") : t("rapportCaisse.enAttente")}</span>
           </div>
         </div>
       </div>
 
       <div className="mt-8">
-        <h2 className="text-xl font-bold border-b border-brand-light-grey pb-2 mb-4">Évolution des soldes (6 derniers mois)</h2>
+        <h2 className="text-xl font-bold border-b border-brand-light-grey pb-2 mb-4">{t("rapportCaisse.evolutionSoldes")}</h2>
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="bg-brand-light-grey/30">
-              <th className="py-2 px-4 text-left border border-brand-light-grey">Mois</th>
-              <th className="py-2 px-4 text-right border border-brand-light-grey">Solde fin de mois</th>
+              <th className="py-2 px-4 text-left border border-brand-light-grey">{t("rapportCaisse.colMois")}</th>
+              <th className="py-2 px-4 text-right border border-brand-light-grey">{t("rapportCaisse.colSoldeFin")}</th>
             </tr>
           </thead>
           <tbody>
@@ -101,7 +105,7 @@ export default function RapportCaisse() {
       </div>
       
       <div className="mt-12 text-center text-xs text-brand-warm-grey print:block">
-        Document généré par Gestion Maxy - Confidentiel
+        {t("rapportCaisse.piedPage")}
       </div>
     </div>
   );

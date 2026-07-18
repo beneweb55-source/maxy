@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StatutLot } from "@prisma/client";
 import { formaterDA } from "@/lib/caisse";
+import { useLangue } from "@/lib/i18n/contexte";
 
 interface LigneRapport {
   lot_id: number;
@@ -24,6 +25,7 @@ interface LigneRapport {
 
 export default function ListeRapports() {
   const router = useRouter();
+  const { langue, t } = useLangue();
   const [rapports, setRapports] = useState<LigneRapport[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -33,7 +35,7 @@ export default function ListeRapports() {
       .then(async (res) => {
         if (!res.ok) {
           const corps = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(corps?.error ?? "Erreur lors du chargement des rapports.");
+          throw new Error(corps?.error ?? t("listeRapports.erreurChargement"));
         }
         return res.json() as Promise<{ rapports: LigneRapport[] }>;
       })
@@ -46,7 +48,7 @@ export default function ListeRapports() {
     return () => {
       annule = true;
     };
-  }, []);
+  }, [t]);
 
   if (erreur) {
     return (
@@ -56,7 +58,7 @@ export default function ListeRapports() {
     );
   }
   if (rapports === null) {
-    return <p className="p-4 text-sm text-brand-warm-grey">Chargement des rapports…</p>;
+    return <p className="p-4 text-sm text-brand-warm-grey">{t("listeRapports.chargement")}</p>;
   }
 
   const aValider = rapports.filter((r) => r.statut_lot === "teste");
@@ -70,12 +72,12 @@ export default function ListeRapports() {
         <table className="w-full min-w-[560px] text-sm">
           <thead className="bg-brand-light-grey/25">
             <tr>
-              <th className="entete-table">Lot</th>
-              <th className="entete-table">Fournisseur</th>
-              <th className="entete-table text-center">Statut</th>
-              <th className="entete-table">Résumé des tests</th>
-              <th className="entete-table text-right">Valeur d'achat</th>
-              <th className="entete-table text-right">Décisions</th>
+              <th className="entete-table">{t("listeRapports.colLot")}</th>
+              <th className="entete-table">{t("listeRapports.colFournisseur")}</th>
+              <th className="entete-table text-center">{t("listeRapports.colStatut")}</th>
+              <th className="entete-table">{t("listeRapports.colResume")}</th>
+              <th className="entete-table text-right">{t("listeRapports.colValeur")}</th>
+              <th className="entete-table text-right">{t("listeRapports.colDecisions")}</th>
             </tr>
           </thead>
           <tbody className="">
@@ -86,26 +88,29 @@ export default function ListeRapports() {
                 className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
               >
                 <td className="px-3 py-2.5 font-semibold">
-                  n°{r.lot_id} — Clôturé le {new Date(r.date_entree).toLocaleDateString("fr-FR")}
+                  {t("listeRapports.lotCloture", {
+                    id: r.lot_id,
+                    date: new Date(r.date_entree).toLocaleDateString(langue === "en" ? "en-GB" : "fr-FR"),
+                  })}
                 </td>
                 <td className="px-3 py-2.5">{r.fournisseur}</td>
                 <td className="px-3 py-2.5 text-center">
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${r.statut_lot === 'teste' ? 'bg-brand-glow/60 text-brand-orange' : 'bg-succes/10 text-succes'}`}>
-                    {r.statut_lot === 'teste' ? 'À valider' : 'Validé'}
+                    {r.statut_lot === 'teste' ? t("listeRapports.aValider") : t("listeRapports.valide")}
                   </span>
                 </td>
                 <td className="px-3 py-2.5 text-sm text-brand-warm-grey">
                   {[
-                    r.resume.ok > 0 && `${r.resume.ok} OK`,
-                    r.resume.a_reparer > 0 && `${r.resume.a_reparer} à réparer`,
-                    r.resume.manque_piece > 0 && `${r.resume.manque_piece} manque pièce`,
-                    r.resume.hs > 0 && `${r.resume.hs} HS`
+                    r.resume.ok > 0 && t("listeRapports.resumeOk", { n: r.resume.ok }),
+                    r.resume.a_reparer > 0 && t("listeRapports.resumeAReparer", { n: r.resume.a_reparer }),
+                    r.resume.manque_piece > 0 && t("listeRapports.resumeManquePiece", { n: r.resume.manque_piece }),
+                    r.resume.hs > 0 && t("listeRapports.resumeHs", { n: r.resume.hs })
                   ].filter(Boolean).join(' · ')}
                 </td>
                 <td className="px-3 py-2.5 text-right">{formaterDA(r.valeur_achat)}</td>
                 <td className="px-3 py-2.5 text-right">
                   {r.decisions_requises === 0 ? (
-                    <span className="text-brand-grey">aucune requise</span>
+                    <span className="text-brand-grey">{t("listeRapports.aucuneRequise")}</span>
                   ) : (
                     <span
                       className={`font-semibold ${
@@ -128,15 +133,15 @@ export default function ListeRapports() {
   return (
     <div className="space-y-6 animate-entree">
       <div className="pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Rapports</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("listeRapports.titre")}</h1>
       </div>
       <section className="space-y-2">
-        <h2 className="libelle text-brand-orange">À valider</h2>
-        <Tableau lignes={aValider} vide="Aucun rapport en attente de validation." />
+        <h2 className="libelle text-brand-orange">{t("listeRapports.aValider")}</h2>
+        <Tableau lignes={aValider} vide={t("listeRapports.videAValider")} />
       </section>
       <section className="space-y-2">
-        <h2 className="libelle text-succes">Validés</h2>
-        <Tableau lignes={valides} vide="Aucun rapport validé pour le moment." />
+        <h2 className="libelle text-succes">{t("listeRapports.sectionValides")}</h2>
+        <Tableau lignes={valides} vide={t("listeRapports.videValides")} />
       </section>
     </div>
   );

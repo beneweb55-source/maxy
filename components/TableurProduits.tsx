@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { formaterDA } from "@/lib/caisse";
+import { useT } from "@/lib/i18n/contexte";
 import { IconeFermer, IconePlus } from "./icons";
 
 export interface LigneTableur {
@@ -29,6 +30,7 @@ export default function TableurProduits({
   categories: string[];
 }) {
   const conteneur = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   function modifier(index: number, champ: keyof LigneTableur, valeur: string) {
     onChange(lignes.map((l, i) => (i === index ? { ...l, [champ]: valeur } : l)));
@@ -69,9 +71,9 @@ export default function TableurProduits({
           <thead className="bg-brand-light-grey/25">
             <tr>
               <th className="entete-table w-8 px-2 py-2">#</th>
-              <th className="entete-table px-2 py-2">Référence *</th>
-              <th className="entete-table w-44 px-2 py-2">Catégorie *</th>
-              <th className="entete-table w-36 px-2 py-2">Prix achat (DA) *</th>
+              <th className="entete-table px-2 py-2">{t("tableur.reference")}</th>
+              <th className="entete-table w-44 px-2 py-2">{t("tableur.categorie")}</th>
+              <th className="entete-table w-36 px-2 py-2">{t("tableur.prixAchat")}</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -86,7 +88,7 @@ export default function TableurProduits({
                     value={ligne.reference}
                     onChange={(e) => modifier(i, "reference", e.target.value)}
                     onKeyDown={surEntree}
-                    placeholder="Ex. Dell Latitude 5480 i5 8Go/256Go"
+                    placeholder={t("tableur.placeholderRef")}
                     className={classeCellule}
                   />
                 </td>
@@ -98,7 +100,7 @@ export default function TableurProduits({
                     value={ligne.categorie}
                     onChange={(e) => modifier(i, "categorie", e.target.value)}
                     onKeyDown={surEntree}
-                    placeholder="Laptop, Écran…"
+                    placeholder={t("tableur.placeholderCat")}
                     className={classeCellule}
                   />
                 </td>
@@ -119,7 +121,7 @@ export default function TableurProduits({
                   <button
                     type="button"
                     onClick={() => supprimerLigne(i)}
-                    aria-label={`Supprimer la ligne ${i + 1}`}
+                    aria-label={t("tableur.supprimerLigne", { n: i + 1 })}
                     className="rounded-md p-1.5 text-brand-grey transition hover:bg-danger/10 hover:text-danger"
                   >
                     <IconeFermer taille={14} />
@@ -138,10 +140,10 @@ export default function TableurProduits({
       <div className="mt-2 flex items-center justify-between">
         <button type="button" onClick={ajouterLigne} className="btn btn-secondaire">
           <IconePlus taille={14} />
-          Ajouter une ligne (Entrée)
+          {t("tableur.ajouterLigne")}
         </button>
         <p className="text-sm">
-          Total : <span className="font-bold">{formaterDA(totalTableur(lignes))}</span>
+          {t("tableur.total")} <span className="font-bold">{formaterDA(totalTableur(lignes))}</span>
         </p>
       </div>
     </div>
