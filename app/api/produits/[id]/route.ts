@@ -100,6 +100,7 @@ export async function PUT(
 ) {
   const acces = await exigerUtilisateur();
   if (acces.reponse) return acces.reponse;
+  const user = acces.user;
 
   const { id } = await params;
   const produitId = Number(id);
@@ -111,11 +112,12 @@ export async function PUT(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { reference, categorie, prix_achat, image_url } = (corps ?? {}) as {
+  const { reference, categorie, prix_achat, image_url, prix_vente_fixe } = (corps ?? {}) as {
     reference?: unknown;
     categorie?: unknown;
     prix_achat?: unknown;
     image_url?: unknown;
+    prix_vente_fixe?: unknown;
   };
 
   const donnees: {
@@ -123,6 +125,8 @@ export async function PUT(
     categorie?: string;
     prix_achat?: number;
     image_url?: string | null;
+    prix_vente_fixe?: number | null;
+    statut?: any;
   } = {};
   if (reference !== undefined) {
     if (typeof reference !== "string" || !reference.trim()) {
@@ -153,6 +157,22 @@ export async function PUT(
       return erreur(400, "Photo invalide.");
     }
   }
+
+  let modifPrixVente = false;
+  if (prix_vente_fixe !== undefined) {
+    if (prix_vente_fixe === null || prix_vente_fixe === "") {
+      donnees.prix_vente_fixe = null;
+      modifPrixVente = true;
+    } else {
+      const p = Number(prix_vente_fixe);
+      if (!Number.isInteger(p) || p < 0) {
+        return erreur(400, "Le prix de vente doit être un entier positif en DA.");
+      }
+      donnees.prix_vente_fixe = p;
+      modifPrixVente = true;
+    }
+  }
+
   if (Object.keys(donnees).length === 0) {
     return erreur(400, "Aucune modification fournie.");
   }
@@ -164,7 +184,25 @@ export async function PUT(
       return erreur(400, "Produit vendu : fiche verrouillée, aucune modification possible.");
     }
 
-    const maj = await prisma.produit.update({ where: { id: produitId }, data: donnees });
+    let maj;
+    if (modifPrixVente && donnees.prix_vente_fixe !== null && produit.statut === "ok") {
+      donnees.statut = "en_vente";
+      maj = await prisma.$transaction(async (tx) => {
+        await tx.historiqueStatut.create({
+          data: {
+            produit_id: produit.id,
+            user_id: user.id,
+            statut_avant: "ok",
+            statut_apres: "en_vente",
+            note: "Prix fixé depuis l'inventaire",
+          },
+        });
+        return tx.produit.update({ where: { id: produitId }, data: donnees });
+      });
+    } else {
+      maj = await prisma.produit.update({ where: { id: produitId }, data: donnees });
+    }
+
     return NextResponse.json({
       ok: true,
       id: maj.id,

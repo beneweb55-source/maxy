@@ -45,6 +45,13 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     });
   }
 
+  if (params.get("a_tarifer") === "1") {
+    clauses.push({
+      prix_vente_fixe: null,
+      statut: { not: "vendu" },
+    });
+  }
+
   return clauses.length > 0 ? { AND: clauses } : {};
 }
 

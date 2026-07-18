@@ -64,6 +64,7 @@ interface FormulaireProduit {
   categorie: string;
   prix_achat: string;
   lot_id: string;
+  prix_vente_fixe: string;
 }
 
 const FORMULAIRE_VIDE: FormulaireProduit = {
@@ -71,6 +72,7 @@ const FORMULAIRE_VIDE: FormulaireProduit = {
   categorie: "",
   prix_achat: "",
   lot_id: "",
+  prix_vente_fixe: "",
 };
 
 interface GroupeProduits {
@@ -196,6 +198,7 @@ export default function Inventaire({ role }: { role: Role }) {
       categorie: p.categorie,
       prix_achat: String(p.prix_achat),
       lot_id: String(p.lot_id),
+      prix_vente_fixe: p.prix_vente_fixe !== null ? String(p.prix_vente_fixe) : "",
     });
     setFormPhoto(p.image_url);
     setFormPhotoModifiee(false);
@@ -254,6 +257,7 @@ export default function Inventaire({ role }: { role: Role }) {
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
+          prix_vente_fixe: formulaire.prix_vente_fixe.trim() ? Number(formulaire.prix_vente_fixe) : null,
           ...(formPhotoModifiee ? { image_url: formPhoto ?? "" } : {}),
         }),
       });
@@ -352,6 +356,23 @@ export default function Inventaire({ role }: { role: Role }) {
             className="champ text-right"
           />
         </div>
+        {modalEdition !== null && (
+          <div className="w-40">
+            <label className="libelle mb-1.5" htmlFor="prix-vente-produit">
+              Prix vente (DA)
+            </label>
+            <input
+              id="prix-vente-produit"
+              type="number"
+              min={0}
+              step={1}
+              value={formulaire.prix_vente_fixe}
+              onChange={(e) => setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value })}
+              className="champ text-right"
+              placeholder="—"
+            />
+          </div>
+        )}
       </div>
       <div>
         <label className="libelle mb-1.5">Photo du produit</label>
@@ -468,6 +489,15 @@ export default function Inventaire({ role }: { role: Role }) {
               className="accent-brand-orange"
             />
             +30 jours en stock
+          </label>
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="checkbox"
+              checked={searchParams?.get("a_tarifer") === "1"}
+              onChange={(e) => majUrl({ a_tarifer: e.target.checked ? "1" : null })}
+              className="accent-brand-orange"
+            />
+            À tarifer (sans prix)
           </label>
         </div>
 
