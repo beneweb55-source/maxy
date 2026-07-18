@@ -71,6 +71,7 @@ interface FormulaireProduit {
   prix_achat: string;
   lot_id: string;
   prix_vente_fixe: string;
+  quantite?: string;
 }
 
 const FORMULAIRE_VIDE: FormulaireProduit = {
@@ -79,6 +80,7 @@ const FORMULAIRE_VIDE: FormulaireProduit = {
   prix_achat: "",
   lot_id: "",
   prix_vente_fixe: "",
+  quantite: "1",
 };
 
 // Prix de vente affiché pour une unité : le prix réel si elle est vendue,
@@ -231,6 +233,7 @@ export default function Inventaire({ role }: { role: Role }) {
       prix_achat: String(p.prix_achat),
       lot_id: String(p.lot_id),
       prix_vente_fixe: p.prix_vente_fixe !== null ? String(p.prix_vente_fixe) : "",
+      quantite: "1",
     });
     setFormPhoto(p.image_url);
     setFormPhotoModifiee(false);
@@ -323,6 +326,7 @@ export default function Inventaire({ role }: { role: Role }) {
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
           image_url: formPhoto ?? undefined,
+          quantite: Number(formulaire.quantite) || 1,
         }),
       });
       const corps = (await res.json().catch(() => null)) as
@@ -454,6 +458,25 @@ export default function Inventaire({ role }: { role: Role }) {
           className="champ text-right"
         />
       </div>
+      {modalEdition === null && (
+        <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
+          <label className="libelle mb-1.5" htmlFor="quantite-produit">
+            Quantité *
+          </label>
+          <input
+            id="quantite-produit"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            value={formulaire.quantite}
+            onChange={(e) =>
+              setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
+            }
+            className="champ text-right"
+          />
+        </div>
+      )}
       {modalEdition !== null && (
         <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
           <label

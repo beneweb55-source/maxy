@@ -114,6 +114,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [nouvRef, setNouvRef] = useState("");
   const [nouvCat, setNouvCat] = useState("");
   const [nouvPrix, setNouvPrix] = useState("");
+  const [nouvQuantite, setNouvQuantite] = useState("1");
   const [nouvPhoto, setNouvPhoto] = useState<string | null>(null);
 
   const [modalEdit, setModalEdit] = useState<ProduitDto | null>(null);
@@ -314,18 +315,23 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       afficher("Veuillez remplir la référence, catégorie et prix.", "erreur");
       return;
     }
+    
+    const quantite = Math.max(1, Number(nouvQuantite) || 1);
+    const produits = Array.from({ length: quantite }).map(() => ({
+      reference: nouvRef.trim(),
+      categorie: nouvCat.trim(),
+      prix_achat: Number(nouvPrix),
+      image_url: nouvPhoto ?? undefined,
+    }));
+
     const ok = await appelApi(`/api/lots/${lotId}/produits`, {
-      produits: [{
-        reference: nouvRef.trim(),
-        categorie: nouvCat.trim(),
-        prix_achat: Number(nouvPrix),
-        image_url: nouvPhoto ?? undefined,
-      }],
+      produits,
     });
     if (ok) {
       afficher("Produit ajouté au lot.");
       setNouvRef("");
       setNouvPrix("");
+      setNouvQuantite("1");
       setNouvPhoto(null);
       setAjoutOuvert(false);
     }
@@ -575,6 +581,10 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 <div>
                   <label className="libelle mb-1.5">Prix d'achat (DA) *</label>
                   <input type="number" inputMode="numeric" min="0" step="1" className="champ" value={nouvPrix} onChange={e => setNouvPrix(e.target.value.replace(/[^\d]/g, ""))} />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5">Quantité *</label>
+                  <input type="number" inputMode="numeric" min="1" step="1" className="champ" value={nouvQuantite} onChange={e => setNouvQuantite(e.target.value.replace(/[^\d]/g, ""))} />
                 </div>
                 <div>
                   <label className="libelle mb-1.5">Photo du produit</label>

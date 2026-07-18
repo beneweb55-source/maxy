@@ -92,12 +92,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { lot_id, reference, categorie, prix_achat, image_url } = (corps ?? {}) as {
+  const { lot_id, reference, categorie, prix_achat, image_url, quantite } = (corps ?? {}) as {
     lot_id?: unknown;
     reference?: unknown;
     categorie?: unknown;
     prix_achat?: unknown;
     image_url?: unknown;
+    quantite?: unknown;
   };
 
   const lotId = Number(lot_id);
@@ -107,35 +108,39 @@ export async function POST(request: NextRequest) {
   const ligne = validation.produits[0];
   if (!ligne) return erreur(400, "Produit invalide.");
 
+  const qty = Math.max(1, Math.min(100, Number(quantite) || 1));
+
   try {
     const lot = await prisma.lot.findUnique({ where: { id: lotId } });
     if (!lot) return erreur(404, "Lot introuvable.");
 
-    const produit = await prisma.$transaction(async (tx) => {
-      const [code] = await genererCodesInternes(tx, 1);
-      const cree = await tx.produit.create({
-        data: {
-          lot_id: lot.id,
-          code_interne: code ?? "P-0001",
-          reference: ligne.reference,
-          categorie: ligne.categorie,
-          prix_achat: ligne.prix_achat,
-          image_url: ligne.image_url ?? null,
-        },
-      });
-      await tx.historiqueStatut.create({
-        data: {
-          produit_id: cree.id,
-          user_id: user.id,
-          statut_avant: null,
-          statut_apres: "recu",
-        },
-      });
-      return cree;
+    const codes = await prisma.$transaction(async (tx) => {
+      const generatedCodes = await genererCodesInternes(tx, qty);
+      for (let i = 0; i < qty; i++) {
+        const cree = await tx.produit.create({
+          data: {
+            lot_id: lot.id,
+            code_interne: generatedCodes[i] ?? "P-0001",
+            reference: ligne.reference,
+            categorie: ligne.categorie,
+            prix_achat: ligne.prix_achat,
+            image_url: ligne.image_url ?? null,
+          },
+        });
+        await tx.historiqueStatut.create({
+          data: {
+            produit_id: cree.id,
+            user_id: user.id,
+            statut_avant: null,
+            statut_apres: "recu",
+          },
+        });
+      }
+      return generatedCodes;
     });
 
     return NextResponse.json(
-      { ok: true, id: produit.id, code_interne: produit.code_interne },
+      { ok: true, ajoutes: qty, code_interne: codes[0] },
       { status: 201 }
     );
   } catch (e) {
