@@ -18,6 +18,9 @@ interface LigneLot {
   statut_lot: StatutLot;
   description: string | null;
   cout_global_declare: number | null;
+  mode_cout: "manuel" | "auto";
+  cout_valide: boolean;
+  cout_calcule: number;
   quantite_attendue: number | null;
   nb_produits: number;
   nb_testes: number;
