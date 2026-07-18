@@ -5,6 +5,7 @@ import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
+import { MISES_A_JOUR } from "@/lib/mises-a-jour";
 import {
   IconeAlerte,
   IconeBanque,
@@ -18,6 +19,7 @@ import {
   IconeCorbeille,
   IconeCurseurs,
   IconeEnregistrer,
+  IconeHistorique,
   IconePanier,
   IconePaquet,
   IconePortefeuille,
@@ -244,6 +246,46 @@ export default function AdminClient() {
           Pilotage des chiffres clés, des paramètres métier, des comptes et des données.
         </p>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="libelle flex items-center gap-1.5 text-brand-smooth">
+          <IconeHistorique taille={13} />
+          Updates
+        </h2>
+        <div className="carte">
+          <ul className="space-y-4">
+            {MISES_A_JOUR.map((m, i) => {
+              const d = new Date(m.date);
+              return (
+                <li
+                  key={i}
+                  className="flex gap-3 border-b border-brand-light-grey/30 pb-4 last:border-0 last:pb-0"
+                >
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-glow/40 text-brand-orange">
+                    <IconeHistorique taille={13} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <span className="font-semibold text-brand-black">{m.titre}</span>
+                      <span className="font-mono text-xs text-brand-warm-grey">
+                        {d.toLocaleDateString("fr-FR")} ·{" "}
+                        {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </p>
+                    {m.details && m.details.length > 0 && (
+                      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-sm text-brand-smooth">
+                        {m.details.map((det, j) => (
+                          <li key={j}>{det}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
 
       <section className="space-y-3">
         <h2 className="libelle text-brand-smooth">Caisse — chiffres clés</h2>
