@@ -251,7 +251,7 @@ export async function chargerDonneesDashboard(
   }
 
   const graphiques: Partial<Record<SourceGraphique, DonneesGraphique>> = {};
-  const genererDonneesGraphique = (valeurDe: (v: (typeof ventes)[number]) => number): DonneesGraphique => {
+    const genererDonneesGraphique = (valeurDe: (v: (typeof ventes)[number]) => number): DonneesGraphique => {
     const jours = new Map<string, number>();
     const moisMap = new Map<string, number>();
     const ans = new Map<string, number>();

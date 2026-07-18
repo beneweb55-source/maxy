@@ -625,7 +625,7 @@ export default function Inventaire({ role }: { role: Role }) {
               {INFOS_STATUT[s].libelle}
             </button>
           ))}
-          {(statutsActifs.length > 0 || !!searchParams?.toString()) && (
+          {(statutsActifs.length > 0 || searchParams?.toString() || "") && (
             <button
               type="button"
               onClick={() => {
