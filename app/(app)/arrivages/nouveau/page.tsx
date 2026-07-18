@@ -5,6 +5,6 @@ import FormulaireLot from "@/components/arrivages/FormulaireLot";
 export default async function PageNouveauLot() {
   const user = await utilisateurCourant();
   if (!user) redirect("/connexion");
-  if (user.role !== "gerant") redirect("/arrivages");
-  return <FormulaireLot />;
+  if (user.role !== "gerant" && user.role !== "technicien") redirect("/arrivages");
+  return <FormulaireLot role={user.role} />;
 }

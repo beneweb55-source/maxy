@@ -140,7 +140,7 @@ const CONFIG_GERANT: ConfigDashboard = {
       id: "rapports-a-valider",
       type: "tableau",
       titre: "Rapports à valider",
-      taille: "grand",
+      taille: "moyen",
       source: "rapports_a_valider",
     },
     {
@@ -199,7 +199,7 @@ const CONFIG_DEV: ConfigDashboard = {
       id: "en-vente",
       type: "tableau",
       titre: "Produits en vente",
-      taille: "grand",
+      taille: "moyen",
       source: "produits_en_vente",
     },
     {
@@ -213,7 +213,7 @@ const CONFIG_DEV: ConfigDashboard = {
       id: "dernieres-ventes",
       type: "tableau",
       titre: "Dernières ventes",
-      taille: "grand",
+      taille: "moyen",
       source: "dernieres_ventes",
     },
     {

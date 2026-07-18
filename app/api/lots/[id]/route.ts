@@ -44,6 +44,8 @@ export async function GET(
       description: lot.description,
       quantite_attendue: lot.quantite_attendue,
       cout_global_declare: lot.cout_global_declare,
+      mode_cout: lot.mode_cout,
+      cout_valide: lot.cout_valide,
       produits: lot.produits.map((p) => ({
         id: p.id,
         code_interne: p.code_interne,

@@ -3,19 +3,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { formaterDA } from "@/lib/caisse";
+import type { Role } from "@prisma/client";
 import { useToast } from "@/components/toast";
 import { IconeFlecheGauche } from "@/components/icons";
 
-export default function FormulaireLot() {
+type ModeCout = "manuel" | "auto";
+
+export default function FormulaireLot({ role }: { role: Role }) {
   const router = useRouter();
   const { afficher } = useToast();
 
   const [fournisseur, setFournisseur] = useState("");
   const [description, setDescription] = useState("");
+  const [modeCout, setModeCout] = useState<ModeCout>("manuel");
   const [coutDeclare, setCoutDeclare] = useState("");
   const [quantiteAttendue, setQuantiteAttendue] = useState("");
   const [fournisseurs, setFournisseurs] = useState<string[]>([]);
+
+  const estGerant = role === "gerant";
 
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -36,7 +41,7 @@ export default function FormulaireLot() {
     }
 
     const declare = Number(coutDeclare);
-    if (coutDeclare.trim() && (!Number.isInteger(declare) || declare < 0)) {
+    if (modeCout === "manuel" && coutDeclare.trim() && (!Number.isInteger(declare) || declare < 0)) {
       setErreur("Le coût global déclaré doit être un entier positif en DA.");
       return;
     }
@@ -55,7 +60,9 @@ export default function FormulaireLot() {
         body: JSON.stringify({
           fournisseur: fournisseur.trim(),
           description: description.trim() || undefined,
-          cout_global_declare: coutDeclare.trim() ? declare : undefined,
+          mode_cout: modeCout,
+          cout_global_declare:
+            modeCout === "manuel" && coutDeclare.trim() ? declare : undefined,
           quantite_attendue: attendus,
         }),
       });
@@ -148,20 +155,65 @@ export default function FormulaireLot() {
         </div>
 
         <div>
-          <label htmlFor="cout" className="libelle mb-1.5">
-            Coût global déclaré (DA) — optionnel
-          </label>
-          <input
-            id="cout"
-            type="number"
-            min={0}
-            step={1}
-            value={coutDeclare}
-            onChange={(e) => setCoutDeclare(e.target.value)}
-            placeholder="Montant payé au fournisseur"
-            className="champ"
-          />
+          <label className="libelle mb-1.5">Mode de coût du lot</label>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setModeCout("manuel")}
+              className={`rounded-lg border px-3 py-2.5 text-left text-sm transition ${
+                modeCout === "manuel"
+                  ? "border-brand-orange bg-brand-glow/25 text-brand-black"
+                  : "border-brand-light-grey text-brand-warm-grey hover:border-brand-grey"
+              }`}
+            >
+              <span className="block font-semibold">Manuel</span>
+              <span className="block text-xs">Coût global fixe saisi à la main</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setModeCout("auto")}
+              className={`rounded-lg border px-3 py-2.5 text-left text-sm transition ${
+                modeCout === "auto"
+                  ? "border-brand-orange bg-brand-glow/25 text-brand-black"
+                  : "border-brand-light-grey text-brand-warm-grey hover:border-brand-grey"
+              }`}
+            >
+              <span className="block font-semibold">Automatique</span>
+              <span className="block text-xs">Calculé depuis les produits, à valider</span>
+            </button>
+          </div>
         </div>
+
+        {modeCout === "manuel" ? (
+          <div>
+            <label htmlFor="cout" className="libelle mb-1.5">
+              Coût global déclaré (DA) — optionnel
+            </label>
+            <input
+              id="cout"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
+              value={coutDeclare}
+              onChange={(e) => setCoutDeclare(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder="Montant payé au fournisseur"
+              className="champ"
+            />
+            <p className="mt-1.5 text-xs text-brand-warm-grey">
+              {estGerant
+                ? "Renseigné, ce montant est retiré immédiatement de la caisse (achat du lot)."
+                : "Le retrait en caisse sera validé ensuite par le gérant."}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-brand-light-grey bg-brand-paper px-3 py-2.5 text-xs text-brand-warm-grey">
+            Le coût du lot sera <strong className="text-brand-black">calculé automatiquement</strong>{" "}
+            en additionnant le prix d'achat de chaque produit ajouté, puis{" "}
+            <strong className="text-brand-black">validé manuellement</strong> par le gérant pour
+            déclencher le retrait en caisse.
+          </div>
+        )}
 
         <div className="text-right pt-2">
           <button

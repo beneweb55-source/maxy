@@ -6,7 +6,7 @@ import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
-import { IconeAlerte, IconeBillet } from "@/components/icons";
+import { IconeAlerte, IconeBillet, IconePaquet, IconeRecherche } from "@/components/icons";
 
 interface CarteEnVente {
   id: number;
@@ -33,6 +33,7 @@ interface LigneVente {
   vendeur_id: number;
   annulee: boolean;
   motif_annulation: string | null;
+  groupe_vente: string | null;
 }
 
 interface ReponseHistorique {
@@ -59,6 +60,20 @@ export default function VentesClient({ role }: { role: Role }) {
   const [canal, setCanal] = useState("");
   const [dateVente, setDateVente] = useState(aujourdhuiIso());
   const [avertissement, setAvertissement] = useState<string | null>(null);
+
+  // Recherche / filtres / tri de l'onglet « En vente » (côté client).
+  const [rechercheEnVente, setRechercheEnVente] = useState("");
+  const [filtreCategorie, setFiltreCategorie] = useState("");
+  const [triCartes, setTriCartes] = useState("");
+
+  // Vente groupée (bundle).
+  const [modeBundle, setModeBundle] = useState(false);
+  const [selection, setSelection] = useState<Set<number>>(new Set());
+  const [modalBundle, setModalBundle] = useState(false);
+  const [prixTotalBundle, setPrixTotalBundle] = useState("");
+  const [canalBundle, setCanalBundle] = useState("");
+  const [dateBundle, setDateBundle] = useState(aujourdhuiIso());
+  const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
 
   const [historique, setHistorique] = useState<ReponseHistorique | null>(null);
   const [erreurHistorique, setErreurHistorique] = useState<string | null>(null);
@@ -117,6 +132,101 @@ export default function VentesClient({ role }: { role: Role }) {
   useEffect(() => {
     void chargerHistorique();
   }, [chargerHistorique]);
+
+  const categoriesEnVente = Array.from(new Set((cartes ?? []).map((c) => c.categorie))).sort();
+
+  const cartesFiltrees = (() => {
+    let liste = cartes ?? [];
+    const q = rechercheEnVente.trim().toLowerCase();
+    if (q) {
+      liste = liste.filter(
+        (c) =>
+          c.reference.toLowerCase().includes(q) ||
+          c.code_interne.toLowerCase().includes(q) ||
+          c.categorie.toLowerCase().includes(q)
+      );
+    }
+    if (filtreCategorie) liste = liste.filter((c) => c.categorie === filtreCategorie);
+    const tri = [...liste];
+    switch (triCartes) {
+      case "prix_asc":
+        tri.sort((a, b) => (a.prix_vente_fixe ?? 0) - (b.prix_vente_fixe ?? 0));
+        break;
+      case "prix_desc":
+        tri.sort((a, b) => (b.prix_vente_fixe ?? 0) - (a.prix_vente_fixe ?? 0));
+        break;
+      case "marge_desc":
+        tri.sort((a, b) => b.marge_prevue - a.marge_prevue);
+        break;
+      case "anciennete":
+        tri.sort((a, b) => b.jours_en_vente - a.jours_en_vente);
+        break;
+    }
+    return tri;
+  })();
+
+  const selectionnees = (cartes ?? []).filter((c) => selection.has(c.id));
+
+  function basculerSelection(id: number) {
+    setSelection((prev) => {
+      const suivant = new Set(prev);
+      if (suivant.has(id)) suivant.delete(id);
+      else suivant.add(id);
+      return suivant;
+    });
+  }
+
+  function quitterModeBundle() {
+    setModeBundle(false);
+    setSelection(new Set());
+  }
+
+  function ouvrirBundle() {
+    const total = selectionnees.reduce((s, c) => s + (c.prix_vente_fixe ?? 0), 0);
+    setPrixTotalBundle(total > 0 ? String(total) : "");
+    setCanalBundle("");
+    setDateBundle(aujourdhuiIso());
+    setAvertissementBundle(null);
+    setModalBundle(true);
+  }
+
+  async function enregistrerVenteGroupee(confirmer: boolean) {
+    setEnvoi(true);
+    try {
+      const res = await fetch("/api/ventes/groupee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          produit_ids: selectionnees.map((c) => c.id),
+          prix_total: Number(prixTotalBundle),
+          canal: canalBundle.trim() || undefined,
+          date_vente: dateBundle !== aujourdhuiIso() ? dateBundle : undefined,
+          confirmer: confirmer || undefined,
+        }),
+      });
+      const corps = (await res.json().catch(() => null)) as
+        | { ok?: boolean; confirmation_required?: boolean; message?: string; error?: string }
+        | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la vente groupée.", "erreur");
+        return;
+      }
+      if (corps?.confirmation_required) {
+        setAvertissementBundle(corps.message ?? "Prix total sous la marge minimum. Confirmer ?");
+        return;
+      }
+      afficher(
+        `Vente groupée enregistrée : ${selectionnees.length} produits — ${formaterDA(Number(prixTotalBundle))}. Imed a été notifié.`
+      );
+      setModalBundle(false);
+      quitterModeBundle();
+      await Promise.all([chargerCartes(), chargerHistorique()]);
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
 
   function ouvrirVente(carte: CarteEnVente) {
     setPrixReel(carte.prix_vente_fixe !== null ? String(carte.prix_vente_fixe) : "");
@@ -216,7 +326,61 @@ export default function VentesClient({ role }: { role: Role }) {
       </div>
 
       {onglet === "en_vente" && (
-        <div>
+        <div className="space-y-3">
+          <div className="carte flex flex-wrap items-center gap-3">
+            <div className="relative min-w-56 flex-1">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-grey">
+                <IconeRecherche taille={15} />
+              </span>
+              <input
+                type="search"
+                value={rechercheEnVente}
+                onChange={(e) => setRechercheEnVente(e.target.value)}
+                placeholder="Rechercher (référence, code, catégorie)"
+                className="champ pl-9"
+              />
+            </div>
+            <select
+              value={filtreCategorie}
+              onChange={(e) => setFiltreCategorie(e.target.value)}
+              className="champ w-auto"
+            >
+              <option value="">Toutes catégories</option>
+              {categoriesEnVente.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <select
+              value={triCartes}
+              onChange={(e) => setTriCartes(e.target.value)}
+              className="champ w-auto"
+              aria-label="Trier les produits en vente"
+            >
+              <option value="">Tri : défaut</option>
+              <option value="prix_asc">Prix ↑</option>
+              <option value="prix_desc">Prix ↓</option>
+              <option value="marge_desc">Marge ↓</option>
+              <option value="anciennete">Ancienneté ↓</option>
+            </select>
+            {peutVendre &&
+              (modeBundle ? (
+                <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire">
+                  Annuler la sélection
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setModeBundle(true)}
+                  className="btn btn-secondaire"
+                >
+                  <IconePaquet taille={15} />
+                  Vente groupée
+                </button>
+              ))}
+          </div>
+
           {erreurCartes && (
             <div className="alerte-erreur" role="alert">
               {erreurCartes}
@@ -231,54 +395,97 @@ export default function VentesClient({ role }: { role: Role }) {
               en vente.
             </p>
           )}
-          {cartes !== null && cartes.length > 0 && (
+          {cartes !== null && cartes.length > 0 && cartesFiltrees.length === 0 && (
+            <p className="carte border-dashed p-6 text-sm text-brand-warm-grey">
+              Aucun produit ne correspond à la recherche.
+            </p>
+          )}
+          {cartes !== null && cartesFiltrees.length > 0 && (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {cartes.map((c) => (
-                <li key={c.id} className="carte flex flex-col">
-                  <Link
-                    href={`/produits/${c.id}`}
-                    className="block truncate text-sm font-semibold transition hover:text-brand-crystal hover:underline"
-                    title={c.reference}
+              {cartesFiltrees.map((c) => {
+                const choisi = selection.has(c.id);
+                return (
+                  <li
+                    key={c.id}
+                    className={`carte flex flex-col ${
+                      modeBundle && choisi ? "ring-2 ring-brand-orange" : ""
+                    }`}
                   >
-                    <span className="font-mono text-xs text-brand-warm-grey">
-                      {c.code_interne}
-                    </span>{" "}
-                    {c.reference}
-                  </Link>
-                  <p className="mt-1 text-xs text-brand-warm-grey">{c.categorie}</p>
-                  <dl className="mt-2 flex-1 space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <dt className="text-brand-warm-grey">Prix fixé</dt>
-                      <dd className="font-bold">
-                        {c.prix_vente_fixe !== null ? formaterDA(c.prix_vente_fixe) : "—"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-brand-warm-grey">Marge prévue</dt>
-                      <dd
-                        className={`font-semibold ${c.marge_prevue >= 0 ? "text-succes" : "text-danger"}`}
-                      >
-                        {formaterDA(c.marge_prevue)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-brand-warm-grey">En vente depuis</dt>
-                      <dd>{c.jours_en_vente} j</dd>
-                    </div>
-                  </dl>
-                  {peutVendre && (
-                    <button
-                      type="button"
-                      onClick={() => ouvrirVente(c)}
-                      className="btn btn-primaire mt-3 w-full"
+                    {modeBundle && (
+                      <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-smooth">
+                        <input
+                          type="checkbox"
+                          checked={choisi}
+                          onChange={() => basculerSelection(c.id)}
+                          className="accent-brand-orange"
+                        />
+                        Ajouter au groupe
+                      </label>
+                    )}
+                    <Link
+                      href={`/produits/${c.id}`}
+                      className="block truncate text-sm font-semibold transition hover:text-brand-crystal hover:underline"
+                      title={c.reference}
                     >
-                      <IconeBillet taille={15} />
-                      Vendre
-                    </button>
-                  )}
-                </li>
-              ))}
+                      <span className="font-mono text-xs text-brand-warm-grey">
+                        {c.code_interne}
+                      </span>{" "}
+                      {c.reference}
+                    </Link>
+                    <p className="mt-1 text-xs text-brand-warm-grey">{c.categorie}</p>
+                    <dl className="mt-2 flex-1 space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <dt className="text-brand-warm-grey">Prix fixé</dt>
+                        <dd className="font-bold">
+                          {c.prix_vente_fixe !== null ? formaterDA(c.prix_vente_fixe) : "—"}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-brand-warm-grey">Marge prévue</dt>
+                        <dd
+                          className={`font-semibold ${c.marge_prevue >= 0 ? "text-succes" : "text-danger"}`}
+                        >
+                          {formaterDA(c.marge_prevue)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-brand-warm-grey">En vente depuis</dt>
+                        <dd>{c.jours_en_vente} j</dd>
+                      </div>
+                    </dl>
+                    {peutVendre && !modeBundle && (
+                      <button
+                        type="button"
+                        onClick={() => ouvrirVente(c)}
+                        className="btn btn-primaire mt-3 w-full"
+                      >
+                        <IconeBillet taille={15} />
+                        Vendre
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
+          )}
+
+          {modeBundle && (
+            <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 rounded-xl border border-brand-light-grey bg-brand-white/95 p-3 shadow-lg backdrop-blur">
+              <span className="text-sm text-brand-warm-grey">
+                <strong className="text-brand-black">{selection.size}</strong> produit
+                {selection.size > 1 ? "s" : ""} sélectionné{selection.size > 1 ? "s" : ""}
+              </span>
+              <button
+                type="button"
+                disabled={selection.size < 2}
+                onClick={ouvrirBundle}
+                className="btn btn-primaire"
+                title={selection.size < 2 ? "Sélectionnez au moins deux produits" : undefined}
+              >
+                <IconePaquet taille={15} />
+                Vendre ensemble
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -376,6 +583,15 @@ export default function VentesClient({ role }: { role: Role }) {
                           </span>{" "}
                           {v.reference}
                         </Link>
+                        {v.groupe_vente && (
+                          <span
+                            className="ml-1 inline-flex items-center gap-0.5 rounded bg-brand-glow/40 px-1 py-0.5 text-xs font-semibold text-brand-smooth"
+                            title={`Vente groupée ${v.groupe_vente.slice(0, 8)}`}
+                          >
+                            <IconePaquet taille={11} />
+                            Bundle
+                          </span>
+                        )}
                         {v.annulee && (
                           <span
                             className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-xs font-semibold text-danger"
@@ -567,6 +783,143 @@ export default function VentesClient({ role }: { role: Role }) {
           >
             Annuler la vente
           </button>
+        </div>
+      </Modale>
+
+      <Modale
+        titre={`Vente groupée — ${selectionnees.length} produits`}
+        ouverte={modalBundle}
+        onFermer={() => setModalBundle(false)}
+      >
+        <div className="space-y-3">
+          <ul className="max-h-40 space-y-1 overflow-y-auto rounded-lg bg-brand-light-grey/25 p-2.5 text-sm">
+            {selectionnees.map((c) => (
+              <li key={c.id} className="flex justify-between gap-2">
+                <span className="truncate" title={c.reference}>
+                  <span className="font-mono text-xs text-brand-warm-grey">{c.code_interne}</span>{" "}
+                  {c.reference}
+                </span>
+                <span className="shrink-0 text-brand-warm-grey">
+                  {c.prix_vente_fixe !== null ? formaterDA(c.prix_vente_fixe) : "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-brand-warm-grey">
+            Somme des prix fixés :{" "}
+            <strong className="text-brand-black">
+              {formaterDA(selectionnees.reduce((s, c) => s + (c.prix_vente_fixe ?? 0), 0))}
+            </strong>{" "}
+            · le prix total sera réparti au prorata entre les produits.
+          </p>
+
+          <div>
+            <label className="libelle mb-1.5" htmlFor="prix-total-bundle">
+              Prix total de la vente groupée (DA) *
+            </label>
+            <input
+              id="prix-total-bundle"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              step={1}
+              value={prixTotalBundle}
+              onChange={(e) => {
+                setPrixTotalBundle(e.target.value.replace(/[^\d]/g, ""));
+                setAvertissementBundle(null);
+              }}
+              autoFocus
+              className="champ"
+            />
+            {Number(prixTotalBundle) > 0 && (
+              <p className="mt-1 text-xs">
+                Marge totale :{" "}
+                <strong
+                  className={
+                    Number(prixTotalBundle) -
+                      selectionnees.reduce((s, c) => s + c.prix_achat + c.cout_reparations, 0) >=
+                    0
+                      ? "text-succes"
+                      : "text-danger"
+                  }
+                >
+                  {formaterDA(
+                    Number(prixTotalBundle) -
+                      selectionnees.reduce((s, c) => s + c.prix_achat + c.cout_reparations, 0)
+                  )}
+                </strong>
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="libelle mb-1.5" htmlFor="date-bundle">
+                Date
+              </label>
+              <input
+                id="date-bundle"
+                type="date"
+                value={dateBundle}
+                max={aujourdhuiIso()}
+                onChange={(e) => setDateBundle(e.target.value)}
+                className="champ"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="libelle mb-1.5" htmlFor="canal-bundle">
+                Canal
+              </label>
+              <input
+                id="canal-bundle"
+                type="text"
+                list="canaux"
+                value={canalBundle}
+                onChange={(e) => setCanalBundle(e.target.value)}
+                placeholder="Ouedkniss…"
+                className="champ"
+              />
+            </div>
+          </div>
+
+          {avertissementBundle && (
+            <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
+              <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
+              {avertissementBundle}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            {avertissementBundle ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setAvertissementBundle(null)}
+                  className="btn btn-secondaire"
+                >
+                  Revoir le prix
+                </button>
+                <button
+                  type="button"
+                  disabled={envoi}
+                  onClick={() => void enregistrerVenteGroupee(true)}
+                  className="btn btn-primaire"
+                >
+                  Vendre quand même
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                disabled={envoi || !prixTotalBundle.trim()}
+                onClick={() => void enregistrerVenteGroupee(false)}
+                className="btn btn-primaire"
+              >
+                <IconePaquet taille={15} />
+                Enregistrer la vente groupée
+              </button>
+            )}
+          </div>
         </div>
       </Modale>
     </div>

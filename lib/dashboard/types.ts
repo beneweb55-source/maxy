@@ -84,7 +84,7 @@ export interface DonneesDashboard {
   kpis: Partial<Record<CleKpi, Kpi>>;
   graphiques: Partial<Record<SourceGraphique, DonneesGraphique>>;
   stock_par_statut?: { statut: StatutProduit; nombre: number }[];
-  alertes?: { stock_30j: AlerteProduit[]; manque_piece_14j: AlerteProduit[] };
+  alertes?: { stock_30j: AlerteProduit[]; manque_piece_14j: AlerteProduit[]; hs: AlerteProduit[] };
   activites?: Activite[];
   tableaux: TableauxDashboard;
   compteurs: Record<string, number>;

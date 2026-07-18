@@ -174,7 +174,7 @@ export default function ListeLots({ role }: { role: Role }) {
     <div className="space-y-6 animate-entree">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Arrivages</h1>
-        {role === "gerant" && (
+        {(role === "gerant" || role === "technicien") && (
           <Link href="/arrivages/nouveau" className="btn btn-primaire">
             <IconePlus taille={15} />
             Nouveau lot

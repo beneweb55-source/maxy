@@ -52,6 +52,10 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     });
   }
 
+  if (params.get("a_jeter") === "1") {
+    clauses.push({ statut: "hs", a_jeter: true });
+  }
+
   return clauses.length > 0 ? { AND: clauses } : {};
 }
 

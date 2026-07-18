@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
         vendeur_id: v.vendeur.id,
         annulee: v.annulee,
         motif_annulation: v.motif_annulation,
+        groupe_vente: v.groupe_vente,
       };
     });
     const valides = lignes.filter((l) => !l.annulee);

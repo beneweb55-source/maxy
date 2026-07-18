@@ -20,6 +20,11 @@ enum StatutLot {
   valide
 }
 
+enum ModeCout {
+  manuel
+  auto
+}
+
 enum StatutProduit {
   recu
   en_test
@@ -87,6 +92,8 @@ model Lot {
   description         String?
   quantite_attendue   Int?      @default(0)
   cout_global_declare Int?
+  mode_cout           ModeCout  @default(manuel)
+  cout_valide         Boolean   @default(false)
 
   produits   Produit[]
   mouvements MouvementCaisse[]
@@ -108,6 +115,7 @@ model Produit {
   notes            String?
   image_url        String?
   decision_rapport DecisionRapport?
+  a_jeter          Boolean          @default(false)
 
   lot         Lot                @relation(fields: [lot_id], references: [id])
   reparations Reparation[]
@@ -129,6 +137,7 @@ model Vente {
   motif_annulation String?
   annulee_par      Int?
   annulee_at       DateTime?
+  groupe_vente     String?
 
   produit Produit @relation(fields: [produit_id], references: [id])
   vendeur User    @relation("ventes_effectuees", fields: [vendu_par], references: [id])

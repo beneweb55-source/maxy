@@ -36,6 +36,20 @@ export const INFOS_STATUT_LOT: Record<StatutLot, { libelle: string; badge: strin
   valide: { libelle: "Validé", badge: "bg-emerald-50 text-emerald-800" },
 };
 
+// Distinction logique fonctionnel / défectueux (HS et à réparer).
+export const STATUTS_DEFAUT: readonly StatutProduit[] = ["a_reparer", "manque_piece", "hs"];
+
+export function estHS(statut: StatutProduit): boolean {
+  return statut === "hs";
+}
+
+export function estFonctionnel(statut: StatutProduit): boolean {
+  return !STATUTS_DEFAUT.includes(statut);
+}
+
+// Style du sous-statut « À jeter » (HS non récupérable pour pièces).
+export const BADGE_A_JETER = "bg-red-900 text-white";
+
 export function libelleStatut(statut: StatutProduit): string {
   return INFOS_STATUT[statut].libelle;
 }

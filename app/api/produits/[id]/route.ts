@@ -44,6 +44,7 @@ export async function GET(
       reference: p.reference,
       categorie: p.categorie,
       statut: p.statut,
+      a_jeter: p.a_jeter,
       notes: p.notes,
       image_url: p.image_url ? urlPhotoProduit(p.id) : null,
       decision_rapport: p.decision_rapport,
@@ -112,12 +113,14 @@ export async function PUT(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { reference, categorie, prix_achat, image_url, prix_vente_fixe } = (corps ?? {}) as {
+  const { reference, categorie, prix_achat, image_url, prix_vente_fixe, a_jeter } = (corps ??
+    {}) as {
     reference?: unknown;
     categorie?: unknown;
     prix_achat?: unknown;
     image_url?: unknown;
     prix_vente_fixe?: unknown;
+    a_jeter?: unknown;
   };
 
   const donnees: {
@@ -126,6 +129,7 @@ export async function PUT(
     prix_achat?: number;
     image_url?: string | null;
     prix_vente_fixe?: number | null;
+    a_jeter?: boolean;
     statut?: any;
   } = {};
   if (reference !== undefined) {
@@ -158,6 +162,13 @@ export async function PUT(
     }
   }
 
+  if (a_jeter !== undefined) {
+    if (typeof a_jeter !== "boolean") {
+      return erreur(400, "Le champ « à jeter » doit être vrai ou faux.");
+    }
+    donnees.a_jeter = a_jeter;
+  }
+
   let modifPrixVente = false;
   if (prix_vente_fixe !== undefined) {
     if (prix_vente_fixe === null || prix_vente_fixe === "") {
@@ -182,6 +193,9 @@ export async function PUT(
     if (!produit) return erreur(404, "Produit introuvable.");
     if (produit.statut === "vendu") {
       return erreur(400, "Produit vendu : fiche verrouillée, aucune modification possible.");
+    }
+    if (donnees.a_jeter === true && produit.statut !== "hs") {
+      return erreur(400, "« À jeter » ne concerne que les produits HS.");
     }
 
     let maj;

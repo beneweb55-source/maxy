@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         reference: p.reference,
         categorie: p.categorie,
         statut: p.statut,
+        a_jeter: p.a_jeter,
         prix_achat: p.prix_achat,
         image_url: p.image_url ? urlPhotoProduit(p.id) : null,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),

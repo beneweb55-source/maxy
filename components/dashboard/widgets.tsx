@@ -198,7 +198,7 @@ function GraphiqueBarres({
         </button>
       </div>
       <div className="overflow-x-auto pb-2">
-        <svg viewBox={`0 0 ${largeur} ${hauteur}`} className="h-48 w-full min-w-[320px]" role="img">
+        <svg viewBox={`0 0 ${largeur} ${hauteur}`} className="h-40 w-full min-w-[320px]" role="img">
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#F86822" />
@@ -349,11 +349,21 @@ function ListeAlertes({
 }
 
 function Alertes({ alertes }: { alertes: DonneesDashboard["alertes"] }) {
-  if (!alertes || (alertes.stock_30j.length === 0 && alertes.manque_piece_14j.length === 0)) {
+  if (
+    !alertes ||
+    (alertes.stock_30j.length === 0 &&
+      alertes.manque_piece_14j.length === 0 &&
+      alertes.hs.length === 0)
+  ) {
     return <p className="mt-3 text-sm text-brand-warm-grey">Aucune alerte. Tout va bien.</p>;
   }
   return (
     <div className="mt-3 space-y-4">
+      <ListeAlertes
+        titre="Produits HS"
+        classe="text-danger"
+        produits={alertes.hs}
+      />
       <ListeAlertes
         titre="En stock depuis plus de 30 jours"
         classe="text-brand-orange"

@@ -84,7 +84,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
         {config.widgets.map((widget, index) =>
           widgetSansCarte(widget) ? (
             <div key={widget.id} className={`col-span-1 ${CLASSE_TAILLE[widget.taille]} animate-entree`} style={{ animationDelay: `${index * 50}ms` }}>

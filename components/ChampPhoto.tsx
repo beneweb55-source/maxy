@@ -3,8 +3,12 @@
 import { useRef, useState } from "react";
 import { useToast } from "@/components/toast";
 import { compresserPhoto } from "@/lib/photo-client";
-import { capturerPhotoNative, captureNativeDisponible } from "@/lib/photo-capture";
-import { IconeAppareilPhoto, IconeCorbeille } from "@/components/icons";
+import {
+  capturerPhotoNative,
+  captureNativeDisponible,
+  type SourcePhoto,
+} from "@/lib/photo-capture";
+import { IconeAppareilPhoto, IconeCorbeille, IconeImage } from "@/components/icons";
 
 export default function ChampPhoto({
   apercu,
@@ -18,23 +22,29 @@ export default function ChampPhoto({
   disabled?: boolean;
 }) {
   const { afficher } = useToast();
-  const champ = useRef<HTMLInputElement>(null);
+  const champCamera = useRef<HTMLInputElement>(null);
+  const champGalerie = useRef<HTMLInputElement>(null);
   const [enCours, setEnCours] = useState(false);
 
-  async function declencher() {
+  async function declencher(source: Exclude<SourcePhoto, "prompt">) {
     if (captureNativeDisponible()) {
       setEnCours(true);
       try {
-        const data = await capturerPhotoNative();
-        if (data) onCapturer(data);
+        const res = await capturerPhotoNative(source);
+        if (res.statut === "ok") {
+          onCapturer(res.dataUrl);
+          return;
+        }
+        if (res.statut === "annule") return;
+        // res.statut === "indisponible" → repli sur l'input HTML ci-dessous.
       } catch (e) {
         afficher(e instanceof Error ? e.message : "Échec de la capture photo.", "erreur");
+        return;
       } finally {
         setEnCours(false);
       }
-      return;
     }
-    champ.current?.click();
+    (source === "camera" ? champCamera : champGalerie).current?.click();
   }
 
   async function surFichier(evenement: React.ChangeEvent<HTMLInputElement>) {
@@ -54,14 +64,22 @@ export default function ChampPhoto({
   return (
     <div>
       <input
-        ref={champ}
+        ref={champCamera}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={(e) => void surFichier(e)}
+        className="hidden"
+      />
+      <input
+        ref={champGalerie}
         type="file"
         accept="image/*"
         onChange={(e) => void surFichier(e)}
         className="hidden"
       />
       {apercu ? (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <img
             src={apercu}
             alt="Aperçu de la photo du produit"
@@ -70,11 +88,20 @@ export default function ChampPhoto({
           <button
             type="button"
             disabled={disabled || enCours}
-            onClick={() => void declencher()}
+            onClick={() => void declencher("camera")}
             className="btn btn-secondaire"
           >
             <IconeAppareilPhoto taille={14} />
-            {enCours ? "Traitement…" : "Remplacer"}
+            {enCours ? "Traitement…" : "Reprendre"}
+          </button>
+          <button
+            type="button"
+            disabled={disabled || enCours}
+            onClick={() => void declencher("galerie")}
+            className="btn btn-secondaire"
+          >
+            <IconeImage taille={14} />
+            Galerie
           </button>
           <button
             type="button"
@@ -87,15 +114,26 @@ export default function ChampPhoto({
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          disabled={disabled || enCours}
-          onClick={() => void declencher()}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
-        >
-          <IconeAppareilPhoto taille={18} />
-          {enCours ? "Préparation de la photo…" : "Prendre une photo"}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            disabled={disabled || enCours}
+            onClick={() => void declencher("camera")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
+          >
+            <IconeAppareilPhoto taille={18} />
+            {enCours ? "Préparation…" : "Prendre une photo"}
+          </button>
+          <button
+            type="button"
+            disabled={disabled || enCours}
+            onClick={() => void declencher("galerie")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
+          >
+            <IconeImage taille={18} />
+            Importer depuis la galerie
+          </button>
+        </div>
       )}
     </div>
   );

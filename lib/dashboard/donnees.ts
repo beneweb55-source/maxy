@@ -333,7 +333,16 @@ export async function chargerDonneesDashboard(
       })
       .filter((p) => p.jours > 14)
       .sort((a, b) => b.jours - a.jours);
-    alertes = { stock_30j, manque_piece_14j };
+    const hs: AlerteProduit[] = stockActuel
+      .filter((p) => p.statut === "hs")
+      .map((p) => ({
+        id: p.id,
+        code_interne: p.code_interne,
+        reference: p.a_jeter ? `${p.reference} · à jeter` : p.reference,
+        jours: enJours(p.lot.date_entree),
+      }))
+      .sort((a, b) => b.jours - a.jours);
+    alertes = { stock_30j, manque_piece_14j, hs };
   }
 
   const tableaux: TableauxDashboard = {};

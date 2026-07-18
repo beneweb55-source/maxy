@@ -10,6 +10,11 @@ import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT, STATUTS_PRODUIT } from "@/lib/statuts";
 import {
+  PLACEHOLDERS_NOTE,
+  STATUTS_NOTE_OBLIGATOIRE,
+  TRANSITIONS_MANUELLES,
+} from "@/lib/transitions";
+import {
   IconeChevronBas,
   IconeChevronGauche,
   IconeChevronDroite,
@@ -28,6 +33,7 @@ interface LigneProduit {
   reference: string;
   categorie: string;
   statut: StatutProduit;
+  a_jeter: boolean;
   prix_achat: number;
   cout_reparations: number;
   prix_vente_fixe: number | null;
@@ -132,7 +138,12 @@ export default function Inventaire({ role }: { role: Role }) {
   const [vueGroupee, setVueGroupee] = useState(true);
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
 
+  // Édition du statut depuis l'inventaire (transitions manuelles + note contextuelle).
+  const [cibleStatut, setCibleStatut] = useState<StatutProduit | null>(null);
+  const [noteStatut, setNoteStatut] = useState("");
+
   const estGerant = role === "gerant";
+  const peutStatut = role === "gerant" || role === "technicien";
 
   const statutsActifs = (searchParams?.get("statuts") ?? "")
     .split(",")
@@ -202,7 +213,72 @@ export default function Inventaire({ role }: { role: Role }) {
     });
     setFormPhoto(p.image_url);
     setFormPhotoModifiee(false);
+    setCibleStatut(null);
+    setNoteStatut("");
     setModalEdition(p);
+  }
+
+  async function changerStatut(cible: StatutProduit) {
+    if (!modalEdition) return;
+    if (STATUTS_NOTE_OBLIGATOIRE.includes(cible) && cibleStatut !== cible) {
+      // Demande une note contextuelle avant d'appliquer.
+      setCibleStatut(cible);
+      setNoteStatut("");
+      return;
+    }
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/produits/${modalEdition.id}/statut`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          statut: cible,
+          note: STATUTS_NOTE_OBLIGATOIRE.includes(cible) ? noteStatut.trim() : undefined,
+        }),
+      });
+      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors du changement de statut.", "erreur");
+        return;
+      }
+      afficher(`${modalEdition.code_interne} → ${INFOS_STATUT[cible].libelle}`);
+      setModalEdition(null);
+      setCibleStatut(null);
+      setNoteStatut("");
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  async function basculerAJeter(valeur: boolean) {
+    if (!modalEdition) return;
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/produits/${modalEdition.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ a_jeter: valeur }),
+      });
+      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la mise à jour.", "erreur");
+        return;
+      }
+      afficher(
+        valeur
+          ? `${modalEdition.code_interne} marqué « à jeter ».`
+          : `${modalEdition.code_interne} : « à jeter » retiré.`
+      );
+      setModalEdition({ ...modalEdition, a_jeter: valeur });
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
   }
 
   function basculerGroupe(cle: string) {
@@ -349,10 +425,13 @@ export default function Inventaire({ role }: { role: Role }) {
           <input
             id="prix-produit"
             type="number"
+            inputMode="numeric"
             min={0}
             step={1}
             value={formulaire.prix_achat}
-            onChange={(e) => setFormulaire({ ...formulaire, prix_achat: e.target.value })}
+            onChange={(e) =>
+              setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
+            }
             className="champ text-right"
           />
         </div>
@@ -364,10 +443,13 @@ export default function Inventaire({ role }: { role: Role }) {
             <input
               id="prix-vente-produit"
               type="number"
+              inputMode="numeric"
               min={0}
               step={1}
               value={formulaire.prix_vente_fixe}
-              onChange={(e) => setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value })}
+              onChange={(e) =>
+                setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
+              }
               className="champ text-right"
               placeholder="—"
             />
@@ -499,6 +581,33 @@ export default function Inventaire({ role }: { role: Role }) {
             />
             À tarifer (sans prix)
           </label>
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="checkbox"
+              checked={searchParams?.get("a_jeter") === "1"}
+              onChange={(e) => majUrl({ a_jeter: e.target.checked ? "1" : null })}
+              className="accent-brand-orange"
+            />
+            À jeter
+          </label>
+          <select
+            value={
+              triActuel === "prix_achat" ? (ordreActuel === "desc" ? "prix_desc" : "prix_asc") : ""
+            }
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc" });
+              else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc" });
+              else majUrl({ tri: null, ordre: null });
+            }}
+            className="champ w-auto"
+            aria-label="Trier par prix"
+            title="Trier par prix d'achat"
+          >
+            <option value="">Tri : défaut</option>
+            <option value="prix_asc">Prix ↑ (croissant)</option>
+            <option value="prix_desc">Prix ↓ (décroissant)</option>
+          </select>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
@@ -642,7 +751,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             lot n°{p.lot_id} · {formaterDA(p.prix_achat)} · {p.jours_stock} j
                           </span>
                         </button>
-                        <BadgeStatut statut={p.statut} />
+                        <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
                         <button
                           type="button"
                           onClick={() => ouvrirEdition(p)}
@@ -712,7 +821,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   </td>
                   <td className="px-3 py-2">{p.categorie}</td>
                   <td className="px-3 py-2">
-                    <BadgeStatut statut={p.statut} />
+                    <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
                   </td>
                   <td className="px-3 py-2 text-xs">
                     {new Date(p.date_entree).toLocaleDateString("fr-FR")}
@@ -847,6 +956,86 @@ export default function Inventaire({ role }: { role: Role }) {
       >
         <div className="space-y-3">
           {champsProduit}
+
+          {modalEdition && peutStatut && modalEdition.statut !== "vendu" && (
+            <div className="space-y-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="libelle">Statut</span>
+                <BadgeStatut statut={modalEdition.statut} aJeter={modalEdition.a_jeter} />
+              </div>
+
+              {(TRANSITIONS_MANUELLES[modalEdition.statut] ?? []).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(TRANSITIONS_MANUELLES[modalEdition.statut] ?? []).map((cible) => (
+                    <button
+                      key={cible}
+                      type="button"
+                      disabled={envoi}
+                      onClick={() => void changerStatut(cible)}
+                      className="btn btn-secondaire"
+                    >
+                      → {INFOS_STATUT[cible].libelle}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-brand-warm-grey">
+                  Aucun changement de statut manuel possible depuis « {INFOS_STATUT[modalEdition.statut].libelle} ».
+                </p>
+              )}
+
+              {cibleStatut && (
+                <div className="space-y-2 rounded-lg bg-brand-white p-2.5">
+                  <label className="libelle" htmlFor="note-statut-inv">
+                    Note obligatoire — {INFOS_STATUT[cibleStatut].libelle}
+                  </label>
+                  <textarea
+                    id="note-statut-inv"
+                    value={noteStatut}
+                    onChange={(e) => setNoteStatut(e.target.value)}
+                    rows={2}
+                    autoFocus
+                    placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? "Précisez la raison"}
+                    className="champ"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCibleStatut(null);
+                        setNoteStatut("");
+                      }}
+                      className="btn btn-secondaire"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      disabled={envoi || !noteStatut.trim()}
+                      onClick={() => void changerStatut(cibleStatut)}
+                      className="btn btn-primaire"
+                    >
+                      Confirmer le statut
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {modalEdition.statut === "hs" && (
+                <label className="flex items-center gap-2 pt-1 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={modalEdition.a_jeter}
+                    disabled={envoi}
+                    onChange={(e) => void basculerAJeter(e.target.checked)}
+                    className="accent-danger"
+                  />
+                  À jeter — non récupérable pour pièces
+                </label>
+              )}
+            </div>
+          )}
+
           <div className="pt-1 text-right">
             <button
               type="button"

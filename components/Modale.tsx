@@ -16,6 +16,18 @@ export default function Modale({
   large?: boolean;
   children: React.ReactNode;
 }) {
+  // Verrouille le défilement de la page tant que la modale est ouverte :
+  // le formulaire reste centré et l'arrière-plan ne défile pas. Dépend
+  // uniquement de `ouverte` pour rester stable entre les rendus.
+  useEffect(() => {
+    if (!ouverte) return;
+    const overflowInitial = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = overflowInitial;
+    };
+  }, [ouverte]);
+
   useEffect(() => {
     if (!ouverte) return;
     function surEchap(e: KeyboardEvent) {
@@ -33,11 +45,16 @@ export default function Modale({
       aria-modal="true"
       aria-label={titre}
     >
-      <div className="absolute inset-0 bg-brand-black/50" onClick={onFermer} />
       <div
-        className={`relative w-full ${large ? "max-w-2xl" : "max-w-md"} rounded-2xl bg-brand-white p-6 shadow-2xl`}
+        className="absolute inset-0 bg-brand-smooth/20 backdrop-blur-sm"
+        onClick={onFermer}
+      />
+      <div
+        className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${
+          large ? "max-w-2xl" : "max-w-md"
+        } flex-col overflow-hidden rounded-2xl border border-white/80 bg-brand-white shadow-2xl`}
       >
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-light-grey/70 px-6 py-4">
           <h2 className="text-base font-bold tracking-tight">{titre}</h2>
           <button
             type="button"
@@ -48,7 +65,7 @@ export default function Modale({
             <IconeFermer taille={18} />
           </button>
         </div>
-        <div className="mt-4">{children}</div>
+        <div className="overflow-y-auto overscroll-contain px-6 py-5">{children}</div>
       </div>
     </div>
   );

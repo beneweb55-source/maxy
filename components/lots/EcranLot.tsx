@@ -24,6 +24,7 @@ import {
   IconeLancer,
   IconeNote,
   IconePlus,
+  IconePortefeuille,
 } from "@/components/icons";
 
 interface ReparationDto {
@@ -53,6 +54,8 @@ interface LotDto {
   statut_lot: StatutLot;
   description: string | null;
   cout_global_declare: number | null;
+  mode_cout: "manuel" | "auto";
+  cout_valide: boolean;
   quantite_attendue: number | null;
   produits: ProduitDto[];
 }
@@ -123,6 +126,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
 
   const peutAgir = role === "technicien" || role === "gerant";
   const estTechnicien = role === "technicien";
+  const estGerant = role === "gerant";
 
   const rafraichir = useCallback(async () => {
     try {
@@ -209,6 +213,26 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     if (ok) {
       afficher("Lot clôturé — rapport généré, Imed a été notifié.");
       setModalCloture(false);
+    }
+  }
+
+  async function validerCout() {
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/lots/${lotId}/valider-cout`, { method: "POST" });
+      const corps = (await res.json().catch(() => null)) as
+        | { message?: string; montant?: number; error?: string }
+        | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la validation du coût.", "erreur");
+        return;
+      }
+      afficher(corps?.message ?? "Coût validé et retiré de la caisse.");
+      await rafraichir();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
     }
   }
 
@@ -326,6 +350,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const pct = lot.produits.length > 0 ? Math.round((nbTestes / lot.produits.length) * 100) : 0;
   const infosLot = INFOS_STATUT_LOT[lot.statut_lot];
   const totalAchat = lot.produits.reduce((s, p) => s + p.prix_achat, 0);
+  const montantCout = lot.mode_cout === "auto" ? totalAchat : lot.cout_global_declare ?? 0;
   const categoriesExistantes = Array.from(new Set(lot.produits.map((p) => p.categorie))).sort();
 
   return (
@@ -359,6 +384,61 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             {nbTestes}/{lot.produits.length} testés
           </span>
         </div>
+      </div>
+
+      <div className="carte space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-grey">
+              Coût du lot · mode {lot.mode_cout === "auto" ? "automatique" : "manuel"}
+            </p>
+            {lot.mode_cout === "auto" ? (
+              <p className="mt-0.5 text-sm">
+                Coût calculé (Σ prix d'achat) :{" "}
+                <strong className="text-brand-black">{formaterDA(montantCout)}</strong>
+              </p>
+            ) : (
+              <p className="mt-0.5 text-sm">
+                Coût global déclaré :{" "}
+                <strong className="text-brand-black">
+                  {lot.cout_global_declare !== null ? formaterDA(lot.cout_global_declare) : "—"}
+                </strong>
+                {lot.cout_global_declare !== null && lot.cout_global_declare !== totalAchat && (
+                  <span className="text-brand-warm-grey">
+                    {" "}
+                    · écart vs achats {formaterDA(lot.cout_global_declare - totalAchat)}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+          {lot.cout_valide ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+              <IconeCoche taille={13} />
+              Coût validé en caisse
+            </span>
+          ) : estGerant ? (
+            <button
+              type="button"
+              disabled={envoi || montantCout <= 0}
+              onClick={() => void validerCout()}
+              className="btn btn-primaire"
+              title={montantCout <= 0 ? "Ajoutez des produits ou un coût déclaré" : undefined}
+            >
+              <IconePortefeuille taille={15} />
+              Valider le coût ({formaterDA(montantCout)})
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+              Coût à valider par le gérant
+            </span>
+          )}
+        </div>
+        {!lot.cout_valide && estGerant && (
+          <p className="text-xs text-brand-warm-grey">
+            La validation retire {formaterDA(montantCout)} de la caisse (mouvement d'achat du lot).
+          </p>
+        )}
       </div>
 
       {lot.statut_lot === "teste" && (
@@ -494,7 +574,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 </div>
                 <div>
                   <label className="libelle mb-1.5">Prix d'achat (DA) *</label>
-                  <input type="number" min="0" step="1" className="champ" value={nouvPrix} onChange={e => setNouvPrix(e.target.value)} />
+                  <input type="number" inputMode="numeric" min="0" step="1" className="champ" value={nouvPrix} onChange={e => setNouvPrix(e.target.value.replace(/[^\d]/g, ""))} />
                 </div>
                 <div>
                   <label className="libelle mb-1.5">Photo du produit</label>
@@ -732,10 +812,11 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               <input
                 id="edit-prix-lot"
                 type="number"
+                inputMode="numeric"
                 min={0}
                 step={1}
                 value={editPrix}
-                onChange={(e) => setEditPrix(e.target.value)}
+                onChange={(e) => setEditPrix(e.target.value.replace(/[^\d]/g, ""))}
                 className="champ text-right"
               />
             </div>

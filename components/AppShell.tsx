@@ -153,7 +153,7 @@ export default function AppShell({
 
         {menuOuvert && (
           <div className="fixed inset-0 z-50 lg:hidden print:hidden">
-            <div className="absolute inset-0 bg-brand-black/50" onClick={() => setMenuOuvert(false)} />
+            <div className="absolute inset-0 bg-brand-smooth/20 backdrop-blur-sm" onClick={() => setMenuOuvert(false)} />
             <div className="absolute left-0 top-0 h-full w-64 bg-brand-smooth shadow-2xl">
               <button
                 type="button"
