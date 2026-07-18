@@ -74,6 +74,7 @@ export async function GET(
         categorie: p.categorie,
         statut: p.statut,
         prix_achat: p.prix_achat,
+        prix_vente_fixe: p.prix_vente_fixe,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         decision_rapport: p.decision_rapport,
         derniere_note: p.historique.at(0)?.note ?? null,

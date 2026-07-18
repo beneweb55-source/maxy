@@ -45,10 +45,9 @@ export default function Modale({
       aria-modal="true"
       aria-label={titre}
     >
-      <div
-        className="absolute inset-0 bg-brand-smooth/20 backdrop-blur-sm"
-        onClick={onFermer}
-      />
+      {/* Zone de clic pour fermer — volontairement transparente, sans fond
+          sombre ni flou (backdrop retiré à la demande). */}
+      <div className="absolute inset-0" onClick={onFermer} />
       <div
         className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${
           large ? "max-w-2xl" : "max-w-md"

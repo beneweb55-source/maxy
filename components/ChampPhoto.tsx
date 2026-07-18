@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
 import { compresserPhoto } from "@/lib/photo-client";
 import {
   capturerPhotoNative,
   captureNativeDisponible,
+  priseDePhotoDisponible,
   type SourcePhoto,
 } from "@/lib/photo-capture";
 import { IconeAppareilPhoto, IconeCorbeille, IconeImage } from "@/components/icons";
@@ -25,6 +26,10 @@ export default function ChampPhoto({
   const champCamera = useRef<HTMLInputElement>(null);
   const champGalerie = useRef<HTMLInputElement>(null);
   const [enCours, setEnCours] = useState(false);
+  // Déterminé après montage pour éviter tout décalage d'hydratation : la prise
+  // de photo est masquée sur ordinateur (desktop), où elle n'est pas possible.
+  const [photoDisponible, setPhotoDisponible] = useState(false);
+  useEffect(() => setPhotoDisponible(priseDePhotoDisponible()), []);
 
   async function declencher(source: Exclude<SourcePhoto, "prompt">) {
     if (captureNativeDisponible()) {
@@ -85,15 +90,17 @@ export default function ChampPhoto({
             alt="Aperçu de la photo du produit"
             className="h-16 w-16 shrink-0 rounded-lg border border-brand-light-grey object-cover"
           />
-          <button
-            type="button"
-            disabled={disabled || enCours}
-            onClick={() => void declencher("camera")}
-            className="btn btn-secondaire"
-          >
-            <IconeAppareilPhoto taille={14} />
-            {enCours ? "Traitement…" : "Reprendre"}
-          </button>
+          {photoDisponible && (
+            <button
+              type="button"
+              disabled={disabled || enCours}
+              onClick={() => void declencher("camera")}
+              className="btn btn-secondaire"
+            >
+              <IconeAppareilPhoto taille={14} />
+              {enCours ? "Traitement…" : "Reprendre"}
+            </button>
+          )}
           <button
             type="button"
             disabled={disabled || enCours}
@@ -115,15 +122,17 @@ export default function ChampPhoto({
         </div>
       ) : (
         <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            disabled={disabled || enCours}
-            onClick={() => void declencher("camera")}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
-          >
-            <IconeAppareilPhoto taille={18} />
-            {enCours ? "Préparation…" : "Prendre une photo"}
-          </button>
+          {photoDisponible && (
+            <button
+              type="button"
+              disabled={disabled || enCours}
+              onClick={() => void declencher("camera")}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
+            >
+              <IconeAppareilPhoto taille={18} />
+              {enCours ? "Préparation…" : "Prendre une photo"}
+            </button>
+          )}
           <button
             type="button"
             disabled={disabled || enCours}

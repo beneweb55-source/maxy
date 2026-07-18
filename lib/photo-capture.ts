@@ -7,6 +7,21 @@ export function captureNativeDisponible(): boolean {
   return Capacitor.isNativePlatform();
 }
 
+/**
+ * Indique si la prise de photo « en direct » a du sens sur le support courant.
+ * Elle n'est proposée que là où un appareil photo fait partie du flux naturel :
+ * l'application native mobile, ou un navigateur sur appareil tactile. Sur
+ * ordinateur (application desktop Electron ou navigateur de bureau), on la
+ * désactive — seul l'import depuis la galerie reste disponible.
+ */
+export function priseDePhotoDisponible(): boolean {
+  if (captureNativeDisponible()) return true; // application native mobile (Android/iOS)
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  if (/electron/i.test(navigator.userAgent ?? "")) return false; // application desktop
+  // Navigateur : seulement les appareils à pointeur grossier (mobiles/tablettes).
+  return window.matchMedia?.("(pointer: coarse)").matches ?? false;
+}
+
 export type SourcePhoto = "camera" | "galerie" | "prompt";
 
 export type ResultatCapture =
