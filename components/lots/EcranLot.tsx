@@ -565,7 +565,15 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             {ajoutOuvert ? "Masquer l'ajout" : "Ajouter un produit"}
           </button>
           {ajoutOuvert && (
-            <div className="mt-3 space-y-3">
+            <form
+              className="mt-3 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!envoi && nouvRef.trim() && nouvCat.trim() && nouvPrix.trim()) {
+                  void ajouterProduit();
+                }
+              }}
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="libelle mb-1.5">Référence *</label>
@@ -598,15 +606,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               </div>
               <div className="text-right">
                 <button
-                  type="button"
+                  type="submit"
                   disabled={envoi || !nouvRef.trim() || !nouvCat.trim() || !nouvPrix.trim()}
-                  onClick={() => void ajouterProduit()}
                   className="btn btn-primaire"
                 >
                   Ajouter au lot
                 </button>
               </div>
-            </div>
+            </form>
           )}
         </div>
       )}
@@ -652,6 +659,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         ouverte={modalNote !== null}
         onFermer={() => setModalNote(null)}
       >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!(!noteTexte.trim() || envoi)) {
+              void confirmerNote();
+            }
+          }}
+        >
         <textarea
           value={noteTexte}
           onChange={(e) => setNoteTexte(e.target.value)}
@@ -662,14 +677,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         />
         <div className="mt-3 text-right">
           <button
-            type="button"
+            type="submit"
             disabled={!noteTexte.trim() || envoi}
-            onClick={() => void confirmerNote()}
             className="btn btn-primaire"
           >
             Confirmer le changement
           </button>
         </div>
+        </form>
       </Modale>
 
       <Modale
@@ -677,6 +692,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         ouverte={modalReparation !== null}
         onFermer={() => setModalReparation(null)}
       >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!(envoi || !coutReparation.trim() || !descReparation.trim())) {
+              void confirmerReparation();
+            }
+          }}
+        >
         {modalReparation && modalReparation.reparations.length > 0 && (
           <ul className="mb-3 space-y-1 rounded-lg bg-brand-light-grey/25 p-2.5 text-xs text-brand-smooth">
             {modalReparation.reparations.map((r) => (
@@ -718,15 +741,15 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           </div>
           <div className="text-right">
             <button
-              type="button"
+              type="submit"
               disabled={envoi || !coutReparation.trim() || !descReparation.trim()}
-              onClick={() => void confirmerReparation()}
               className="btn btn-primaire"
             >
               Enregistrer la réparation
             </button>
           </div>
         </div>
+        </form>
       </Modale>
 
       <Modale
@@ -734,6 +757,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         ouverte={modalManque}
         onFermer={() => setModalManque(false)}
       >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!(envoi || !msgManque.trim())) {
+              void signalerManque();
+            }
+          }}
+        >
         <p className="text-sm text-brand-warm-grey mb-3">
           Précisez le problème rencontré (ex: "Il manque 2 produits par rapport à la quantité attendue").
         </p>
@@ -748,14 +779,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             Annuler
           </button>
           <button
-            type="button"
+            type="submit"
             disabled={envoi || !msgManque.trim()}
-            onClick={() => void signalerManque()}
             className="btn btn-danger"
           >
             Envoyer l'alerte
           </button>
         </div>
+        </form>
       </Modale>
 
       <Modale
@@ -763,6 +794,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         ouverte={modalCloture}
         onFermer={() => setModalCloture(false)}
       >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!envoi) {
+              void confirmerCloture();
+            }
+          }}
+        >
         <p className="text-sm text-brand-warm-grey">
           Le rapport sera généré et Imed notifié pour validation. Les statuts resteront
           modifiables jusqu'à la validation du rapport.
@@ -772,14 +811,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             Annuler
           </button>
           <button
-            type="button"
+            type="submit"
             disabled={envoi}
-            onClick={() => void confirmerCloture()}
             className="btn btn-primaire"
           >
             Clôturer
           </button>
         </div>
+        </form>
       </Modale>
 
       <Modale
@@ -787,7 +826,15 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         ouverte={modalEdit !== null}
         onFermer={() => setModalEdit(null)}
       >
-        <div className="space-y-3">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!(envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim())) {
+              void confirmerEdition();
+            }
+          }}
+        >
           <div>
             <label className="libelle mb-1.5" htmlFor="edit-ref-lot">
               Référence *
@@ -848,15 +895,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           </div>
           <div className="pt-1 text-right">
             <button
-              type="button"
+              type="submit"
               disabled={envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim()}
-              onClick={() => void confirmerEdition()}
               className="btn btn-primaire"
             >
               Enregistrer les modifications
             </button>
           </div>
-        </div>
+        </form>
       </Modale>
 
       <Modale
@@ -865,7 +911,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         onFermer={() => setModalSuppr(null)}
       >
         {modalSuppr && (
-          <>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!envoi) {
+                void confirmerSuppression();
+              }
+            }}
+          >
             <p className="text-sm text-brand-warm-grey">
               Le produit <strong className="text-brand-black">{modalSuppr.reference}</strong> sera
               définitivement retiré du lot, avec son historique de statuts et ses réparations. Cette
@@ -880,16 +933,15 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 Annuler
               </button>
               <button
-                type="button"
+                type="submit"
                 disabled={envoi}
-                onClick={() => void confirmerSuppression()}
                 className="btn btn-danger"
               >
                 <IconeCorbeille taille={15} />
                 Supprimer définitivement
               </button>
             </div>
-          </>
+          </form>
         )}
       </Modale>
     </div>

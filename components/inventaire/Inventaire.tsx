@@ -1006,7 +1006,15 @@ export default function Inventaire({ role }: { role: Role }) {
           majUrl({ ajouter: null });
         }}
       >
-        <div className="space-y-3">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!envoi && formulaireValide && formulaire.lot_id) {
+              void ajouterProduit();
+            }
+          }}
+        >
           <div>
             <label className="libelle mb-1.5" htmlFor="lot-produit">
               Lot de rattachement *
@@ -1033,16 +1041,15 @@ export default function Inventaire({ role }: { role: Role }) {
           {champsProduit}
           <div className="pt-1 text-right">
             <button
-              type="button"
+              type="submit"
               disabled={envoi || !formulaireValide || !formulaire.lot_id}
-              onClick={() => void ajouterProduit()}
               className="btn btn-primaire"
             >
               <IconePlus taille={15} />
               Ajouter le produit
             </button>
           </div>
-        </div>
+        </form>
       </Modale>
 
       <Modale
@@ -1050,7 +1057,15 @@ export default function Inventaire({ role }: { role: Role }) {
         ouverte={modalEdition !== null}
         onFermer={() => setModalEdition(null)}
       >
-        <div className="space-y-3">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!envoi && formulaireValide) {
+              void modifierProduit();
+            }
+          }}
+        >
           {champsProduit}
 
           {modalEdition && peutStatut && (
@@ -1135,15 +1150,14 @@ export default function Inventaire({ role }: { role: Role }) {
 
           <div className="pt-1 text-right">
             <button
-              type="button"
+              type="submit"
               disabled={envoi || !formulaireValide}
-              onClick={() => void modifierProduit()}
               className="btn btn-primaire"
             >
               Enregistrer les modifications
             </button>
           </div>
-        </div>
+        </form>
       </Modale>
 
       <Modale
@@ -1152,7 +1166,14 @@ export default function Inventaire({ role }: { role: Role }) {
         onFermer={() => setModalSuppression(null)}
       >
         {modalSuppression && (
-          <>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!envoi) {
+                void supprimerProduit();
+              }
+            }}
+          >
             <p className="text-sm text-brand-warm-grey">
               Le produit <strong className="text-brand-black">{modalSuppression.reference}</strong>{" "}
               sera définitivement retiré de l'inventaire, avec son historique de statuts et ses
@@ -1167,16 +1188,15 @@ export default function Inventaire({ role }: { role: Role }) {
                 Annuler
               </button>
                 <button
-                  type="button"
+                  type="submit"
                   disabled={envoi}
-                  onClick={() => void supprimerProduit()}
                   className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center gap-1.5"
                 >
                 <IconeCorbeille taille={15} />
                 Supprimer définitivement
               </button>
             </div>
-          </>
+          </form>
         )}
       </Modale>
     </div>
