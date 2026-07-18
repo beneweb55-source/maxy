@@ -713,7 +713,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       <Modale
         titre={
           modalNote
-            ? `${modalNote.produit.code_interne} → ${INFOS_STATUT[modalNote.cible].libelle}`
+            ? `${modalNote.produits.length} produit(s) → ${INFOS_STATUT[modalNote.cible].libelle}`
             : ""
         }
         ouverte={modalNote !== null}
