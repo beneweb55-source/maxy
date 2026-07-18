@@ -27,6 +27,28 @@ export const en = {
     technicien: "Technician",
     dev: "Dev",
   },
+  statuts: {
+    recu: "Received",
+    en_test: "Testing",
+    ok: "OK",
+    a_reparer: "To repair",
+    manque_piece: "Missing part",
+    hs: "Faulty",
+    en_vente: "For sale",
+    vendu: "Sold",
+    a_jeter: "To discard",
+    aJeterTitre: "Faulty product, not salvageable for parts",
+  },
+  statutsLot: {
+    en_cours_de_test: "Testing in progress",
+    teste: "Tested",
+    valide: "Validated",
+  },
+  placeholdersNote: {
+    a_reparer: "Describe the defect to repair (required)",
+    manque_piece: "Specify the missing part (required)",
+    hs: "Explain why the product is faulty (required)",
+  },
   nav: {
     navigation: "Navigation",
     dashboard: "Dashboard",

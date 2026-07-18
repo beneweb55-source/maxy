@@ -1,5 +1,8 @@
+"use client";
+
 import type { StatutProduit } from "@prisma/client";
 import { BADGE_A_JETER, INFOS_STATUT } from "@/lib/statuts";
+import { useT } from "@/lib/i18n/contexte";
 
 export default function BadgeStatut({
   statut,
@@ -8,6 +11,7 @@ export default function BadgeStatut({
   statut: StatutProduit;
   aJeter?: boolean;
 }) {
+  const t = useT();
   const infos = INFOS_STATUT[statut];
   return (
     <span className="inline-flex items-center gap-1">
@@ -19,14 +23,14 @@ export default function BadgeStatut({
           className="h-1.5 w-1.5 shrink-0 rounded-full"
           style={{ backgroundColor: statut === "vendu" ? "#FFFFFF" : infos.hex }}
         />
-        {infos.libelle}
+        {t(`statuts.${statut}`)}
       </span>
       {statut === "hs" && aJeter && (
         <span
           className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${BADGE_A_JETER}`}
-          title="Produit HS non récupérable pour pièces"
+          title={t("statuts.aJeterTitre")}
         >
-          À jeter
+          {t("statuts.a_jeter")}
         </span>
       )}
     </span>

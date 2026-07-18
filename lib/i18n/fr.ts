@@ -28,6 +28,28 @@ export const fr = {
     technicien: "Technicien",
     dev: "Dev",
   },
+  statuts: {
+    recu: "Reçu",
+    en_test: "En test",
+    ok: "OK",
+    a_reparer: "À réparer",
+    manque_piece: "Manque pièce",
+    hs: "HS",
+    en_vente: "En vente",
+    vendu: "Vendu",
+    a_jeter: "À jeter",
+    aJeterTitre: "Produit HS non récupérable pour pièces",
+  },
+  statutsLot: {
+    en_cours_de_test: "En cours de test",
+    teste: "Testé",
+    valide: "Validé",
+  },
+  placeholdersNote: {
+    a_reparer: "Décrivez le défaut à réparer (obligatoire)",
+    manque_piece: "Précisez la pièce manquante (obligatoire)",
+    hs: "Expliquez pourquoi le produit est HS (obligatoire)",
+  },
   nav: {
     navigation: "Navigation",
     dashboard: "Dashboard",
