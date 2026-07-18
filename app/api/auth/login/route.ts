@@ -62,10 +62,19 @@ export async function POST(request: NextRequest) {
   });
 
   const reponse = NextResponse.json({
-    user: { id: user.id, username: user.username, role: user.role },
+    user: { id: user.id, username: user.username, role: user.role, langue: user.langue },
   });
   reponse.cookies.set(SESSION_COOKIE, creerJeton(user.id), {
     httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: DUREE_SESSION_S,
+  });
+  // Cookie de langue (lisible côté client, mis à jour lors d'une bascule) :
+  // le compte retrouve sa langue sur n'importe quel appareil dès la connexion.
+  reponse.cookies.set("langue", user.langue, {
+    httpOnly: false,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",

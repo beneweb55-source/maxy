@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
-import type { Role } from "@prisma/client";
+import type { Langue, Role } from "@prisma/client";
 import { prisma } from "./db";
 import { SESSION_COOKIE } from "./constantes";
 
@@ -45,6 +45,7 @@ export interface Utilisateur {
   id: number;
   username: string;
   role: Role;
+  langue: Langue;
 }
 
 export async function utilisateurCourant(): Promise<Utilisateur | null> {
@@ -55,6 +56,6 @@ export async function utilisateurCourant(): Promise<Utilisateur | null> {
   if (userId === null) return null;
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, role: true },
+    select: { id: true, username: true, role: true, langue: true },
   });
 }

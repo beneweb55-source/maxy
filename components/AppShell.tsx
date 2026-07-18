@@ -5,7 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import ClocheNotifications from "./ClocheNotifications";
+import SelecteurLangue from "./SelecteurLangue";
 import { FournisseurToasts } from "./toast";
+import { useT } from "@/lib/i18n/contexte";
 import {
   IconeArchive,
   IconeCamion,
@@ -26,36 +28,30 @@ interface UtilisateurShell {
   role: Role;
 }
 
-const LIBELLES_ROLE: Record<Role, string> = {
-  gerant: "Gérant",
-  technicien: "Technicien",
-  dev: "Dev",
-};
-
 interface EntreeNavigation {
   href: string;
-  libelle: string;
+  cle: string;
   icone: (props: ProprietesIcone) => React.ReactNode;
   sousChemins: readonly string[];
   roles?: readonly Role[];
 }
 
 const NAVIGATION: readonly EntreeNavigation[] = [
-  { href: "/", libelle: "Dashboard", icone: IconeTableauDeBord, sousChemins: [] },
-  { href: "/arrivages", libelle: "Arrivages", icone: IconeCamion, sousChemins: ["/lots"] },
-  { href: "/inventaire", libelle: "Inventaire", icone: IconeArchive, sousChemins: ["/produits"] },
-  { href: "/rapports", libelle: "Rapports", icone: IconeRapport, sousChemins: [] },
-  { href: "/ventes", libelle: "Ventes", icone: IconePanier, sousChemins: [] },
+  { href: "/", cle: "nav.dashboard", icone: IconeTableauDeBord, sousChemins: [] },
+  { href: "/arrivages", cle: "nav.arrivages", icone: IconeCamion, sousChemins: ["/lots"] },
+  { href: "/inventaire", cle: "nav.inventaire", icone: IconeArchive, sousChemins: ["/produits"] },
+  { href: "/rapports", cle: "nav.rapports", icone: IconeRapport, sousChemins: [] },
+  { href: "/ventes", cle: "nav.ventes", icone: IconePanier, sousChemins: [] },
   {
     href: "/caisse",
-    libelle: "Caisse",
+    cle: "nav.caisse",
     icone: IconePortefeuille,
     sousChemins: [],
     roles: ["gerant", "dev"],
   },
   {
     href: "/administration",
-    libelle: "Administration",
+    cle: "nav.administration",
     icone: IconeReglages,
     sousChemins: [],
     roles: ["gerant"],
@@ -71,6 +67,7 @@ export default function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useT();
   const [menuOuvert, setMenuOuvert] = useState(false);
 
   const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(user.role));
@@ -92,7 +89,7 @@ export default function AppShell({
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        <p className="libelle px-3 pb-2 text-brand-grey/70">Navigation</p>
+        <p className="libelle px-3 pb-2 text-brand-grey/70">{t("nav.navigation")}</p>
         {navigation.map((item) => {
           const actif =
             item.href === "/"
@@ -113,7 +110,7 @@ export default function AppShell({
               }`}
             >
               <Icone taille={17} />
-              {item.libelle}
+              {t(item.cle)}
             </Link>
           );
         })}
@@ -128,13 +125,13 @@ export default function AppShell({
             <span className="block truncate text-sm font-semibold text-brand-white">
               {user.username}
             </span>
-            <span className="block text-xs text-brand-grey">{LIBELLES_ROLE[user.role]}</span>
+            <span className="block text-xs text-brand-grey">{t(`roles.${user.role}`)}</span>
           </span>
           <button
             type="button"
             onClick={() => void deconnexion()}
-            title="Déconnexion"
-            aria-label="Déconnexion"
+            title={t("entete.deconnexion")}
+            aria-label={t("entete.deconnexion")}
             className="rounded-lg p-2 text-brand-grey transition hover:bg-white/10 hover:text-brand-white"
           >
             <IconeDeconnexion taille={17} />
@@ -158,7 +155,7 @@ export default function AppShell({
               <button
                 type="button"
                 onClick={() => setMenuOuvert(false)}
-                aria-label="Fermer le menu"
+                aria-label={t("entete.fermerMenu")}
                 className="absolute right-3 top-5 rounded-lg p-2 text-brand-grey hover:text-brand-white"
               >
                 <IconeFermer taille={18} />
@@ -174,14 +171,17 @@ export default function AppShell({
               type="button"
               onClick={() => setMenuOuvert(true)}
               className="rounded-lg border border-brand-light-grey p-2 text-brand-smooth lg:hidden"
-              aria-label="Ouvrir le menu"
+              aria-label={t("entete.ouvrirMenu")}
             >
               <IconeMenu taille={18} />
             </button>
             <span className="hidden text-sm font-medium text-brand-warm-grey lg:block">
-              Plateforme de gestion de Stock / Revente Solution Maxy
+              {t("entete.titrePlateforme")}
             </span>
-            <ClocheNotifications />
+            <div className="ml-auto flex items-center gap-3">
+              <SelecteurLangue />
+              <ClocheNotifications />
+            </div>
           </header>
 
           <main className="min-w-0 p-4 lg:p-6 print:p-0">{children}</main>
