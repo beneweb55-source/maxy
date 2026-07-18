@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
+import { useT } from "@/lib/i18n/contexte";
 import { compresserPhoto } from "@/lib/photo-client";
 import {
   capturerPhotoNative,
@@ -23,6 +24,7 @@ export default function ChampPhoto({
   disabled?: boolean;
 }) {
   const { afficher } = useToast();
+  const t = useT();
   const champCamera = useRef<HTMLInputElement>(null);
   const champGalerie = useRef<HTMLInputElement>(null);
   const [enCours, setEnCours] = useState(false);
@@ -43,7 +45,7 @@ export default function ChampPhoto({
         if (res.statut === "annule") return;
         // res.statut === "indisponible" → repli sur l'input HTML ci-dessous.
       } catch (e) {
-        afficher(e instanceof Error ? e.message : "Échec de la capture photo.", "erreur");
+        afficher(e instanceof Error ? e.message : t("champPhoto.echecCapture"), "erreur");
         return;
       } finally {
         setEnCours(false);
@@ -60,7 +62,7 @@ export default function ChampPhoto({
     try {
       onCapturer(await compresserPhoto(fichier));
     } catch (e) {
-      afficher(e instanceof Error ? e.message : "Photo illisible.", "erreur");
+      afficher(e instanceof Error ? e.message : t("champPhoto.illisible"), "erreur");
     } finally {
       setEnCours(false);
     }
@@ -87,7 +89,7 @@ export default function ChampPhoto({
         <div className="flex flex-wrap items-center gap-3">
           <img
             src={apercu}
-            alt="Aperçu de la photo du produit"
+            alt={t("champPhoto.apercuAlt")}
             className="h-16 w-16 shrink-0 rounded-lg border border-brand-light-grey object-cover"
           />
           {photoDisponible && (
@@ -98,7 +100,7 @@ export default function ChampPhoto({
               className="btn btn-secondaire"
             >
               <IconeAppareilPhoto taille={14} />
-              {enCours ? "Traitement…" : "Reprendre"}
+              {enCours ? t("champPhoto.traitement") : t("champPhoto.reprendre")}
             </button>
           )}
           <button
@@ -108,13 +110,13 @@ export default function ChampPhoto({
             className="btn btn-secondaire"
           >
             <IconeImage taille={14} />
-            Galerie
+            {t("champPhoto.galerie")}
           </button>
           <button
             type="button"
             disabled={disabled || enCours}
             onClick={onRetirer}
-            aria-label="Retirer la photo"
+            aria-label={t("champPhoto.retirer")}
             className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
           >
             <IconeCorbeille taille={14} />
@@ -130,7 +132,7 @@ export default function ChampPhoto({
               className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
             >
               <IconeAppareilPhoto taille={18} />
-              {enCours ? "Préparation…" : "Prendre une photo"}
+              {enCours ? t("champPhoto.preparation") : t("champPhoto.prendrePhoto")}
             </button>
           )}
           <button
@@ -140,7 +142,7 @@ export default function ChampPhoto({
             className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
           >
             <IconeImage taille={18} />
-            Importer depuis la galerie
+            {t("champPhoto.importerGalerie")}
           </button>
         </div>
       )}

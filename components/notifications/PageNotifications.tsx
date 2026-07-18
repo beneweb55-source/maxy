@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
+import { useLangue } from "@/lib/i18n/contexte";
 import { IconeCoche } from "@/components/icons";
 
 interface NotificationDto {
@@ -16,6 +17,7 @@ interface NotificationDto {
 export default function PageNotifications() {
   const router = useRouter();
   const { afficher } = useToast();
+  const { langue, t } = useLangue();
   const [notifications, setNotifications] = useState<NotificationDto[] | null>(null);
   const [nonLues, setNonLues] = useState(0);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export default function PageNotifications() {
         | { error?: string }
         | null;
       if (!res.ok || !corps || "error" in (corps as object)) {
-        setErreur((corps as { error?: string } | null)?.error ?? "Erreur de chargement.");
+        setErreur((corps as { error?: string } | null)?.error ?? t("notifications.erreurChargement"));
         return;
       }
       const d = corps as { non_lues: number; notifications: NotificationDto[] };
@@ -36,9 +38,9 @@ export default function PageNotifications() {
       setNonLues(d.non_lues);
       setErreur(null);
     } catch {
-      setErreur("Impossible de joindre le serveur.");
+      setErreur(t("commun.serveurInjoignable"));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void charger();
@@ -52,7 +54,7 @@ export default function PageNotifications() {
   async function toutMarquerLu() {
     const res = await fetch("/api/notifications/tout-lu", { method: "POST" });
     if (res.ok) {
-      afficher("Toutes les notifications sont marquées lues.");
+      afficher(t("notifications.toutesLues"));
       await charger();
     }
   }
@@ -65,31 +67,31 @@ export default function PageNotifications() {
     );
   }
   if (notifications === null) {
-    return <p className="p-4 text-sm text-brand-warm-grey">Chargement des notifications…</p>;
+    return <p className="p-4 text-sm text-brand-warm-grey">{t("notifications.chargement")}</p>;
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 animate-entree">
       <div className="flex items-center justify-between pb-2 border-b border-brand-light-grey/50">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black flex items-center gap-2">
-          Notifications
+          {t("notifications.titre")}
           {nonLues > 0 && (
             <span className="rounded-full bg-brand-orange px-2 py-0.5 text-xs font-bold text-brand-white">
-              {nonLues} non lue{nonLues > 1 ? "s" : ""}
+              {nonLues} {t(nonLues > 1 ? "notifications.nonLuesP" : "notifications.nonLuesS")}
             </span>
           )}
         </h1>
         {nonLues > 0 && (
           <button type="button" onClick={() => void toutMarquerLu()} className="btn btn-secondaire">
             <IconeCoche taille={15} />
-            Tout marquer lu
+            {t("notifications.toutMarquerLu")}
           </button>
         )}
       </div>
 
       {notifications.length === 0 ? (
         <p className="carte border-dashed p-6 text-sm text-brand-warm-grey">
-          Aucune notification.
+          {t("notifications.aucune")}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white">
@@ -106,7 +108,7 @@ export default function PageNotifications() {
                 <span className="min-w-0 flex-1">
                   <span className="block">{n.message}</span>
                   <span className="text-xs font-normal text-brand-grey">
-                    {new Date(n.created_at).toLocaleString("fr-FR", {
+                    {new Date(n.created_at).toLocaleString(langue === "en" ? "en-GB" : "fr-FR", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",

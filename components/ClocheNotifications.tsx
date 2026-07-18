@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLangue } from "@/lib/i18n/contexte";
 import { IconeCloche } from "./icons";
 
 interface NotificationDto {
@@ -15,6 +16,7 @@ interface NotificationDto {
 
 export default function ClocheNotifications() {
   const router = useRouter();
+  const { langue, t } = useLangue();
   const [ouvert, setOuvert] = useState(false);
   const [nonLues, setNonLues] = useState(0);
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
@@ -68,7 +70,7 @@ export default function ClocheNotifications() {
       <button
         type="button"
         onClick={() => setOuvert(!ouvert)}
-        aria-label={`Notifications (${nonLues} non lues)`}
+        aria-label={t("notifications.clocheAria", { n: nonLues })}
         className="relative rounded-lg border border-brand-light-grey p-2 text-brand-smooth transition hover:bg-brand-light-grey/40"
       >
         <IconeCloche taille={17} />
@@ -82,14 +84,14 @@ export default function ClocheNotifications() {
       {ouvert && (
         <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white shadow-xl">
           <div className="flex items-center justify-between border-b border-brand-light-grey/70 px-4 py-2.5">
-            <span className="text-sm font-bold">Notifications</span>
+            <span className="text-sm font-bold">{t("notifications.titre")}</span>
             <button type="button" onClick={() => void toutMarquerLu()} className="lien text-xs">
-              Tout marquer lu
+              {t("notifications.toutMarquerLu")}
             </button>
           </div>
           <ul className="max-h-96 divide-y divide-brand-light-grey/50 overflow-y-auto">
             {notifications.length === 0 && (
-              <li className="px-4 py-5 text-sm text-brand-warm-grey">Aucune notification.</li>
+              <li className="px-4 py-5 text-sm text-brand-warm-grey">{t("notifications.aucune")}</li>
             )}
             {notifications.map((n) => (
               <li key={n.id}>
@@ -107,7 +109,7 @@ export default function ClocheNotifications() {
                     <span className="min-w-0">
                       <span className="block truncate">{n.message}</span>
                       <span className="text-xs font-normal text-brand-grey">
-                        {new Date(n.created_at).toLocaleString("fr-FR", {
+                        {new Date(n.created_at).toLocaleString(langue === "en" ? "en-GB" : "fr-FR", {
                           day: "numeric",
                           month: "short",
                           hour: "2-digit",
@@ -122,7 +124,7 @@ export default function ClocheNotifications() {
           </ul>
           <div className="border-t border-brand-light-grey/70 px-4 py-2.5 text-center">
             <Link href="/notifications" onClick={() => setOuvert(false)} className="lien text-sm">
-              Voir toutes les notifications
+              {t("notifications.voirToutes")}
             </Link>
           </div>
         </div>
