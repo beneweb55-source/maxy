@@ -9,6 +9,7 @@ import BadgeDescription from "@/components/BadgeDescription";
 import { useToast } from "@/components/toast";
 import { INFOS_STATUT_LOT } from "@/lib/statuts";
 import { formaterDA } from "@/lib/caisse";
+import { useLangue } from "@/lib/i18n/contexte";
 import { IconeCorbeille, IconeCrayon, IconePlus } from "@/components/icons";
 
 interface LigneLot {
@@ -27,6 +28,7 @@ interface LigneLot {
 export default function ListeLots({ role }: { role: Role }) {
   const router = useRouter();
   const { afficher } = useToast();
+  const { langue, t } = useLangue();
   const [lots, setLots] = useState<LigneLot[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -49,15 +51,15 @@ export default function ListeLots({ role }: { role: Role }) {
       const res = await fetch("/api/lots");
       if (!res.ok) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(corps?.error ?? "Erreur lors du chargement des lots.");
+        throw new Error(corps?.error ?? t("listeLots.erreurChargement"));
       }
       const d = (await res.json()) as { lots: LigneLot[] };
       setLots(d.lots);
       setErreur(null);
     } catch (e) {
-      setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
+      setErreur(e instanceof Error ? e.message : t("listeLots.erreurInattendue"));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void charger();
@@ -74,12 +76,12 @@ export default function ListeLots({ role }: { role: Role }) {
   async function confirmerEdition() {
     if (!modalEdit) return;
     if (!editFournisseur.trim()) {
-      afficher("Le fournisseur est obligatoire.", "erreur");
+      afficher(t("listeLots.erreurFournisseur"), "erreur");
       return;
     }
     const quantite = Number(editQuantite);
     if (!editQuantite.trim() || !Number.isInteger(quantite) || quantite <= 0) {
-      afficher("La quantité attendue doit être un entier strictement positif.", "erreur");
+      afficher(t("listeLots.erreurQuantite"), "erreur");
       return;
     }
     const donneesLot: Record<string, unknown> = {
@@ -91,7 +93,7 @@ export default function ListeLots({ role }: { role: Role }) {
       if (editCout.trim()) {
         const cout = Number(editCout);
         if (!Number.isInteger(cout) || cout < 0) {
-          afficher("Le coût global déclaré doit être un entier positif en DA.", "erreur");
+          afficher(t("listeLots.erreurCout"), "erreur");
           return;
         }
         donneesLot.cout_global_declare = cout;
@@ -110,19 +112,22 @@ export default function ListeLots({ role }: { role: Role }) {
         | { error?: string; correction_caisse?: number }
         | null;
       if (!res.ok) {
-        afficher(corps?.error ?? "Erreur lors de la modification du lot.", "erreur");
+        afficher(corps?.error ?? t("listeLots.erreurModification"), "erreur");
         return;
       }
       const correction = corps?.correction_caisse;
       afficher(
         correction
-          ? `Lot n°${modalEdit.id} modifié — caisse ajustée de ${correction > 0 ? "−" : "+"}${formaterDA(Math.abs(correction))}.`
-          : `Lot n°${modalEdit.id} modifié.`
+          ? t("listeLots.modifieCaisse", {
+              id: modalEdit.id,
+              montant: `${correction > 0 ? "−" : "+"}${formaterDA(Math.abs(correction))}`,
+            })
+          : t("listeLots.modifie", { id: modalEdit.id })
       );
       setModalEdit(null);
       await charger();
     } catch {
-      afficher("Impossible de joindre le serveur.", "erreur");
+      afficher(t("commun.serveurInjoignable"), "erreur");
     } finally {
       setEnvoi(false);
     }
@@ -135,14 +140,14 @@ export default function ListeLots({ role }: { role: Role }) {
       const res = await fetch(`/api/lots/${modalSuppr.id}`, { method: "DELETE" });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) {
-        afficher(corps?.error ?? "Erreur lors de la suppression du lot.", "erreur");
+        afficher(corps?.error ?? t("listeLots.erreurSuppression"), "erreur");
         return;
       }
-      afficher(`Lot n°${modalSuppr.id} supprimé.`);
+      afficher(t("listeLots.supprime", { id: modalSuppr.id }));
       setModalSuppr(null);
       await charger();
     } catch {
-      afficher("Impossible de joindre le serveur.", "erreur");
+      afficher(t("commun.serveurInjoignable"), "erreur");
     } finally {
       setEnvoi(false);
     }
@@ -173,48 +178,48 @@ export default function ListeLots({ role }: { role: Role }) {
   return (
     <div className="space-y-6 animate-entree">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Arrivages</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("listeLots.titre")}</h1>
         {(role === "gerant" || role === "technicien") && (
           <Link href="/arrivages/nouveau" className="btn btn-primaire">
             <IconePlus taille={15} />
-            Nouveau lot
+            {t("listeLots.nouveauLot")}
           </Link>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-4 rounded-xl border border-brand-light-grey bg-brand-white p-4">
         <div className="flex flex-1 flex-col gap-1 min-w-[200px]">
-          <label className="text-xs font-semibold text-brand-warm-grey">Fournisseur</label>
+          <label className="text-xs font-semibold text-brand-warm-grey">{t("listeLots.filtreFournisseur")}</label>
           <input
             type="text"
             className="champ"
-            placeholder="Rechercher un fournisseur..."
+            placeholder={t("listeLots.rechercheFournisseur")}
             value={rechercheFournisseur}
             onChange={(e) => setRechercheFournisseur(e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-brand-warm-grey">Statut</label>
+          <label className="text-xs font-semibold text-brand-warm-grey">{t("listeLots.filtreStatut")}</label>
           <select
             className="champ"
             value={filtreStatut}
             onChange={(e) => setFiltreStatut(e.target.value as any)}
           >
-            <option value="tous">Tous les statuts</option>
-            <option value="en_cours_de_test">En cours de test</option>
-            <option value="teste">Testé</option>
-            <option value="valide">Validé</option>
+            <option value="tous">{t("listeLots.tousStatuts")}</option>
+            <option value="en_cours_de_test">{t("statutsLot.en_cours_de_test")}</option>
+            <option value="teste">{t("statutsLot.teste")}</option>
+            <option value="valide">{t("statutsLot.valide")}</option>
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-brand-warm-grey">Tri par date</label>
+          <label className="text-xs font-semibold text-brand-warm-grey">{t("listeLots.triDate")}</label>
           <select
             className="champ"
             value={triOrdre}
             onChange={(e) => setTriOrdre(e.target.value as any)}
           >
-            <option value="desc">Plus récents d'abord</option>
-            <option value="asc">Plus anciens d'abord</option>
+            <option value="desc">{t("listeLots.triRecents")}</option>
+            <option value="asc">{t("listeLots.triAnciens")}</option>
           </select>
         </div>
       </div>
@@ -226,12 +231,12 @@ export default function ListeLots({ role }: { role: Role }) {
       )}
 
       {!erreur && lots === null && (
-        <p className="text-sm text-brand-warm-grey">Chargement des lots…</p>
+        <p className="text-sm text-brand-warm-grey">{t("listeLots.chargement")}</p>
       )}
 
       {lots !== null && lotsFiltres?.length === 0 && (
         <div className="carte border-dashed p-8 text-center text-sm text-brand-warm-grey">
-          <p>Aucun lot ne correspond aux critères.</p>
+          <p>{t("listeLots.aucunLot")}</p>
         </div>
       )}
 
@@ -240,14 +245,14 @@ export default function ListeLots({ role }: { role: Role }) {
           <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-brand-light-grey/25">
               <tr>
-                <th className="entete-table">Lot</th>
-                <th className="entete-table">Date</th>
-                <th className="entete-table">Fournisseur</th>
-                <th className="entete-table text-right">Produits</th>
-                <th className="entete-table text-right">Attendus</th>
-                <th className="entete-table">Progression</th>
-                <th className="entete-table">Statut</th>
-                <th className="entete-table text-right">Coût déclaré</th>
+                <th className="entete-table">{t("listeLots.colLot")}</th>
+                <th className="entete-table">{t("listeLots.colDate")}</th>
+                <th className="entete-table">{t("listeLots.colFournisseur")}</th>
+                <th className="entete-table text-right">{t("listeLots.colProduits")}</th>
+                <th className="entete-table text-right">{t("listeLots.colAttendus")}</th>
+                <th className="entete-table">{t("listeLots.colProgression")}</th>
+                <th className="entete-table">{t("listeLots.colStatut")}</th>
+                <th className="entete-table text-right">{t("listeLots.colCout")}</th>
                 <th className="entete-table" />
               </tr>
             </thead>
@@ -264,7 +269,7 @@ export default function ListeLots({ role }: { role: Role }) {
                   >
                     <td className="px-3 py-2.5 font-bold">n°{lot.id}</td>
                     <td className="px-3 py-2.5">
-                      {new Date(lot.date_entree).toLocaleDateString("fr-FR")}
+                      {new Date(lot.date_entree).toLocaleDateString(langue === "en" ? "en-GB" : "fr-FR")}
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="font-medium">{lot.fournisseur}</div>
@@ -283,7 +288,7 @@ export default function ListeLots({ role }: { role: Role }) {
                           />
                         </div>
                         <span className="text-xs text-brand-warm-grey">
-                          {lot.nb_testes}/{lot.nb_produits} testés
+                          {t("listeLots.progressionTestes", { testes: lot.nb_testes, total: lot.nb_produits })}
                         </span>
                       </div>
                     </td>
@@ -291,7 +296,7 @@ export default function ListeLots({ role }: { role: Role }) {
                       <span
                         className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${infos.badge}`}
                       >
-                        {infos.libelle}
+                        {t(`statutsLot.${lot.statut_lot}`)}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-right">
@@ -307,8 +312,8 @@ export default function ListeLots({ role }: { role: Role }) {
                             e.stopPropagation();
                             ouvrirEdition(lot);
                           }}
-                          title="Modifier"
-                          aria-label={`Modifier le lot n°${lot.id}`}
+                          title={t("commun.modifier")}
+                          aria-label={t("listeLots.modifierLot", { id: lot.id })}
                           className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
                         >
                           <IconeCrayon taille={14} />
@@ -319,8 +324,8 @@ export default function ListeLots({ role }: { role: Role }) {
                             e.stopPropagation();
                             setModalSuppr(lot);
                           }}
-                          title="Supprimer"
-                          aria-label={`Supprimer le lot n°${lot.id}`}
+                          title={t("commun.supprimer")}
+                          aria-label={t("listeLots.supprimerLot", { id: lot.id })}
                           className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
                         >
                           <IconeCorbeille taille={14} />
@@ -336,14 +341,14 @@ export default function ListeLots({ role }: { role: Role }) {
       )}
 
       <Modale
-        titre={modalEdit ? `Modifier le lot n°${modalEdit.id}` : ""}
+        titre={modalEdit ? t("listeLots.modalEditTitre", { id: modalEdit.id }) : ""}
         ouverte={modalEdit !== null}
         onFermer={() => setModalEdit(null)}
       >
         <div className="space-y-3">
           <div>
             <label className="libelle mb-1.5" htmlFor="edit-fournisseur">
-              Fournisseur *
+              {t("formulaireLot.fournisseur")}
             </label>
             <input
               id="edit-fournisseur"
@@ -356,7 +361,7 @@ export default function ListeLots({ role }: { role: Role }) {
           </div>
           <div>
             <label className="libelle mb-1.5" htmlFor="edit-quantite">
-              Quantité attendue *
+              {t("listeLots.editQuantite")}
             </label>
             <input
               id="edit-quantite"
@@ -370,21 +375,21 @@ export default function ListeLots({ role }: { role: Role }) {
           </div>
           <div>
             <label className="libelle mb-1.5" htmlFor="edit-desc-lot">
-              Description
+              {t("formulaireLot.description")}
             </label>
             <input
               id="edit-desc-lot"
               type="text"
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Ex. Lot mixte bureautique"
+              placeholder={t("formulaireLot.descriptionPlaceholder")}
               className="champ"
             />
           </div>
           {estGerant ? (
             <div>
               <label className="libelle mb-1.5" htmlFor="edit-cout-lot">
-                Coût global déclaré (DA)
+                {t("listeLots.editCout")}
               </label>
               <input
                 id="edit-cout-lot"
@@ -393,17 +398,16 @@ export default function ListeLots({ role }: { role: Role }) {
                 step={1}
                 value={editCout}
                 onChange={(e) => setEditCout(e.target.value)}
-                placeholder="Laisser vide si non déclaré"
+                placeholder={t("listeLots.editCoutPlaceholder")}
                 className="champ"
               />
               <p className="mt-1.5 text-xs text-brand-warm-grey">
-                Corriger ce montant crée un mouvement d'ajustement tracé en caisse pour l'écart —
-                l'historique n'est jamais réécrit.
+                {t("listeLots.editCoutNote")}
               </p>
             </div>
           ) : (
             <p className="text-xs text-brand-warm-grey">
-              Le coût global déclaré est lié à la caisse ; seul le gérant peut le corriger.
+              {t("listeLots.editCoutNoteAutre")}
             </p>
           )}
           <div className="pt-1 text-right">
@@ -413,24 +417,23 @@ export default function ListeLots({ role }: { role: Role }) {
               onClick={() => void confirmerEdition()}
               className="btn btn-primaire"
             >
-              Enregistrer les modifications
+              {t("commun.enregistrerModifications")}
             </button>
           </div>
         </div>
       </Modale>
 
       <Modale
-        titre={modalSuppr ? `Supprimer le lot n°${modalSuppr.id}` : ""}
+        titre={modalSuppr ? t("listeLots.modalSupprTitre", { id: modalSuppr.id }) : ""}
         ouverte={modalSuppr !== null}
         onFermer={() => setModalSuppr(null)}
       >
         {modalSuppr && (
           <>
             <p className="text-sm text-brand-warm-grey">
-              Le lot <strong className="text-brand-black">n°{modalSuppr.id} — {modalSuppr.fournisseur}</strong>{" "}
-              et ses {modalSuppr.nb_produits} produit{modalSuppr.nb_produits > 1 ? "s" : ""} seront
-              définitivement supprimés. Un lot ayant un historique de caisse (coût déclaré, réparation
-              ou vente) ne peut pas être supprimé. Cette action est irréversible.
+              {t("listeLots.supprIntro")}{" "}
+              <strong className="text-brand-black">{t("listeLots.lotNo", { id: modalSuppr.id })} — {modalSuppr.fournisseur}</strong>{" "}
+              {t("listeLots.supprCorps", { n: modalSuppr.nb_produits })}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -438,7 +441,7 @@ export default function ListeLots({ role }: { role: Role }) {
                 onClick={() => setModalSuppr(null)}
                 className="btn btn-secondaire"
               >
-                Annuler
+                {t("commun.annuler")}
               </button>
               <button
                 type="button"
@@ -447,7 +450,7 @@ export default function ListeLots({ role }: { role: Role }) {
                 className="btn btn-danger"
               >
                 <IconeCorbeille taille={15} />
-                Supprimer définitivement
+                {t("commun.supprimerDefinitivement")}
               </button>
             </div>
           </>

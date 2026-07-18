@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { useToast } from "@/components/toast";
+import { useT } from "@/lib/i18n/contexte";
 import { IconeFlecheGauche } from "@/components/icons";
 
 type ModeCout = "manuel" | "auto";
@@ -12,6 +13,7 @@ type ModeCout = "manuel" | "auto";
 export default function FormulaireLot({ role }: { role: Role }) {
   const router = useRouter();
   const { afficher } = useToast();
+  const t = useT();
 
   const [fournisseur, setFournisseur] = useState("");
   const [description, setDescription] = useState("");
@@ -36,19 +38,19 @@ export default function FormulaireLot({ role }: { role: Role }) {
     setErreur(null);
 
     if (!fournisseur.trim()) {
-      setErreur("Le fournisseur est obligatoire.");
+      setErreur(t("formulaireLot.erreurFournisseur"));
       return;
     }
 
     const declare = Number(coutDeclare);
     if (modeCout === "manuel" && coutDeclare.trim() && (!Number.isInteger(declare) || declare < 0)) {
-      setErreur("Le coût global déclaré doit être un entier positif en DA.");
+      setErreur(t("formulaireLot.erreurCout"));
       return;
     }
 
     const attendus = Number(quantiteAttendue);
     if (!quantiteAttendue.trim() || !Number.isInteger(attendus) || attendus <= 0) {
-      setErreur("La quantité attendue doit être un entier strictement positif.");
+      setErreur(t("formulaireLot.erreurQuantite"));
       return;
     }
 
@@ -72,16 +74,14 @@ export default function FormulaireLot({ role }: { role: Role }) {
         | null;
 
       if (!res.ok) {
-        setErreur(corps?.error ?? "Erreur lors de la création du lot.");
+        setErreur(corps?.error ?? t("formulaireLot.erreurCreation"));
         return;
       }
 
-      afficher(
-        `Lot n°${corps?.lot_id} créé — ${attendus} produits attendus. Raouf a été notifié pour le remplissage.`
-      );
+      afficher(t("formulaireLot.creeToast", { id: corps?.lot_id ?? "", n: attendus }));
       router.push(`/lots/${corps?.lot_id}`);
     } catch {
-      setErreur("Impossible de joindre le serveur.");
+      setErreur(t("commun.serveurInjoignable"));
     } finally {
       setEnvoi(false);
     }
@@ -90,10 +90,10 @@ export default function FormulaireLot({ role }: { role: Role }) {
   return (
     <div className="mx-auto max-w-xl space-y-6 animate-entree">
       <div className="flex items-center justify-between pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Nouveau lot (Arrivage)</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("formulaireLot.titre")}</h1>
         <Link href="/arrivages" className="lien inline-flex items-center gap-1.5 text-sm">
           <IconeFlecheGauche taille={14} />
-          Retour aux arrivages
+          {t("formulaireLot.retour")}
         </Link>
       </div>
 
@@ -106,7 +106,7 @@ export default function FormulaireLot({ role }: { role: Role }) {
       <div className="carte space-y-4">
         <div>
           <label htmlFor="fournisseur" className="libelle mb-1.5">
-            Fournisseur *
+            {t("formulaireLot.fournisseur")}
           </label>
           <input
             id="fournisseur"
@@ -126,7 +126,7 @@ export default function FormulaireLot({ role }: { role: Role }) {
 
         <div>
           <label htmlFor="quantite" className="libelle mb-1.5">
-            Quantité attendue de produits *
+            {t("formulaireLot.quantite")}
           </label>
           <input
             id="quantite"
@@ -135,27 +135,27 @@ export default function FormulaireLot({ role }: { role: Role }) {
             step={1}
             value={quantiteAttendue}
             onChange={(e) => setQuantiteAttendue(e.target.value)}
-            placeholder="Ex: 50"
+            placeholder={t("formulaireLot.quantitePlaceholder")}
             className="champ"
           />
         </div>
 
         <div>
           <label htmlFor="description" className="libelle mb-1.5">
-            Description
+            {t("formulaireLot.description")}
           </label>
           <input
             id="description"
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ex. Lot mixte bureautique"
+            placeholder={t("formulaireLot.descriptionPlaceholder")}
             className="champ"
           />
         </div>
 
         <div>
-          <label className="libelle mb-1.5">Mode de coût du lot</label>
+          <label className="libelle mb-1.5">{t("formulaireLot.modeCout")}</label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <button
               type="button"
@@ -166,8 +166,8 @@ export default function FormulaireLot({ role }: { role: Role }) {
                   : "border-brand-light-grey text-brand-warm-grey hover:border-brand-grey"
               }`}
             >
-              <span className="block font-semibold">Manuel</span>
-              <span className="block text-xs">Coût global fixe saisi à la main</span>
+              <span className="block font-semibold">{t("formulaireLot.manuel")}</span>
+              <span className="block text-xs">{t("formulaireLot.manuelDesc")}</span>
             </button>
             <button
               type="button"
@@ -178,8 +178,8 @@ export default function FormulaireLot({ role }: { role: Role }) {
                   : "border-brand-light-grey text-brand-warm-grey hover:border-brand-grey"
               }`}
             >
-              <span className="block font-semibold">Automatique</span>
-              <span className="block text-xs">Calculé depuis les produits, à valider</span>
+              <span className="block font-semibold">{t("formulaireLot.auto")}</span>
+              <span className="block text-xs">{t("formulaireLot.autoDesc")}</span>
             </button>
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function FormulaireLot({ role }: { role: Role }) {
         {modeCout === "manuel" ? (
           <div>
             <label htmlFor="cout" className="libelle mb-1.5">
-              Coût global déclaré (DA) — optionnel
+              {t("formulaireLot.coutDeclare")}
             </label>
             <input
               id="cout"
@@ -197,21 +197,22 @@ export default function FormulaireLot({ role }: { role: Role }) {
               step={1}
               value={coutDeclare}
               onChange={(e) => setCoutDeclare(e.target.value.replace(/[^\d]/g, ""))}
-              placeholder="Montant payé au fournisseur"
+              placeholder={t("formulaireLot.coutPlaceholder")}
               className="champ"
             />
             <p className="mt-1.5 text-xs text-brand-warm-grey">
               {estGerant
-                ? "Renseigné, ce montant est retiré immédiatement de la caisse (achat du lot)."
-                : "Le retrait en caisse sera validé ensuite par le gérant."}
+                ? t("formulaireLot.coutNoteGerant")
+                : t("formulaireLot.coutNoteAutre")}
             </p>
           </div>
         ) : (
           <div className="rounded-lg border border-brand-light-grey bg-brand-paper px-3 py-2.5 text-xs text-brand-warm-grey">
-            Le coût du lot sera <strong className="text-brand-black">calculé automatiquement</strong>{" "}
-            en additionnant le prix d'achat de chaque produit ajouté, puis{" "}
-            <strong className="text-brand-black">validé manuellement</strong> par le gérant pour
-            déclencher le retrait en caisse.
+            {t("formulaireLot.autoTexte1")}{" "}
+            <strong className="text-brand-black">{t("formulaireLot.autoStrong1")}</strong>{" "}
+            {t("formulaireLot.autoTexte2")}{" "}
+            <strong className="text-brand-black">{t("formulaireLot.autoStrong2")}</strong>{" "}
+            {t("formulaireLot.autoTexte3")}
           </div>
         )}
 
@@ -222,7 +223,7 @@ export default function FormulaireLot({ role }: { role: Role }) {
             disabled={envoi || !fournisseur.trim() || !quantiteAttendue.toString().trim()}
             className="btn btn-primaire w-full justify-center"
           >
-            {envoi ? "Création…" : "Créer le lot"}
+            {envoi ? t("formulaireLot.creationEnCours") : t("formulaireLot.creer")}
           </button>
         </div>
       </div>
