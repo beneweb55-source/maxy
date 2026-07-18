@@ -33,7 +33,8 @@ export async function DELETE(request: NextRequest) {
       // Nettoyer les dépendances des produits avant suppression
       await tx.reparation.deleteMany({ where: { produit_id: { in: produitIds } } });
       await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: produitIds } } });
-      await tx.mouvementCaisse.deleteMany({ where: { details: { contains: "produit" } } }); // Optionnel: ne pas toucher la caisse si lié au produit
+      await tx.vente.deleteMany({ where: { produit_id: { in: produitIds } } });
+      await tx.mouvementCaisse.deleteMany({ where: { produit_id: { in: produitIds } } });
       await tx.produit.deleteMany({ where: { id: { in: produitIds } } });
     });
 
