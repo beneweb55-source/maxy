@@ -100,10 +100,12 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
 
-  const [modalNote, setModalNote] = useState<{ produit: ProduitDto; cible: StatutProduit } | null>(
+  const [modalNote, setModalNote] = useState<{ produits: ProduitDto[]; cible: StatutProduit } | null>(
     null
   );
   const [noteTexte, setNoteTexte] = useState("");
+  const [modalPrix, setModalPrix] = useState<ProduitDto[] | null>(null);
+  const [prixTexte, setPrixTexte] = useState("");
   const [modalReparation, setModalReparation] = useState<ProduitDto | null>(null);
   const [coutReparation, setCoutReparation] = useState("");
   const [descReparation, setDescReparation] = useState("");
@@ -117,13 +119,13 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [nouvQuantite, setNouvQuantite] = useState("1");
   const [nouvPhoto, setNouvPhoto] = useState<string | null>(null);
 
-  const [modalEdit, setModalEdit] = useState<ProduitDto | null>(null);
+  const [modalEdit, setModalEdit] = useState<ProduitDto[] | null>(null);
   const [editRef, setEditRef] = useState("");
   const [editCat, setEditCat] = useState("");
   const [editPrix, setEditPrix] = useState("");
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
   const [editPhotoModifiee, setEditPhotoModifiee] = useState(false);
-  const [modalSuppr, setModalSuppr] = useState<ProduitDto | null>(null);
+  const [modalSuppr, setModalSuppr] = useState<ProduitDto[] | null>(null);
 
   const peutAgir = role === "technicien" || role === "gerant";
   const estTechnicien = role === "technicien";
@@ -171,26 +173,27 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     }
   }
 
-  function demanderTransition(produit: ProduitDto, cible: StatutProduit) {
+  function demanderTransition(produits: ProduitDto[], cible: StatutProduit) {
     if (STATUTS_NOTE_OBLIGATOIRE.includes(cible)) {
       setNoteTexte("");
-      setModalNote({ produit, cible });
+      setModalNote({ produits, cible });
       return;
     }
-    void appelApi(`/api/produits/${produit.id}/statut`, { statut: cible }).then(
-      (ok) => ok && afficher(`${produit.code_interne} → ${INFOS_STATUT[cible].libelle}`)
+    void appelApi(`/api/produits/masse/statut`, { ids: produits.map(p => p.id), statut: cible }).then(
+      (ok) => ok && afficher(`${produits.length} produit(s) → ${INFOS_STATUT[cible].libelle}`)
     );
   }
 
   async function confirmerNote() {
     if (!modalNote) return;
-    const { produit, cible } = modalNote;
-    const ok = await appelApi(`/api/produits/${produit.id}/statut`, {
+    const { produits, cible } = modalNote;
+    const ok = await appelApi(`/api/produits/masse/statut`, {
+      ids: produits.map(p => p.id),
       statut: cible,
       note: noteTexte,
     });
     if (ok) {
-      afficher(`${produit.code_interne} → ${INFOS_STATUT[cible].libelle}`);
+      afficher(`${produits.length} produit(s) → ${INFOS_STATUT[cible].libelle}`);
       setModalNote(null);
     }
   }
@@ -273,13 +276,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     }
   }
 
-  function ouvrirEdition(produit: ProduitDto) {
+  function ouvrirEdition(produits: ProduitDto[]) {
+    const produit = produits[0];
     setEditRef(produit.reference);
     setEditCat(produit.categorie);
     setEditPrix(String(produit.prix_achat));
     setEditPhoto(produit.image_url);
     setEditPhotoModifiee(false);
-    setModalEdit(produit);
+    setModalEdit(produits);
   }
 
   async function confirmerEdition() {
@@ -289,24 +293,43 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       return;
     }
     const corps: Record<string, unknown> = {
+      ids: modalEdit.map(p => p.id),
       reference: editRef.trim(),
       categorie: editCat.trim(),
       prix_achat: Number(editPrix),
     };
     if (editPhotoModifiee) corps.image_url = editPhoto ?? "";
-    const ok = await appelMethode(`/api/produits/${modalEdit.id}`, "PUT", corps);
+    const ok = await appelMethode(`/api/produits/masse/edition`, "PUT", corps);
     if (ok) {
-      afficher(`Produit ${modalEdit.code_interne} modifié.`);
+      afficher(`${modalEdit.length} produit(s) modifié(s).`);
       setModalEdit(null);
     }
   }
 
   async function confirmerSuppression() {
     if (!modalSuppr) return;
-    const ok = await appelMethode(`/api/produits/${modalSuppr.id}`, "DELETE");
+    const ok = await appelMethode(`/api/produits/masse/suppression`, "DELETE", { ids: modalSuppr.map(p => p.id) });
     if (ok) {
-      afficher(`Produit ${modalSuppr.code_interne} supprimé.`);
+      afficher(`${modalSuppr.length} produit(s) supprimé(s).`);
       setModalSuppr(null);
+    }
+  }
+
+  async function confirmerPrix() {
+    if (!modalPrix) return;
+    const prix = Number(prixTexte);
+    if (!Number.isInteger(prix) || prix <= 0) {
+      afficher("Prix invalide.", "erreur");
+      return;
+    }
+    const ok = await appelApi(`/api/produits/masse/prix`, {
+      ids: modalPrix.map(p => p.id),
+      prix_vente_fixe: prix,
+    });
+    if (ok) {
+      afficher(`Prix fixé pour ${modalPrix.length} produit(s).`);
+      setModalPrix(null);
+      setPrixTexte("");
     }
   }
 
@@ -465,10 +488,22 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       )}
 
       <ul className="space-y-3">
-        {lot.produits.map((p) => {
+        {(() => {
+          const groupes: Record<string, ProduitDto[]> = {};
+          for (const p of lot.produits) {
+            const cle = `${p.reference}|${p.categorie}|${p.prix_achat}|${p.statut}|${p.prix_vente_fixe}|${p.image_url ?? ""}|${p.derniere_note ?? ""}`;
+            if (!groupes[cle]) groupes[cle] = [];
+            groupes[cle].push(p);
+          }
+          const liste = Object.values(groupes);
+          liste.forEach(g => g.sort((a, b) => a.code_interne.localeCompare(b.code_interne)));
+          return liste;
+        })().map((groupe, idx) => {
+          const p = groupe[0];
+          const nb = groupe.length;
           const cibles = peutAgir ? (TRANSITIONS_MANUELLES[p.statut] ?? []) : [];
           return (
-            <li key={p.id} className="carte">
+            <li key={idx} className="carte">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-start gap-3">
                   {p.image_url && (
@@ -480,15 +515,24 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                     />
                   )}
                   <div className="min-w-0">
-                    <Link
-                      href={`/produits/${p.id}`}
-                      className="block truncate text-sm font-semibold transition hover:text-brand-crystal hover:underline"
-                    >
-                      <span className="font-mono text-xs text-brand-warm-grey">
-                        {p.code_interne}
-                      </span>{" "}
-                      {p.reference}
-                    </Link>
+                    {nb === 1 ? (
+                      <Link
+                        href={`/produits/${p.id}`}
+                        className="block truncate text-sm font-semibold transition hover:text-brand-crystal hover:underline"
+                      >
+                        <span className="font-mono text-xs text-brand-warm-grey">
+                          {p.code_interne}
+                        </span>{" "}
+                        {p.reference}
+                      </Link>
+                    ) : (
+                      <div className="block truncate text-sm font-semibold text-brand-black">
+                        <span className="font-mono text-xs text-brand-warm-grey">
+                          {nb} produits ({p.code_interne} à {groupe[nb - 1].code_interne})
+                        </span>{" "}
+                        {p.reference}
+                      </div>
+                    )}
                     <p className="text-xs text-brand-warm-grey">
                       {p.categorie} · achat {formaterDA(p.prix_achat)}
                       {p.cout_reparations > 0 && ` · réparations ${formaterDA(p.cout_reparations)}`}
@@ -512,13 +556,13 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                       key={cible}
                       type="button"
                       disabled={envoi}
-                      onClick={() => demanderTransition(p, cible)}
+                      onClick={() => demanderTransition(groupe, cible)}
                       className="btn btn-secondaire"
                     >
                       <BoutonTransition avant={p.statut} cible={cible} />
                     </button>
                   ))}
-                  {peutAgir && (
+                  {peutAgir && nb === 1 && (
                     <button
                       type="button"
                       disabled={envoi}
@@ -529,23 +573,36 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                       Réparation
                     </button>
                   )}
+                  {estGerant && p.statut === "ok" && (
+                    <button
+                      type="button"
+                      disabled={envoi}
+                      onClick={() => {
+                        setPrixTexte("");
+                        setModalPrix(groupe);
+                      }}
+                      className="btn btn-primaire"
+                    >
+                      Fixer le prix de vente ({nb})
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={envoi}
-                    onClick={() => ouvrirEdition(p)}
+                    onClick={() => ouvrirEdition(groupe)}
                     className="btn btn-secondaire"
                   >
                     <IconeCrayon taille={14} />
-                    Modifier
+                    Modifier ({nb})
                   </button>
                   <button
                     type="button"
                     disabled={envoi}
-                    onClick={() => setModalSuppr(p)}
+                    onClick={() => setModalSuppr(groupe)}
                     className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
                   >
                     <IconeCorbeille taille={14} />
-                    Supprimer
+                    Supprimer ({nb})
                   </button>
                 </div>
               )}
@@ -822,7 +879,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       </Modale>
 
       <Modale
-        titre={modalEdit ? `Modifier — ${modalEdit.code_interne}` : ""}
+        titre={modalEdit ? `Modifier — ${modalEdit.length} produit(s)` : ""}
         ouverte={modalEdit !== null}
         onFermer={() => setModalEdit(null)}
       >
@@ -906,7 +963,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       </Modale>
 
       <Modale
-        titre={modalSuppr ? `Supprimer — ${modalSuppr.code_interne}` : ""}
+        titre={modalSuppr ? `Supprimer — ${modalSuppr.length} produit(s)` : ""}
         ouverte={modalSuppr !== null}
         onFermer={() => setModalSuppr(null)}
       >
@@ -920,8 +977,8 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             }}
           >
             <p className="text-sm text-brand-warm-grey">
-              Le produit <strong className="text-brand-black">{modalSuppr.reference}</strong> sera
-              définitivement retiré du lot, avec son historique de statuts et ses réparations. Cette
+              Les <strong className="text-brand-black">{modalSuppr.length} produit(s)</strong> seront
+              définitivement retirés du lot, avec leur historique de statuts et leurs réparations. Cette
               action est irréversible.
             </p>
             <div className="mt-4 flex justify-end gap-2">
@@ -943,6 +1000,51 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             </div>
           </form>
         )}
+      </Modale>
+
+      <Modale
+        titre="Fixer le prix de vente"
+        ouverte={modalPrix !== null}
+        onFermer={() => setModalPrix(null)}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!envoi) {
+              void confirmerPrix();
+            }
+          }}
+        >
+          <p className="text-sm text-brand-warm-grey mb-3">
+            Fixer le prix de vente pour les <strong className="text-brand-black">{modalPrix?.length}</strong> produit(s) sélectionné(s).
+          </p>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={prixTexte}
+            onChange={(e) => setPrixTexte(e.target.value)}
+            autoFocus
+            placeholder="Prix de vente (DA)"
+            className="champ mb-3"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setModalPrix(null)}
+              className="btn btn-secondaire"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={envoi || !prixTexte.trim()}
+              className="btn btn-primaire"
+            >
+              Fixer le prix
+            </button>
+          </div>
+        </form>
       </Modale>
     </div>
   );
