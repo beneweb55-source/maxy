@@ -44,6 +44,7 @@ interface ProduitDto {
   image_url: string | null;
   derniere_note: string | null;
   cout_reparations: number;
+  prix_vente_fixe: number | null;
   reparations: ReparationDto[];
 }
 
@@ -278,6 +279,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
 
   function ouvrirEdition(produits: ProduitDto[]) {
     const produit = produits[0];
+    if (!produit) return;
     setEditRef(produit.reference);
     setEditCat(produit.categorie);
     setEditPrix(String(produit.prix_achat));
@@ -500,6 +502,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           return liste;
         })().map((groupe, idx) => {
           const p = groupe[0];
+          if (!p) return null;
           const nb = groupe.length;
           const cibles = peutAgir ? (TRANSITIONS_MANUELLES[p.statut] ?? []) : [];
           return (
@@ -528,7 +531,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                     ) : (
                       <div className="block truncate text-sm font-semibold text-brand-black">
                         <span className="font-mono text-xs text-brand-warm-grey">
-                          {nb} produits ({p.code_interne} à {groupe[nb - 1].code_interne})
+                          {nb} produits ({p.code_interne} à {groupe[nb - 1]?.code_interne})
                         </span>{" "}
                         {p.reference}
                       </div>

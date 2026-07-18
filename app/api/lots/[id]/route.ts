@@ -56,6 +56,7 @@ export async function GET(
         image_url: p.image_url ? urlPhotoProduit(p.id) : null,
         derniere_note: p.historique.at(0)?.note ?? null,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
+        prix_vente_fixe: p.prix_vente_fixe,
         reparations: p.reparations.map((r) => ({
           id: r.id,
           cout: r.cout,
