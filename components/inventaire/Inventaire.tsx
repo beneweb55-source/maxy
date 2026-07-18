@@ -333,7 +333,7 @@ export default function Inventaire({ role }: { role: Role }) {
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
-          prix_vente_fixe: formulaire.prix_vente_fixe.trim() ? Number(formulaire.prix_vente_fixe) : null,
+          prix_vente_fixe: formulaire.prix_vente_fixe?.trim() ? Number(formulaire.prix_vente_fixe) : null,
           ...(formPhotoModifiee ? { image_url: formPhoto ?? "" } : {}),
         }),
       });
