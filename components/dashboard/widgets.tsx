@@ -31,9 +31,11 @@ import { ICONES_ACTIVITE, IconeTendanceBas, IconeTendanceHaut } from "@/componen
 export function RenduWidget({
   widget,
   donnees,
+  role,
 }: {
   widget: Widget;
   donnees: DonneesDashboard;
+  role?: string;
 }) {
   switch (widget.type) {
     case "kpis":
@@ -49,7 +51,7 @@ export function RenduWidget({
     case "activites":
       return <Activites activites={donnees.activites ?? []} />;
     case "tableau":
-      return <Tableau source={widget.source} donnees={donnees} />;
+      return <Tableau source={widget.source} donnees={donnees} role={role} />;
   }
 }
 
@@ -415,22 +417,16 @@ function Activites({ activites }: { activites: Activite[] }) {
   );
 }
 
-function Tableau({
-  source,
-  donnees,
-}: {
-  source: Extract<Widget, { type: "tableau" }>["source"];
-  donnees: DonneesDashboard;
-}) {
+function Tableau({ source, donnees, role }: { source: SourceTableau; donnees: DonneesDashboard; role?: string }) {
   switch (source) {
     case "produits_en_vente":
-      return <TableauEnVente lignes={donnees.tableaux.produits_en_vente ?? []} />;
+      return <TableauEnVente lignes={donnees.tableaux.produits_en_vente ?? []} role={role} />;
     case "rapports_a_valider":
       return <TableauRapports lignes={donnees.tableaux.rapports_a_valider ?? []} />;
     case "produits_a_tarifer":
       return <TableauATarifer lignes={donnees.tableaux.produits_a_tarifer ?? []} />;
     case "dernieres_ventes":
-      return <TableauVentes lignes={donnees.tableaux.dernieres_ventes ?? []} />;
+      return <TableauVentes lignes={donnees.tableaux.dernieres_ventes ?? []} role={role} />;
   }
 }
 
@@ -449,7 +445,8 @@ function Vide({ message }: { message: string }) {
   return <p className="mt-3 text-sm text-brand-warm-grey">{message}</p>;
 }
 
-function TableauEnVente({ lignes }: { lignes: LigneEnVente[] }) {
+function TableauEnVente({ lignes, role }: { lignes: LigneEnVente[]; role?: string }) {
+  const estSocial = role === "social_media";
   if (lignes.length === 0) return <Vide message="Aucun produit en vente actuellement." />;
   return (
     <CadreTableau>
@@ -457,7 +454,7 @@ function TableauEnVente({ lignes }: { lignes: LigneEnVente[] }) {
         <tr className="border-b border-brand-light-grey">
           <th className={CLASSE_ENTETE}>Produit</th>
           <th className={`${CLASSE_ENTETE} text-right`}>Prix fixé</th>
-          <th className={`${CLASSE_ENTETE} text-right`}>Marge prévue</th>
+          {!estSocial && <th className={`${CLASSE_ENTETE} text-right`}>Marge prévue</th>}
           <th className={`${CLASSE_ENTETE} text-right`}>En vente depuis</th>
           <th className={CLASSE_ENTETE} />
         </tr>
@@ -472,13 +469,15 @@ function TableauEnVente({ lignes }: { lignes: LigneEnVente[] }) {
             <td className={`${CLASSE_CELLULE} text-right font-semibold`}>
               {l.prix_vente_fixe !== null ? formaterDA(l.prix_vente_fixe) : "—"}
             </td>
-            <td
-              className={`${CLASSE_CELLULE} text-right font-semibold ${
-                l.marge_prevue >= 0 ? "text-succes" : "text-danger"
-              }`}
-            >
-              {formaterDA(l.marge_prevue)}
-            </td>
+            {!estSocial && (
+              <td
+                className={`${CLASSE_CELLULE} text-right font-semibold ${
+                  l.marge_prevue >= 0 ? "text-succes" : "text-danger"
+                }`}
+              >
+                {formaterDA(l.marge_prevue)}
+              </td>
+            )}
             <td className={`${CLASSE_CELLULE} text-right`}>{l.jours_en_vente} j</td>
             <td className={`${CLASSE_CELLULE} text-right`}>
               <Link href="/ventes" className="lien text-sm">
@@ -573,7 +572,8 @@ function TableauATarifer({ lignes }: { lignes: LigneATarifer[] }) {
   );
 }
 
-function TableauVentes({ lignes }: { lignes: LigneVente[] }) {
+function TableauVentes({ lignes, role }: { lignes: LigneVente[]; role?: string }) {
+  const estSocial = role === "social_media";
   if (lignes.length === 0) return <Vide message="Aucune vente enregistrée." />;
   return (
     <CadreTableau>
@@ -581,7 +581,7 @@ function TableauVentes({ lignes }: { lignes: LigneVente[] }) {
         <tr className="border-b border-brand-light-grey">
           <th className={CLASSE_ENTETE}>Produit</th>
           <th className={`${CLASSE_ENTETE} text-right`}>Prix</th>
-          <th className={`${CLASSE_ENTETE} text-right`}>Marge</th>
+          {!estSocial && <th className={`${CLASSE_ENTETE} text-right`}>Marge</th>}
           <th className={CLASSE_ENTETE}>Vendeur</th>
           <th className={`${CLASSE_ENTETE} text-right`}>Date</th>
         </tr>
@@ -598,13 +598,15 @@ function TableauVentes({ lignes }: { lignes: LigneVente[] }) {
               )}
             </td>
             <td className={`${CLASSE_CELLULE} text-right`}>{formaterDA(l.prix_vente_reel)}</td>
-            <td
-              className={`${CLASSE_CELLULE} text-right font-semibold ${
-                l.annulee ? "" : l.marge >= 0 ? "text-succes" : "text-danger"
-              }`}
-            >
-              {formaterDA(l.marge)}
-            </td>
+            {!estSocial && (
+              <td
+                className={`${CLASSE_CELLULE} text-right font-semibold ${
+                  l.annulee ? "" : l.marge >= 0 ? "text-succes" : "text-danger"
+                }`}
+              >
+                {formaterDA(l.marge)}
+              </td>
+            )}
             <td className={CLASSE_CELLULE}>{l.vendeur}</td>
             <td className={`${CLASSE_CELLULE} text-right`}>
               {new Date(l.quand).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}

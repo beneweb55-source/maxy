@@ -84,6 +84,7 @@ export default function VentesClient({ role }: { role: Role }) {
 
   const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
   const estGerant = role === "gerant";
+  const estSocial = role === "social_media";
 
   const chargerCartes = useCallback(async () => {
     try {
@@ -440,14 +441,16 @@ export default function VentesClient({ role }: { role: Role }) {
                           {c.prix_vente_fixe !== null ? formaterDA(c.prix_vente_fixe) : "—"}
                         </dd>
                       </div>
-                      <div className="flex justify-between">
-                        <dt className="text-brand-warm-grey">Marge prévue</dt>
-                        <dd
-                          className={`font-semibold ${c.marge_prevue >= 0 ? "text-succes" : "text-danger"}`}
-                        >
-                          {formaterDA(c.marge_prevue)}
-                        </dd>
-                      </div>
+                      {!estSocial && (
+                        <div className="flex justify-between">
+                          <dt className="text-brand-warm-grey">Marge prévue</dt>
+                          <dd
+                            className={`font-semibold ${c.marge_prevue >= 0 ? "text-succes" : "text-danger"}`}
+                          >
+                            {formaterDA(c.marge_prevue)}
+                          </dd>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <dt className="text-brand-warm-grey">En vente depuis</dt>
                         <dd>{c.jours_en_vente} j</dd>
@@ -533,12 +536,16 @@ export default function VentesClient({ role }: { role: Role }) {
               <strong className="text-brand-black">
                 {formaterDA(historique.totaux.chiffre_affaires)}
               </strong>{" "}
-              · marge totale{" "}
-              <strong
-                className={historique.totaux.marge >= 0 ? "text-succes" : "text-danger"}
-              >
-                {formaterDA(historique.totaux.marge)}
-              </strong>
+              {!estSocial && (
+                <>
+                  {" "}· marge totale{" "}
+                  <strong
+                    className={historique.totaux.marge >= 0 ? "text-succes" : "text-danger"}
+                  >
+                    {formaterDA(historique.totaux.marge)}
+                  </strong>
+                </>
+              )}
             </p>
           )}
 
@@ -563,7 +570,7 @@ export default function VentesClient({ role }: { role: Role }) {
                   <tr>
                     <th className="entete-table">Produit</th>
                     <th className="entete-table text-right">Prix</th>
-                    <th className="entete-table text-right">Marge</th>
+                    {!estSocial && <th className="entete-table text-right">Marge</th>}
                     <th className="entete-table">Canal</th>
                     <th className="entete-table">Vendeur</th>
                     <th className="entete-table text-right">Date</th>
@@ -602,13 +609,15 @@ export default function VentesClient({ role }: { role: Role }) {
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">{formaterDA(v.prix_vente_reel)}</td>
-                      <td
-                        className={`px-3 py-2 text-right font-semibold ${
-                          v.annulee ? "" : v.marge >= 0 ? "text-succes" : "text-danger"
-                        }`}
-                      >
-                        {formaterDA(v.marge)}
-                      </td>
+                      {!estSocial && (
+                        <td
+                          className={`px-3 py-2 text-right font-semibold ${
+                            v.annulee ? "" : v.marge >= 0 ? "text-succes" : "text-danger"
+                          }`}
+                        >
+                          {formaterDA(v.marge)}
+                        </td>
+                      )}
                       <td className="px-3 py-2">{v.canal ?? "—"}</td>
                       <td className="px-3 py-2">{v.vendeur}</td>
                       <td className="px-3 py-2 text-right">
@@ -664,7 +673,7 @@ export default function VentesClient({ role }: { role: Role }) {
                 autoFocus
                 className="champ"
               />
-              {Number(prixReel) > 0 && (
+              {!estSocial && Number(prixReel) > 0 && (
                 <p className="mt-1 text-xs">
                   Marge :{" "}
                   <strong
@@ -831,7 +840,7 @@ export default function VentesClient({ role }: { role: Role }) {
               autoFocus
               className="champ"
             />
-            {Number(prixTotalBundle) > 0 && (
+            {!estSocial && Number(prixTotalBundle) > 0 && (
               <p className="mt-1 text-xs">
                 Marge totale :{" "}
                 <strong

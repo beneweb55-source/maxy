@@ -11,7 +11,7 @@ export async function GET() {
   try {
     const config = configPourRole(acces.user.role);
     const donnees = await chargerDonneesDashboard(acces.user, config);
-    const reponse: ReponseDashboard = { config, donnees };
+    const reponse: ReponseDashboard = { role: acces.user.role, config, donnees };
     return NextResponse.json(reponse);
   } catch (e) {
     console.error("GET /api/dashboard", e);

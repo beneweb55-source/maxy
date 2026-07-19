@@ -89,7 +89,7 @@ export default function Dashboard() {
           widgetSansCarte(widget) ? (
             <div key={widget.id} className={`col-span-1 ${CLASSE_TAILLE[widget.taille]} animate-entree`} style={{ animationDelay: `${index * 50}ms` }}>
               {widget.titre && <h2 className="libelle mb-3 text-brand-smooth/80">{widget.titre}</h2>}
-              <RenduWidget widget={widget} donnees={donnees} />
+              <RenduWidget widget={widget} donnees={donnees} role={reponse.role} />
             </div>
           ) : (
             <section
@@ -98,7 +98,7 @@ export default function Dashboard() {
             >
               {widget.titre && <h2 className="libelle mb-4 text-brand-smooth/80">{widget.titre}</h2>}
               <div className="flex-1">
-                <RenduWidget widget={widget} donnees={donnees} />
+                <RenduWidget widget={widget} donnees={donnees} role={reponse.role} />
               </div>
             </section>
           )

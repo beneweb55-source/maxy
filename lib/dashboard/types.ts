@@ -1,4 +1,4 @@
-import type { StatutProduit } from "@prisma/client";
+import type { Role, StatutProduit } from "@prisma/client";
 import type {
   CleKpi,
   ConfigDashboard,
@@ -91,6 +91,7 @@ export interface DonneesDashboard {
 }
 
 export interface ReponseDashboard {
+  role?: Role;
   config: ConfigDashboard;
   donnees: DonneesDashboard;
 }
