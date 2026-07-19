@@ -424,14 +424,20 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-4 tabular-nums">
-                      <span className="w-24 text-right text-xs text-brand-warm-grey">
-                        {g.achatMin === g.achatMax
-                          ? formaterDA(g.achatMin)
-                          : `${formaterDA(g.achatMin)} – ${formaterDA(g.achatMax)}`}
-                      </span>
-                      <span className="w-24 text-right font-bold text-brand-orange">
-                        {g.prix_vente_fixe !== null ? formaterDA(g.prix_vente_fixe) : "—"}
-                      </span>
+                      <div className="w-24 text-right text-xs">
+                        <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">Achat unitaire</span>
+                        <span className="font-semibold text-brand-smooth">
+                          {g.achatMin === g.achatMax
+                            ? formaterDA(g.achatMin)
+                            : `${formaterDA(g.achatMin)} – ${formaterDA(g.achatMax)}`}
+                        </span>
+                      </div>
+                      <div className="w-24 text-right rounded-lg bg-brand-glow/25 px-2.5 py-1 text-sm">
+                        <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">Vente</span>
+                        <span className="font-bold text-brand-orange">
+                          {g.prix_vente_fixe !== null ? formaterDA(g.prix_vente_fixe) : "—"}
+                        </span>
+                      </div>
                     </div>
                   </li>
                 ))}

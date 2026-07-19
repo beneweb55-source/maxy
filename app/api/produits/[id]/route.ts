@@ -246,16 +246,11 @@ export async function DELETE(
       },
     });
     if (!produit) return erreur(404, "Produit introuvable.");
-    if (produit.statut === "vendu" || produit._count.ventes > 0 || produit._count.mouvements > 0) {
-      return erreur(
-        400,
-        "Ce produit a un historique de vente ou de caisse : il ne peut pas être supprimé."
-      );
-    }
-
     await prisma.$transaction([
       prisma.historiqueStatut.deleteMany({ where: { produit_id: produitId } }),
       prisma.reparation.deleteMany({ where: { produit_id: produitId } }),
+      prisma.vente.deleteMany({ where: { produit_id: produitId } }),
+      prisma.mouvementCaisse.deleteMany({ where: { produit_id: produitId } }),
       prisma.produit.delete({ where: { id: produitId } }),
     ]);
 

@@ -404,8 +404,8 @@ export default function Inventaire({ role }: { role: Role }) {
   const page = donnees?.page ?? 1;
 
   const champsProduit = (
-    <div className="space-y-3">
-      <div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2">
         <label className="libelle mb-1.5" htmlFor="ref-produit">
           Référence *
         </label>
@@ -418,7 +418,7 @@ export default function Inventaire({ role }: { role: Role }) {
           className="champ"
         />
       </div>
-      <div>
+      <div className="sm:col-span-2">
         <label className="libelle mb-1.5" htmlFor="cat-produit">
           Catégorie *
         </label>
@@ -437,49 +437,47 @@ export default function Inventaire({ role }: { role: Role }) {
           ))}
         </datalist>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
-          <label className="libelle mb-1.5" htmlFor="prix-produit">
-            Prix achat (DA) *
+      <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
+        <label className="libelle mb-1.5" htmlFor="prix-produit">
+          Prix achat (DA) *
+        </label>
+        <input
+          id="prix-produit"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          value={formulaire.prix_achat}
+          onChange={(e) =>
+            setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
+          }
+          className="champ text-right"
+        />
+      </div>
+      {modalEdition !== null && (
+        <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
+          <label
+            className="libelle mb-1.5 text-brand-orange"
+            htmlFor="prix-vente-produit"
+          >
+            Prix vente (DA)
           </label>
           <input
-            id="prix-produit"
+            id="prix-vente-produit"
             type="number"
             inputMode="numeric"
             min={0}
             step={1}
-            value={formulaire.prix_achat}
+            value={formulaire.prix_vente_fixe}
             onChange={(e) =>
-              setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
+              setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
             }
-            className="champ text-right"
+            className="champ text-right font-semibold"
+            placeholder="—"
           />
         </div>
-        {modalEdition !== null && (
-          <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
-            <label
-              className="libelle mb-1.5 text-brand-orange"
-              htmlFor="prix-vente-produit"
-            >
-              Prix vente (DA)
-            </label>
-            <input
-              id="prix-vente-produit"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={1}
-              value={formulaire.prix_vente_fixe}
-              onChange={(e) =>
-                setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
-              }
-              className="champ text-right font-semibold"
-              placeholder="—"
-            />
-          </div>
-        )}
-      </div>
-      <div>
+      )}
+      <div className="sm:col-span-2 mt-2">
         <label className="libelle mb-1.5">Photo du produit</label>
         <ChampPhoto
           apercu={formPhoto}
@@ -755,7 +753,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           ? formaterDA(g.prixMin)
                           : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
                       </span>
-                      <span className="block text-xs text-brand-grey">achat unitaire</span>
+                      <span className="block text-[10px] font-semibold uppercase text-brand-grey mt-0.5">Achat unitaire</span>
                     </div>
                   )}
                   <div className="hidden shrink-0 rounded-lg bg-brand-glow/25 px-2.5 py-1 text-right text-sm sm:block">
@@ -766,8 +764,8 @@ export default function Inventaire({ role }: { role: Role }) {
                           ? formaterDA(g.venteMin)
                           : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
                     </span>
-                    <span className="block text-xs font-semibold text-brand-orange/70">
-                      prix de vente
+                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mt-0.5">
+                      Vente
                     </span>
                   </div>
                   <button
@@ -889,7 +887,8 @@ export default function Inventaire({ role }: { role: Role }) {
                   </td>
                   {!estSocial && (
                     <td className="px-3 py-2 text-right">
-                      {formaterDA(p.prix_achat)}
+                      <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">Achat</span>
+                      <span className="font-semibold text-brand-black">{formaterDA(p.prix_achat)}</span>
                       {p.cout_reparations > 0 && (
                         <span className="block text-xs text-brand-grey">
                           +{formaterDA(p.cout_reparations)} rép.
@@ -898,6 +897,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     </td>
                   )}
                   <td className="px-3 py-2 text-right">
+                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">Vente</span>
                     {prixVenteAffiche(p) !== null ? (
                       <span className="font-bold text-brand-orange">
                         {formaterDA(prixVenteAffiche(p)!)}
@@ -1143,12 +1143,12 @@ export default function Inventaire({ role }: { role: Role }) {
               >
                 Annuler
               </button>
-              <button
-                type="button"
-                disabled={envoi}
-                onClick={() => void supprimerProduit()}
-                className="btn btn-danger"
-              >
+                <button
+                  type="button"
+                  disabled={envoi}
+                  onClick={() => void supprimerProduit()}
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center gap-1.5"
+                >
                 <IconeCorbeille taille={15} />
                 Supprimer définitivement
               </button>

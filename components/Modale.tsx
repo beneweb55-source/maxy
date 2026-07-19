@@ -23,30 +23,11 @@ export default function Modale({
   // fermeture. Dépend uniquement de `ouverte` pour rester stable.
   useEffect(() => {
     if (!ouverte) return;
-    const defilementY = window.scrollY;
     const style = document.body.style;
-    const initial = {
-      position: style.position,
-      top: style.top,
-      left: style.left,
-      right: style.right,
-      width: style.width,
-      overflow: style.overflow,
-    };
-    style.position = "fixed";
-    style.top = `-${defilementY}px`;
-    style.left = "0";
-    style.right = "0";
-    style.width = "100%";
+    const originalOverflow = style.overflow;
     style.overflow = "hidden";
     return () => {
-      style.position = initial.position;
-      style.top = initial.top;
-      style.left = initial.left;
-      style.right = initial.right;
-      style.width = initial.width;
-      style.overflow = initial.overflow;
-      window.scrollTo(0, defilementY);
+      style.overflow = originalOverflow;
     };
   }, [ouverte]);
 
