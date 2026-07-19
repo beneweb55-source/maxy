@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import SelecteurLangue from "@/components/SelecteurLangue";
 import { useT } from "@/lib/i18n/contexte";
+import { IconeOeil, IconeOeilBarre } from "@/components/icons";
 
 function destinationSure(brut: string | null): string {
   if (brut && brut.startsWith("/") && !brut.startsWith("//")) return brut;
@@ -16,6 +16,7 @@ export default function FormulaireConnexion() {
   const t = useT();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
 
@@ -46,9 +47,6 @@ export default function FormulaireConnexion() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-smooth p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-4 flex justify-center">
-          <SelecteurLangue sombre />
-        </div>
         <div className="mb-7 flex flex-col items-center gap-4">
           <img
             src="/brand/solutionmaxi-logo-fonce.svg"
@@ -78,15 +76,25 @@ export default function FormulaireConnexion() {
             <label htmlFor="password" className="libelle mb-1.5">
               {t("connexion.motDePasse")}
             </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="champ"
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="champ pr-10"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-warm-grey hover:text-brand-black focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              >
+                {showPassword ? <IconeOeilBarre taille={16} /> : <IconeOeil taille={16} />}
+              </button>
+            </div>
           </div>
 
           {erreur && (
