@@ -11,6 +11,7 @@ import {
   type ActionRapide,
   type CleKpi,
   type SourceGraphique,
+  type SourceTableau,
   type Widget,
 } from "@/lib/dashboard/config";
 import type {
