@@ -101,12 +101,7 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
   const [rapport, setRapport] = useState<RapportDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<Map<number, DecisionRapport>>(new Map());
-  const [aiDecisionLoading, setAiDecisionLoading] = useState<Set<number>>(new Set());
-  const [aiDecisions, setAiDecisions] = useState<Map<number, {
-    valeur_marche_estimee: number;
-    decision_recommandee: string;
-    analyse: string;
-  }>>(new Map());
+
   const [envoi, setEnvoi] = useState(false);
 
   const estGerant = role === "gerant";
@@ -203,37 +198,6 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
       await rafraichir();
     } finally {
       setEnvoi(false);
-    }
-  }
-
-  async function estimerDecisionIA(p: ProduitRapport) {
-    setAiDecisionLoading((prev) => new Set(prev).add(p.id));
-    try {
-      const res = await fetch("/api/ai/decision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reference: p.reference,
-          categorie: p.categorie,
-          pannes: p.derniere_note || p.statut,
-          prix_achat: p.prix_achat,
-          devis_reparation: p.cout_reparations,
-        }),
-      });
-      if (!res.ok) {
-        afficher("Erreur IA.", "erreur");
-        return;
-      }
-      const data = await res.json();
-      setAiDecisions((prev) => new Map(prev).set(p.id, data));
-    } catch {
-      afficher("Erreur réseau.", "erreur");
-    } finally {
-      setAiDecisionLoading((prev) => {
-        const next = new Set(prev);
-        next.delete(p.id);
-        return next;
-      });
     }
   }
 
@@ -381,45 +345,19 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
                     <BadgeStatut statut={p.statut} />
                   </div>
                   {enAttente && estGerant && (
-                    <div className="mt-2 flex flex-col gap-3 print:hidden">
-                      <div className="flex flex-wrap gap-3">
-                        {(Object.keys(LIBELLES_DECISION) as DecisionRapport[]).map((d) => (
-                          <label key={d} className={`flex items-center gap-1.5 text-sm cursor-pointer border p-2 rounded transition ${decisions.get(p.id) === d ? "bg-brand-orange/10 border-brand-orange font-semibold" : "hover:bg-brand-light-grey/20"}`}>
-                            <input
-                              type="radio"
-                              name={`decision-${p.id}`}
-                              checked={decisions.get(p.id) === d}
-                              onChange={() => setDecisions(new Map(decisions).set(p.id, d))}
-                              className="accent-brand-orange"
-                            />
-                            {LIBELLES_DECISION[d]}
-                          </label>
-                        ))}
-                      </div>
-
-                      <div className="rounded-lg bg-brand-glow/5 border border-brand-glow/20 p-3 max-w-xl">
-                         <div className="flex justify-between items-center">
-                            <span className="text-xs font-semibold text-brand-smooth">Assistant IA Gemini ✨</span>
-                            <button 
-                              type="button" 
-                              disabled={aiDecisionLoading.has(p.id)}
-                              onClick={() => estimerDecisionIA(p)}
-                              className="btn btn-secondaire text-[11px] px-2 py-1 shadow-sm"
-                            >
-                               {aiDecisionLoading.has(p.id) ? "Analyse en cours..." : "Aide à la décision"}
-                            </button>
-                         </div>
-                         {aiDecisions.has(p.id) && (() => {
-                            const rec = aiDecisions.get(p.id)!;
-                            return (
-                               <div className="mt-3 text-xs text-brand-warm-grey space-y-1.5">
-                                  <p>Valeur marchande estimée (si réparé) : <strong className="text-brand-black">{formaterDA(rec.valeur_marche_estimee)}</strong></p>
-                                  <p>Décision recommandée : <strong className="text-brand-orange uppercase">{rec.decision_recommandee.replace("_", " ")}</strong></p>
-                                  <p className="italic border-l-2 border-brand-glow/40 pl-2 mt-1.5 py-0.5 bg-brand-white/50">"{rec.analyse}"</p>
-                               </div>
-                            )
-                         })()}
-                      </div>
+                    <div className="mt-2 flex flex-wrap gap-3 print:hidden">
+                      {(Object.keys(LIBELLES_DECISION) as DecisionRapport[]).map((d) => (
+                        <label key={d} className={`flex items-center gap-1.5 text-sm cursor-pointer border p-2 rounded transition ${decisions.get(p.id) === d ? "bg-brand-orange/10 border-brand-orange font-semibold" : "hover:bg-brand-light-grey/20"}`}>
+                          <input
+                            type="radio"
+                            name={`decision-${p.id}`}
+                            checked={decisions.get(p.id) === d}
+                            onChange={() => setDecisions(new Map(decisions).set(p.id, d))}
+                            className="accent-brand-orange"
+                          />
+                          {LIBELLES_DECISION[d]}
+                        </label>
+                      ))}
                     </div>
                   )}
                   {(!enAttente || !estGerant) && (
