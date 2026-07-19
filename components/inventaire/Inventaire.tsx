@@ -61,7 +61,7 @@ const COLONNES_TRI = [
   { cle: "categorie", libelle: "Catégorie" },
   { cle: "statut", libelle: "Statut" },
   { cle: "date_entree", libelle: "Entrée" },
-  { cle: "prix_achat", libelle: "Achat" },
+  { cle: "prix_achat", libelle: "Prix achat" },
   { cle: "prix_vente_fixe", libelle: "Prix vente" },
 ] as const;
 
@@ -81,6 +81,13 @@ const FORMULAIRE_VIDE: FormulaireProduit = {
   prix_vente_fixe: "",
 };
 
+// Prix de vente affiché pour une unité : le prix réel si elle est vendue,
+// sinon le prix de vente fixé (null si aucun des deux).
+function prixVenteAffiche(p: LigneProduit): number | null {
+  if (p.statut === "vendu" && p.prix_vente_reel !== null) return p.prix_vente_reel;
+  return p.prix_vente_fixe;
+}
+
 interface GroupeProduits {
   cle: string;
   reference: string;
@@ -89,6 +96,8 @@ interface GroupeProduits {
   unites: LigneProduit[];
   prixMin: number;
   prixMax: number;
+  venteMin: number | null;
+  venteMax: number | null;
   resumeStatuts: { statut: StatutProduit; n: number }[];
 }
 
@@ -102,6 +111,9 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
   }
   return Array.from(groupes.entries()).map(([cle, unites]) => {
     const prix = unites.map((u) => u.prix_achat);
+    const vente = unites
+      .map(prixVenteAffiche)
+      .filter((v): v is number => v !== null);
     const parStatut = new Map<StatutProduit, number>();
     for (const u of unites) parStatut.set(u.statut, (parStatut.get(u.statut) ?? 0) + 1);
     const premier = unites[0]!;
@@ -113,6 +125,8 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
       unites,
       prixMin: Math.min(...prix),
       prixMax: Math.max(...prix),
+      venteMin: vente.length > 0 ? Math.min(...vente) : null,
+      venteMax: vente.length > 0 ? Math.max(...vente) : null,
       resumeStatuts: Array.from(parStatut.entries()).map(([statut, n]) => ({ statut, n })),
     };
   });
@@ -395,32 +409,31 @@ export default function Inventaire({ role }: { role: Role }) {
           onChange={(e) => setFormulaire({ ...formulaire, reference: e.target.value })}
           placeholder="Ex. Dell Latitude 5480 i5 8Go/256Go"
           className="champ"
-          autoFocus
         />
       </div>
-      <div className="flex flex-wrap sm:flex-nowrap gap-3">
-        <div className="flex-1 min-w-[120px]">
-          <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="cat-produit">
-            Catégorie&nbsp;*
-          </label>
-          <input
-            id="cat-produit"
-            type="text"
-            list="categories-inventaire"
-            value={formulaire.categorie}
-            onChange={(e) => setFormulaire({ ...formulaire, categorie: e.target.value })}
-            placeholder="Laptop, Écran…"
-            className="champ"
-          />
-          <datalist id="categories-inventaire">
-            {(donnees?.categories ?? []).map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-        <div className="flex-1 min-w-[120px]">
-          <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="prix-produit">
-            Prix achat (DA)&nbsp;*
+      <div>
+        <label className="libelle mb-1.5" htmlFor="cat-produit">
+          Catégorie *
+        </label>
+        <input
+          id="cat-produit"
+          type="text"
+          list="categories-inventaire"
+          value={formulaire.categorie}
+          onChange={(e) => setFormulaire({ ...formulaire, categorie: e.target.value })}
+          placeholder="Laptop, Écran…"
+          className="champ"
+        />
+        <datalist id="categories-inventaire">
+          {(donnees?.categories ?? []).map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
+          <label className="libelle mb-1.5" htmlFor="prix-produit">
+            Prix achat (DA) *
           </label>
           <input
             id="prix-produit"
@@ -436,8 +449,11 @@ export default function Inventaire({ role }: { role: Role }) {
           />
         </div>
         {modalEdition !== null && (
-          <div className="flex-1 min-w-[120px]">
-            <label className="libelle mb-1.5 whitespace-nowrap" htmlFor="prix-vente-produit">
+          <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
+            <label
+              className="libelle mb-1.5 text-brand-orange"
+              htmlFor="prix-vente-produit"
+            >
               Prix vente (DA)
             </label>
             <input
@@ -450,7 +466,7 @@ export default function Inventaire({ role }: { role: Role }) {
               onChange={(e) =>
                 setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
               }
-              className="champ text-right"
+              className="champ text-right font-semibold"
               placeholder="—"
             />
           </div>
@@ -715,12 +731,24 @@ export default function Inventaire({ role }: { role: Role }) {
                     </p>
                   </div>
                   <div className="hidden shrink-0 text-right text-sm sm:block">
-                    <span className="font-semibold">
+                    <span className="font-semibold text-brand-smooth">
                       {g.prixMin === g.prixMax
                         ? formaterDA(g.prixMin)
                         : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
                     </span>
                     <span className="block text-xs text-brand-grey">achat unitaire</span>
+                  </div>
+                  <div className="hidden shrink-0 rounded-lg bg-brand-glow/25 px-2.5 py-1 text-right text-sm sm:block">
+                    <span className="font-bold text-brand-orange">
+                      {g.venteMin === null
+                        ? "—"
+                        : g.venteMin === g.venteMax
+                          ? formaterDA(g.venteMin)
+                          : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
+                    </span>
+                    <span className="block text-xs font-semibold text-brand-orange/70">
+                      prix de vente
+                    </span>
                   </div>
                   <button
                     type="button"
@@ -748,7 +776,12 @@ export default function Inventaire({ role }: { role: Role }) {
                             {p.code_interne}
                           </span>{" "}
                           <span className="text-xs text-brand-grey">
-                            lot n°{p.lot_id} · {formaterDA(p.prix_achat)} · {p.jours_stock} j
+                            lot n°{p.lot_id} · achat {formaterDA(p.prix_achat)} · {p.jours_stock} j
+                          </span>{" "}
+                          <span className="text-xs font-bold text-brand-orange">
+                            {prixVenteAffiche(p) !== null
+                              ? `vente ${formaterDA(prixVenteAffiche(p)!)}`
+                              : ""}
                           </span>
                         </button>
                         <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
@@ -838,12 +871,17 @@ export default function Inventaire({ role }: { role: Role }) {
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    {p.statut === "vendu" && p.prix_vente_reel !== null ? (
-                      <span className="font-bold text-brand-orange">{formaterDA(p.prix_vente_reel)}</span>
-                    ) : p.prix_vente_fixe !== null ? (
-                      formaterDA(p.prix_vente_fixe)
+                    {prixVenteAffiche(p) !== null ? (
+                      <span className="font-bold text-brand-orange">
+                        {formaterDA(prixVenteAffiche(p)!)}
+                        {p.statut === "vendu" && (
+                          <span className="block text-[10px] font-semibold uppercase text-brand-grey">
+                            vendu
+                          </span>
+                        )}
+                      </span>
                     ) : (
-                      "—"
+                      <span className="text-brand-grey">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">{p.jours_stock}</td>
@@ -963,7 +1001,7 @@ export default function Inventaire({ role }: { role: Role }) {
         <div className="space-y-3">
           {champsProduit}
 
-          {modalEdition && peutStatut && modalEdition.statut !== "vendu" && (
+          {modalEdition && peutStatut && (
             <div className="space-y-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="libelle">Statut</span>

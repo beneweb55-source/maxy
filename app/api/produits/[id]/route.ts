@@ -191,9 +191,6 @@ export async function PUT(
   try {
     const produit = await prisma.produit.findUnique({ where: { id: produitId } });
     if (!produit) return erreur(404, "Produit introuvable.");
-    if (produit.statut === "vendu") {
-      return erreur(400, "Produit vendu : fiche verrouillée, aucune modification possible.");
-    }
     if (donnees.a_jeter === true && produit.statut !== "hs") {
       return erreur(400, "« À jeter » ne concerne que les produits HS.");
     }

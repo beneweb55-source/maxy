@@ -16,15 +16,37 @@ export default function Modale({
   large?: boolean;
   children: React.ReactNode;
 }) {
-  // Verrouille le défilement de la page tant que la modale est ouverte :
-  // le formulaire reste centré et l'arrière-plan ne défile pas. Dépend
-  // uniquement de `ouverte` pour rester stable entre les rendus.
+  // Verrouille le défilement en figeant le body à sa position courante
+  // (position: fixed + top négatif) : aucun saut de page possible à
+  // l'ouverture (autofocus, re-layout…), l'arrière-plan reste exactement au
+  // niveau où l'utilisateur se trouvait, et la position est restaurée à la
+  // fermeture. Dépend uniquement de `ouverte` pour rester stable.
   useEffect(() => {
     if (!ouverte) return;
-    const overflowInitial = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const defilementY = window.scrollY;
+    const style = document.body.style;
+    const initial = {
+      position: style.position,
+      top: style.top,
+      left: style.left,
+      right: style.right,
+      width: style.width,
+      overflow: style.overflow,
+    };
+    style.position = "fixed";
+    style.top = `-${defilementY}px`;
+    style.left = "0";
+    style.right = "0";
+    style.width = "100%";
+    style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = overflowInitial;
+      style.position = initial.position;
+      style.top = initial.top;
+      style.left = initial.left;
+      style.right = initial.right;
+      style.width = initial.width;
+      style.overflow = initial.overflow;
+      window.scrollTo(0, defilementY);
     };
   }, [ouverte]);
 
