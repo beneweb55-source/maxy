@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { IconeFermer } from "./icons";
 
 export default function Modale({
@@ -16,11 +17,14 @@ export default function Modale({
   large?: boolean;
   children: React.ReactNode;
 }) {
-  // Verrouille le défilement en figeant le body à sa position courante
-  // (position: fixed + top négatif) : aucun saut de page possible à
-  // l'ouverture (autofocus, re-layout…), l'arrière-plan reste exactement au
-  // niveau où l'utilisateur se trouvait, et la position est restaurée à la
-  // fermeture. Dépend uniquement de `ouverte` pour rester stable.
+  // On utilise un portail React pour rendre la modale directement dans
+  // document.body. Cela évite qu'un ancêtre avec `transform` (par exemple
+  // la classe `animate-entree`) ne crée un nouveau « containing block » qui
+  // empêcherait `position: fixed` de fonctionner par rapport au viewport.
+  const [monté, setMonté] = useState(false);
+  useEffect(() => setMonté(true), []);
+
+  // Verrouille le défilement du body à l'ouverture de la modale.
   useEffect(() => {
     if (!ouverte) return;
     const style = document.body.style;
@@ -40,21 +44,26 @@ export default function Modale({
     return () => document.removeEventListener("keydown", surEchap);
   }, [ouverte, onFermer]);
 
-  if (!ouverte) return null;
-  return (
+  if (!ouverte || !monté) return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-label={titre}
     >
-      {/* Zone de clic pour fermer — volontairement transparente, sans fond
-          sombre ni flou (backdrop retiré à la demande). */}
-      <div className="absolute inset-0" onClick={onFermer} />
+      {/* Fond sombre semi-transparent pour isoler la modale du contenu. */}
       <div
-        className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${
+        className="absolute inset-0"
+        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        onClick={onFermer}
+      />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative z-10 flex max-h-[calc(100dvh-2rem)] w-full ${
           large ? "max-w-2xl" : "max-w-md"
-        } flex-col overflow-hidden rounded-2xl border border-white/80 bg-brand-white shadow-2xl`}
+        } flex-col overflow-hidden rounded-2xl border border-brand-light-grey bg-brand-white shadow-2xl`}
       >
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-light-grey/70 px-6 py-4">
           <h2 className="text-base font-bold tracking-tight">{titre}</h2>
@@ -69,6 +78,7 @@ export default function Modale({
         </div>
         <div className="overflow-y-auto overscroll-contain px-6 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
