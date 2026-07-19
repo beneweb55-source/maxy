@@ -16,7 +16,7 @@ import { entierPositif } from "@/lib/validation";
  * cohérente.
  */
 export async function POST(request: NextRequest) {
-  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 

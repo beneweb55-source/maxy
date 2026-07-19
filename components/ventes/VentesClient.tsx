@@ -82,7 +82,7 @@ export default function VentesClient({ role }: { role: Role }) {
   const [modalAnnulation, setModalAnnulation] = useState<LigneVente | null>(null);
   const [motif, setMotif] = useState("");
 
-  const peutVendre = role === "gerant" || role === "dev";
+  const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
   const estGerant = role === "gerant";
 
   const chargerCartes = useCallback(async () => {

@@ -93,7 +93,7 @@ export default function FicheProduit({
 
   const peutModifierStatut = role === "technicien" || role === "gerant";
   const estGerant = role === "gerant";
-  const peutVendre = role === "gerant" || role === "dev";
+  const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
 
   const rafraichir = useCallback(async () => {
     try {
