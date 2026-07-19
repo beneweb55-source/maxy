@@ -135,6 +135,14 @@ export default function VentesClient({ role }: { role: Role }) {
     void chargerCartes();
   }, [chargerCartes]);
 
+  const ouvrirVente = useCallback((carte: CarteEnVente) => {
+    setPrixReel(carte.prix_vente_fixe !== null ? String(carte.prix_vente_fixe) : "");
+    setCanal("");
+    setDateVente(aujourdhuiIso());
+    setAvertissement(null);
+    setModalVente(carte);
+  }, []);
+
   useEffect(() => {
     if (cartes && !initTermine) {
       setInitTermine(true);
@@ -247,13 +255,6 @@ export default function VentesClient({ role }: { role: Role }) {
     }
   }
 
-  const ouvrirVente = useCallback((carte: CarteEnVente) => {
-    setPrixReel(carte.prix_vente_fixe !== null ? String(carte.prix_vente_fixe) : "");
-    setCanal("");
-    setDateVente(aujourdhuiIso());
-    setAvertissement(null);
-    setModalVente(carte);
-  }, []);
 
   async function enregistrerVente(confirmer: boolean) {
     if (!modalVente) return;
