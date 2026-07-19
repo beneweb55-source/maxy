@@ -247,14 +247,21 @@ export const CONFIG_FALLBACK: ConfigDashboard = {
 // produits — pas de chiffres de caisse, d'achats ni d'alertes internes.
 const CONFIG_SOCIAL: ConfigDashboard = {
   titre: "Tableau de bord — Produits",
-  modules: ["inventaire", "ventes"],
+  modules: ["inventaire", "ventes", "caisse"],
   filtres: [],
   widgets: [
     {
       id: "kpi-social",
       type: "kpis",
       taille: "pleine",
-      cles: ["nb_en_vente", "valeur_en_vente"],
+      cles: ["nb_en_vente", "valeur_en_vente", "benefice_mois", "cash_disponible"],
+    },
+    {
+      id: "benefices",
+      type: "graphique_barres",
+      titre: "Bénéfice — 6 derniers mois",
+      taille: "pleine",
+      source: "benefices_6_mois",
     },
     {
       id: "en-vente",
