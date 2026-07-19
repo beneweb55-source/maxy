@@ -5,6 +5,6 @@ import CaisseClient from "@/components/caisse/CaisseClient";
 export default async function PageCaisse() {
   const user = await utilisateurCourant();
   if (!user) redirect("/connexion");
-  if (user.role === "technicien") redirect("/");
+  if (user.role !== "gerant" && user.role !== "dev") redirect("/");
   return <CaisseClient role={user.role} />;
 }

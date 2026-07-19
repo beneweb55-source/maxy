@@ -8,7 +8,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur();
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 

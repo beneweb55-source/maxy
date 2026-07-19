@@ -7,7 +7,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ lotId: string }> }
 ) {
-  const acces = await exigerUtilisateur();
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
   if (acces.reponse) return acces.reponse;
 
   const { lotId: brut } = await params;

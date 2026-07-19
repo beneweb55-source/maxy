@@ -158,6 +158,13 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const estGerant = role === "gerant";
   const peutStatut = role === "gerant" || role === "technicien";
+  // Social Media Manager : consultation seule, restreinte aux produits en
+  // vente / vendus (le serveur applique la même restriction sur les données).
+  const estSocial = role === "social_media";
+  const peutModifier = !estSocial;
+  const statutsVisibles = estSocial
+    ? (["en_vente", "vendu"] as readonly StatutProduit[])
+    : STATUTS_PRODUIT;
 
   const statutsActifs = (searchParams?.get("statuts") ?? "")
     .split(",")
@@ -513,10 +520,12 @@ export default function Inventaire({ role }: { role: Role }) {
               Export CSV
             </a>
           )}
-          <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
-            <IconePlus taille={15} />
-            Ajouter un produit
-          </button>
+          {peutModifier && (
+            <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
+              <IconePlus taille={15} />
+              Ajouter un produit
+            </button>
+          )}
         </div>
       </div>
 
@@ -552,6 +561,8 @@ export default function Inventaire({ role }: { role: Role }) {
               </option>
             ))}
           </select>
+          {!estSocial && (
+          <>
           <select
             value={searchParams?.get("lot") ?? ""}
             onChange={(e) => majUrl({ lot: e.target.value || null })}
@@ -624,10 +635,12 @@ export default function Inventaire({ role }: { role: Role }) {
             <option value="prix_asc">Prix ↑ (croissant)</option>
             <option value="prix_desc">Prix ↓ (décroissant)</option>
           </select>
+          </>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {STATUTS_PRODUIT.map((s) => (
+          {statutsVisibles.map((s) => (
             <button
               key={s}
               type="button"
@@ -659,8 +672,13 @@ export default function Inventaire({ role }: { role: Role }) {
       {donnees && (
         <p className="text-sm text-brand-warm-grey">
           <strong className="text-brand-black">{donnees.total}</strong> produit
-          {donnees.total > 1 ? "s" : ""} · valeur de la sélection (achat + réparations) :{" "}
-          <strong className="text-brand-black">{formaterDA(donnees.valeur)}</strong>
+          {donnees.total > 1 ? "s" : ""}
+          {!estSocial && (
+            <>
+              {" "}· valeur de la sélection (achat + réparations) :{" "}
+              <strong className="text-brand-black">{formaterDA(donnees.valeur)}</strong>
+            </>
+          )}
         </p>
       )}
 
@@ -675,7 +693,7 @@ export default function Inventaire({ role }: { role: Role }) {
       {donnees && donnees.produits.length === 0 && (
         <div className="carte border-dashed p-8 text-center text-sm text-brand-warm-grey">
           <p>Aucun produit ne correspond à ces filtres.</p>
-          {donnees.total === 0 && (
+          {donnees.total === 0 && peutModifier && (
             <button type="button" onClick={ouvrirAjout} className="btn btn-primaire mt-4">
               <IconePlus taille={15} />
               Ajouter le premier produit
@@ -730,14 +748,16 @@ export default function Inventaire({ role }: { role: Role }) {
                       ))}
                     </p>
                   </div>
-                  <div className="hidden shrink-0 text-right text-sm sm:block">
-                    <span className="font-semibold text-brand-smooth">
-                      {g.prixMin === g.prixMax
-                        ? formaterDA(g.prixMin)
-                        : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
-                    </span>
-                    <span className="block text-xs text-brand-grey">achat unitaire</span>
-                  </div>
+                  {!estSocial && (
+                    <div className="hidden shrink-0 text-right text-sm sm:block">
+                      <span className="font-semibold text-brand-smooth">
+                        {g.prixMin === g.prixMax
+                          ? formaterDA(g.prixMin)
+                          : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
+                      </span>
+                      <span className="block text-xs text-brand-grey">achat unitaire</span>
+                    </div>
+                  )}
                   <div className="hidden shrink-0 rounded-lg bg-brand-glow/25 px-2.5 py-1 text-right text-sm sm:block">
                     <span className="font-bold text-brand-orange">
                       {g.venteMin === null
@@ -776,7 +796,8 @@ export default function Inventaire({ role }: { role: Role }) {
                             {p.code_interne}
                           </span>{" "}
                           <span className="text-xs text-brand-grey">
-                            lot n°{p.lot_id} · achat {formaterDA(p.prix_achat)} · {p.jours_stock} j
+                            lot n°{p.lot_id}
+                            {!estSocial && ` · achat ${formaterDA(p.prix_achat)}`} · {p.jours_stock} j
                           </span>{" "}
                           <span className="text-xs font-bold text-brand-orange">
                             {prixVenteAffiche(p) !== null
@@ -785,24 +806,28 @@ export default function Inventaire({ role }: { role: Role }) {
                           </span>
                         </button>
                         <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                        <button
-                          type="button"
-                          onClick={() => ouvrirEdition(p)}
-                          title="Modifier"
-                          aria-label={`Modifier ${p.code_interne}`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                        >
-                          <IconeCrayon taille={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setModalSuppression(p)}
-                          title="Supprimer"
-                          aria-label={`Supprimer ${p.code_interne}`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                        >
-                          <IconeCorbeille taille={14} />
-                        </button>
+                        {peutModifier && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => ouvrirEdition(p)}
+                              title="Modifier"
+                              aria-label={`Modifier ${p.code_interne}`}
+                              className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                            >
+                              <IconeCrayon taille={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setModalSuppression(p)}
+                              title="Supprimer"
+                              aria-label={`Supprimer ${p.code_interne}`}
+                              className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                            >
+                              <IconeCorbeille taille={14} />
+                            </button>
+                          </>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -818,7 +843,7 @@ export default function Inventaire({ role }: { role: Role }) {
           <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-brand-light-grey/25">
               <tr>
-                {COLONNES_TRI.map((c) => (
+                {COLONNES_TRI.filter((c) => !estSocial || c.cle !== "prix_achat").map((c) => (
                   <th
                     key={c.cle}
                     onClick={() => trierPar(c.cle)}
@@ -862,14 +887,16 @@ export default function Inventaire({ role }: { role: Role }) {
                       lot n°{p.lot_id} · {p.fournisseur}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-right">
-                    {formaterDA(p.prix_achat)}
-                    {p.cout_reparations > 0 && (
-                      <span className="block text-xs text-brand-grey">
-                        +{formaterDA(p.cout_reparations)} rép.
-                      </span>
-                    )}
-                  </td>
+                  {!estSocial && (
+                    <td className="px-3 py-2 text-right">
+                      {formaterDA(p.prix_achat)}
+                      {p.cout_reparations > 0 && (
+                        <span className="block text-xs text-brand-grey">
+                          +{formaterDA(p.cout_reparations)} rép.
+                        </span>
+                      )}
+                    </td>
+                  )}
                   <td className="px-3 py-2 text-right">
                     {prixVenteAffiche(p) !== null ? (
                       <span className="font-bold text-brand-orange">
@@ -886,32 +913,34 @@ export default function Inventaire({ role }: { role: Role }) {
                   </td>
                   <td className="px-3 py-2 text-right">{p.jours_stock}</td>
                   <td className="px-2 py-2">
-                    <span className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          ouvrirEdition(p);
-                        }}
-                        title="Modifier"
-                        aria-label={`Modifier ${p.code_interne}`}
-                        className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                      >
-                        <IconeCrayon taille={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setModalSuppression(p);
-                        }}
-                        title="Supprimer"
-                        aria-label={`Supprimer ${p.code_interne}`}
-                        className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                      >
-                        <IconeCorbeille taille={14} />
-                      </button>
-                    </span>
+                    {peutModifier && (
+                      <span className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ouvrirEdition(p);
+                          }}
+                          title="Modifier"
+                          aria-label={`Modifier ${p.code_interne}`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                        >
+                          <IconeCrayon taille={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalSuppression(p);
+                          }}
+                          title="Supprimer"
+                          aria-label={`Supprimer ${p.code_interne}`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                        >
+                          <IconeCorbeille taille={14} />
+                        </button>
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

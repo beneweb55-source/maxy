@@ -5,7 +5,7 @@ import { ajouterMouvement } from "@/lib/caisse-db";
 import { idsParRole, notifier } from "@/lib/notifs";
 
 export async function GET() {
-  const acces = await exigerUtilisateur();
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
   if (acces.reponse) return acces.reponse;
 
   try {

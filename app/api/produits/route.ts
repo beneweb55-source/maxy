@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const params = request.nextUrl.searchParams;
-    const where = construireFiltresProduits(params);
+    let where = construireFiltresProduits(params);
+    // Le rôle social_media ne voit que les produits en vente ou vendus,
+    // quels que soient les filtres demandés (restriction côté serveur).
+    if (acces.user.role === "social_media") {
+      where = { AND: [where, { statut: { in: ["en_vente", "vendu"] } }] };
+    }
     const orderBy = construireTriProduits(params);
     const page = Math.max(1, Number(params.get("page")) || 1);
 
@@ -77,7 +82,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const acces = await exigerUtilisateur();
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 

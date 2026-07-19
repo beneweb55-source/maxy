@@ -28,6 +28,7 @@ export const en = {
     gerant: "Manager",
     technicien: "Technician",
     dev: "Dev",
+    social_media: "Social Media Manager",
   },
   statuts: {
     recu: "Received",

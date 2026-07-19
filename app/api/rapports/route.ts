@@ -5,7 +5,7 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 const STATUTS_DECISION = ["a_reparer", "manque_piece", "hs"] as const;
 
 export async function GET() {
-  const acces = await exigerUtilisateur();
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
   if (acces.reponse) return acces.reponse;
 
   try {

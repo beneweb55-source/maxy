@@ -16,6 +16,7 @@ async function main() {
       { username: "raouf", password_hash: hashPassword("raouf2026"), role: "technicien" },
       { username: "samy", password_hash: hashPassword("samy2026"), role: "dev" },
       { username: "louay", password_hash: hashPassword("louay2026"), role: "dev" },
+      { username: "hiba", password_hash: hashPassword("hiba2026"), role: "social_media" },
     ],
   });
 

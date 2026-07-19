@@ -29,6 +29,7 @@ export const fr = {
     gerant: "Gérant",
     technicien: "Technicien",
     dev: "Dev",
+    social_media: "Social Media Manager",
   },
   statuts: {
     recu: "Reçu",

@@ -53,6 +53,7 @@ const LIBELLES_ROLE: Record<Role, string> = {
   gerant: "Gérant",
   technicien: "Technicien",
   dev: "Dev",
+  social_media: "Social Media Manager",
 };
 
 export default function AdminClient() {

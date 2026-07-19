@@ -243,9 +243,40 @@ export const CONFIG_FALLBACK: ConfigDashboard = {
   ],
 };
 
+// Social Media Manager : uniquement ce qui sert à la mise en avant des
+// produits — pas de chiffres de caisse, d'achats ni d'alertes internes.
+const CONFIG_SOCIAL: ConfigDashboard = {
+  titre: "Tableau de bord — Produits",
+  modules: ["inventaire", "ventes"],
+  filtres: [],
+  widgets: [
+    {
+      id: "kpi-social",
+      type: "kpis",
+      taille: "pleine",
+      cles: ["nb_en_vente", "valeur_en_vente"],
+    },
+    {
+      id: "en-vente",
+      type: "tableau",
+      titre: "Produits en vente",
+      taille: "moyen",
+      source: "produits_en_vente",
+    },
+    {
+      id: "dernieres-ventes",
+      type: "tableau",
+      titre: "Dernières ventes",
+      taille: "moyen",
+      source: "dernieres_ventes",
+    },
+  ],
+};
+
 export const CONFIGS_DASHBOARD: Partial<Record<Role, ConfigDashboard>> = {
   gerant: CONFIG_GERANT,
   dev: CONFIG_DEV,
+  social_media: CONFIG_SOCIAL,
 };
 
 export function configPourRole(role: Role): ConfigDashboard {

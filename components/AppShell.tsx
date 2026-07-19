@@ -38,9 +38,21 @@ interface EntreeNavigation {
 
 const NAVIGATION: readonly EntreeNavigation[] = [
   { href: "/", cle: "nav.dashboard", icone: IconeTableauDeBord, sousChemins: [] },
-  { href: "/arrivages", cle: "nav.arrivages", icone: IconeCamion, sousChemins: ["/lots"] },
+  {
+    href: "/arrivages",
+    cle: "nav.arrivages",
+    icone: IconeCamion,
+    sousChemins: ["/lots"],
+    roles: ["gerant", "technicien", "dev"],
+  },
   { href: "/inventaire", cle: "nav.inventaire", icone: IconeArchive, sousChemins: ["/produits"] },
-  { href: "/rapports", cle: "nav.rapports", icone: IconeRapport, sousChemins: [] },
+  {
+    href: "/rapports",
+    cle: "nav.rapports",
+    icone: IconeRapport,
+    sousChemins: [],
+    roles: ["gerant", "technicien", "dev"],
+  },
   { href: "/ventes", cle: "nav.ventes", icone: IconePanier, sousChemins: [] },
   {
     href: "/caisse",

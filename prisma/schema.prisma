@@ -12,6 +12,7 @@ enum Role {
   gerant
   technicien
   dev
+  social_media
 }
 
 enum Langue {

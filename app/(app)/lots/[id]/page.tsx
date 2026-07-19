@@ -9,6 +9,7 @@ export default async function PageLot({
 }) {
   const user = await utilisateurCourant();
   if (!user) redirect("/connexion");
+  if (user.role === "social_media") redirect("/");
   const { id } = await params;
   const lotId = Number(id);
   if (!Number.isInteger(lotId)) redirect("/arrivages");

@@ -9,6 +9,7 @@ export default async function PageRapport({
 }) {
   const user = await utilisateurCourant();
   if (!user) redirect("/connexion");
+  if (user.role === "social_media") redirect("/");
   const { lotId } = await params;
   const id = Number(lotId);
   if (!Number.isInteger(id)) redirect("/rapports");

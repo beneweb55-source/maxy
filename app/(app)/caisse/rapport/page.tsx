@@ -5,7 +5,7 @@ import RapportCaisse from "@/components/caisse/RapportCaisse";
 export default async function PageRapportCaisse() {
   const user = await utilisateurCourant();
   if (!user) redirect("/connexion");
-  if (user.role === "technicien") redirect("/");
+  if (user.role !== "gerant" && user.role !== "dev") redirect("/");
 
   return <RapportCaisse />;
 }
