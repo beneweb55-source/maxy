@@ -94,6 +94,7 @@ export default function FicheProduit({
   const peutModifierStatut = role === "technicien" || role === "gerant";
   const estGerant = role === "gerant";
   const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
+  const estSocial = role === "social_media";
 
   const rafraichir = useCallback(async () => {
     try {
@@ -268,16 +269,20 @@ export default function FicheProduit({
         <section className="carte">
           <h2 className="libelle text-brand-smooth">Finances</h2>
           <dl className="mt-2.5 space-y-1.5 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Prix d'achat</dt>
-              <dd className="font-semibold">{formaterDA(produit.prix_achat)}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Total réparations</dt>
-              <dd className="font-semibold">
-                {produit.cout_reparations > 0 ? formaterDA(produit.cout_reparations) : "—"}
-              </dd>
-            </div>
+            {!estSocial && (
+              <>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-brand-warm-grey">Prix d'achat</dt>
+                  <dd className="font-semibold">{formaterDA(produit.prix_achat)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-brand-warm-grey">Total réparations</dt>
+                  <dd className="font-semibold">
+                    {produit.cout_reparations > 0 ? formaterDA(produit.cout_reparations) : "—"}
+                  </dd>
+                </div>
+              </>
+            )}
             <div className="flex justify-between gap-2">
               <dt className="text-brand-warm-grey">Prix de vente fixé</dt>
               <dd className="font-semibold">
@@ -290,23 +295,25 @@ export default function FicheProduit({
                 {produit.prix_vente_reel !== null ? formaterDA(produit.prix_vente_reel) : "—"}
               </dd>
             </div>
-            <div className="flex justify-between gap-2 border-t border-brand-light-grey/70 pt-1.5">
-              <dt className="text-brand-warm-grey">Marge</dt>
-              <dd
-                className={`font-bold ${
-                  produit.marge === null
-                    ? "text-brand-grey"
-                    : produit.marge >= 0
-                      ? "text-succes"
-                      : "text-danger"
-                }`}
-              >
-                {produit.marge !== null ? formaterDA(produit.marge) : "— (pas encore vendu)"}
-              </dd>
-            </div>
+            {!estSocial && (
+              <div className="flex justify-between gap-2 border-t border-brand-light-grey/70 pt-1.5">
+                <dt className="text-brand-warm-grey">Marge</dt>
+                <dd
+                  className={`font-bold ${
+                    produit.marge === null
+                      ? "text-brand-grey"
+                      : produit.marge >= 0
+                        ? "text-succes"
+                        : "text-danger"
+                  }`}
+                >
+                  {produit.marge !== null ? formaterDA(produit.marge) : "— (pas encore vendu)"}
+                </dd>
+              </div>
+            )}
           </dl>
 
-          {produit.reparations.length > 0 && (
+          {!estSocial && produit.reparations.length > 0 && (
             <ul className="mt-3 space-y-1 rounded-lg bg-brand-light-grey/25 p-2.5 text-xs text-brand-smooth">
               {produit.reparations.map((r) => (
                 <li key={r.id}>

@@ -254,14 +254,7 @@ const CONFIG_SOCIAL: ConfigDashboard = {
       id: "kpi-social",
       type: "kpis",
       taille: "pleine",
-      cles: ["nb_en_vente", "valeur_en_vente", "benefice_mois", "cash_disponible"],
-    },
-    {
-      id: "benefices",
-      type: "graphique_barres",
-      titre: "Bénéfice — 6 derniers mois",
-      taille: "pleine",
-      source: "benefices_6_mois",
+      cles: ["nb_en_vente", "valeur_en_vente"],
     },
     {
       id: "en-vente",

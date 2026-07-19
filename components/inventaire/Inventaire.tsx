@@ -671,7 +671,7 @@ export default function Inventaire({ role }: { role: Role }) {
         <p className="text-sm text-brand-warm-grey">
           <strong className="text-brand-black">{donnees.total}</strong> produit
           {donnees.total > 1 ? "s" : ""}
-          {true && (
+          {!estSocial && (
             <>
               {" "}· valeur de la sélection (achat + réparations) :{" "}
               <strong className="text-brand-black">{formaterDA(donnees.valeur)}</strong>
@@ -746,7 +746,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       ))}
                     </p>
                   </div>
-                  {true && (
+                  {!estSocial && (
                     <div className="hidden shrink-0 text-right text-sm sm:block">
                       <span className="font-semibold text-brand-smooth">
                         {g.prixMin === g.prixMax
@@ -841,7 +841,7 @@ export default function Inventaire({ role }: { role: Role }) {
           <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-brand-light-grey/25">
               <tr>
-                {COLONNES_TRI.map((c) => (
+                {COLONNES_TRI.filter(c => c.cle !== 'prix_achat' || !estSocial).map((c) => (
                   <th
                     key={c.cle}
                     onClick={() => trierPar(c.cle)}
@@ -885,7 +885,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       lot n°{p.lot_id} · {p.fournisseur}
                     </span>
                   </td>
-                  {true && (
+                  {!estSocial && (
                     <td className="px-3 py-2 text-right">
                       <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">Achat</span>
                       <span className="font-semibold text-brand-black">{formaterDA(p.prix_achat)}</span>
