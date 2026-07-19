@@ -82,6 +82,13 @@ export default function FicheProduit({
   const [noteTexte, setNoteTexte] = useState("");
   const [modalPrix, setModalPrix] = useState(false);
   const [prixTexte, setPrixTexte] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiRecommandation, setAiRecommandation] = useState<{
+    fourchette_basse: number;
+    fourchette_haute: number;
+    prix_recommande: number;
+    justification: string;
+  } | null>(null);
   const [modalReparation, setModalReparation] = useState(false);
   const [coutReparation, setCoutReparation] = useState("");
   const [descReparation, setDescReparation] = useState("");
@@ -143,6 +150,38 @@ export default function FicheProduit({
       return false;
     } finally {
       setEnvoi(false);
+    }
+  }
+
+  async function estimerAvecIA() {
+    if (!produit) return;
+    setAiLoading(true);
+    setAiRecommandation(null);
+    try {
+      const res = await fetch("/api/ai/prix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reference: produit.reference,
+          categorie: produit.categorie,
+          etat: "Bon état / Fonctionnel",
+          prix_achat: produit.prix_achat,
+          cout_reparations: produit.cout_reparations,
+        }),
+      });
+      if (!res.ok) {
+        afficher("Erreur lors de l'estimation IA.", "erreur");
+        return;
+      }
+      const data = await res.json();
+      setAiRecommandation(data);
+      if (data.prix_recommande && !prixTexte) {
+        setPrixTexte(String(data.prix_recommande));
+      }
+    } catch {
+      afficher("Erreur réseau.", "erreur");
+    } finally {
+      setAiLoading(false);
     }
   }
 
@@ -575,7 +614,35 @@ export default function FicheProduit({
             </strong>
           </p>
         )}
-        <div className="mt-3 text-right">
+
+        <div className="mt-4 rounded-xl border border-brand-glow/40 bg-brand-glow/10 p-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-brand-smooth">Assistant IA Gemini ✨</h3>
+            <button
+              type="button"
+              disabled={aiLoading}
+              onClick={estimerAvecIA}
+              className="btn text-xs bg-brand-white text-brand-black shadow-sm hover:bg-brand-light-grey"
+            >
+              {aiLoading ? "Recherche en cours..." : "Estimer le prix sur Ouedkniss"}
+            </button>
+          </div>
+          {aiRecommandation && (
+            <div className="mt-3 space-y-2 text-sm text-brand-warm-grey">
+              <p>
+                Fourchette du marché : <strong className="text-brand-black">{formaterDA(aiRecommandation.fourchette_basse)}</strong> - <strong className="text-brand-black">{formaterDA(aiRecommandation.fourchette_haute)}</strong>
+              </p>
+              <p>
+                Prix recommandé : <strong className="text-succes">{formaterDA(aiRecommandation.prix_recommande)}</strong>
+              </p>
+              <p className="text-xs italic bg-brand-white/50 p-2 rounded">
+                "{aiRecommandation.justification}"
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 flex justify-end gap-2 border-t border-brand-light-grey/50 pt-3">
           <button
             type="button"
             disabled={envoi || !prixTexte.trim()}
