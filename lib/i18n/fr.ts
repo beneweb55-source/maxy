@@ -227,6 +227,6 @@ export const fr = {
     modalSupprTitre: "Supprimer le lot n°{id}",
     lotNo: "n°{id}",
     supprIntro: "Le lot",
-    supprCorps: "et ses {n} produits seront définitivement supprimés. Un lot ayant un historique de caisse (coût déclaré, réparation ou vente) ne peut pas être supprimé. Cette action est irréversible.",
+    supprCorps: "et ses {n} produits seront définitivement supprimés ainsi que leurs historiques (ventes, caisse, etc.). Cette action est irréversible.",
   },
 } satisfies Dictionnaire;

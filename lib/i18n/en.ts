@@ -226,6 +226,6 @@ export const en = {
     modalSupprTitre: "Delete batch no. {id}",
     lotNo: "No. {id}",
     supprIntro: "Batch",
-    supprCorps: "and its {n} products will be permanently deleted. A batch with cash-register history (declared cost, repair or sale) cannot be deleted. This action is irreversible.",
+    supprCorps: "and its {n} products will be permanently deleted along with their history (sales, cash). This action is irreversible.",
   },
 } satisfies Dictionnaire;

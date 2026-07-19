@@ -202,20 +202,9 @@ export async function DELETE(
     const lot = await prisma.lot.findUnique({ where: { id: lotId } });
     if (!lot) return erreur(404, "Lot introuvable.");
 
-    const [mouvements, vendus] = await Promise.all([
-      prisma.mouvementCaisse.count({
-        where: { OR: [{ lot_id: lotId }, { produit: { lot_id: lotId } }] },
-      }),
-      prisma.produit.count({ where: { lot_id: lotId, statut: "vendu" } }),
-    ]);
-    if (mouvements > 0 || vendus > 0) {
-      return erreur(
-        400,
-        "Ce lot a un historique de caisse (coût déclaré, réparation ou vente) : il ne peut pas être supprimé."
-      );
-    }
-
     await prisma.$transaction([
+      prisma.mouvementCaisse.deleteMany({ where: { OR: [{ lot_id: lotId }, { produit: { lot_id: lotId } }] } }),
+      prisma.vente.deleteMany({ where: { produit: { lot_id: lotId } } }),
       prisma.historiqueStatut.deleteMany({ where: { produit: { lot_id: lotId } } }),
       prisma.reparation.deleteMany({ where: { produit: { lot_id: lotId } } }),
       prisma.produit.deleteMany({ where: { lot_id: lotId } }),
