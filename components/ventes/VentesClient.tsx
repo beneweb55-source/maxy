@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
 import { useToast } from "@/components/toast";
@@ -50,6 +51,9 @@ function aujourdhuiIso(): string {
 
 export default function VentesClient({ role }: { role: Role }) {
   const { afficher } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [initTermine, setInitTermine] = useState(false);
   const [onglet, setOnglet] = useState<"en_vente" | "historique">("en_vente");
   const [envoi, setEnvoi] = useState(false);
 
@@ -130,6 +134,20 @@ export default function VentesClient({ role }: { role: Role }) {
   useEffect(() => {
     void chargerCartes();
   }, [chargerCartes]);
+
+  useEffect(() => {
+    if (cartes && !initTermine) {
+      setInitTermine(true);
+      const produitId = searchParams.get("vendre_produit_id");
+      if (produitId && peutVendre) {
+        const produit = cartes.find((c) => c.id === Number(produitId));
+        if (produit) {
+          ouvrirVente(produit);
+          router.replace("/ventes");
+        }
+      }
+    }
+  }, [cartes, searchParams, peutVendre, initTermine, ouvrirVente, router]);
   useEffect(() => {
     void chargerHistorique();
   }, [chargerHistorique]);
@@ -229,13 +247,13 @@ export default function VentesClient({ role }: { role: Role }) {
     }
   }
 
-  function ouvrirVente(carte: CarteEnVente) {
+  const ouvrirVente = useCallback((carte: CarteEnVente) => {
     setPrixReel(carte.prix_vente_fixe !== null ? String(carte.prix_vente_fixe) : "");
     setCanal("");
     setDateVente(aujourdhuiIso());
     setAvertissement(null);
     setModalVente(carte);
-  }
+  }, []);
 
   async function enregistrerVente(confirmer: boolean) {
     if (!modalVente) return;

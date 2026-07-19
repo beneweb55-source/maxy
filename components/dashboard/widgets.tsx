@@ -481,7 +481,7 @@ function TableauEnVente({ lignes, role }: { lignes: LigneEnVente[]; role?: strin
             )}
             <td className={`${CLASSE_CELLULE} text-right`}>{l.jours_en_vente} j</td>
             <td className={`${CLASSE_CELLULE} text-right`}>
-              <Link href="/ventes" className="lien text-sm">
+              <Link href={`/ventes?vendre_produit_id=${l.id}`} className="lien text-sm">
                 Vendre
               </Link>
             </td>
