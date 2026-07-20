@@ -124,6 +124,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [editRef, setEditRef] = useState("");
   const [editCat, setEditCat] = useState("");
   const [editPrix, setEditPrix] = useState("");
+  const [editQuantite, setEditQuantite] = useState("");
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
   const [editPhotoModifiee, setEditPhotoModifiee] = useState(false);
   const [modalSuppr, setModalSuppr] = useState<ProduitDto[] | null>(null);
@@ -283,6 +284,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     setEditRef(produit.reference);
     setEditCat(produit.categorie);
     setEditPrix(String(produit.prix_achat));
+    setEditQuantite(String(produits.length));
     setEditPhoto(produit.image_url);
     setEditPhotoModifiee(false);
     setModalEdit(produits);
@@ -290,8 +292,8 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
 
   async function confirmerEdition() {
     if (!modalEdit) return;
-    if (!editRef.trim() || !editCat.trim() || !editPrix.trim()) {
-      afficher("Veuillez remplir la référence, catégorie et prix.", "erreur");
+    if (!editRef.trim() || !editCat.trim() || !editPrix.trim() || !editQuantite.trim()) {
+      afficher("Veuillez remplir la référence, catégorie, prix et quantité.", "erreur");
       return;
     }
     const corps: Record<string, unknown> = {
@@ -299,6 +301,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       reference: editRef.trim(),
       categorie: editCat.trim(),
       prix_achat: Number(editPrix),
+      quantite: Number(editQuantite),
     };
     if (editPhotoModifiee) corps.image_url = editPhoto ?? "";
     const ok = await appelMethode(`/api/produits/masse/edition`, "PUT", corps);
@@ -890,7 +893,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           className="space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!(envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim())) {
+            if (!(envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim() || !editQuantite.trim())) {
               void confirmerEdition();
             }
           }}
@@ -937,6 +940,21 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 className="champ text-right"
               />
             </div>
+            <div className="w-24">
+              <label className="libelle mb-1.5" htmlFor="edit-quantite-lot">
+                Quantité *
+              </label>
+              <input
+                id="edit-quantite-lot"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                value={editQuantite}
+                onChange={(e) => setEditQuantite(e.target.value.replace(/[^\d]/g, ""))}
+                className="champ text-center"
+              />
+            </div>
           </div>
           <div>
             <label className="libelle mb-1.5">Photo du produit</label>
@@ -956,7 +974,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           <div className="pt-1 text-right">
             <button
               type="submit"
-              disabled={envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim()}
+              disabled={envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim() || !editQuantite.trim()}
               className="btn btn-primaire"
             >
               Enregistrer les modifications
