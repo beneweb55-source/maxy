@@ -88,6 +88,7 @@ export async function PUT(request: NextRequest) {
       // Ajout des nouveaux produits si la quantité est augmentée
       if (diff > 0) {
         const originalProduct = produits[0];
+        if (!originalProduct) throw new Error("Produit original manquant");
         const codes = await genererCodesInternes(tx, diff);
         for (let i = 0; i < diff; i++) {
           const code = codes[i];
