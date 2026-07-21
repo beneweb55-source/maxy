@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — Analyse fonctionnelle complète
 
-Document de référence de l'architecture fonctionnelle de **Gestion Maxy** (plateforme de gestion de revente de matériel informatique d'occasion, 4 associés).
+Document de référence de l'architecture fonctionnelle de **Gestion Maxi** (plateforme de gestion de revente de matériel informatique d'occasion, 4 associés).
 Le design est volontairement exclu : ce document ne traite que la logique métier, les flux, les droits et les validations.
 
 **Sources de vérité, par ordre de priorité :**

@@ -1,4 +1,4 @@
-# Gestion Maxy — Plateforme de gestion de Stock / Revente Solution Maxy
+# Gestion Maxi — Plateforme de gestion de Stock / Revente Solution Maxi
 
 Application web interne pour 4 associés : achat, test, réparation et revente de matériel informatique d'occasion. Cycle complet : **Arrivage → Test → Rapport → Validation → Prix → Vente → Caisse**.
 

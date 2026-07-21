@@ -1,5 +1,5 @@
 {
-  "name": "gestion-maxy",
+  "name": "gestion-maxi",
   "version": "0.1.0",
   "private": true,
   "main": "main.js",
@@ -17,8 +17,8 @@
     "electron:build": "electron-builder --win"
   },
   "build": {
-    "appId": "com.gestionmaxy.desktop",
-    "productName": "Gestion Maxy",
+    "appId": "com.gestionmaxi.desktop",
+    "productName": "Gestion Maxi",
     "directories": {
       "output": "out"
     },

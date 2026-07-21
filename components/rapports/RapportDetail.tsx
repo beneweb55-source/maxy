@@ -239,7 +239,7 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
         <div className="hidden print:flex mb-6 items-center justify-between border-b pb-4">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-widest text-brand-black">
-              MAXY
+              MAXI
             </h1>
             <p className="text-xs font-semibold tracking-widest text-brand-warm-grey">
               GESTION INFORMATIQUE

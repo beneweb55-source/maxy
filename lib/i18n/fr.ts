@@ -64,13 +64,13 @@ export const fr = {
     administration: "Administration",
   },
   entete: {
-    titrePlateforme: "Plateforme de gestion de Stock / Revente Solution Maxy",
+    titrePlateforme: "Plateforme de gestion de Stock / Revente Solution Maxi",
     ouvrirMenu: "Ouvrir le menu",
     fermerMenu: "Fermer le menu",
     deconnexion: "Déconnexion",
   },
   connexion: {
-    sousTitre: "Plateforme de gestion de Stock / Revente Solution Maxy",
+    sousTitre: "Plateforme de gestion de Stock / Revente Solution Maxi",
     identifiant: "Identifiant",
     motDePasse: "Mot de passe",
     seConnecter: "Se connecter",
@@ -153,7 +153,7 @@ export const fr = {
     evolutionSoldes: "Évolution des soldes (6 derniers mois)",
     colMois: "Mois",
     colSoldeFin: "Solde fin de mois",
-    piedPage: "Document généré par Gestion Maxy - Confidentiel",
+    piedPage: "Document généré par Gestion Maxi - Confidentiel",
   },
   formulaireLot: {
     erreurFournisseur: "Le fournisseur est obligatoire.",

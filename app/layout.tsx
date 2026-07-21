@@ -6,7 +6,7 @@ import { estLangue, type Langue } from "@/lib/i18n/types";
 
 export const metadata: Metadata = {
   title: "SolutionMaxi",
-  description: "Plateforme de gestion de Stock / Revente Solution Maxy",
+  description: "Plateforme de gestion de Stock / Revente Solution Maxi",
 };
 
 export default async function RootLayout({
