@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { DecisionRapport, Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
-import ChampPhoto from "@/components/ChampPhoto";
+import ChampPhotos from "@/components/ChampPhotos";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
@@ -25,6 +25,8 @@ import {
   IconeFlecheDroite,
   IconeNote,
   IconePlus,
+  IconeTelechargement,
+  IconeVitrine,
 } from "@/components/icons";
 
 interface ProduitDto {
@@ -35,6 +37,8 @@ interface ProduitDto {
   statut: StatutProduit;
   notes: string | null;
   image_url: string | null;
+  images: string[];
+  en_vitrine: boolean;
   decision_rapport: DecisionRapport | null;
   prix_achat: number;
   cout_reparations: number;
@@ -87,9 +91,10 @@ export default function FicheProduit({
   const [descReparation, setDescReparation] = useState("");
   const [modalEdition, setModalEdition] = useState(false);
   const [edition, setEdition] = useState({ reference: "", categorie: "", prix_achat: "" });
-  const [editPhoto, setEditPhoto] = useState<string | null>(null);
-  const [editPhotoModifiee, setEditPhotoModifiee] = useState(false);
+  const [editPhotos, setEditPhotos] = useState<string[]>([]);
+  const [editPhotosModifiees, setEditPhotosModifiees] = useState(false);
   const [modalSuppression, setModalSuppression] = useState(false);
+  const [indexActif, setIndexActif] = useState(0);
 
   const peutModifierStatut = role === "technicien" || role === "gerant";
   const estGerant = role === "gerant";
@@ -110,6 +115,7 @@ export default function FicheProduit({
       const p = corps as ProduitDto;
       setProduit(p);
       setNotes(p.notes ?? "");
+      setIndexActif(0);
       setErreur(null);
     } catch {
       setErreur("Impossible de joindre le serveur.");
@@ -185,9 +191,20 @@ export default function FicheProduit({
       categorie: produit.categorie,
       prix_achat: String(produit.prix_achat),
     });
-    setEditPhoto(produit.image_url);
-    setEditPhotoModifiee(false);
+    setEditPhotos(produit.images);
+    setEditPhotosModifiees(false);
     setModalEdition(true);
+  }
+
+  function basculerVitrine() {
+    if (!produit) return;
+    const cible = !produit.en_vitrine;
+    void appel(`/api/produits/${produitId}`, "PUT", { en_vitrine: cible }).then((ok) => {
+      if (ok) {
+        afficher(cible ? "Produit mis en vitrine." : "Produit retiré de la vitrine.");
+        void rafraichir();
+      }
+    });
   }
 
   return (
@@ -213,18 +230,67 @@ export default function FicheProduit({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <section className="carte">
           <h2 className="libelle text-brand-smooth">Identité</h2>
-          {produit.image_url && (
-            <img
-              src={produit.image_url}
-              alt={`Photo de ${produit.reference}`}
-              className="mt-2.5 h-44 w-full rounded-lg border border-brand-light-grey object-cover"
-            />
+          {produit.images.length > 0 && (
+            <div className="mt-2.5 space-y-2">
+              <div className="relative">
+                <img
+                  src={produit.images[indexActif] ?? produit.images[0]}
+                  alt={`Photo de ${produit.reference}`}
+                  className="h-52 w-full rounded-lg border border-brand-light-grey object-cover"
+                />
+                {produit.en_vitrine && (
+                  <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-brand-white shadow">
+                    <IconeVitrine taille={12} />
+                    En vitrine
+                  </span>
+                )}
+              </div>
+              {produit.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {produit.images.map((src, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setIndexActif(i)}
+                      className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                        i === indexActif
+                          ? "border-brand-orange"
+                          : "border-brand-light-grey hover:border-brand-grey"
+                      }`}
+                    >
+                      <img src={src} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              <a
+                href={`/api/produits/${produitId}/images/export`}
+                className="btn btn-secondaire w-full justify-center"
+              >
+                <IconeTelechargement taille={15} />
+                {produit.images.length > 1
+                  ? `Télécharger les ${produit.images.length} photos`
+                  : "Télécharger la photo"}
+              </a>
+            </div>
           )}
           <dl className="mt-2.5 space-y-1.5 text-sm">
             <div className="flex justify-between gap-2">
               <dt className="text-brand-warm-grey">Statut</dt>
               <dd>
                 <BadgeStatut statut={produit.statut} />
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-brand-warm-grey">Vitrine</dt>
+              <dd className="font-semibold">
+                {produit.en_vitrine ? (
+                  <span className="inline-flex items-center gap-1 text-brand-orange">
+                    <IconeVitrine taille={13} /> Exposé
+                  </span>
+                ) : (
+                  <span className="text-brand-grey">Non exposé</span>
+                )}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
@@ -376,6 +442,22 @@ export default function FicheProduit({
               >
                 <IconePlus taille={14} />
                 Réparation
+              </button>
+            )}
+            {(role === "gerant" || role === "technicien" || role === "dev") && (
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={basculerVitrine}
+                title="Exposition physique en vitrine — indépendante de la mise en vente en ligne"
+                className={
+                  produit.en_vitrine
+                    ? "btn bg-brand-orange text-brand-white hover:bg-brand-orange/90"
+                    : "btn btn-secondaire"
+                }
+              >
+                <IconeVitrine taille={14} />
+                {produit.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
               </button>
             )}
             {!vendu && (
@@ -697,16 +779,12 @@ export default function FicheProduit({
             </div>
           </div>
           <div>
-            <label className="libelle mb-1.5">Photo du produit</label>
-            <ChampPhoto
-              apercu={editPhoto}
-              onCapturer={(data) => {
-                setEditPhoto(data);
-                setEditPhotoModifiee(true);
-              }}
-              onRetirer={() => {
-                setEditPhoto(null);
-                setEditPhotoModifiee(true);
+            <label className="libelle mb-1.5">Photos du produit</label>
+            <ChampPhotos
+              photos={editPhotos}
+              onChange={(p) => {
+                setEditPhotos(p);
+                setEditPhotosModifiees(true);
               }}
               disabled={envoi}
             />
@@ -726,7 +804,7 @@ export default function FicheProduit({
                   reference: edition.reference.trim(),
                   categorie: edition.categorie.trim(),
                   prix_achat: Number(edition.prix_achat),
-                  ...(editPhotoModifiee ? { image_url: editPhoto ?? "" } : {}),
+                  ...(editPhotosModifiees ? { images: editPhotos } : {}),
                 }).then((ok) => {
                   if (ok) {
                     afficher("Produit modifié.");

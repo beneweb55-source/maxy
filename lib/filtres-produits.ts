@@ -56,6 +56,10 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     clauses.push({ statut: "hs", a_jeter: true });
   }
 
+  if (params.get("en_vitrine") === "1") {
+    clauses.push({ en_vitrine: true });
+  }
+
   return clauses.length > 0 ? { AND: clauses } : {};
 }
 

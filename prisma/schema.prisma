@@ -123,14 +123,29 @@ model Produit {
   image_url        String?
   decision_rapport DecisionRapport?
   a_jeter          Boolean          @default(false)
+  en_vitrine       Boolean          @default(false)
 
   lot         Lot                @relation(fields: [lot_id], references: [id])
   reparations Reparation[]
   historique  HistoriqueStatut[]
   mouvements  MouvementCaisse[]
   ventes      Vente[]
+  images      ProduitImage[]
 
   @@map("produits")
+}
+
+model ProduitImage {
+  id         Int      @id @default(autoincrement())
+  produit_id Int
+  data       String
+  position   Int      @default(0)
+  created_at DateTime @default(now())
+
+  produit Produit @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+
+  @@index([produit_id])
+  @@map("produit_images")
 }
 
 model Vente {

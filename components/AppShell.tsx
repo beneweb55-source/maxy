@@ -19,6 +19,7 @@ import {
   IconeRapport,
   IconeReglages,
   IconeTableauDeBord,
+  IconeVitrine,
   type ProprietesIcone,
 } from "./icons";
 
@@ -46,6 +47,13 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     roles: ["gerant", "technicien", "dev"],
   },
   { href: "/inventaire", cle: "nav.inventaire", icone: IconeArchive, sousChemins: ["/produits"] },
+  {
+    href: "/vitrine",
+    cle: "nav.vitrine",
+    icone: IconeVitrine,
+    sousChemins: [],
+    roles: ["gerant", "technicien", "dev"],
+  },
   {
     href: "/rapports",
     cle: "nav.rapports",

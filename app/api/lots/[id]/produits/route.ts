@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { genererCodesInternes } from "@/lib/codes";
 import { validerLignesProduits } from "@/lib/validation";
+import { creerImagesSupplementaires } from "@/lib/produit-images-db";
 
 export async function POST(
   request: NextRequest,
@@ -47,9 +48,10 @@ export async function POST(
             reference: ligne.reference,
             categorie: ligne.categorie,
             prix_achat: ligne.prix_achat,
-            image_url: ligne.image_url ?? null,
+            image_url: ligne.images[0] ?? null,
           },
         });
+        await creerImagesSupplementaires(tx, produit.id, ligne.images.slice(1));
         await tx.historiqueStatut.create({
           data: {
             produit_id: produit.id,

@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         });
         await tx.produit.update({
           where: { id: produit.id },
-          data: { statut: "vendu", prix_vente_reel: part, date_vente: quand },
+          data: { statut: "vendu", prix_vente_reel: part, date_vente: quand, en_vitrine: false },
         });
         await tx.historiqueStatut.create({
           data: {

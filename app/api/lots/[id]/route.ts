@@ -24,6 +24,7 @@ export async function GET(
           orderBy: { id: "asc" },
           include: {
             reparations: { select: { id: true, cout: true, description: true, date: true } },
+            _count: { select: { images: true } },
             historique: {
               where: { note: { not: null } },
               orderBy: { created_at: "desc" },
@@ -52,8 +53,10 @@ export async function GET(
         reference: p.reference,
         categorie: p.categorie,
         statut: p.statut,
+        en_vitrine: p.en_vitrine,
         prix_achat: p.prix_achat,
         image_url: p.image_url ? urlPhotoProduit(p.id) : null,
+        nb_images: (p.image_url ? 1 : 0) + p._count.images,
         derniere_note: p.historique.at(0)?.note ?? null,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
@@ -204,6 +207,7 @@ export async function DELETE(
     if (!lot) return erreur(404, "Lot introuvable.");
 
     await prisma.$transaction([
+      prisma.produitImage.deleteMany({ where: { produit: { lot_id: lotId } } }),
       prisma.mouvementCaisse.deleteMany({ where: { OR: [{ lot_id: lotId }, { produit: { lot_id: lotId } }] } }),
       prisma.vente.deleteMany({ where: { produit: { lot_id: lotId } } }),
       prisma.historiqueStatut.deleteMany({ where: { produit: { lot_id: lotId } } }),

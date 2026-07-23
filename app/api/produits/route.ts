@@ -5,6 +5,7 @@ import { genererCodesInternes } from "@/lib/codes";
 import { construireFiltresProduits, construireTriProduits } from "@/lib/filtres-produits";
 import { urlPhotoProduit } from "@/lib/images";
 import { validerLignesProduits } from "@/lib/validation";
+import { creerImagesSupplementaires } from "@/lib/produit-images-db";
 
 const PAR_PAGE = 50;
 const JOUR_MS = 24 * 60 * 60 * 1000;
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
           include: {
             lot: { select: { id: true, fournisseur: true, date_entree: true } },
             reparations: { select: { cout: true } },
+            _count: { select: { images: true } },
           },
         }),
         prisma.produit.findMany({ distinct: ["categorie"], select: { categorie: true } }),
@@ -64,8 +66,10 @@ export async function GET(request: NextRequest) {
         categorie: p.categorie,
         statut: p.statut,
         a_jeter: p.a_jeter,
+        en_vitrine: p.en_vitrine,
         prix_achat: p.prix_achat,
         image_url: p.image_url ? urlPhotoProduit(p.id) : null,
+        nb_images: (p.image_url ? 1 : 0) + p._count.images,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
         prix_vente_reel: p.prix_vente_reel,
@@ -92,18 +96,19 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { lot_id, reference, categorie, prix_achat, image_url, quantite } = (corps ?? {}) as {
+  const { lot_id, reference, categorie, prix_achat, image_url, images, quantite } = (corps ?? {}) as {
     lot_id?: unknown;
     reference?: unknown;
     categorie?: unknown;
     prix_achat?: unknown;
     image_url?: unknown;
+    images?: unknown;
     quantite?: unknown;
   };
 
   const lotId = Number(lot_id);
   if (!Number.isInteger(lotId)) return erreur(400, "Choisissez le lot de rattachement.");
-  const validation = validerLignesProduits([{ reference, categorie, prix_achat, image_url }]);
+  const validation = validerLignesProduits([{ reference, categorie, prix_achat, image_url, images }]);
   if (validation.erreur !== undefined) return erreur(400, validation.erreur);
   const ligne = validation.produits[0];
   if (!ligne) return erreur(400, "Produit invalide.");
@@ -124,9 +129,10 @@ export async function POST(request: NextRequest) {
             reference: ligne.reference,
             categorie: ligne.categorie,
             prix_achat: ligne.prix_achat,
-            image_url: ligne.image_url ?? null,
+            image_url: ligne.images[0] ?? null,
           },
         });
+        await creerImagesSupplementaires(tx, cree.id, ligne.images.slice(1));
         await tx.historiqueStatut.create({
           data: {
             produit_id: cree.id,

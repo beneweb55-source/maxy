@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
-import ChampPhoto from "@/components/ChampPhoto";
+import ChampPhotos from "@/components/ChampPhotos";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT, INFOS_STATUT_LOT } from "@/lib/statuts";
@@ -42,6 +42,7 @@ interface ProduitDto {
   statut: StatutProduit;
   prix_achat: number;
   image_url: string | null;
+  nb_images: number;
   derniere_note: string | null;
   cout_reparations: number;
   prix_vente_fixe: number | null;
@@ -118,15 +119,15 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [nouvCat, setNouvCat] = useState("");
   const [nouvPrix, setNouvPrix] = useState("");
   const [nouvQuantite, setNouvQuantite] = useState("1");
-  const [nouvPhoto, setNouvPhoto] = useState<string | null>(null);
+  const [nouvPhotos, setNouvPhotos] = useState<string[]>([]);
 
   const [modalEdit, setModalEdit] = useState<ProduitDto[] | null>(null);
   const [editRef, setEditRef] = useState("");
   const [editCat, setEditCat] = useState("");
   const [editPrix, setEditPrix] = useState("");
   const [editQuantite, setEditQuantite] = useState("");
-  const [editPhoto, setEditPhoto] = useState<string | null>(null);
-  const [editPhotoModifiee, setEditPhotoModifiee] = useState(false);
+  const [editPhotos, setEditPhotos] = useState<string[]>([]);
+  const [editPhotosModifiees, setEditPhotosModifiees] = useState(false);
   const [modalSuppr, setModalSuppr] = useState<ProduitDto[] | null>(null);
 
   const peutAgir = role === "technicien" || role === "gerant";
@@ -285,9 +286,18 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     setEditCat(produit.categorie);
     setEditPrix(String(produit.prix_achat));
     setEditQuantite(String(produits.length));
-    setEditPhoto(produit.image_url);
-    setEditPhotoModifiee(false);
+    setEditPhotos(produit.image_url ? [produit.image_url] : []);
+    setEditPhotosModifiees(false);
     setModalEdit(produits);
+    // Récupère la galerie complète (au-delà de la couverture) pour l'édition.
+    if (produit.nb_images > 1) {
+      void fetch(`/api/produits/${produit.id}`)
+        .then((r) => (r.ok ? (r.json() as Promise<{ images?: string[] }>) : null))
+        .then((d) => {
+          if (d?.images) setEditPhotos(d.images);
+        })
+        .catch(() => undefined);
+    }
   }
 
   async function confirmerEdition() {
@@ -303,7 +313,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       prix_achat: Number(editPrix),
       quantite: Number(editQuantite),
     };
-    if (editPhotoModifiee) corps.image_url = editPhoto ?? "";
+    if (editPhotosModifiees) corps.images = editPhotos;
     const ok = await appelMethode(`/api/produits/masse/edition`, "PUT", corps);
     if (ok) {
       afficher(`${modalEdit.length} produit(s) modifié(s).`);
@@ -349,7 +359,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       reference: nouvRef.trim(),
       categorie: nouvCat.trim(),
       prix_achat: Number(nouvPrix),
-      image_url: nouvPhoto ?? undefined,
+      images: nouvPhotos,
     }));
 
     const ok = await appelApi(`/api/lots/${lotId}/produits`, {
@@ -360,7 +370,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       setNouvRef("");
       setNouvPrix("");
       setNouvQuantite("1");
-      setNouvPhoto(null);
+      setNouvPhotos([]);
       setAjoutOuvert(false);
     }
   }
@@ -513,12 +523,19 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-start gap-3">
                   {p.image_url && (
-                    <img
-                      src={p.image_url}
-                      alt={`Photo de ${p.reference}`}
-                      loading="lazy"
-                      className="h-12 w-12 shrink-0 rounded-lg border border-brand-light-grey object-cover"
-                    />
+                    <div className="relative shrink-0">
+                      <img
+                        src={p.image_url}
+                        alt={`Photo de ${p.reference}`}
+                        loading="lazy"
+                        className="h-12 w-12 rounded-lg border border-brand-light-grey object-cover"
+                      />
+                      {p.nb_images > 1 && (
+                        <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-brand-white shadow">
+                          {p.nb_images}
+                        </span>
+                      )}
+                    </div>
                   )}
                   <div className="min-w-0">
                     {nb === 1 ? (
@@ -657,14 +674,9 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                   <label className="libelle mb-1.5">Quantité *</label>
                   <input type="number" inputMode="numeric" min="1" step="1" className="champ" value={nouvQuantite} onChange={e => setNouvQuantite(e.target.value.replace(/[^\d]/g, ""))} />
                 </div>
-                <div>
-                  <label className="libelle mb-1.5">Photo du produit</label>
-                  <ChampPhoto
-                    apercu={nouvPhoto}
-                    onCapturer={setNouvPhoto}
-                    onRetirer={() => setNouvPhoto(null)}
-                    disabled={envoi}
-                  />
+                <div className="md:col-span-2">
+                  <label className="libelle mb-1.5">Photos du produit</label>
+                  <ChampPhotos photos={nouvPhotos} onChange={setNouvPhotos} disabled={envoi} />
                 </div>
               </div>
               <div className="text-right">
@@ -957,16 +969,12 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             </div>
           </div>
           <div>
-            <label className="libelle mb-1.5">Photo du produit</label>
-            <ChampPhoto
-              apercu={editPhoto}
-              onCapturer={(data) => {
-                setEditPhoto(data);
-                setEditPhotoModifiee(true);
-              }}
-              onRetirer={() => {
-                setEditPhoto(null);
-                setEditPhotoModifiee(true);
+            <label className="libelle mb-1.5">Photos du produit</label>
+            <ChampPhotos
+              photos={editPhotos}
+              onChange={(p) => {
+                setEditPhotos(p);
+                setEditPhotosModifiees(true);
               }}
               disabled={envoi}
             />

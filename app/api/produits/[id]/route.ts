@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { urlPhotoProduit, validerPhoto } from "@/lib/images";
+import {
+  urlPhotoProduit,
+  urlPhotoSupplementaire,
+  validerPhoto,
+} from "@/lib/images";
+import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -33,9 +38,16 @@ export async function GET(
           orderBy: { date_vente: "asc" },
           include: { vendeur: { select: { username: true } } },
         },
+        images: { orderBy: { position: "asc" }, select: { id: true } },
       },
     });
     if (!p) return erreur(404, "Produit introuvable.");
+
+    // Galerie complète : la couverture d'abord, puis les photos supplémentaires.
+    const galerie: string[] = [
+      ...(p.image_url ? [urlPhotoProduit(p.id)] : []),
+      ...p.images.map((img) => urlPhotoSupplementaire(p.id, img.id)),
+    ];
 
     const coutReparations = p.reparations.reduce((s, r) => s + r.cout, 0);
     return NextResponse.json({
@@ -45,8 +57,10 @@ export async function GET(
       categorie: p.categorie,
       statut: p.statut,
       a_jeter: p.a_jeter,
+      en_vitrine: p.en_vitrine,
       notes: p.notes,
       image_url: p.image_url ? urlPhotoProduit(p.id) : null,
+      images: galerie,
       decision_rapport: p.decision_rapport,
       prix_achat: p.prix_achat,
       cout_reparations: coutReparations,
@@ -113,15 +127,17 @@ export async function PUT(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { reference, categorie, prix_achat, image_url, prix_vente_fixe, a_jeter } = (corps ??
-    {}) as {
-    reference?: unknown;
-    categorie?: unknown;
-    prix_achat?: unknown;
-    image_url?: unknown;
-    prix_vente_fixe?: unknown;
-    a_jeter?: unknown;
-  };
+  const { reference, categorie, prix_achat, image_url, images, prix_vente_fixe, a_jeter, en_vitrine } =
+    (corps ?? {}) as {
+      reference?: unknown;
+      categorie?: unknown;
+      prix_achat?: unknown;
+      image_url?: unknown;
+      images?: unknown;
+      prix_vente_fixe?: unknown;
+      a_jeter?: unknown;
+      en_vitrine?: unknown;
+    };
 
   const donnees: {
     reference?: string;
@@ -130,6 +146,7 @@ export async function PUT(
     image_url?: string | null;
     prix_vente_fixe?: number | null;
     a_jeter?: boolean;
+    en_vitrine?: boolean;
     statut?: any;
   } = {};
   if (reference !== undefined) {
@@ -160,6 +177,24 @@ export async function PUT(
     } else {
       return erreur(400, "Photo invalide.");
     }
+  }
+
+  // Galerie multi-photos : `images[0]` devient la couverture, le reste la galerie.
+  // Le client peut renvoyer un mélange d'URL existantes et de data-URL nouvelles.
+  let extrasARemplacer: string[] | null = null;
+  if (images !== undefined) {
+    if (!Array.isArray(images)) return erreur(400, "Liste de photos invalide.");
+    const resolution = await resoudreGalerie(prisma, images as string[]);
+    if (resolution.erreur !== undefined) return erreur(400, resolution.erreur);
+    donnees.image_url = resolution.images[0] ?? null;
+    extrasARemplacer = resolution.images.slice(1);
+  }
+
+  if (en_vitrine !== undefined) {
+    if (typeof en_vitrine !== "boolean") {
+      return erreur(400, "Le champ « en vitrine » doit être vrai ou faux.");
+    }
+    donnees.en_vitrine = en_vitrine;
   }
 
   if (a_jeter !== undefined) {
@@ -194,11 +229,13 @@ export async function PUT(
     if (donnees.a_jeter === true && produit.statut !== "hs") {
       return erreur(400, "« À jeter » ne concerne que les produits HS.");
     }
+    if (donnees.en_vitrine === true && produit.statut === "vendu") {
+      return erreur(400, "Un produit vendu ne peut pas être mis en vitrine.");
+    }
 
-    let maj;
-    if (modifPrixVente && donnees.prix_vente_fixe !== null && produit.statut === "ok") {
-      donnees.statut = "en_vente";
-      maj = await prisma.$transaction(async (tx) => {
+    const maj = await prisma.$transaction(async (tx) => {
+      if (modifPrixVente && donnees.prix_vente_fixe !== null && produit.statut === "ok") {
+        donnees.statut = "en_vente";
         await tx.historiqueStatut.create({
           data: {
             produit_id: produit.id,
@@ -208,11 +245,13 @@ export async function PUT(
             note: "Prix fixé depuis l'inventaire",
           },
         });
-        return tx.produit.update({ where: { id: produitId }, data: donnees });
-      });
-    } else {
-      maj = await prisma.produit.update({ where: { id: produitId }, data: donnees });
-    }
+      }
+      const m = await tx.produit.update({ where: { id: produitId }, data: donnees });
+      if (extrasARemplacer !== null) {
+        await remplacerImagesSupplementaires(tx, produitId, extrasARemplacer);
+      }
+      return m;
+    });
 
     return NextResponse.json({
       ok: true,
@@ -247,6 +286,7 @@ export async function DELETE(
     });
     if (!produit) return erreur(404, "Produit introuvable.");
     await prisma.$transaction([
+      prisma.produitImage.deleteMany({ where: { produit_id: produitId } }),
       prisma.historiqueStatut.deleteMany({ where: { produit_id: produitId } }),
       prisma.reparation.deleteMany({ where: { produit_id: produitId } }),
       prisma.vente.deleteMany({ where: { produit_id: produitId } }),

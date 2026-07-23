@@ -46,3 +46,15 @@ export function validerPhoto(valeur: string): string | null {
 export function urlPhotoProduit(produitId: number): string {
   return `/api/produits/${produitId}/image`;
 }
+
+// URL de service d'une photo supplémentaire (galerie) d'un produit.
+export function urlPhotoSupplementaire(produitId: number, imageId: number): string {
+  return `/api/produits/${produitId}/images/${imageId}`;
+}
+
+// Extension de fichier correspondant à un type MIME d'image.
+export function extensionDepuisMime(mime: string): string {
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
+  return "jpg";
+}

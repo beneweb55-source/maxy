@@ -204,6 +204,23 @@ export const IconeImage = creerIcone(
   </>
 );
 
+export const IconeVitrine = creerIcone(
+  "Vitrine",
+  <>
+    <path d="M3 9l1.5-5h15L21 9" />
+    <path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" />
+    <path d="M3 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 3 0" />
+    <path d="M9 21v-6h6v6" />
+  </>
+);
+
+export const IconeEtoile = creerIcone(
+  "Etoile",
+  <>
+    <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.8 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8L12 2z" />
+  </>
+);
+
 export const IconeTelechargement = creerIcone(
   "Telechargement",
   <>

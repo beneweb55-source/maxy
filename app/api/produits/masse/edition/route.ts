@@ -3,6 +3,11 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { validerLignesProduits } from "@/lib/validation";
 import { genererCodesInternes } from "@/lib/codes";
+import {
+  creerImagesSupplementaires,
+  remplacerImagesSupplementaires,
+  resoudreGalerie,
+} from "@/lib/produit-images-db";
 
 export async function PUT(request: NextRequest) {
   const acces = await exigerUtilisateur(["technicien", "gerant", "dev"]);
@@ -15,12 +20,13 @@ export async function PUT(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { ids, reference, categorie, prix_achat, image_url, quantite } = (corps ?? {}) as {
+  const { ids, reference, categorie, prix_achat, image_url, images, quantite } = (corps ?? {}) as {
     ids?: unknown;
     reference?: unknown;
     categorie?: unknown;
     prix_achat?: unknown;
     image_url?: unknown;
+    images?: unknown;
     quantite?: unknown;
   };
 
@@ -38,17 +44,36 @@ export async function PUT(request: NextRequest) {
     targetQuantite = q;
   }
 
-  const validation = validerLignesProduits([{ reference, categorie, prix_achat, image_url }]);
+  const validation = validerLignesProduits([{ reference, categorie, prix_achat }]);
   if (validation.erreur !== undefined) return erreur(400, validation.erreur);
   const ligne = validation.produits[0];
   if (!ligne) return erreur(400, "Données invalides.");
 
+  // Photos fournies explicitement (soit `images`, soit `image_url` en héritage) ?
+  const imagesFournies = "images" in (corps as object) || "image_url" in (corps as object);
+  let couvertureFournie: string | null = null;
+  let extrasFournis: string[] = [];
+  if (imagesFournies) {
+    const brutes = Array.isArray(images)
+      ? (images as string[])
+      : typeof image_url === "string" && image_url.trim()
+        ? [image_url.trim()]
+        : [];
+    const resolution = await resoudreGalerie(prisma, brutes);
+    if (resolution.erreur !== undefined) return erreur(400, resolution.erreur);
+    couvertureFournie = resolution.images[0] ?? null;
+    extrasFournis = resolution.images.slice(1);
+  }
+
   try {
-    const produits = await prisma.produit.findMany({ where: { id: { in: produitIds } } });
+    const produits = await prisma.produit.findMany({
+      where: { id: { in: produitIds } },
+      include: { images: { orderBy: { position: "asc" }, select: { data: true } } },
+    });
     if (produits.length !== produitIds.length) {
       return erreur(404, "Certains produits sont introuvables.");
     }
-    
+
     if (produits.some(p => p.statut === "vendu")) {
       return erreur(400, "Un ou plusieurs produits sont déjà vendus et ne peuvent être modifiés.");
     }
@@ -58,18 +83,19 @@ export async function PUT(request: NextRequest) {
       categorie: ligne.categorie,
       prix_achat: ligne.prix_achat,
     };
-    if ("image_url" in (corps as object)) donnees.image_url = ligne.image_url ?? null;
+    if (imagesFournies) donnees.image_url = couvertureFournie;
 
     const diff = targetQuantite - produitIds.length;
 
     await prisma.$transaction(async (tx) => {
       let idsAUpdate = [...produitIds];
-      
+
       // Suppression de l'excédent si la quantité est réduite
       if (diff < 0) {
         const nbASupprimer = -diff;
         const idsASupprimer = idsAUpdate.splice(-nbASupprimer, nbASupprimer);
-        
+
+        await tx.produitImage.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.reparation.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.vente.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
@@ -83,12 +109,23 @@ export async function PUT(request: NextRequest) {
           where: { id: { in: idsAUpdate } },
           data: donnees,
         });
+        // Si des photos sont fournies, on remplace la galerie de chaque produit.
+        if (imagesFournies) {
+          for (const pid of idsAUpdate) {
+            await remplacerImagesSupplementaires(tx, pid, extrasFournis);
+          }
+        }
       }
 
       // Ajout des nouveaux produits si la quantité est augmentée
       if (diff > 0) {
         const originalProduct = produits[0];
         if (!originalProduct) throw new Error("Produit original manquant");
+        // Galerie des nouvelles unités : celle fournie, sinon copie de l'original.
+        const couvertureNouvelle = imagesFournies ? couvertureFournie : originalProduct.image_url;
+        const extrasNouveaux = imagesFournies
+          ? extrasFournis
+          : originalProduct.images.map((img) => img.data);
         const codes = await genererCodesInternes(tx, diff);
         for (let i = 0; i < diff; i++) {
           const code = codes[i];
@@ -100,10 +137,11 @@ export async function PUT(request: NextRequest) {
               reference: ligne.reference,
               categorie: ligne.categorie,
               prix_achat: ligne.prix_achat,
-              image_url: ("image_url" in (corps as object)) ? (ligne.image_url ?? null) : originalProduct.image_url,
+              image_url: couvertureNouvelle,
               statut: originalProduct.statut,
             },
           });
+          await creerImagesSupplementaires(tx, produit.id, extrasNouveaux);
           await tx.historiqueStatut.create({
             data: {
               produit_id: produit.id,

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
-import ChampPhoto from "@/components/ChampPhoto";
+import ChampPhotos from "@/components/ChampPhotos";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT, STATUTS_PRODUIT } from "@/lib/statuts";
@@ -20,11 +20,13 @@ import {
   IconeChevronDroite,
   IconeCorbeille,
   IconeCrayon,
+  IconeImage,
   IconePlus,
   IconeRecherche,
   IconeTelechargement,
   IconeTriBas,
   IconeTriHaut,
+  IconeVitrine,
 } from "@/components/icons";
 
 interface LigneProduit {
@@ -34,6 +36,7 @@ interface LigneProduit {
   categorie: string;
   statut: StatutProduit;
   a_jeter: boolean;
+  en_vitrine: boolean;
   prix_achat: number;
   cout_reparations: number;
   prix_vente_fixe: number | null;
@@ -43,6 +46,7 @@ interface LigneProduit {
   date_entree: string;
   jours_stock: number;
   image_url: string | null;
+  nb_images: number;
 }
 
 interface ReponseInventaire {
@@ -95,6 +99,8 @@ interface GroupeProduits {
   reference: string;
   categorie: string;
   image_url: string | null;
+  nbImages: number;
+  enVitrine: number;
   unites: LigneProduit[];
   prixMin: number;
   prixMax: number;
@@ -124,6 +130,8 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
       reference: premier.reference,
       categorie: premier.categorie,
       image_url: unites.find((u) => u.image_url)?.image_url ?? null,
+      nbImages: Math.max(...unites.map((u) => u.nb_images)),
+      enVitrine: unites.filter((u) => u.en_vitrine).length,
       unites,
       prixMin: Math.min(...prix),
       prixMax: Math.max(...prix),
@@ -148,8 +156,8 @@ export default function Inventaire({ role }: { role: Role }) {
   const [modalEdition, setModalEdition] = useState<LigneProduit | null>(null);
   const [modalSuppression, setModalSuppression] = useState<LigneProduit | null>(null);
   const [formulaire, setFormulaire] = useState<FormulaireProduit>(FORMULAIRE_VIDE);
-  const [formPhoto, setFormPhoto] = useState<string | null>(null);
-  const [formPhotoModifiee, setFormPhotoModifiee] = useState(false);
+  const [formPhotos, setFormPhotos] = useState<string[]>([]);
+  const [formPhotosModifiees, setFormPhotosModifiees] = useState(false);
 
   const [vueGroupee, setVueGroupee] = useState(true);
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
@@ -221,8 +229,8 @@ export default function Inventaire({ role }: { role: Role }) {
 
   function ouvrirAjout() {
     setFormulaire({ ...FORMULAIRE_VIDE, lot_id: String(donnees?.lots[0]?.id ?? "") });
-    setFormPhoto(null);
-    setFormPhotoModifiee(false);
+    setFormPhotos([]);
+    setFormPhotosModifiees(false);
     setModalAjout(true);
   }
 
@@ -235,11 +243,49 @@ export default function Inventaire({ role }: { role: Role }) {
       prix_vente_fixe: p.prix_vente_fixe !== null ? String(p.prix_vente_fixe) : "",
       quantite: "1",
     });
-    setFormPhoto(p.image_url);
-    setFormPhotoModifiee(false);
+    // Amorce avec la couverture connue, puis récupère la galerie complète.
+    setFormPhotos(p.image_url ? [p.image_url] : []);
+    setFormPhotosModifiees(false);
     setCibleStatut(null);
     setNoteStatut("");
     setModalEdition(p);
+    if (p.nb_images > 1) {
+      void fetch(`/api/produits/${p.id}`)
+        .then((r) => (r.ok ? (r.json() as Promise<{ images?: string[] }>) : null))
+        .then((d) => {
+          if (d?.images) setFormPhotos(d.images);
+        })
+        .catch(() => undefined);
+    }
+  }
+
+  async function basculerVitrine() {
+    if (!modalEdition) return;
+    const cible = !modalEdition.en_vitrine;
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/produits/${modalEdition.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ en_vitrine: cible }),
+      });
+      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la mise à jour de la vitrine.", "erreur");
+        return;
+      }
+      afficher(
+        cible
+          ? `${modalEdition.code_interne} mis en vitrine.`
+          : `${modalEdition.code_interne} retiré de la vitrine.`
+      );
+      setModalEdition({ ...modalEdition, en_vitrine: cible });
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
   }
 
   async function changerStatut(cible: StatutProduit) {
@@ -325,7 +371,7 @@ export default function Inventaire({ role }: { role: Role }) {
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
-          image_url: formPhoto ?? undefined,
+          images: formPhotos,
           quantite: Number(formulaire.quantite) || 1,
         }),
       });
@@ -359,7 +405,7 @@ export default function Inventaire({ role }: { role: Role }) {
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
           prix_vente_fixe: formulaire.prix_vente_fixe.trim() ? Number(formulaire.prix_vente_fixe) : null,
-          ...(formPhotoModifiee ? { image_url: formPhoto ?? "" } : {}),
+          ...(formPhotosModifiees ? { images: formPhotos } : {}),
         }),
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -501,16 +547,12 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
       <div className="sm:col-span-2 mt-2">
-        <label className="libelle mb-1.5">Photo du produit</label>
-        <ChampPhoto
-          apercu={formPhoto}
-          onCapturer={(data) => {
-            setFormPhoto(data);
-            setFormPhotoModifiee(true);
-          }}
-          onRetirer={() => {
-            setFormPhoto(null);
-            setFormPhotoModifiee(true);
+        <label className="libelle mb-1.5">Photos du produit</label>
+        <ChampPhotos
+          photos={formPhotos}
+          onChange={(p) => {
+            setFormPhotos(p);
+            setFormPhotosModifiees(true);
           }}
           disabled={envoi}
         />
@@ -532,6 +574,14 @@ export default function Inventaire({ role }: { role: Role }) {
           >
             {vueGroupee ? "Vue détaillée" : "Vue groupée"}
           </button>
+          <a
+            href={`/api/produits/images/export?${searchParams?.toString() || ""}`}
+            className="btn btn-secondaire"
+            title="Télécharger les photos des produits filtrés (archive ZIP organisée par produit)"
+          >
+            <IconeImage taille={15} />
+            Photos (ZIP)
+          </a>
           {estGerant && (
             <a
               href={`/api/produits/export?${searchParams?.toString() || ""}`}
@@ -637,6 +687,15 @@ export default function Inventaire({ role }: { role: Role }) {
               className="accent-brand-orange"
             />
             À jeter
+          </label>
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="checkbox"
+              checked={searchParams?.get("en_vitrine") === "1"}
+              onChange={(e) => majUrl({ en_vitrine: e.target.checked ? "1" : null })}
+              className="accent-brand-orange"
+            />
+            En vitrine
           </label>
           <select
             value={
@@ -767,6 +826,18 @@ export default function Inventaire({ role }: { role: Role }) {
                           {r.n}× {INFOS_STATUT[r.statut].libelle}
                         </span>
                       ))}
+                      {g.enVitrine > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/15 px-1.5 py-0.5 text-[11px] font-semibold text-brand-orange">
+                          <IconeVitrine taille={11} />
+                          {g.enVitrine > 1 ? `${g.enVitrine}× vitrine` : "Vitrine"}
+                        </span>
+                      )}
+                      {g.nbImages > 1 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-light-grey/60 px-1.5 py-0.5 text-[11px] font-semibold text-brand-warm-grey">
+                          <IconeImage taille={11} />
+                          {g.nbImages}
+                        </span>
+                      )}
                     </p>
                   </div>
                   {!estSocial && (
@@ -827,6 +898,13 @@ export default function Inventaire({ role }: { role: Role }) {
                           </span>
                         </button>
                         <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+                        {p.en_vitrine && (
+                          <IconeVitrine
+                            taille={14}
+                            className="shrink-0 text-brand-orange"
+                            aria-label="En vitrine"
+                          />
+                        )}
                         {peutModifier && (
                           <>
                             <button
@@ -900,7 +978,16 @@ export default function Inventaire({ role }: { role: Role }) {
                   </td>
                   <td className="px-3 py-2">{p.categorie}</td>
                   <td className="px-3 py-2">
-                    <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+                    <span className="inline-flex items-center gap-1.5">
+                      <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+                      {p.en_vitrine && (
+                        <IconeVitrine
+                          taille={14}
+                          className="text-brand-orange"
+                          aria-label="En vitrine"
+                        />
+                      )}
+                    </span>
                   </td>
                   <td className="px-3 py-2 text-xs">
                     {new Date(p.date_entree).toLocaleDateString("fr-FR")}
@@ -1145,6 +1232,31 @@ export default function Inventaire({ role }: { role: Role }) {
                   À jeter — non récupérable pour pièces
                 </label>
               )}
+            </div>
+          )}
+
+          {modalEdition && peutModifier && modalEdition.statut !== "vendu" && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
+              <div className="min-w-0">
+                <span className="libelle inline-flex items-center gap-1.5">
+                  <IconeVitrine taille={14} /> Vitrine
+                </span>
+                <p className="text-xs text-brand-warm-grey">
+                  Exposé physiquement en vitrine — indépendant de la vente en ligne.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={() => void basculerVitrine()}
+                className={
+                  modalEdition.en_vitrine
+                    ? "btn bg-brand-orange text-brand-white hover:bg-brand-orange/90"
+                    : "btn btn-secondaire"
+                }
+              >
+                {modalEdition.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
+              </button>
             </div>
           )}
 
