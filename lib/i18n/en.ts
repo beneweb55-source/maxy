@@ -115,6 +115,15 @@ export const en = {
     echecCapture: "Photo capture failed.",
     max: "Maximum {max} photos reached.",
     vide: "No photos yet.",
+    agrandir: "View photo full size",
+  },
+  visionneuse: {
+    apercu: "Photo preview",
+    fermer: "Close preview",
+    telecharger: "Download this photo",
+    precedente: "Previous photo",
+    suivante: "Next photo",
+    compteur: "{n} / {total}",
   },
   tableur: {
     reference: "Reference *",

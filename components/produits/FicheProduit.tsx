@@ -7,6 +7,7 @@ import type { DecisionRapport, Role, StatutLot, StatutProduit } from "@prisma/cl
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
 import ChampPhotos from "@/components/ChampPhotos";
+import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
@@ -95,6 +96,7 @@ export default function FicheProduit({
   const [editPhotosModifiees, setEditPhotosModifiees] = useState(false);
   const [modalSuppression, setModalSuppression] = useState(false);
   const [indexActif, setIndexActif] = useState(0);
+  const [visionneuseOuverte, setVisionneuseOuverte] = useState(false);
 
   const peutModifierStatut = role === "technicien" || role === "gerant";
   const estGerant = role === "gerant";
@@ -233,17 +235,39 @@ export default function FicheProduit({
           {produit.images.length > 0 && (
             <div className="mt-2.5 space-y-2">
               <div className="relative">
-                <img
-                  src={produit.images[indexActif] ?? produit.images[0]}
-                  alt={`Photo de ${produit.reference}`}
-                  className="h-52 w-full rounded-lg border border-brand-light-grey object-cover"
-                />
+                <button
+                  type="button"
+                  onClick={() => setVisionneuseOuverte(true)}
+                  title="Voir la photo en grand"
+                  aria-label="Voir la photo en grand"
+                  className="block w-full cursor-zoom-in"
+                >
+                  <img
+                    src={produit.images[indexActif] ?? produit.images[0]}
+                    alt={`Photo de ${produit.reference}`}
+                    className="h-52 w-full rounded-lg border border-brand-light-grey object-cover"
+                  />
+                </button>
                 {produit.en_vitrine && (
-                  <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-brand-white shadow">
+                  <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-brand-white shadow">
                     <IconeVitrine taille={12} />
                     En vitrine
                   </span>
                 )}
+                {produit.images.length > 1 && (
+                  <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
+                    {indexActif + 1} / {produit.images.length}
+                  </span>
+                )}
+                <a
+                  href={`${produit.images[indexActif] ?? produit.images[0]}?download=1`}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Télécharger la photo affichée"
+                  aria-label="Télécharger la photo affichée"
+                  className="absolute bottom-2 right-2 rounded-full bg-black/55 p-2 text-white shadow transition hover:bg-black/75"
+                >
+                  <IconeTelechargement taille={15} />
+                </a>
               </div>
               {produit.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-1">
@@ -263,28 +287,16 @@ export default function FicheProduit({
                   ))}
                 </div>
               )}
-              <div className="flex flex-col gap-2 sm:flex-row">
+              {produit.images.length > 1 && (
                 <a
-                  href={`${produit.images[indexActif] ?? produit.images[0]}?download=1`}
-                  className="btn btn-secondaire flex-1 justify-center"
-                  title="Télécharger la photo affichée"
+                  href={`/api/produits/${produitId}/images/export`}
+                  className="btn btn-secondaire w-full justify-center"
+                  title="Télécharger toutes les photos de ce produit (ZIP)"
                 >
                   <IconeTelechargement taille={15} />
-                  {produit.images.length > 1
-                    ? `Télécharger la photo ${indexActif + 1}/${produit.images.length}`
-                    : "Télécharger la photo"}
+                  Tout télécharger ({produit.images.length} photos)
                 </a>
-                {produit.images.length > 1 && (
-                  <a
-                    href={`/api/produits/${produitId}/images/export`}
-                    className="btn btn-secondaire flex-1 justify-center"
-                    title="Télécharger toutes les photos de ce produit (ZIP)"
-                  >
-                    <IconeTelechargement taille={15} />
-                    Tout télécharger ({produit.images.length}) — ZIP
-                  </a>
-                )}
-              </div>
+              )}
             </div>
           )}
           <dl className="mt-2.5 space-y-1.5 text-sm">
@@ -870,6 +882,17 @@ export default function FicheProduit({
           </button>
         </div>
       </Modale>
+
+      {visionneuseOuverte && produit.images.length > 0 && (
+        <VisionneusePhotos
+          photos={produit.images}
+          index={indexActif}
+          onFermer={() => setVisionneuseOuverte(false)}
+          onNaviguer={setIndexActif}
+          lienTelechargement={(i) => `${produit.images[i]}?download=1`}
+          titre={produit.code_interne}
+        />
+      )}
     </div>
   );
 }

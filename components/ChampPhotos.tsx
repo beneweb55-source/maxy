@@ -10,6 +10,7 @@ import {
   priseDePhotoDisponible,
 } from "@/lib/photo-capture";
 import { MAX_PHOTOS_PRODUIT } from "@/lib/validation";
+import VisionneusePhotos from "@/components/VisionneusePhotos";
 import {
   IconeAppareilPhoto,
   IconeCorbeille,
@@ -39,6 +40,8 @@ export default function ChampPhotos({
   const champGalerie = useRef<HTMLInputElement>(null);
   const [enCours, setEnCours] = useState(false);
   const [photoDisponible, setPhotoDisponible] = useState(false);
+  // Index de la photo affichée en plein écran (null = aperçu fermé).
+  const [apercu, setApercu] = useState<number | null>(null);
   useEffect(() => setPhotoDisponible(priseDePhotoDisponible()), []);
 
   const plein = photos.length >= max;
@@ -137,22 +140,30 @@ export default function ChampPhotos({
           {photos.map((src, index) => (
             <div
               key={`${index}-${src.slice(0, 32)}`}
-              className="group relative aspect-square overflow-hidden rounded-lg border border-brand-light-grey bg-brand-paper"
+              className="relative aspect-square overflow-hidden rounded-lg border border-brand-light-grey bg-brand-paper"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt={t("champPhotos.couverture")}
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
+              <button
+                type="button"
+                onClick={() => setApercu(index)}
+                title={t("champPhotos.agrandir")}
+                aria-label={t("champPhotos.agrandir")}
+                className="block h-full w-full cursor-zoom-in"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={t("champPhotos.couverture")}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </button>
               {index === 0 && (
-                <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-brand-white shadow">
+                <span className="pointer-events-none absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-brand-white shadow">
                   <IconeEtoile taille={10} />
                   {t("champPhotos.couverture")}
                 </span>
               )}
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-gradient-to-t from-black/55 to-transparent p-1 opacity-0 transition group-hover:opacity-100">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-gradient-to-t from-black/55 to-transparent p-1">
                 {index !== 0 && (
                   <button
                     type="button"
@@ -160,7 +171,7 @@ export default function ChampPhotos({
                     onClick={() => definirCouverture(index)}
                     title={t("champPhotos.definirCouverture")}
                     aria-label={t("champPhotos.definirCouverture")}
-                    className="rounded-md bg-brand-white/90 p-1 text-brand-black transition hover:bg-brand-white"
+                    className="pointer-events-auto rounded-md bg-brand-white/90 p-1 text-brand-black transition hover:bg-brand-white"
                   >
                     <IconeEtoile taille={13} />
                   </button>
@@ -171,7 +182,7 @@ export default function ChampPhotos({
                   onClick={() => retirer(index)}
                   title={t("champPhotos.retirer")}
                   aria-label={t("champPhotos.retirer")}
-                  className="rounded-md bg-brand-white/90 p-1 text-danger transition hover:bg-brand-white"
+                  className="pointer-events-auto rounded-md bg-brand-white/90 p-1 text-danger transition hover:bg-brand-white"
                 >
                   <IconeCorbeille taille={13} />
                 </button>
@@ -209,6 +220,15 @@ export default function ChampPhotos({
           ? t("champPhotos.vide")
           : t("champPhotos.compteur", { n: photos.length, max })}
       </p>
+
+      {apercu !== null && photos.length > 0 && (
+        <VisionneusePhotos
+          photos={photos}
+          index={apercu}
+          onFermer={() => setApercu(null)}
+          onNaviguer={setApercu}
+        />
+      )}
     </div>
   );
 }
