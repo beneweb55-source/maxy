@@ -25,16 +25,18 @@ export async function GET(
         reference: true,
         image_url: true,
         statut: true,
+        en_vitrine: true,
         images: { orderBy: { position: "asc" }, select: { data: true } },
       },
     });
     if (!produit) return erreur(404, "Produit introuvable.");
 
-    // Le rôle social_media est limité aux produits en vente / vendus.
+    // Le rôle social_media est limité aux produits en vente, vendus ou en vitrine.
     if (
       acces.user.role === "social_media" &&
       produit.statut !== "en_vente" &&
-      produit.statut !== "vendu"
+      produit.statut !== "vendu" &&
+      !produit.en_vitrine
     ) {
       return erreur(403, "Accès restreint à ce produit.");
     }

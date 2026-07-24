@@ -17,10 +17,16 @@ export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
     let where = construireFiltresProduits(params);
-    // Le rôle social_media ne voit que les produits en vente ou vendus,
-    // quels que soient les filtres demandés (restriction côté serveur).
+    // Le rôle social_media ne voit que les produits en vente, vendus ou
+    // exposés en vitrine, quels que soient les filtres demandés
+    // (restriction côté serveur).
     if (acces.user.role === "social_media") {
-      where = { AND: [where, { statut: { in: ["en_vente", "vendu"] } }] };
+      where = {
+        AND: [
+          where,
+          { OR: [{ statut: { in: ["en_vente", "vendu"] } }, { en_vitrine: true }] },
+        ],
+      };
     }
     const orderBy = construireTriProduits(params);
     const page = Math.max(1, Number(params.get("page")) || 1);
