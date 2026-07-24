@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
+import { urlPhotoProduit, urlPhotoSupplementaire } from "@/lib/images";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -15,6 +16,7 @@ export async function GET() {
       include: {
         lot: { select: { date_entree: true } },
         reparations: { select: { cout: true } },
+        images: { orderBy: { position: "asc" }, select: { id: true } },
         historique: {
           where: { statut_apres: "en_vente" },
           orderBy: { created_at: "desc" },
@@ -38,6 +40,12 @@ export async function GET() {
           prix_vente_fixe: p.prix_vente_fixe,
           marge_prevue: (p.prix_vente_fixe ?? 0) - p.prix_achat - coutRep,
           jours_en_vente: Math.floor((maintenant - depuis.getTime()) / JOUR_MS),
+          image_url: p.image_url ? urlPhotoProduit(p.id) : null,
+          // Galerie complète (couverture d'abord) pour l'aperçu plein écran.
+          images: [
+            ...(p.image_url ? [urlPhotoProduit(p.id)] : []),
+            ...p.images.map((img) => urlPhotoSupplementaire(p.id, img.id)),
+          ],
         };
       }),
     });

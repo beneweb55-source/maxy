@@ -4,6 +4,7 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 import { ajouterMouvement } from "@/lib/caisse-db";
 import { formaterDA } from "@/lib/caisse";
 import { margeVente, seuilMargeMinimum } from "@/lib/finances";
+import { urlPhotoProduit } from "@/lib/images";
 import { idsParRole, notifier } from "@/lib/notifs";
 import { entierPositif } from "@/lib/validation";
 
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
               code_interne: true,
               reference: true,
               prix_achat: true,
+              image_url: true,
               reparations: { select: { cout: true } },
             },
           },
@@ -57,6 +59,7 @@ export async function GET(request: NextRequest) {
         produit_id: v.produit.id,
         code_interne: v.produit.code_interne,
         reference: v.produit.reference,
+        image_url: v.produit.image_url ? urlPhotoProduit(v.produit.id) : null,
         prix_vente_reel: v.prix_vente_reel,
         marge: margeVente(v.prix_vente_reel, v.produit.prix_achat, coutRep),
         canal: v.canal,

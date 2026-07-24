@@ -5,9 +5,16 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
+import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
-import { IconeAlerte, IconeBillet, IconePaquet, IconeRecherche } from "@/components/icons";
+import {
+  IconeAlerte,
+  IconeBillet,
+  IconeImage,
+  IconePaquet,
+  IconeRecherche,
+} from "@/components/icons";
 
 interface CarteEnVente {
   id: number;
@@ -19,6 +26,8 @@ interface CarteEnVente {
   prix_vente_fixe: number | null;
   marge_prevue: number;
   jours_en_vente: number;
+  image_url: string | null;
+  images: string[];
 }
 
 interface LigneVente {
@@ -26,6 +35,7 @@ interface LigneVente {
   produit_id: number;
   code_interne: string;
   reference: string;
+  image_url: string | null;
   prix_vente_reel: number;
   marge: number;
   canal: string | null;
@@ -85,6 +95,13 @@ export default function VentesClient({ role }: { role: Role }) {
   const [filtreVendeur, setFiltreVendeur] = useState("");
   const [modalAnnulation, setModalAnnulation] = useState<LigneVente | null>(null);
   const [motif, setMotif] = useState("");
+
+  // Aperçu plein écran des photos d'un produit (galerie + téléchargement).
+  const [apercuPhotos, setApercuPhotos] = useState<{
+    photos: string[];
+    index: number;
+    titre: string;
+  } | null>(null);
 
   const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
   const estGerant = role === "gerant";
@@ -442,6 +459,37 @@ export default function VentesClient({ role }: { role: Role }) {
                         Ajouter au groupe
                       </label>
                     )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        c.images.length > 0 &&
+                        setApercuPhotos({ photos: c.images, index: 0, titre: c.code_interne })
+                      }
+                      title={c.images.length > 0 ? "Voir les photos en grand" : undefined}
+                      aria-label={`Photos de ${c.reference}`}
+                      className={`relative mb-2.5 block h-32 w-full overflow-hidden rounded-lg border border-brand-light-grey bg-brand-paper ${
+                        c.images.length > 0 ? "cursor-zoom-in" : "cursor-default"
+                      }`}
+                    >
+                      {c.image_url ? (
+                        <img
+                          src={c.image_url}
+                          alt={`Photo de ${c.reference}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center text-brand-grey">
+                          <IconeImage taille={26} />
+                        </span>
+                      )}
+                      {c.images.length > 1 && (
+                        <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                          <IconeImage taille={11} />
+                          {c.images.length}
+                        </span>
+                      )}
+                    </button>
                     <Link
                       href={`/produits/${c.id}`}
                       className="block truncate text-sm font-semibold transition hover:text-brand-crystal hover:underline"
@@ -600,6 +648,34 @@ export default function VentesClient({ role }: { role: Role }) {
                   {historique.ventes.map((v) => (
                     <tr key={v.id} className={`ligne-table border-b border-brand-light-grey/30 last:border-0 ${v.annulee ? "text-brand-grey" : ""}`}>
                       <td className="px-3 py-2">
+                        <span className="flex items-center gap-2">
+                          {v.image_url ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setApercuPhotos({
+                                  photos: [v.image_url!],
+                                  index: 0,
+                                  titre: v.code_interne,
+                                })
+                              }
+                              title="Voir la photo en grand"
+                              aria-label={`Photo de ${v.reference}`}
+                              className="shrink-0 cursor-zoom-in"
+                            >
+                              <img
+                                src={v.image_url}
+                                alt=""
+                                loading="lazy"
+                                className="h-9 w-9 rounded-md border border-brand-light-grey object-cover"
+                              />
+                            </button>
+                          ) : (
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-dashed border-brand-light-grey text-brand-grey">
+                              <IconeImage taille={14} />
+                            </span>
+                          )}
+                          <span className="min-w-0">
                         <Link
                           href={`/produits/${v.produit_id}`}
                           className={`hover:underline ${v.annulee ? "line-through" : ""}`}
@@ -626,6 +702,8 @@ export default function VentesClient({ role }: { role: Role }) {
                             annulée
                           </span>
                         )}
+                          </span>
+                        </span>
                       </td>
                       <td className="px-3 py-2 text-right">{formaterDA(v.prix_vente_reel)}</td>
                       {!estSocial && (
@@ -674,7 +752,30 @@ export default function VentesClient({ role }: { role: Role }) {
       >
         {modalVente && (
           <div className="space-y-3">
-            <p className="text-sm text-brand-warm-grey">{modalVente.reference}</p>
+            <div className="flex items-center gap-3">
+              {modalVente.image_url && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setApercuPhotos({
+                      photos: modalVente.images,
+                      index: 0,
+                      titre: modalVente.code_interne,
+                    })
+                  }
+                  title="Voir les photos en grand"
+                  aria-label={`Photos de ${modalVente.reference}`}
+                  className="shrink-0 cursor-zoom-in"
+                >
+                  <img
+                    src={modalVente.image_url}
+                    alt=""
+                    className="h-14 w-14 rounded-lg border border-brand-light-grey object-cover"
+                  />
+                </button>
+              )}
+              <p className="text-sm text-brand-warm-grey">{modalVente.reference}</p>
+            </div>
             <div>
               <label className="libelle mb-1.5" htmlFor="prix-reel">
                 Prix de vente réel (DA) *
@@ -950,6 +1051,17 @@ export default function VentesClient({ role }: { role: Role }) {
           </div>
         </div>
       </Modale>
+
+      {apercuPhotos && (
+        <VisionneusePhotos
+          photos={apercuPhotos.photos}
+          index={apercuPhotos.index}
+          onFermer={() => setApercuPhotos(null)}
+          onNaviguer={(i) => setApercuPhotos((a) => (a ? { ...a, index: i } : a))}
+          lienTelechargement={(i) => `${apercuPhotos.photos[i]}?download=1`}
+          titre={apercuPhotos.titre}
+        />
+      )}
     </div>
   );
 }
