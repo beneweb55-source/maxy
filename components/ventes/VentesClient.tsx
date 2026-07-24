@@ -359,7 +359,7 @@ export default function VentesClient({ role }: { role: Role }) {
         date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
         confirmer: confirmer || undefined,
       } : {
-        produit_id: unitesConcernees[0].id,
+        produit_id: unitesConcernees[0]!.id,
         prix_vente_reel: Number(prixReel),
         canal: canal.trim() || undefined,
         date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
@@ -884,7 +884,7 @@ export default function VentesClient({ role }: { role: Role }) {
       )}
 
       <Modale
-        titre={modalVente ? `Vendre — ${modalVente.unites[0].code_interne}` : ""}
+        titre={modalVente ? `Vendre — ${modalVente.unites[0]!.code_interne}` : ""}
         ouverte={modalVente !== null}
         onFermer={() => setModalVente(null)}
       >
@@ -898,7 +898,7 @@ export default function VentesClient({ role }: { role: Role }) {
                     setApercuPhotos({
                       photos: modalVente.images,
                       index: 0,
-                      titre: modalVente.unites[0].code_interne,
+                      titre: modalVente.unites[0]!.code_interne,
                     })
                   }
                   title="Voir les photos en grand"
