@@ -48,7 +48,8 @@ interface ProduitDto {
   date_vente: string | null;
   marge: number | null;
   jours_stock: number;
-  lot: { id: number; fournisseur: string; date_entree: string; statut_lot: StatutLot };
+  date_entree: string;
+  lot: { id: number; fournisseur: string; date_entree: string; statut_lot: StatutLot } | null;
   reparations: { id: number; cout: number; description: string; date: string; par: string }[];
   historique: {
     id: number;
@@ -325,14 +326,22 @@ export default function FicheProduit({
             <div className="flex justify-between gap-2">
               <dt className="text-brand-warm-grey">Lot d'origine</dt>
               <dd>
-                <Link href={`/lots/${produit.lot.id}`} className="lien">
-                  n°{produit.lot.id} — {produit.lot.fournisseur}
-                </Link>
+                {produit.lot ? (
+                  <Link href={`/lots/${produit.lot.id}`} className="lien">
+                    n°{produit.lot.id} — {produit.lot.fournisseur}
+                  </Link>
+                ) : (
+                  <span className="text-brand-grey">Ajout direct (sans arrivage)</span>
+                )}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-brand-warm-grey">Date d'entrée</dt>
-              <dd>{new Date(produit.lot.date_entree).toLocaleDateString("fr-FR")}</dd>
+              <dd>
+                {new Date(produit.lot?.date_entree ?? produit.date_entree).toLocaleDateString(
+                  "fr-FR"
+                )}
+              </dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-brand-warm-grey">Jours en stock</dt>

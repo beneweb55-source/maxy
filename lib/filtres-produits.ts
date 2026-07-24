@@ -29,6 +29,9 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
   const lotId = Number(params.get("lot"));
   if (Number.isInteger(lotId) && lotId > 0) clauses.push({ lot_id: lotId });
 
+  // Produits ajoutés directement à l'inventaire, sans rattachement à un lot.
+  if (params.get("sans_lot") === "1") clauses.push({ lot_id: null });
+
   const du = params.get("du");
   const au = params.get("au");
   const dateEntree: Prisma.DateTimeFilter = {};
@@ -36,12 +39,21 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
   if (au && !Number.isNaN(Date.parse(au))) {
     dateEntree.lt = new Date(new Date(au).getTime() + JOUR_MS);
   }
-  if (dateEntree.gte || dateEntree.lt) clauses.push({ lot: { date_entree: dateEntree } });
+  // Date d'entrée = date du lot si présent, sinon date de création du produit.
+  if (dateEntree.gte || dateEntree.lt) {
+    clauses.push({
+      OR: [{ lot: { date_entree: dateEntree } }, { lot_id: null, created_at: dateEntree }],
+    });
+  }
 
   if (params.get("plus30j") === "1") {
+    const seuil = new Date(Date.now() - 30 * JOUR_MS);
     clauses.push({
       statut: { not: "vendu" },
-      lot: { date_entree: { lt: new Date(Date.now() - 30 * JOUR_MS) } },
+      OR: [
+        { lot: { date_entree: { lt: seuil } } },
+        { lot_id: null, created_at: { lt: seuil } },
+      ],
     });
   }
 
@@ -79,7 +91,10 @@ export function construireTriProduits(
     case "prix_vente_fixe":
       return { prix_vente_fixe: ordre };
     case "date_entree":
-      return { lot: { date_entree: ordre } };
+      // On trie sur created_at (propre au produit, rétro-rempli comme date
+      // d'entrée) : cohérent pour tous les produits, y compris ceux sans lot,
+      // contrairement à lot.date_entree qui classerait les sans-lot en NULLS.
+      return { created_at: ordre };
     default:
       return { code_interne: ordre };
   }

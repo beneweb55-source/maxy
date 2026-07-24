@@ -33,7 +33,13 @@ export async function verifierAlertesQuotidiennes(): Promise<void> {
   if (!(await dejaNotifieAujourdhui(LIEN_PLUS_30J, debutJour))) {
     const seuil30 = new Date(maintenant.getTime() - 30 * JOUR_MS);
     const nb = await prisma.produit.count({
-      where: { statut: { not: "vendu" }, lot: { date_entree: { lt: seuil30 } } },
+      where: {
+        statut: { not: "vendu" },
+        OR: [
+          { lot: { date_entree: { lt: seuil30 } } },
+          { lot_id: null, created_at: { lt: seuil30 } },
+        ],
+      },
     });
     if (nb > 0) {
       await notifierGerants(

@@ -124,6 +124,7 @@ model Produit {
   decision_rapport DecisionRapport?
   a_jeter          Boolean          @default(false)
   en_vitrine       Boolean          @default(false)
+  created_at       DateTime         @default(now())
 
   lot         Lot?               @relation(fields: [lot_id], references: [id])
   reparations Reparation[]

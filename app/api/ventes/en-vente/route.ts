@@ -29,7 +29,7 @@ export async function GET() {
     return NextResponse.json({
       produits: produits.map((p) => {
         const coutRep = p.reparations.reduce((s, r) => s + r.cout, 0);
-        const depuis = p.historique.at(0)?.created_at ?? p.lot.date_entree;
+        const depuis = p.historique.at(0)?.created_at ?? p.lot?.date_entree ?? p.created_at;
         return {
           id: p.id,
           code_interne: p.code_interne,

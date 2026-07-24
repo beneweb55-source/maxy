@@ -79,9 +79,12 @@ export async function GET(request: NextRequest) {
         prix_vente_fixe: p.prix_vente_fixe,
         prix_vente_reel: p.prix_vente_reel,
         lot_id: p.lot?.id ?? null,
-        fournisseur: p.lot?.fournisseur ?? "Indépendant",
-        date_entree: p.lot ? p.lot.date_entree.toISOString() : new Date().toISOString(),
-        jours_stock: p.lot ? Math.floor((maintenant - p.lot.date_entree.getTime()) / JOUR_MS) : 0,
+        fournisseur: p.lot?.fournisseur ?? null,
+        // Sans lot, la date d'entrée est celle de création du produit.
+        date_entree: (p.lot?.date_entree ?? p.created_at).toISOString(),
+        jours_stock: Math.floor(
+          (maintenant - (p.lot?.date_entree ?? p.created_at).getTime()) / JOUR_MS
+        ),
       })),
     });
   } catch (e) {

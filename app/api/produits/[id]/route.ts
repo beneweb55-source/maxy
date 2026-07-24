@@ -71,13 +71,18 @@ export async function GET(
         p.prix_vente_reel !== null
           ? p.prix_vente_reel - p.prix_achat - coutReparations
           : null,
-      jours_stock: Math.floor((Date.now() - p.lot.date_entree.getTime()) / JOUR_MS),
-      lot: {
-        id: p.lot.id,
-        fournisseur: p.lot.fournisseur,
-        date_entree: p.lot.date_entree.toISOString(),
-        statut_lot: p.lot.statut_lot,
-      },
+      jours_stock: Math.floor(
+        (Date.now() - (p.lot?.date_entree ?? p.created_at).getTime()) / JOUR_MS
+      ),
+      date_entree: (p.lot?.date_entree ?? p.created_at).toISOString(),
+      lot: p.lot
+        ? {
+            id: p.lot.id,
+            fournisseur: p.lot.fournisseur,
+            date_entree: p.lot.date_entree.toISOString(),
+            statut_lot: p.lot.statut_lot,
+          }
+        : null,
       reparations: p.reparations.map((r) => ({
         id: r.id,
         cout: r.cout,

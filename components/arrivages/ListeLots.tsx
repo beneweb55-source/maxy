@@ -51,7 +51,10 @@ export default function ListeLots({ role }: { role: Role }) {
 
   const charger = useCallback(async () => {
     try {
-      const res = await fetch("/api/lots");
+      // `no-store` : le coût des lots « auto » est recalculé (Σ prix d'achat) à
+      // chaque appel ; sans cela, le cache du navigateur pourrait figer un
+      // ancien total après modification d'un prix produit dans le détail du lot.
+      const res = await fetch("/api/lots", { cache: "no-store" });
       if (!res.ok) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(corps?.error ?? t("listeLots.erreurChargement"));
@@ -66,6 +69,20 @@ export default function ListeLots({ role }: { role: Role }) {
 
   useEffect(() => {
     void charger();
+  }, [charger]);
+
+  // Recharge à chaque retour sur la page (revenir du détail d'un lot après avoir
+  // modifié un prix produit) pour refléter le coût recalculé du lot « auto ».
+  useEffect(() => {
+    function surRetour() {
+      if (document.visibilityState === "visible") void charger();
+    }
+    window.addEventListener("focus", surRetour);
+    document.addEventListener("visibilitychange", surRetour);
+    return () => {
+      window.removeEventListener("focus", surRetour);
+      document.removeEventListener("visibilitychange", surRetour);
+    };
   }, [charger]);
 
   function ouvrirEdition(lot: LigneLot) {

@@ -132,6 +132,12 @@ export async function chargerDonneesDashboard(
     : null;
 
   const produits = await produitsPromise;
+  // Date d'entrée d'un produit : celle de son lot si rattaché, sinon sa propre
+  // date de création (produit ajouté directement à l'inventaire, sans arrivage).
+  const dateEntreeProduit = (p: {
+    lot: { date_entree: Date } | null;
+    created_at: Date;
+  }): Date => p.lot?.date_entree ?? p.created_at;
   const ventes = ventesPromise ? await ventesPromise : [];
   const mouvements = mouvementsPromise ? await mouvementsPromise : [];
   const lotsTeste = lotsTestePromise ? await lotsTestePromise : [];
@@ -185,7 +191,7 @@ export async function chargerDonneesDashboard(
   if (clesKpi.has("valeur_stock") || clesKpi.has("temps_stock_moyen")) {
     const stockA = (date: Date) =>
       produits.filter(
-        (p) => p.lot.date_entree <= date && (p.date_vente === null || p.date_vente > date)
+        (p) => dateEntreeProduit(p) <= date && (p.date_vente === null || p.date_vente > date)
       );
     if (clesKpi.has("valeur_stock")) {
       const valeurA = (date: Date) =>
@@ -206,7 +212,7 @@ export async function chargerDonneesDashboard(
         const stock = stockA(date);
         if (stock.length === 0) return 0;
         const total = stock.reduce(
-          (s, p) => s + Math.max(0, date.getTime() - p.lot.date_entree.getTime()),
+          (s, p) => s + Math.max(0, date.getTime() - dateEntreeProduit(p).getTime()),
           0
         );
         return Math.round(total / stock.length / JOUR_MS);
@@ -310,12 +316,12 @@ export async function chargerDonneesDashboard(
     const enJours = (depuis: Date) =>
       Math.floor((maintenant.getTime() - depuis.getTime()) / JOUR_MS);
     const stock_30j: AlerteProduit[] = stockActuel
-      .filter((p) => p.lot.date_entree < seuil30)
+      .filter((p) => dateEntreeProduit(p) < seuil30)
       .map((p) => ({
         id: p.id,
         code_interne: p.code_interne,
         reference: p.reference,
-        jours: enJours(p.lot.date_entree),
+        jours: enJours(dateEntreeProduit(p)),
       }))
       .sort((a, b) => b.jours - a.jours);
     const manque_piece_14j: AlerteProduit[] = stockActuel
@@ -323,7 +329,7 @@ export async function chargerDonneesDashboard(
       .map((p) => {
         const depuis =
           p.historique.find((h) => h.statut_apres === "manque_piece")?.created_at ??
-          p.lot.date_entree;
+          dateEntreeProduit(p);
         return {
           id: p.id,
           code_interne: p.code_interne,
@@ -339,7 +345,7 @@ export async function chargerDonneesDashboard(
         id: p.id,
         code_interne: p.code_interne,
         reference: p.a_jeter ? `${p.reference} · à jeter` : p.reference,
-        jours: enJours(p.lot.date_entree),
+        jours: enJours(dateEntreeProduit(p)),
       }))
       .sort((a, b) => b.jours - a.jours);
     alertes = { stock_30j, manque_piece_14j, hs };
@@ -352,7 +358,7 @@ export async function chargerDonneesDashboard(
       .map((p) => {
         const enVenteDepuis =
           p.historique.find((h) => h.statut_apres === "en_vente")?.created_at ??
-          p.lot.date_entree;
+          dateEntreeProduit(p);
         return {
           id: p.id,
           code_interne: p.code_interne,

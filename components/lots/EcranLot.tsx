@@ -136,7 +136,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
 
   const rafraichir = useCallback(async () => {
     try {
-      const res = await fetch(`/api/lots/${lotId}`);
+      const res = await fetch(`/api/lots/${lotId}`, { cache: "no-store" });
       const corps = (await res.json().catch(() => null)) as LotDto | { error?: string } | null;
       if (!res.ok || !corps || "error" in (corps as object)) {
         setErreur((corps as { error?: string } | null)?.error ?? "Erreur de chargement du lot.");

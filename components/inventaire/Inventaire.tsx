@@ -42,7 +42,7 @@ interface LigneProduit {
   prix_vente_fixe: number | null;
   prix_vente_reel: number | null;
   lot_id: number | null;
-  fournisseur: string;
+  fournisseur: string | null;
   date_entree: string;
   jours_stock: number;
   image_url: string | null;
@@ -208,7 +208,9 @@ export default function Inventaire({ role }: { role: Role }) {
   const charger = useCallback(async () => {
     setErreur(null);
     try {
-      const res = await fetch(`/api/produits?${searchParams?.toString() || ""}`);
+      const res = await fetch(`/api/produits?${searchParams?.toString() || ""}`, {
+        cache: "no-store",
+      });
       if (!res.ok) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(corps?.error ?? "Erreur lors du chargement de l'inventaire.");
@@ -240,7 +242,9 @@ export default function Inventaire({ role }: { role: Role }) {
   }
 
   function ouvrirAjout() {
-    setFormulaire({ ...FORMULAIRE_VIDE, lot_id: String(donnees?.lots[0]?.id ?? "") });
+    // Aucun lot pré-sélectionné : par défaut, le produit reste dans l'inventaire
+    // sans être rattaché à un arrivage.
+    setFormulaire({ ...FORMULAIRE_VIDE, lot_id: "" });
     setFormPhotos([]);
     setFormPhotosModifiees(false);
     setFormVitrine(false);
@@ -252,7 +256,7 @@ export default function Inventaire({ role }: { role: Role }) {
       reference: p.reference,
       categorie: p.categorie,
       prix_achat: String(p.prix_achat),
-      lot_id: String(p.lot_id),
+      lot_id: p.lot_id ? String(p.lot_id) : "",
       prix_vente_fixe: p.prix_vente_fixe !== null ? String(p.prix_vente_fixe) : "",
       quantite: "1",
     });
@@ -732,11 +736,16 @@ export default function Inventaire({ role }: { role: Role }) {
           {true && (
           <>
           <select
-            value={searchParams?.get("lot") ?? ""}
-            onChange={(e) => majUrl({ lot: e.target.value || null })}
+            value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "__sans__") majUrl({ sans_lot: "1", lot: null });
+              else majUrl({ lot: v || null, sans_lot: null });
+            }}
             className="champ w-auto"
           >
             <option value="">Tous les lots</option>
+            <option value="__sans__">Sans arrivage (ajout direct)</option>
             {(donnees?.lots ?? []).map((l) => (
               <option key={l.id} value={l.id}>
                 {l.libelle}
@@ -1035,7 +1044,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             {p.code_interne}
                           </span>{" "}
                           <span className="text-xs text-brand-grey">
-                            lot n°{p.lot_id}
+                            {p.lot_id ? `lot n°${p.lot_id}` : "sans arrivage"}
                             {` · achat ${formaterDA(p.prix_achat)}`} · {p.jours_stock} j
                           </span>{" "}
                           <span className="text-xs font-bold text-brand-orange">
@@ -1157,7 +1166,9 @@ export default function Inventaire({ role }: { role: Role }) {
                   <td className="px-3 py-2 text-xs">
                     {new Date(p.date_entree).toLocaleDateString("fr-FR")}
                     <span className="block text-brand-grey">
-                      {p.lot_id ? `lot n°${p.lot_id} · ` : ""}{p.fournisseur}
+                      {p.lot_id
+                        ? `lot n°${p.lot_id}${p.fournisseur ? ` · ${p.fournisseur}` : ""}`
+                        : "Sans arrivage"}
                     </span>
                   </td>
                   {!estSocial && (
