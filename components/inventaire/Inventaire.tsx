@@ -153,7 +153,10 @@ export default function Inventaire({ role }: { role: Role }) {
   const [envoi, setEnvoi] = useState(false);
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
-  const [modalEdition, setModalEdition] = useState<LigneProduit | null>(null);
+  const [modalEdition, setModalEdition] = useState<{
+    unites: LigneProduit[];
+    titre: string;
+  } | null>(null);
   // Suppression : soit des unités précises (« unites »), soit tout un modèle
   // (« modele ») = tous les exemplaires en stock d'une référence, au-delà de la
   // page courante. `vendusExclus` : exemplaires vendus écartés (conservés pour
@@ -251,23 +254,22 @@ export default function Inventaire({ role }: { role: Role }) {
     setModalAjout(true);
   }
 
-  function ouvrirEdition(p: LigneProduit) {
+  function ouvrirEdition(unites: LigneProduit[], titre: string) {
+    const premier = unites[0]!;
     setFormulaire({
-      reference: p.reference,
-      categorie: p.categorie,
-      prix_achat: String(p.prix_achat),
-      lot_id: p.lot_id ? String(p.lot_id) : "",
-      prix_vente_fixe: p.prix_vente_fixe !== null ? String(p.prix_vente_fixe) : "",
-      quantite: "1",
+      reference: premier.reference,
+      categorie: premier.categorie,
+      prix_achat: String(premier.prix_achat),
+      lot_id: premier.lot_id ? String(premier.lot_id) : "",
+      prix_vente_fixe: premier.prix_vente_fixe !== null ? String(premier.prix_vente_fixe) : "",
     });
-    // Amorce avec la couverture connue, puis récupère la galerie complète.
-    setFormPhotos(p.image_url ? [p.image_url] : []);
+    setFormPhotos(premier.image_url ? [premier.image_url] : []);
     setFormPhotosModifiees(false);
     setCibleStatut(null);
     setNoteStatut("");
-    setModalEdition(p);
-    if (p.nb_images > 1) {
-      void fetch(`/api/produits/${p.id}`)
+    setModalEdition({ unites, titre });
+    if (premier.nb_images > 1) {
+      void fetch(`/api/produits/${premier.id}`)
         .then((r) => (r.ok ? (r.json() as Promise<{ images?: string[] }>) : null))
         .then((d) => {
           if (d?.images) setFormPhotos(d.images);
@@ -302,13 +304,16 @@ export default function Inventaire({ role }: { role: Role }) {
 
   async function basculerVitrine() {
     if (!modalEdition) return;
-    const cible = !modalEdition.en_vitrine;
+    const cible = !modalEdition.unites[0]!.en_vitrine;
     setEnvoi(true);
     try {
-      const res = await fetch(`/api/produits/${modalEdition.id}`, {
+      const ids = modalEdition.unites.map(u => u.id);
+      
+      // Update vitrine in mass
+      const res = await fetch(`/api/produits/masse/vitrine`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ en_vitrine: cible }),
+        body: JSON.stringify({ ids, en_vitrine: cible }),
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) {
@@ -317,10 +322,10 @@ export default function Inventaire({ role }: { role: Role }) {
       }
       afficher(
         cible
-          ? `${modalEdition.code_interne} mis en vitrine.`
-          : `${modalEdition.code_interne} retiré de la vitrine.`
+          ? `${ids.length} produit(s) mis en vitrine.`
+          : `${ids.length} produit(s) retiré(s) de la vitrine.`
       );
-      setModalEdition({ ...modalEdition, en_vitrine: cible });
+      setModalEdition({ ...modalEdition, unites: modalEdition.unites.map(u => ({ ...u, en_vitrine: cible })) });
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -339,10 +344,12 @@ export default function Inventaire({ role }: { role: Role }) {
     }
     setEnvoi(true);
     try {
-      const res = await fetch(`/api/produits/${modalEdition.id}/statut`, {
+      const ids = modalEdition.unites.map(u => u.id);
+      const res = await fetch(`/api/produits/masse/statut`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ids,
           statut: cible,
           note: STATUTS_NOTE_OBLIGATOIRE.includes(cible) ? noteStatut.trim() : undefined,
         }),
@@ -352,7 +359,7 @@ export default function Inventaire({ role }: { role: Role }) {
         afficher(corps?.error ?? "Erreur lors du changement de statut.", "erreur");
         return;
       }
-      afficher(`${modalEdition.code_interne} → ${INFOS_STATUT[cible].libelle}`);
+      afficher(`${ids.length} produit(s) → ${INFOS_STATUT[cible].libelle}`);
       setModalEdition(null);
       setCibleStatut(null);
       setNoteStatut("");
@@ -368,10 +375,12 @@ export default function Inventaire({ role }: { role: Role }) {
     if (!modalEdition) return;
     setEnvoi(true);
     try {
-      const res = await fetch(`/api/produits/${modalEdition.id}`, {
+      const ids = modalEdition.unites.map(u => u.id);
+      
+      const res = await fetch(`/api/produits/masse/edition`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ a_jeter: valeur }),
+        body: JSON.stringify({ ids, a_jeter: valeur }), // Assuming masse/edition supports a_jeter if modified
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) {
@@ -380,10 +389,10 @@ export default function Inventaire({ role }: { role: Role }) {
       }
       afficher(
         valeur
-          ? `${modalEdition.code_interne} marqué « à jeter ».`
-          : `${modalEdition.code_interne} : « à jeter » retiré.`
+          ? `${ids.length} produit(s) marqué(s) « à jeter ».`
+          : `${ids.length} produit(s) : « à jeter » retiré.`
       );
-      setModalEdition({ ...modalEdition, a_jeter: valeur });
+      setModalEdition({ ...modalEdition, unites: modalEdition.unites.map(u => ({ ...u, a_jeter: valeur })) });
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -439,10 +448,12 @@ export default function Inventaire({ role }: { role: Role }) {
     if (!modalEdition) return;
     setEnvoi(true);
     try {
-      const res = await fetch(`/api/produits/${modalEdition.id}`, {
+      const ids = modalEdition.unites.map(u => u.id);
+      const res = await fetch(`/api/produits/masse/edition`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ids,
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
@@ -1003,6 +1014,17 @@ export default function Inventaire({ role }: { role: Role }) {
                         </button>
                       );
                     })()}
+                    {peutModifier && (
+                      <button
+                        type="button"
+                        onClick={() => ouvrirEdition(g.unites, g.reference)}
+                        title="Modifier tous les exemplaires"
+                        aria-label={`Modifier tout le groupe ${g.reference}`}
+                        className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                      >
+                        <IconeCrayon taille={15} />
+                      </button>
+                    )}
                   {peutModifier && (
                     <button
                       type="button"
@@ -1083,7 +1105,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             )}
                             <button
                               type="button"
-                              onClick={() => ouvrirEdition(p)}
+                              onClick={() => ouvrirEdition([p], p.code_interne)}
                               title="Modifier"
                               aria-label={`Modifier ${p.code_interne}`}
                               className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
@@ -1224,7 +1246,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            ouvrirEdition(p);
+                            ouvrirEdition([p], p.code_interne);
                           }}
                           title="Modifier"
                           aria-label={`Modifier ${p.code_interne}`}
@@ -1265,9 +1287,55 @@ export default function Inventaire({ role }: { role: Role }) {
             <IconeChevronGauche taille={15} />
             Précédent
           </button>
-          <span className="px-2 text-brand-warm-grey">
-            Page {page} / {donnees.pages}
-          </span>
+          <div className="flex items-center gap-1 px-2">
+            {(() => {
+              const totalPages = donnees.pages;
+              const currentPage = page;
+              
+              const renderPageButton = (p: number) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => majUrl({ page: String(p) })}
+                  className={`flex h-8 w-8 items-center justify-center rounded-md transition ${
+                    currentPage === p
+                      ? "bg-brand-black text-brand-white font-bold"
+                      : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-black"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+              
+              const pages: React.ReactNode[] = [];
+              if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) {
+                  pages.push(renderPageButton(i));
+                }
+              } else {
+                pages.push(renderPageButton(1));
+                
+                if (currentPage > 3) {
+                  pages.push(<span key="ell1" className="px-1 text-brand-light-grey">...</span>);
+                }
+                
+                const start = Math.max(2, currentPage - 1);
+                const end = Math.min(totalPages - 1, currentPage + 1);
+                
+                for (let i = start; i <= end; i++) {
+                  pages.push(renderPageButton(i));
+                }
+                
+                if (currentPage < totalPages - 2) {
+                  pages.push(<span key="ell2" className="px-1 text-brand-light-grey">...</span>);
+                }
+                
+                pages.push(renderPageButton(totalPages));
+              }
+              
+              return pages;
+            })()}
+          </div>
           <button
             type="button"
             disabled={page >= donnees.pages}
@@ -1330,7 +1398,7 @@ export default function Inventaire({ role }: { role: Role }) {
       </Modale>
 
       <Modale
-        titre={modalEdition ? `Modifier — ${modalEdition.code_interne}` : ""}
+        titre={modalEdition ? `Modifier — ${modalEdition.titre}` : ""}
         ouverte={modalEdition !== null}
         onFermer={() => setModalEdition(null)}
       >
@@ -1349,7 +1417,7 @@ export default function Inventaire({ role }: { role: Role }) {
             <div className="space-y-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="libelle">Statut</span>
-                <BadgeStatut statut={modalEdition.statut} aJeter={modalEdition.a_jeter} />
+                <BadgeStatut statut={modalEdition.unites[0]!.statut} aJeter={modalEdition.unites[0]!.a_jeter} />
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1365,7 +1433,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   className="champ text-sm py-1.5"
                 >
                   <option value="">Changer le statut vers...</option>
-                  {STATUTS_PRODUIT.filter((s) => s !== modalEdition.statut).map((s) => (
+                  {STATUTS_PRODUIT.filter((s) => s !== modalEdition.unites[0]!.statut).map((s) => (
                     <option key={s} value={s}>
                       {INFOS_STATUT[s].libelle}
                     </option>
@@ -1410,11 +1478,11 @@ export default function Inventaire({ role }: { role: Role }) {
                 </div>
               )}
 
-              {modalEdition.statut === "hs" && (
+              {modalEdition.unites[0]!.statut === "hs" && (
                 <label className="flex items-center gap-2 pt-1 text-sm">
                   <input
                     type="checkbox"
-                    checked={modalEdition.a_jeter}
+                    checked={modalEdition.unites[0]!.a_jeter}
                     disabled={envoi}
                     onChange={(e) => void basculerAJeter(e.target.checked)}
                     className="accent-danger"
@@ -1425,7 +1493,7 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          {modalEdition && peutModifier && modalEdition.statut !== "vendu" && (
+          {modalEdition && peutModifier && modalEdition.unites[0]!.statut !== "vendu" && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
               <div className="min-w-0">
                 <span className="libelle inline-flex items-center gap-1.5">
@@ -1440,12 +1508,12 @@ export default function Inventaire({ role }: { role: Role }) {
                 disabled={envoi}
                 onClick={() => void basculerVitrine()}
                 className={
-                  modalEdition.en_vitrine
+                  modalEdition.unites[0]!.en_vitrine
                     ? "btn bg-brand-orange text-brand-white hover:bg-brand-orange/90"
                     : "btn btn-secondaire"
                 }
               >
-                {modalEdition.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                {modalEdition.unites[0]!.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
               </button>
             </div>
           )}

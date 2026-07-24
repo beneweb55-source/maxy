@@ -16,7 +16,7 @@ export async function PUT(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { ids, reference, categorie, prix_achat, image_url, images, quantite } = (corps ?? {}) as {
+  const { ids, reference, categorie, prix_achat, image_url, images, quantite, prix_vente_fixe, a_jeter } = (corps ?? {}) as {
     ids?: unknown;
     reference?: unknown;
     categorie?: unknown;
@@ -24,6 +24,8 @@ export async function PUT(request: NextRequest) {
     image_url?: unknown;
     images?: unknown;
     quantite?: unknown;
+    prix_vente_fixe?: unknown;
+    a_jeter?: unknown;
   };
 
   if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id) => Number.isInteger(Number(id)))) {
@@ -74,12 +76,37 @@ export async function PUT(request: NextRequest) {
       return erreur(400, "Un ou plusieurs produits sont déjà vendus et ne peuvent être modifiés.");
     }
 
-    const donnees: Record<string, unknown> = {
-      reference: ligne.reference,
-      categorie: ligne.categorie,
-      prix_achat: ligne.prix_achat,
-    };
+    const donnees: Record<string, unknown> = {};
+    if (ligne.reference) donnees.reference = ligne.reference;
+    if (ligne.categorie) donnees.categorie = ligne.categorie;
+    if (ligne.prix_achat !== undefined) donnees.prix_achat = ligne.prix_achat;
+
     if (imagesFournies) donnees.image_url = couvertureFournie;
+
+    if (a_jeter !== undefined) {
+      if (typeof a_jeter !== "boolean") {
+        return erreur(400, "Le champ « à jeter » doit être vrai ou faux.");
+      }
+      if (a_jeter === true && produits.some((p) => p.statut !== "hs")) {
+        return erreur(400, "« À jeter » ne concerne que les produits HS.");
+      }
+      donnees.a_jeter = a_jeter;
+    }
+
+    let modifPrixVente = false;
+    if (prix_vente_fixe !== undefined) {
+      if (prix_vente_fixe === null || prix_vente_fixe === "") {
+        donnees.prix_vente_fixe = null;
+        modifPrixVente = true;
+      } else {
+        const p = Number(prix_vente_fixe);
+        if (!Number.isInteger(p) || p < 0) {
+          return erreur(400, "Le prix de vente doit être un entier positif en DA.");
+        }
+        donnees.prix_vente_fixe = p;
+        modifPrixVente = true;
+      }
+    }
 
     const diff = targetQuantite - produitIds.length;
 
@@ -105,6 +132,26 @@ export async function PUT(request: NextRequest) {
           where: { id: { in: idsAUpdate } },
           data: donnees,
         });
+
+        // Si modification de prix de vente sur des produits "ok", ils passent "en_vente"
+        if (modifPrixVente && donnees.prix_vente_fixe !== null) {
+          const produitsOk = produits.filter(p => p.statut === "ok" && idsAUpdate.includes(p.id));
+          if (produitsOk.length > 0) {
+            await tx.produit.updateMany({
+              where: { id: { in: produitsOk.map(p => p.id) } },
+              data: { statut: "en_vente" },
+            });
+            await tx.historiqueStatut.createMany({
+              data: produitsOk.map(p => ({
+                produit_id: p.id,
+                user_id: user.id,
+                statut_avant: "ok",
+                statut_apres: "en_vente",
+                note: "Prix fixé depuis l'inventaire (masse)",
+              })),
+            });
+          }
+        }
         // Si des photos sont fournies, on remplace la galerie de chaque produit.
         if (imagesFournies) {
           for (const pid of idsAUpdate) {
@@ -128,6 +175,7 @@ export async function PUT(request: NextRequest) {
           prix_achat: ligne.prix_achat,
           image_url: couvertureNouvelle ?? undefined,
           images: [...(couvertureNouvelle ? [couvertureNouvelle] : []), ...extrasNouveaux],
+          ...(donnees.prix_vente_fixe !== undefined ? { prix_vente_fixe: donnees.prix_vente_fixe as number | null } : {}),
         };
         await creerProduitsGroupes(tx, {
           lotId: originalProduct.lot_id,
