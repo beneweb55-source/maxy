@@ -412,8 +412,8 @@ export default function VentesClient({ role }: { role: Role }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ids,
-          statut: "en_stock",
-          note: "Retiré de la vente depuis la caisse.",
+          statut: "ok",
+          note: "Retiré de la vente depuis la page Ventes.",
         }),
       });
       const corps = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
