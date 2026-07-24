@@ -31,6 +31,42 @@ interface CarteEnVente {
   images: string[];
 }
 
+interface GroupeEnVente {
+  cle: string;
+  reference: string;
+  categorie: string;
+  prix_vente_fixe: number | null;
+  marge_prevue: number;
+  jours_en_vente: number;
+  image_url: string | null;
+  images: string[];
+  unites: CarteEnVente[];
+}
+
+function grouperDoublonsVente(cartes: CarteEnVente[]): GroupeEnVente[] {
+  const map = new Map<string, GroupeEnVente>();
+  for (const c of cartes) {
+    const cle = `${c.reference.toLowerCase().trim()}|${c.categorie.toLowerCase().trim()}`;
+    const existant = map.get(cle);
+    if (existant) {
+      existant.unites.push(c);
+    } else {
+      map.set(cle, {
+        cle,
+        reference: c.reference,
+        categorie: c.categorie,
+        prix_vente_fixe: c.prix_vente_fixe,
+        marge_prevue: c.marge_prevue,
+        jours_en_vente: c.jours_en_vente,
+        image_url: c.image_url,
+        images: c.images,
+        unites: [c],
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
 interface LigneVente {
   id: number;
   produit_id: number;
@@ -83,7 +119,7 @@ export default function VentesClient({ role }: { role: Role }) {
 
   // Vente groupée (bundle).
   const [modeBundle, setModeBundle] = useState(false);
-  const [selection, setSelection] = useState<Set<number>>(new Set());
+  const [selection, setSelection] = useState<Map<string, number>>(new Map());
   const [modalBundle, setModalBundle] = useState(false);
   const [prixTotalBundle, setPrixTotalBundle] = useState("");
   const [canalBundle, setCanalBundle] = useState("");
@@ -180,7 +216,7 @@ export default function VentesClient({ role }: { role: Role }) {
 
   const categoriesEnVente = Array.from(new Set((cartes ?? []).map((c) => c.categorie))).sort();
 
-  const cartesFiltrees = (() => {
+  const groupesFiltres = (() => {
     let liste = cartes ?? [];
     const q = rechercheEnVente.trim().toLowerCase();
     if (q) {
@@ -192,7 +228,9 @@ export default function VentesClient({ role }: { role: Role }) {
       );
     }
     if (filtreCategorie) liste = liste.filter((c) => c.categorie === filtreCategorie);
-    const tri = [...liste];
+    
+    const tri = grouperDoublonsVente(liste);
+    
     switch (triCartes) {
       case "prix_asc":
         tri.sort((a, b) => (a.prix_vente_fixe ?? 0) - (b.prix_vente_fixe ?? 0));
@@ -210,24 +248,43 @@ export default function VentesClient({ role }: { role: Role }) {
     return tri;
   })();
 
-  const selectionnees = (cartes ?? []).filter((c) => selection.has(c.id));
+  const totalSelectionnees = Array.from(selection.values()).reduce((a, b) => a + b, 0);
 
-  function basculerSelection(id: number) {
+  const selectionnees = (() => {
+    const arr: CarteEnVente[] = [];
+    if (!cartes) return arr;
+    const groupes = grouperDoublonsVente(cartes);
+    for (const [cle, qty] of selection.entries()) {
+      const g = groupes.find(groupe => groupe.cle === cle);
+      if (g) {
+        arr.push(...g.unites.slice(0, qty));
+      }
+    }
+    return arr;
+  })();
+
+  function mettreAJourSelection(cle: string, qte: number) {
     setSelection((prev) => {
-      const suivant = new Set(prev);
-      if (suivant.has(id)) suivant.delete(id);
-      else suivant.add(id);
+      const suivant = new Map(prev);
+      if (qte <= 0) suivant.delete(cle);
+      else suivant.set(cle, qte);
       return suivant;
     });
   }
 
   function quitterModeBundle() {
     setModeBundle(false);
-    setSelection(new Set());
+    setSelection(new Map());
   }
 
   function ouvrirBundle() {
-    const total = selectionnees.reduce((s, c) => s + (c.prix_vente_fixe ?? 0), 0);
+    let total = 0;
+    for (const [cle, qty] of selection.entries()) {
+      const groupe = grouperDoublonsVente(cartes ?? []).find(g => g.cle === cle);
+      if (groupe && groupe.prix_vente_fixe) {
+        total += groupe.prix_vente_fixe * qty;
+      }
+    }
     setPrixTotalBundle(total > 0 ? String(total) : "");
     setCanalBundle("");
     setDateBundle(aujourdhuiIso());
@@ -238,11 +295,19 @@ export default function VentesClient({ role }: { role: Role }) {
   async function enregistrerVenteGroupee(confirmer: boolean) {
     setEnvoi(true);
     try {
-      const res = await fetch("/api/ventes/groupee", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          produit_ids: selectionnees.map((c) => c.id),
+        const produit_ids: number[] = [];
+        for (const [cle, qty] of selection.entries()) {
+          const groupe = grouperDoublonsVente(cartes ?? []).find(g => g.cle === cle);
+          if (groupe) {
+            produit_ids.push(...groupe.unites.slice(0, qty).map(u => u.id));
+          }
+        }
+        
+        const res = await fetch("/api/ventes/groupee", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            produit_ids,
           prix_total: Number(prixTotalBundle),
           canal: canalBundle.trim() || undefined,
           date_vente: dateBundle !== aujourdhuiIso() ? dateBundle : undefined,
@@ -261,7 +326,7 @@ export default function VentesClient({ role }: { role: Role }) {
         return;
       }
       afficher(
-        `Vente groupée enregistrée : ${selectionnees.length} produits — ${formaterDA(Number(prixTotalBundle))}. Imed a été notifié.`
+        `Vente groupée enregistrée : ${produit_ids.length} produits — ${formaterDA(Number(prixTotalBundle))}. Imed a été notifié.`
       );
       setModalBundle(false);
       quitterModeBundle();
@@ -433,85 +498,114 @@ export default function VentesClient({ role }: { role: Role }) {
               en vente.
             </p>
           )}
-          {cartes !== null && cartes.length > 0 && cartesFiltrees.length === 0 && (
+          {cartes !== null && groupesFiltres.length === 0 && (
             <p className="carte border-dashed p-6 text-sm text-brand-warm-grey">
               Aucun produit ne correspond à la recherche.
             </p>
           )}
-          {cartes !== null && cartesFiltrees.length > 0 && (
+          {cartes !== null && groupesFiltres.length > 0 && (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {cartesFiltrees.map((c) => {
-                const choisi = selection.has(c.id);
+              {groupesFiltres.map((g) => {
+                const qtySelected = selection.get(g.cle) ?? 0;
+                const choisi = qtySelected > 0;
+                const c = g.unites[0]!;
                 return (
                   <li
-                    key={c.id}
+                    key={g.cle}
                     className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md ${
                       modeBundle && choisi
                         ? "border-brand-orange ring-2 ring-brand-orange"
                         : "border-brand-light-grey"
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (modeBundle) basculerSelection(c.id);
-                        else if (c.images.length > 0)
-                          setApercuPhotos({ photos: c.images, index: 0, titre: c.code_interne });
-                      }}
-                      title={
-                        modeBundle
-                          ? choisi
-                            ? "Retirer du groupe"
-                            : "Ajouter au groupe"
-                          : c.images.length > 0
-                            ? "Voir les photos en grand"
-                            : undefined
-                      }
-                      aria-label={
-                        modeBundle ? `Sélectionner ${c.reference}` : `Photos de ${c.reference}`
-                      }
-                      className={`relative block aspect-[4/3] w-full overflow-hidden bg-brand-paper ${
-                        modeBundle
-                          ? "cursor-pointer"
-                          : c.images.length > 0
-                            ? "cursor-zoom-in"
-                            : "cursor-default"
-                      }`}
+                    <div
+                      className="relative block aspect-[4/3] w-full overflow-hidden bg-brand-paper"
                     >
+                      {/* Clic principal sur la carte */}
+                      <div
+                        className={`absolute inset-0 z-0 ${
+                          modeBundle
+                            ? "cursor-pointer"
+                            : c.images.length > 0
+                              ? "cursor-zoom-in"
+                              : "cursor-default"
+                        }`}
+                        onClick={() => {
+                          if (modeBundle) {
+                            if (!choisi) mettreAJourSelection(g.cle, 1);
+                          } else if (c.images.length > 0) {
+                            setApercuPhotos({ photos: c.images, index: 0, titre: c.code_interne });
+                          }
+                        }}
+                        title={
+                          modeBundle
+                            ? choisi
+                              ? ""
+                              : "Ajouter au groupe"
+                            : c.images.length > 0
+                              ? "Voir les photos en grand"
+                              : undefined
+                        }
+                      />
+
                       {c.image_url ? (
                         <img
                           src={c.image_url}
                           alt={`Photo de ${c.reference}`}
                           loading="lazy"
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                          className="pointer-events-none h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                         />
                       ) : (
-                        <span className="flex h-full w-full items-center justify-center text-brand-grey">
+                        <span className="pointer-events-none flex h-full w-full items-center justify-center text-brand-grey">
                           <IconeImage taille={30} />
                         </span>
                       )}
+                      
+                      {/* Contrôles / Badges */}
                       {modeBundle && (
-                        <span
-                          className={`absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold shadow ${
-                            choisi
-                              ? "bg-brand-orange text-brand-white"
-                              : "bg-brand-white/90 text-brand-smooth"
-                          }`}
-                        >
-                          <IconeCoche taille={12} />
-                          {choisi ? "Sélectionné" : "Choisir"}
-                        </span>
+                        <div className="absolute left-2 top-2 z-10">
+                          {choisi ? (
+                            <div className="flex h-7 items-center gap-3 rounded-full bg-brand-white/95 px-2 font-bold shadow ring-1 ring-brand-orange">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); mettreAJourSelection(g.cle, qtySelected - 1); }}
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white"
+                              >
+                                -
+                              </button>
+                              <span className="text-xs text-brand-orange">{qtySelected}</span>
+                              <button
+                                type="button"
+                                disabled={qtySelected >= g.unites.length}
+                                onClick={(e) => { e.stopPropagation(); mettreAJourSelection(g.cle, qtySelected + 1); }}
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white disabled:opacity-30 disabled:hover:bg-brand-light-grey/50 disabled:hover:text-brand-black"
+                              >
+                                +
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="pointer-events-none inline-flex items-center gap-1 rounded-full bg-brand-white/90 px-2 py-1 text-[11px] font-bold text-brand-smooth shadow">
+                              <IconeCoche taille={12} />
+                              Choisir
+                            </span>
+                          )}
+                        </div>
                       )}
+                      
                       {c.images.length > 1 && (
-                        <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                        <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold text-white">
                           <IconeImage taille={11} />
                           {c.images.length}
                         </span>
                       )}
-                      <span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
+                      
+                      <span className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
                         {c.jours_en_vente} j en vente
                       </span>
-                    </button>
+                      <span className="pointer-events-none absolute bottom-2 right-2 z-10 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-semibold text-white">
+                        En stock : {g.unites.length}
+                      </span>
+                    </div>
 
                     <div className="flex flex-1 flex-col p-3">
                       <div className="flex items-center justify-between gap-2">
@@ -569,15 +663,15 @@ export default function VentesClient({ role }: { role: Role }) {
           {modeBundle && (
             <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 rounded-xl border border-brand-light-grey bg-brand-white/95 p-3 shadow-lg backdrop-blur">
               <span className="text-sm text-brand-warm-grey">
-                <strong className="text-brand-black">{selection.size}</strong> produit
-                {selection.size > 1 ? "s" : ""} sélectionné{selection.size > 1 ? "s" : ""}
+                <strong className="text-brand-black">{totalSelectionnees}</strong> produit
+                {totalSelectionnees > 1 ? "s" : ""} sélectionné{totalSelectionnees > 1 ? "s" : ""}
               </span>
               <button
                 type="button"
-                disabled={selection.size < 2}
+                disabled={totalSelectionnees < 2}
                 onClick={ouvrirBundle}
                 className="btn btn-primaire"
-                title={selection.size < 2 ? "Sélectionnez au moins deux produits" : undefined}
+                title={totalSelectionnees < 2 ? "Sélectionnez au moins deux produits" : undefined}
               >
                 <IconePaquet taille={15} />
                 Vendre ensemble
