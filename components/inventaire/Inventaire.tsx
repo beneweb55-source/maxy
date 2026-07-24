@@ -466,7 +466,7 @@ export default function Inventaire({ role }: { role: Role }) {
         afficher(corps?.error ?? "Erreur lors de la modification.", "erreur");
         return;
       }
-      afficher(`Produit ${modalEdition.code_interne} modifié.`);
+      afficher(`Produit(s) ${modalEdition.titre} modifié(s).`);
       setModalEdition(null);
       await charger();
     } catch {
