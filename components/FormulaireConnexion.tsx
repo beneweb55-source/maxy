@@ -28,7 +28,7 @@ export default function FormulaireConnexion() {
       const reponse = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
       if (!reponse.ok) {
         const corps = (await reponse.json().catch(() => null)) as { error?: string } | null;
@@ -65,6 +65,9 @@ export default function FormulaireConnexion() {
               id="username"
               type="text"
               autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}

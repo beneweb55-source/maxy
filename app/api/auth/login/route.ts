@@ -26,7 +26,12 @@ export async function POST(request: NextRequest) {
     return erreur(400, "Identifiant et mot de passe requis.");
   }
 
-  const user = await prisma.user.findUnique({ where: { username } });
+  // Tolérance de saisie mobile : espaces parasites et majuscule automatique du
+  // clavier (« Raouf » ≠ « raouf ») ne doivent pas empêcher la connexion.
+  const identifiant = username.trim();
+  const user = await prisma.user.findFirst({
+    where: { username: { equals: identifiant, mode: "insensitive" } },
+  });
   if (!user) {
     verifyPassword(password, HASH_FICTIF);
     return erreur(401, MESSAGE_ECHEC);
