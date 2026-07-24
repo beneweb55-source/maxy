@@ -20,6 +20,9 @@ interface LigneLot {
   description: string | null;
   cout_global_declare: number | null;
   quantite_attendue: number | null;
+  mode_cout: "auto" | "manuel";
+  cout_valide: boolean;
+  cout_calcule: number;
   nb_produits: number;
   nb_testes: number;
   nb_recus: number;
@@ -300,9 +303,11 @@ export default function ListeLots({ role }: { role: Role }) {
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-right">
-                      {lot.cout_global_declare !== null
-                        ? formaterDA(lot.cout_global_declare)
-                        : "—"}
+                      {lot.mode_cout === "auto"
+                        ? formaterDA(lot.cout_calcule)
+                        : lot.cout_global_declare !== null
+                          ? formaterDA(lot.cout_global_declare)
+                          : "—"}
                     </td>
                     <td className="px-2 py-2.5">
                       <span className="flex items-center justify-end gap-1">
