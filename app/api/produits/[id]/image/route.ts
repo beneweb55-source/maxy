@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { estUrlPhotoDistante, lireDataUrlImage } from "@/lib/images";
+import { estUrlPhotoDistante, extensionDepuisMime, lireDataUrlImage } from "@/lib/images";
+import { nomSur } from "@/lib/zip";
 
 export async function GET(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const acces = await exigerUtilisateur();
@@ -17,7 +18,7 @@ export async function GET(
   try {
     const produit = await prisma.produit.findUnique({
       where: { id: produitId },
-      select: { image_url: true },
+      select: { image_url: true, code_interne: true },
     });
     if (!produit) return erreur(404, "Produit introuvable.");
     if (!produit.image_url) return erreur(404, "Ce produit n'a pas de photo.");
@@ -31,13 +32,18 @@ export async function GET(
     }
 
     const octets = Buffer.from(photo.base64, "base64");
-    return new NextResponse(new Uint8Array(octets), {
-      headers: {
-        "Content-Type": photo.mime,
-        "Content-Length": String(octets.byteLength),
-        "Cache-Control": "private, max-age=300",
-      },
-    });
+    const entetes: Record<string, string> = {
+      "Content-Type": photo.mime,
+      "Content-Length": String(octets.byteLength),
+      "Cache-Control": "private, max-age=300",
+    };
+    // `?download=1` : téléchargement direct avec un nom de fichier propre
+    // (la couverture est toujours la photo n°01).
+    if (request.nextUrl.searchParams.get("download") === "1") {
+      const nom = `${nomSur(produit.code_interne)}-01.${extensionDepuisMime(photo.mime)}`;
+      entetes["Content-Disposition"] = `attachment; filename="${nom}"`;
+    }
+    return new NextResponse(new Uint8Array(octets), { headers: entetes });
   } catch (e) {
     console.error("GET /api/produits/[id]/image", e);
     return erreur(500, "Erreur lors du chargement de la photo.");

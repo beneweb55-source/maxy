@@ -574,14 +574,6 @@ export default function Inventaire({ role }: { role: Role }) {
           >
             {vueGroupee ? "Vue détaillée" : "Vue groupée"}
           </button>
-          <a
-            href={`/api/produits/images/export?${searchParams?.toString() || ""}`}
-            className="btn btn-secondaire"
-            title="Télécharger les photos des produits filtrés (archive ZIP organisée par produit)"
-          >
-            <IconeImage taille={15} />
-            Photos (ZIP)
-          </a>
           {estGerant && (
             <a
               href={`/api/produits/export?${searchParams?.toString() || ""}`}

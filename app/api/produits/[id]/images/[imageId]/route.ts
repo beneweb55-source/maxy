@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { lireDataUrlImage } from "@/lib/images";
+import { extensionDepuisMime, lireDataUrlImage } from "@/lib/images";
+import { nomSur } from "@/lib/zip";
 
 // Sert une photo supplémentaire (galerie) d'un produit, décodée depuis sa
 // donnée data-URL stockée en base.
 export async function GET(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string; imageId: string }> }
 ) {
   const acces = await exigerUtilisateur();
@@ -22,7 +23,12 @@ export async function GET(
   try {
     const image = await prisma.produitImage.findUnique({
       where: { id: imgId },
-      select: { data: true, produit_id: true },
+      select: {
+        data: true,
+        produit_id: true,
+        position: true,
+        produit: { select: { code_interne: true } },
+      },
     });
     if (!image || image.produit_id !== produitId) {
       return erreur(404, "Photo introuvable.");
@@ -32,13 +38,19 @@ export async function GET(
     if (!photo) return erreur(404, "Photo illisible.");
 
     const octets = Buffer.from(photo.base64, "base64");
-    return new NextResponse(new Uint8Array(octets), {
-      headers: {
-        "Content-Type": photo.mime,
-        "Content-Length": String(octets.byteLength),
-        "Cache-Control": "private, max-age=300",
-      },
-    });
+    const entetes: Record<string, string> = {
+      "Content-Type": photo.mime,
+      "Content-Length": String(octets.byteLength),
+      "Cache-Control": "private, max-age=300",
+    };
+    // `?download=1` : téléchargement direct, numéroté comme dans le ZIP
+    // (couverture = 01, galerie = position + 1).
+    if (request.nextUrl.searchParams.get("download") === "1") {
+      const numero = String(image.position + 1).padStart(2, "0");
+      const nom = `${nomSur(image.produit.code_interne)}-${numero}.${extensionDepuisMime(photo.mime)}`;
+      entetes["Content-Disposition"] = `attachment; filename="${nom}"`;
+    }
+    return new NextResponse(new Uint8Array(octets), { headers: entetes });
   } catch (e) {
     console.error("GET /api/produits/[id]/images/[imageId]", e);
     return erreur(500, "Erreur lors du chargement de la photo.");

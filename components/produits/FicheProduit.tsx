@@ -263,15 +263,28 @@ export default function FicheProduit({
                   ))}
                 </div>
               )}
-              <a
-                href={`/api/produits/${produitId}/images/export`}
-                className="btn btn-secondaire w-full justify-center"
-              >
-                <IconeTelechargement taille={15} />
-                {produit.images.length > 1
-                  ? `Télécharger les ${produit.images.length} photos`
-                  : "Télécharger la photo"}
-              </a>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <a
+                  href={`${produit.images[indexActif] ?? produit.images[0]}?download=1`}
+                  className="btn btn-secondaire flex-1 justify-center"
+                  title="Télécharger la photo affichée"
+                >
+                  <IconeTelechargement taille={15} />
+                  {produit.images.length > 1
+                    ? `Télécharger la photo ${indexActif + 1}/${produit.images.length}`
+                    : "Télécharger la photo"}
+                </a>
+                {produit.images.length > 1 && (
+                  <a
+                    href={`/api/produits/${produitId}/images/export`}
+                    className="btn btn-secondaire flex-1 justify-center"
+                    title="Télécharger toutes les photos de ce produit (ZIP)"
+                  >
+                    <IconeTelechargement taille={15} />
+                    Tout télécharger ({produit.images.length}) — ZIP
+                  </a>
+                )}
+              </div>
             </div>
           )}
           <dl className="mt-2.5 space-y-1.5 text-sm">

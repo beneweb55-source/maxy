@@ -8,6 +8,7 @@ import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import {
   IconeImage,
+  IconeTelechargement,
   IconeVitrine,
   IconeChevronGauche,
   IconeChevronDroite,
@@ -95,16 +96,6 @@ export default function Vitrine({ role }: { role: Role }) {
             Produits exposés physiquement en vitrine — indépendant de la mise en vente en ligne.
           </p>
         </div>
-        {produits.length > 0 && (
-          <a
-            href="/api/produits/images/export?en_vitrine=1"
-            className="btn btn-secondaire"
-            title="Télécharger les photos des produits en vitrine (archive ZIP organisée)"
-          >
-            <IconeImage taille={15} />
-            Photos (ZIP)
-          </a>
-        )}
       </div>
 
       {erreur && (
@@ -184,17 +175,29 @@ export default function Vitrine({ role }: { role: Role }) {
                     <span className="font-bold text-brand-orange">
                       {prix !== null ? formaterDA(prix) : "—"}
                     </span>
-                    {peutRetirer && (
-                      <button
-                        type="button"
-                        disabled={envoi}
-                        onClick={() => void retirer(p.id, p.code_interne)}
-                        className="rounded-md px-2 py-1 text-xs font-semibold text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                        title="Retirer de la vitrine"
-                      >
-                        Retirer
-                      </button>
-                    )}
+                    <span className="flex items-center gap-1">
+                      {p.nb_images > 0 && (
+                        <a
+                          href={`/api/produits/${p.id}/images/export`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                          title={`Télécharger les photos de ${p.code_interne} (ZIP)`}
+                          aria-label={`Télécharger les photos de ${p.code_interne}`}
+                        >
+                          <IconeTelechargement taille={14} />
+                        </a>
+                      )}
+                      {peutRetirer && (
+                        <button
+                          type="button"
+                          disabled={envoi}
+                          onClick={() => void retirer(p.id, p.code_interne)}
+                          className="rounded-md px-2 py-1 text-xs font-semibold text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                          title="Retirer de la vitrine"
+                        >
+                          Retirer
+                        </button>
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
