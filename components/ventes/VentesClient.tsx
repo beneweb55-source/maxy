@@ -106,7 +106,8 @@ export default function VentesClient({ role }: { role: Role }) {
 
   const [cartes, setCartes] = useState<CarteEnVente[] | null>(null);
   const [erreurCartes, setErreurCartes] = useState<string | null>(null);
-  const [modalVente, setModalVente] = useState<CarteEnVente | null>(null);
+  const [modalVente, setModalVente] = useState<GroupeEnVente | null>(null);
+  const [quantiteVente, setQuantiteVente] = useState(1);
   const [prixReel, setPrixReel] = useState("");
   const [canal, setCanal] = useState("");
   const [dateVente, setDateVente] = useState(aujourdhuiIso());
@@ -189,12 +190,13 @@ export default function VentesClient({ role }: { role: Role }) {
     void chargerCartes();
   }, [chargerCartes]);
 
-  const ouvrirVente = useCallback((carte: CarteEnVente) => {
-    setPrixReel(carte.prix_vente_fixe !== null ? String(carte.prix_vente_fixe) : "");
+  const ouvrirVente = useCallback((groupe: GroupeEnVente) => {
+    setPrixReel(groupe.prix_vente_fixe !== null ? String(groupe.prix_vente_fixe) : "");
+    setQuantiteVente(1);
     setCanal("");
     setDateVente(aujourdhuiIso());
     setAvertissement(null);
-    setModalVente(carte);
+    setModalVente(groupe);
   }, []);
 
   useEffect(() => {
@@ -204,8 +206,11 @@ export default function VentesClient({ role }: { role: Role }) {
       if (produitId && peutVendre) {
         const produit = cartes.find((c) => c.id === Number(produitId));
         if (produit) {
-          ouvrirVente(produit);
-          router.replace("/ventes");
+          const groupe = grouperDoublonsVente(cartes).find(g => g.unites.some(u => u.id === produit.id));
+          if (groupe) {
+            ouvrirVente(groupe);
+            router.replace("/ventes");
+          }
         }
       }
     }
@@ -343,16 +348,28 @@ export default function VentesClient({ role }: { role: Role }) {
     if (!modalVente) return;
     setEnvoi(true);
     try {
-      const res = await fetch("/api/ventes", {
+      const isMultiple = quantiteVente > 1;
+      const url = isMultiple ? "/api/ventes/groupee" : "/api/ventes";
+      const unitesConcernees = modalVente.unites.slice(0, quantiteVente);
+      
+      const body = isMultiple ? {
+        produit_ids: unitesConcernees.map(u => u.id),
+        prix_total: Number(prixReel),
+        canal: canal.trim() || undefined,
+        date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
+        confirmer: confirmer || undefined,
+      } : {
+        produit_id: unitesConcernees[0].id,
+        prix_vente_reel: Number(prixReel),
+        canal: canal.trim() || undefined,
+        date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
+        confirmer: confirmer || undefined,
+      };
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          produit_id: modalVente.id,
-          prix_vente_reel: Number(prixReel),
-          canal: canal.trim() || undefined,
-          date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
-          confirmer: confirmer || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       const corps = (await res.json().catch(() => null)) as
         | { ok?: boolean; confirmation_required?: boolean; message?: string; error?: string }
@@ -366,7 +383,7 @@ export default function VentesClient({ role }: { role: Role }) {
         return;
       }
       afficher(
-        `Vente enregistrée : ${modalVente.reference} — ${formaterDA(Number(prixReel))}. Imed a été notifié.`
+        `Vente enregistrée : ${modalVente.reference} (x${quantiteVente}) — ${formaterDA(Number(prixReel))}. Imed a été notifié.`
       );
       setModalVente(null);
       await Promise.all([chargerCartes(), chargerHistorique()]);
@@ -646,7 +663,7 @@ export default function VentesClient({ role }: { role: Role }) {
                       {peutVendre && !modeBundle && (
                         <button
                           type="button"
-                          onClick={() => ouvrirVente(c)}
+                          onClick={() => ouvrirVente(g)}
                           className="btn btn-primaire mt-3 w-full justify-center"
                         >
                           <IconeBillet taille={15} />
@@ -867,7 +884,7 @@ export default function VentesClient({ role }: { role: Role }) {
       )}
 
       <Modale
-        titre={modalVente ? `Vendre — ${modalVente.code_interne}` : ""}
+        titre={modalVente ? `Vendre — ${modalVente.unites[0].code_interne}` : ""}
         ouverte={modalVente !== null}
         onFermer={() => setModalVente(null)}
       >
@@ -881,7 +898,7 @@ export default function VentesClient({ role }: { role: Role }) {
                     setApercuPhotos({
                       photos: modalVente.images,
                       index: 0,
-                      titre: modalVente.code_interne,
+                      titre: modalVente.unites[0].code_interne,
                     })
                   }
                   title="Voir les photos en grand"
@@ -897,39 +914,61 @@ export default function VentesClient({ role }: { role: Role }) {
               )}
               <p className="text-sm text-brand-warm-grey">{modalVente.reference}</p>
             </div>
-            <div>
-              <label className="libelle mb-1.5" htmlFor="prix-reel">
-                Prix de vente réel (DA) *
-              </label>
-              <input
-                id="prix-reel"
-                type="number"
-                min={1}
-                step={1}
-                value={prixReel}
-                onChange={(e) => {
-                  setPrixReel(e.target.value);
-                  setAvertissement(null);
-                }}
-                autoFocus
-                className="champ"
-              />
-              {!estSocial && Number(prixReel) > 0 && (
-                <p className="mt-1 text-xs">
-                  Marge :{" "}
-                  <strong
-                    className={
-                      Number(prixReel) - modalVente.prix_achat - modalVente.cout_reparations >= 0
-                        ? "text-succes"
-                        : "text-danger"
-                    }
-                  >
-                    {formaterDA(
-                      Number(prixReel) - modalVente.prix_achat - modalVente.cout_reparations
-                    )}
-                  </strong>
-                </p>
-              )}
+            <div className="flex gap-3">
+              <div className="w-1/3">
+                <label className="libelle mb-1.5" htmlFor="quantite">
+                  Quantité (max {modalVente.unites.length})
+                </label>
+                <input
+                  id="quantite"
+                  type="number"
+                  min={1}
+                  max={modalVente.unites.length}
+                  value={quantiteVente}
+                  onChange={(e) => {
+                     const max = modalVente.unites.length;
+                     let val = parseInt(e.target.value, 10);
+                     if (isNaN(val) || val < 1) val = 1;
+                     if (val > max) val = max;
+                     setQuantiteVente(val);
+                     if (modalVente.prix_vente_fixe !== null) {
+                       setPrixReel(String(modalVente.prix_vente_fixe * val));
+                     }
+                     setAvertissement(null);
+                  }}
+                  className="champ"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="prix-reel">
+                  Prix de vente total (DA) *
+                </label>
+                <input
+                  id="prix-reel"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={prixReel}
+                  onChange={(e) => {
+                    setPrixReel(e.target.value.replace(/[^\d]/g, ""));
+                    setAvertissement(null);
+                  }}
+                  autoFocus
+                  className="champ"
+                />
+                {!estSocial && Number(prixReel) > 0 && (() => {
+                   const coutTotal = modalVente.unites.slice(0, quantiteVente).reduce((s, u) => s + u.prix_achat + u.cout_reparations, 0);
+                   const marge = Number(prixReel) - coutTotal;
+                   return (
+                    <p className="mt-1 text-xs">
+                      Marge totale :{" "}
+                      <strong className={marge >= 0 ? "text-succes" : "text-danger"}>
+                        {formaterDA(marge)}
+                      </strong>
+                    </p>
+                   );
+                })()}
+              </div>
             </div>
             <div className="flex gap-3">
               <div className="flex-1">
