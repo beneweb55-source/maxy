@@ -108,6 +108,8 @@ export default function VentesClient({ role }: { role: Role }) {
   const [erreurCartes, setErreurCartes] = useState<string | null>(null);
   const [modalVente, setModalVente] = useState<GroupeEnVente | null>(null);
   const [quantiteVente, setQuantiteVente] = useState(1);
+  const [modalRetrait, setModalRetrait] = useState<GroupeEnVente | null>(null);
+  const [quantiteRetrait, setQuantiteRetrait] = useState(1);
   const [prixReel, setPrixReel] = useState("");
   const [canal, setCanal] = useState("");
   const [dateVente, setDateVente] = useState(aujourdhuiIso());
@@ -394,6 +396,41 @@ export default function VentesClient({ role }: { role: Role }) {
     }
   }
 
+  const ouvrirRetrait = useCallback((groupe: GroupeEnVente) => {
+    setQuantiteRetrait(1);
+    setAvertissement(null);
+    setModalRetrait(groupe);
+  }, []);
+
+  async function enregistrerRetrait() {
+    if (!modalRetrait) return;
+    setEnvoi(true);
+    try {
+      const ids = modalRetrait.unites.slice(0, quantiteRetrait).map(u => u.id);
+      const res = await fetch("/api/produits/masse/statut", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          statut: "en_stock",
+          note: "Retiré de la vente depuis la caisse.",
+        }),
+      });
+      const corps = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors du retrait.", "erreur");
+        return;
+      }
+      afficher(`${quantiteRetrait} unité(s) de ${modalRetrait.reference} retirée(s) de la vente.`);
+      setModalRetrait(null);
+      await Promise.all([chargerCartes(), chargerHistorique()]);
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
   async function annulerVente() {
     if (!modalAnnulation) return;
     setEnvoi(true);
@@ -661,14 +698,24 @@ export default function VentesClient({ role }: { role: Role }) {
                         )}
                       </div>
                       {peutVendre && !modeBundle && (
-                        <button
-                          type="button"
-                          onClick={() => ouvrirVente(g)}
-                          className="btn btn-primaire mt-3 w-full justify-center"
-                        >
-                          <IconeBillet taille={15} />
-                          Vendre
-                        </button>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => ouvrirRetrait(g)}
+                            className="btn btn-secondaire flex-1 justify-center px-1 text-xs"
+                            title="Retirer de la vente"
+                          >
+                            Retirer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ouvrirVente(g)}
+                            className="btn btn-primaire flex-[2] justify-center"
+                          >
+                            <IconeBillet taille={15} />
+                            Vendre
+                          </button>
+                        </div>
                       )}
                     </div>
                   </li>
@@ -1222,6 +1269,58 @@ export default function VentesClient({ role }: { role: Role }) {
           titre={apercuPhotos.titre}
         />
       )}
+
+      <Modale
+        titre={modalRetrait ? `Retirer — ${modalRetrait.unites[0]!.code_interne}` : ""}
+        ouverte={modalRetrait !== null}
+        onFermer={() => setModalRetrait(null)}
+      >
+        {modalRetrait && (
+          <div className="space-y-3">
+            <p className="text-sm">
+              Vous êtes sur le point de retirer <strong>{modalRetrait.reference}</strong> de la vente (retour en stock).
+            </p>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="quantite-retrait">
+                Quantité à retirer (max {modalRetrait.unites.length})
+              </label>
+              <input
+                id="quantite-retrait"
+                type="number"
+                min={1}
+                max={modalRetrait.unites.length}
+                value={quantiteRetrait}
+                onChange={(e) => {
+                   const max = modalRetrait.unites.length;
+                   let val = parseInt(e.target.value, 10);
+                   if (isNaN(val) || val < 1) val = 1;
+                   if (val > max) val = max;
+                   setQuantiteRetrait(val);
+                }}
+                autoFocus
+                className="champ"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalRetrait(null)}
+                className="btn btn-secondaire"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={() => void enregistrerRetrait()}
+                className="btn btn-primaire"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        )}
+      </Modale>
     </div>
   );
 }
