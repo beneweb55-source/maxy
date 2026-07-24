@@ -16,7 +16,26 @@ import {
   IconeCorbeille,
   IconeEtoile,
   IconeImage,
+  IconeTelechargement,
 } from "@/components/icons";
+
+/**
+ * Lien de téléchargement d'une photo du champ. Deux cas :
+ * — data-URL (photo ajoutée, pas encore enregistrée) : le href est la donnée
+ *   elle-même et l'attribut `download` fournit le nom de fichier ;
+ * — URL servie par l'app (photo existante) : `?download=1` délègue au serveur
+ *   le nom propre (P-XXXX-NN.jpg) via Content-Disposition.
+ */
+function lienTelechargementPhoto(src: string, index: number): { href: string; nom: string } {
+  const numero = String(index + 1).padStart(2, "0");
+  const mime = /^data:image\/(\w+);/.exec(src)?.[1];
+  if (mime) {
+    const ext = mime === "png" ? "png" : mime === "webp" ? "webp" : "jpg";
+    return { href: src, nom: `photo-${numero}.${ext}` };
+  }
+  const separateur = src.includes("?") ? "&" : "?";
+  return { href: `${src}${separateur}download=1`, nom: `photo-${numero}.jpg` };
+}
 
 /**
  * Champ de saisie multi-photos. La première photo du tableau est la couverture.
@@ -164,6 +183,15 @@ export default function ChampPhotos({
                 </span>
               )}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-gradient-to-t from-black/55 to-transparent p-1">
+                <a
+                  href={lienTelechargementPhoto(src, index).href}
+                  download={lienTelechargementPhoto(src, index).nom}
+                  title={t("visionneuse.telecharger")}
+                  aria-label={t("visionneuse.telecharger")}
+                  className="pointer-events-auto rounded-md bg-brand-white/90 p-1 text-brand-black transition hover:bg-brand-white"
+                >
+                  <IconeTelechargement taille={13} />
+                </a>
                 {index !== 0 && (
                   <button
                     type="button"
@@ -227,6 +255,8 @@ export default function ChampPhotos({
           index={apercu}
           onFermer={() => setApercu(null)}
           onNaviguer={setApercu}
+          lienTelechargement={(i) => lienTelechargementPhoto(photos[i] ?? "", i).href}
+          nomTelechargement={(i) => lienTelechargementPhoto(photos[i] ?? "", i).nom}
         />
       )}
     </div>

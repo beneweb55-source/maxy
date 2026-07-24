@@ -22,14 +22,21 @@ export default function VisionneusePhotos({
   onFermer,
   onNaviguer,
   lienTelechargement,
+  nomTelechargement,
   titre,
 }: {
   photos: string[];
   index: number;
   onFermer: () => void;
   onNaviguer: (index: number) => void;
-  /** URL de téléchargement de la photo i ; omis pour un aperçu local (ajout). */
+  /** URL de téléchargement de la photo i ; omis pour masquer le bouton. */
   lienTelechargement?: (index: number) => string;
+  /**
+   * Nom de fichier suggéré (attribut `download`). Indispensable quand le lien
+   * est une data-URL (photo pas encore enregistrée) ; pour une URL servie par
+   * l'app, le serveur impose déjà son nom via Content-Disposition.
+   */
+  nomTelechargement?: (index: number) => string;
   titre?: string;
 }) {
   const t = useT();
@@ -90,6 +97,7 @@ export default function VisionneusePhotos({
           {lienTelechargement && (
             <a
               href={lienTelechargement(i)}
+              download={nomTelechargement ? nomTelechargement(i) : undefined}
               onClick={(e) => e.stopPropagation()}
               title={t("visionneuse.telecharger")}
               aria-label={t("visionneuse.telecharger")}
