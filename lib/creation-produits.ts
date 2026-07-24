@@ -13,7 +13,7 @@ type Tx = Prisma.TransactionClient;
 export async function creerProduitsGroupes(
   tx: Tx,
   options: {
-    lotId: number;
+    lotId: number | null;
     lignes: LigneProduitEntree[];
     userId: number;
     statut?: StatutProduit;

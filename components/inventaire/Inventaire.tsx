@@ -41,7 +41,7 @@ interface LigneProduit {
   cout_reparations: number;
   prix_vente_fixe: number | null;
   prix_vente_reel: number | null;
-  lot_id: number;
+  lot_id: number | null;
   fournisseur: string;
   date_entree: string;
   jours_stock: number;
@@ -404,7 +404,7 @@ export default function Inventaire({ role }: { role: Role }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          lot_id: Number(formulaire.lot_id),
+          lot_id: formulaire.lot_id ? Number(formulaire.lot_id) : null,
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
@@ -1157,7 +1157,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   <td className="px-3 py-2 text-xs">
                     {new Date(p.date_entree).toLocaleDateString("fr-FR")}
                     <span className="block text-brand-grey">
-                      lot n°{p.lot_id} · {p.fournisseur}
+                      {p.lot_id ? `lot n°${p.lot_id} · ` : ""}{p.fournisseur}
                     </span>
                   </td>
                   {!estSocial && (
@@ -1281,14 +1281,14 @@ export default function Inventaire({ role }: { role: Role }) {
           className="space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!envoi && formulaireValide && formulaire.lot_id) {
+            if (!envoi && formulaireValide) {
               void ajouterProduit();
             }
           }}
         >
           <div>
             <label className="libelle mb-1.5" htmlFor="lot-produit">
-              Lot de rattachement *
+              Lot de rattachement (Optionnel)
             </label>
             <select
               id="lot-produit"
@@ -1296,24 +1296,19 @@ export default function Inventaire({ role }: { role: Role }) {
               onChange={(e) => setFormulaire({ ...formulaire, lot_id: e.target.value })}
               className="champ"
             >
-              {(donnees?.lots ?? []).length === 0 && <option value="">Aucun lot disponible</option>}
+              <option value="">Stock indépendant (aucun arrivage)</option>
               {(donnees?.lots ?? []).map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.libelle}
                 </option>
               ))}
             </select>
-            {(donnees?.lots ?? []).length === 0 && (
-              <p className="mt-1.5 text-xs text-brand-warm-grey">
-                Créez d'abord un arrivage : chaque produit appartient à un lot.
-              </p>
-            )}
           </div>
           {champsProduit}
           <div className="pt-1 text-right">
             <button
               type="submit"
-              disabled={envoi || !formulaireValide || !formulaire.lot_id}
+              disabled={envoi || !formulaireValide}
               className="btn btn-primaire"
             >
               <IconePlus taille={15} />

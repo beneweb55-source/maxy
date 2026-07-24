@@ -110,7 +110,7 @@ model Lot {
 
 model Produit {
   id               Int              @id @default(autoincrement())
-  lot_id           Int
+  lot_id           Int?
   code_interne     String           @unique
   reference        String
   categorie        String
@@ -125,7 +125,7 @@ model Produit {
   a_jeter          Boolean          @default(false)
   en_vitrine       Boolean          @default(false)
 
-  lot         Lot                @relation(fields: [lot_id], references: [id])
+  lot         Lot?               @relation(fields: [lot_id], references: [id])
   reparations Reparation[]
   historique  HistoriqueStatut[]
   mouvements  MouvementCaisse[]

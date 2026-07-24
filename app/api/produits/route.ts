@@ -78,10 +78,10 @@ export async function GET(request: NextRequest) {
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
         prix_vente_reel: p.prix_vente_reel,
-        lot_id: p.lot.id,
-        fournisseur: p.lot.fournisseur,
-        date_entree: p.lot.date_entree.toISOString(),
-        jours_stock: Math.floor((maintenant - p.lot.date_entree.getTime()) / JOUR_MS),
+        lot_id: p.lot?.id ?? null,
+        fournisseur: p.lot?.fournisseur ?? "Indépendant",
+        date_entree: p.lot ? p.lot.date_entree.toISOString() : new Date().toISOString(),
+        jours_stock: p.lot ? Math.floor((maintenant - p.lot.date_entree.getTime()) / JOUR_MS) : 0,
       })),
     });
   } catch (e) {
@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
       en_vitrine?: unknown;
     };
 
-  const lotId = Number(lot_id);
-  if (!Number.isInteger(lotId)) return erreur(400, "Choisissez le lot de rattachement.");
+  const lotId = lot_id ? Number(lot_id) : null;
+  if (lot_id && !Number.isInteger(lotId)) return erreur(400, "Lot invalide.");
   const validation = validerLignesProduits([{ reference, categorie, prix_achat, image_url, images }]);
   if (validation.erreur !== undefined) return erreur(400, validation.erreur);
   const ligne = validation.produits[0];
@@ -123,8 +123,10 @@ export async function POST(request: NextRequest) {
   const qty = Math.max(1, Math.min(MAX_QUANTITE_PRODUITS, Number(quantite) || 1));
 
   try {
-    const lot = await prisma.lot.findUnique({ where: { id: lotId } });
-    if (!lot) return erreur(404, "Lot introuvable.");
+    if (lotId !== null) {
+      const lot = await prisma.lot.findUnique({ where: { id: lotId } });
+      if (!lot) return erreur(404, "Lot introuvable.");
+    }
 
     // La même ligne validée est répétée `qty` fois (les éléments partagent la
     // référence du tableau `images`, aucune copie mémoire lourde).
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
     const codes = await prisma.$transaction(
       (tx) =>
         creerProduitsGroupes(tx, {
-          lotId: lot.id,
+          lotId: lotId,
           lignes,
           userId: user.id,
           enVitrine: en_vitrine === true,
