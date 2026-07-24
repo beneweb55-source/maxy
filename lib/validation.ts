@@ -3,6 +3,9 @@ import { validerPhoto } from "./images";
 // Nombre maximum de photos conservées par produit (couverture + galerie).
 export const MAX_PHOTOS_PRODUIT = 10;
 
+// Quantité maximale de produits identiques créés en une seule opération.
+export const MAX_QUANTITE_PRODUITS = 500;
+
 export interface LigneProduitEntree {
   reference: string;
   categorie: string;

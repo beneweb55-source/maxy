@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { genererCodesInternes } from "@/lib/codes";
-import { validerLignesProduits } from "@/lib/validation";
-import { creerImagesSupplementaires } from "@/lib/produit-images-db";
+import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
+import { creerProduitsGroupes } from "@/lib/creation-produits";
 
 export async function POST(
   request: NextRequest,
@@ -23,10 +22,30 @@ export async function POST(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produits: produitsBruts } = (corps ?? {}) as { produits?: unknown };
+  const { produits: produitsBruts, quantite } = (corps ?? {}) as {
+    produits?: unknown;
+    quantite?: unknown;
+  };
   const validation = validerLignesProduits(produitsBruts);
   if (validation.erreur !== undefined) return erreur(400, validation.erreur);
-  const lignes = validation.produits;
+  let lignes = validation.produits;
+
+  // Mode « quantité » : le client envoie UNE ligne (photos incluses une seule
+  // fois) + une quantité ; on la réplique côté serveur. Cela évite de dupliquer
+  // les photos N fois dans le corps de la requête (limite de taille) pour un
+  // ajout d'un même produit en grand nombre.
+  if (quantite !== undefined) {
+    const q = Number(quantite);
+    if (!Number.isInteger(q) || q < 1) return erreur(400, "Quantité invalide.");
+    if (lignes.length !== 1) {
+      return erreur(400, "La quantité s'applique à un seul produit à la fois.");
+    }
+    const modele = lignes[0]!;
+    const qty = Math.min(MAX_QUANTITE_PRODUITS, q);
+    lignes = Array.from({ length: qty }, () => modele);
+  } else if (lignes.length > MAX_QUANTITE_PRODUITS) {
+    return erreur(400, `Maximum ${MAX_QUANTITE_PRODUITS} produits par ajout.`);
+  }
 
   try {
     const lot = await prisma.lot.findUnique({ where: { id: lotId } });
@@ -35,33 +54,10 @@ export async function POST(
       return erreur(400, "Impossible d'ajouter des produits : le lot n'est plus en cours de test.");
     }
 
-    await prisma.$transaction(async (tx) => {
-      const codes = await genererCodesInternes(tx, lignes.length);
-      for (let i = 0; i < lignes.length; i++) {
-        const ligne = lignes[i];
-        const code = codes[i];
-        if (!ligne || !code) continue;
-        const produit = await tx.produit.create({
-          data: {
-            lot_id: lot.id,
-            code_interne: code,
-            reference: ligne.reference,
-            categorie: ligne.categorie,
-            prix_achat: ligne.prix_achat,
-            image_url: ligne.images[0] ?? null,
-          },
-        });
-        await creerImagesSupplementaires(tx, produit.id, ligne.images.slice(1));
-        await tx.historiqueStatut.create({
-          data: {
-            produit_id: produit.id,
-            user_id: user.id,
-            statut_avant: null,
-            statut_apres: "recu",
-          },
-        });
-      }
-    });
+    await prisma.$transaction(
+      (tx) => creerProduitsGroupes(tx, { lotId: lot.id, lignes, userId: user.id }),
+      { timeout: 120000 }
+    );
 
     return NextResponse.json({ ok: true, ajoutes: lignes.length }, { status: 201 });
   } catch (e) {

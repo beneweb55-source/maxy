@@ -1,13 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { validerLignesProduits } from "@/lib/validation";
-import { genererCodesInternes } from "@/lib/codes";
-import {
-  creerImagesSupplementaires,
-  remplacerImagesSupplementaires,
-  resoudreGalerie,
-} from "@/lib/produit-images-db";
+import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
+import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
+import { creerProduitsGroupes } from "@/lib/creation-produits";
 
 export async function PUT(request: NextRequest) {
   const acces = await exigerUtilisateur(["technicien", "gerant", "dev"]);
@@ -41,7 +37,7 @@ export async function PUT(request: NextRequest) {
     if (!Number.isInteger(q) || q < 1) {
       return erreur(400, "Quantité invalide.");
     }
-    targetQuantite = q;
+    targetQuantite = Math.min(MAX_QUANTITE_PRODUITS, q);
   }
 
   const validation = validerLignesProduits([{ reference, categorie, prix_achat }]);
@@ -88,7 +84,7 @@ export async function PUT(request: NextRequest) {
     const diff = targetQuantite - produitIds.length;
 
     await prisma.$transaction(async (tx) => {
-      let idsAUpdate = [...produitIds];
+      const idsAUpdate = [...produitIds];
 
       // Suppression de l'excédent si la quantité est réduite
       if (diff < 0) {
@@ -126,33 +122,21 @@ export async function PUT(request: NextRequest) {
         const extrasNouveaux = imagesFournies
           ? extrasFournis
           : originalProduct.images.map((img) => img.data);
-        const codes = await genererCodesInternes(tx, diff);
-        for (let i = 0; i < diff; i++) {
-          const code = codes[i];
-          if (!code) continue;
-          const produit = await tx.produit.create({
-            data: {
-              lot_id: originalProduct.lot_id,
-              code_interne: code,
-              reference: ligne.reference,
-              categorie: ligne.categorie,
-              prix_achat: ligne.prix_achat,
-              image_url: couvertureNouvelle,
-              statut: originalProduct.statut,
-            },
-          });
-          await creerImagesSupplementaires(tx, produit.id, extrasNouveaux);
-          await tx.historiqueStatut.create({
-            data: {
-              produit_id: produit.id,
-              user_id: user.id,
-              statut_avant: null,
-              statut_apres: originalProduct.statut,
-            },
-          });
-        }
+        const modeleLigne = {
+          reference: ligne.reference,
+          categorie: ligne.categorie,
+          prix_achat: ligne.prix_achat,
+          image_url: couvertureNouvelle ?? undefined,
+          images: [...(couvertureNouvelle ? [couvertureNouvelle] : []), ...extrasNouveaux],
+        };
+        await creerProduitsGroupes(tx, {
+          lotId: originalProduct.lot_id,
+          lignes: Array.from({ length: diff }, () => modeleLigne),
+          userId: user.id,
+          statut: originalProduct.statut,
+        });
       }
-    });
+    }, { timeout: 120000 });
 
     return NextResponse.json({ ok: true });
   } catch (e) {

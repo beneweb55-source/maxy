@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { genererCodesInternes } from "@/lib/codes";
 import { construireFiltresProduits, construireTriProduits } from "@/lib/filtres-produits";
 import { urlPhotoProduit } from "@/lib/images";
-import { validerLignesProduits } from "@/lib/validation";
-import { creerImagesSupplementaires } from "@/lib/produit-images-db";
+import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
+import { creerProduitsGroupes } from "@/lib/creation-produits";
 
 const PAR_PAGE = 50;
 const JOUR_MS = 24 * 60 * 60 * 1000;
@@ -119,37 +118,19 @@ export async function POST(request: NextRequest) {
   const ligne = validation.produits[0];
   if (!ligne) return erreur(400, "Produit invalide.");
 
-  const qty = Math.max(1, Math.min(100, Number(quantite) || 1));
+  const qty = Math.max(1, Math.min(MAX_QUANTITE_PRODUITS, Number(quantite) || 1));
 
   try {
     const lot = await prisma.lot.findUnique({ where: { id: lotId } });
     if (!lot) return erreur(404, "Lot introuvable.");
 
-    const codes = await prisma.$transaction(async (tx) => {
-      const generatedCodes = await genererCodesInternes(tx, qty);
-      for (let i = 0; i < qty; i++) {
-        const cree = await tx.produit.create({
-          data: {
-            lot_id: lot.id,
-            code_interne: generatedCodes[i] ?? "P-0001",
-            reference: ligne.reference,
-            categorie: ligne.categorie,
-            prix_achat: ligne.prix_achat,
-            image_url: ligne.images[0] ?? null,
-          },
-        });
-        await creerImagesSupplementaires(tx, cree.id, ligne.images.slice(1));
-        await tx.historiqueStatut.create({
-          data: {
-            produit_id: cree.id,
-            user_id: user.id,
-            statut_avant: null,
-            statut_apres: "recu",
-          },
-        });
-      }
-      return generatedCodes;
-    });
+    // La même ligne validée est répétée `qty` fois (les éléments partagent la
+    // référence du tableau `images`, aucune copie mémoire lourde).
+    const lignes = Array.from({ length: qty }, () => ligne);
+    const codes = await prisma.$transaction(
+      (tx) => creerProduitsGroupes(tx, { lotId: lot.id, lignes, userId: user.id }),
+      { timeout: 120000 }
+    );
 
     return NextResponse.json(
       { ok: true, ajoutes: qty, code_interne: codes[0] },

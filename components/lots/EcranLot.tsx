@@ -355,15 +355,18 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     }
     
     const quantite = Math.max(1, Number(nouvQuantite) || 1);
-    const produits = Array.from({ length: quantite }).map(() => ({
-      reference: nouvRef.trim(),
-      categorie: nouvCat.trim(),
-      prix_achat: Number(nouvPrix),
-      images: nouvPhotos,
-    }));
-
+    // On envoie une seule ligne (avec ses photos) + la quantité : le serveur la
+    // réplique. Évite de dupliquer les photos N fois dans le corps de requête.
     const ok = await appelApi(`/api/lots/${lotId}/produits`, {
-      produits,
+      produits: [
+        {
+          reference: nouvRef.trim(),
+          categorie: nouvCat.trim(),
+          prix_achat: Number(nouvPrix),
+          images: nouvPhotos,
+        },
+      ],
+      quantite,
     });
     if (ok) {
       afficher("Produit ajouté au lot.");
