@@ -101,15 +101,17 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { lot_id, reference, categorie, prix_achat, image_url, images, quantite } = (corps ?? {}) as {
-    lot_id?: unknown;
-    reference?: unknown;
-    categorie?: unknown;
-    prix_achat?: unknown;
-    image_url?: unknown;
-    images?: unknown;
-    quantite?: unknown;
-  };
+  const { lot_id, reference, categorie, prix_achat, image_url, images, quantite, en_vitrine } =
+    (corps ?? {}) as {
+      lot_id?: unknown;
+      reference?: unknown;
+      categorie?: unknown;
+      prix_achat?: unknown;
+      image_url?: unknown;
+      images?: unknown;
+      quantite?: unknown;
+      en_vitrine?: unknown;
+    };
 
   const lotId = Number(lot_id);
   if (!Number.isInteger(lotId)) return erreur(400, "Choisissez le lot de rattachement.");
@@ -128,7 +130,13 @@ export async function POST(request: NextRequest) {
     // référence du tableau `images`, aucune copie mémoire lourde).
     const lignes = Array.from({ length: qty }, () => ligne);
     const codes = await prisma.$transaction(
-      (tx) => creerProduitsGroupes(tx, { lotId: lot.id, lignes, userId: user.id }),
+      (tx) =>
+        creerProduitsGroupes(tx, {
+          lotId: lot.id,
+          lignes,
+          userId: user.id,
+          enVitrine: en_vitrine === true,
+        }),
       { timeout: 120000 }
     );
 

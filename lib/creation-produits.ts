@@ -17,9 +17,10 @@ export async function creerProduitsGroupes(
     lignes: LigneProduitEntree[];
     userId: number;
     statut?: StatutProduit;
+    enVitrine?: boolean;
   }
 ): Promise<string[]> {
-  const { lotId, lignes, userId, statut = "recu" } = options;
+  const { lotId, lignes, userId, statut = "recu", enVitrine = false } = options;
   if (lignes.length === 0) return [];
 
   const codes = await genererCodesInternes(tx, lignes.length);
@@ -40,6 +41,7 @@ export async function creerProduitsGroupes(
         prix_achat: ligne.prix_achat,
         image_url: ligne.images[0] ?? null,
         statut,
+        en_vitrine: enVitrine,
       })),
       select: { id: true, code_interne: true },
     });

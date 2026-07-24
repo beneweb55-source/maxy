@@ -168,6 +168,8 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formulaire, setFormulaire] = useState<FormulaireProduit>(FORMULAIRE_VIDE);
   const [formPhotos, setFormPhotos] = useState<string[]>([]);
   const [formPhotosModifiees, setFormPhotosModifiees] = useState(false);
+  // « En vitrine » dès la création (formulaire d'ajout).
+  const [formVitrine, setFormVitrine] = useState(false);
 
   const [vueGroupee, setVueGroupee] = useState(true);
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
@@ -241,6 +243,7 @@ export default function Inventaire({ role }: { role: Role }) {
     setFormulaire({ ...FORMULAIRE_VIDE, lot_id: String(donnees?.lots[0]?.id ?? "") });
     setFormPhotos([]);
     setFormPhotosModifiees(false);
+    setFormVitrine(false);
     setModalAjout(true);
   }
 
@@ -266,6 +269,30 @@ export default function Inventaire({ role }: { role: Role }) {
           if (d?.images) setFormPhotos(d.images);
         })
         .catch(() => undefined);
+    }
+  }
+
+  // Action rapide (hors modale) : met/retire des produits de la vitrine.
+  async function basculerVitrineIds(ids: number[], enVitrine: boolean, libelle: string) {
+    if (ids.length === 0) return;
+    setEnvoi(true);
+    try {
+      const res = await fetch("/api/produits/masse/vitrine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, en_vitrine: enVitrine }),
+      });
+      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la mise à jour de la vitrine.", "erreur");
+        return;
+      }
+      afficher(enVitrine ? `${libelle} mis en vitrine.` : `${libelle} retiré de la vitrine.`);
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
     }
   }
 
@@ -383,6 +410,7 @@ export default function Inventaire({ role }: { role: Role }) {
           prix_achat: Number(formulaire.prix_achat),
           images: formPhotos,
           quantite: Number(formulaire.quantite) || 1,
+          en_vitrine: formVitrine,
         }),
       });
       const corps = (await res.json().catch(() => null)) as
@@ -616,6 +644,24 @@ export default function Inventaire({ role }: { role: Role }) {
           disabled={envoi}
         />
       </div>
+      {modalEdition === null && (
+        <label className="sm:col-span-2 flex items-start gap-2.5 rounded-lg border border-brand-light-grey bg-brand-paper p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={formVitrine}
+            onChange={(e) => setFormVitrine(e.target.checked)}
+            className="mt-0.5 accent-brand-orange"
+          />
+          <span>
+            <span className="inline-flex items-center gap-1.5 font-semibold text-brand-black">
+              <IconeVitrine taille={14} /> Mettre en vitrine
+            </span>
+            <span className="block text-xs text-brand-warm-grey">
+              Exposé physiquement en vitrine — indépendant de la mise en vente en ligne.
+            </span>
+          </span>
+        </label>
+      )}
     </div>
   );
 
@@ -913,6 +959,41 @@ export default function Inventaire({ role }: { role: Role }) {
                       Vente
                     </span>
                   </div>
+                  {peutModifier &&
+                    (() => {
+                      const nonVendu = g.unites.filter((u) => u.statut !== "vendu");
+                      const exposeIds = g.unites.filter((u) => u.en_vitrine).map((u) => u.id);
+                      const enVitrine = g.enVitrine > 0;
+                      const desactive = envoi || (!enVitrine && nonVendu.length === 0);
+                      return (
+                        <button
+                          type="button"
+                          disabled={desactive}
+                          onClick={() =>
+                            enVitrine
+                              ? void basculerVitrineIds(exposeIds, false, g.reference)
+                              : void basculerVitrineIds([nonVendu[0]!.id], true, g.reference)
+                          }
+                          title={
+                            enVitrine
+                              ? "Retirer de la vitrine"
+                              : "Mettre en vitrine (le modèle apparaît avec sa quantité)"
+                          }
+                          aria-label={
+                            enVitrine
+                              ? `Retirer ${g.reference} de la vitrine`
+                              : `Mettre ${g.reference} en vitrine`
+                          }
+                          className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+                            enVitrine
+                              ? "text-brand-orange hover:bg-brand-orange/10"
+                              : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
+                          }`}
+                        >
+                          <IconeVitrine taille={15} />
+                        </button>
+                      );
+                    })()}
                   {peutModifier && (
                     <button
                       type="button"
@@ -973,6 +1054,24 @@ export default function Inventaire({ role }: { role: Role }) {
                         )}
                         {peutModifier && (
                           <>
+                            {p.statut !== "vendu" && (
+                              <button
+                                type="button"
+                                disabled={envoi}
+                                onClick={() =>
+                                  void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)
+                                }
+                                title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                                aria-label={`${p.en_vitrine ? "Retirer" : "Mettre"} ${p.code_interne} ${p.en_vitrine ? "de" : "en"} vitrine`}
+                                className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+                                  p.en_vitrine
+                                    ? "text-brand-orange hover:bg-brand-orange/10"
+                                    : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
+                                }`}
+                              >
+                                <IconeVitrine taille={14} />
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => ouvrirEdition(p)}
@@ -1091,6 +1190,25 @@ export default function Inventaire({ role }: { role: Role }) {
                   <td className="px-2 py-2">
                     {peutModifier && (
                       <span className="flex items-center justify-end gap-1">
+                        {p.statut !== "vendu" && (
+                          <button
+                            type="button"
+                            disabled={envoi}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
+                            }}
+                            title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                            aria-label={`${p.en_vitrine ? "Retirer" : "Mettre"} ${p.code_interne} ${p.en_vitrine ? "de" : "en"} vitrine`}
+                            className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+                              p.en_vitrine
+                                ? "text-brand-orange hover:bg-brand-orange/10"
+                                : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
+                            }`}
+                          >
+                            <IconeVitrine taille={14} />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={(e) => {
