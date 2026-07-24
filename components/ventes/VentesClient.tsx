@@ -11,6 +11,7 @@ import { formaterDA } from "@/lib/caisse";
 import {
   IconeAlerte,
   IconeBillet,
+  IconeCoche,
   IconeImage,
   IconePaquet,
   IconeRecherche,
@@ -444,31 +445,37 @@ export default function VentesClient({ role }: { role: Role }) {
                 return (
                   <li
                     key={c.id}
-                    className={`carte flex flex-col ${
-                      modeBundle && choisi ? "ring-2 ring-brand-orange" : ""
+                    className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md ${
+                      modeBundle && choisi
+                        ? "border-brand-orange ring-2 ring-brand-orange"
+                        : "border-brand-light-grey"
                     }`}
                   >
-                    {modeBundle && (
-                      <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-smooth">
-                        <input
-                          type="checkbox"
-                          checked={choisi}
-                          onChange={() => basculerSelection(c.id)}
-                          className="accent-brand-orange"
-                        />
-                        Ajouter au groupe
-                      </label>
-                    )}
                     <button
                       type="button"
-                      onClick={() =>
-                        c.images.length > 0 &&
-                        setApercuPhotos({ photos: c.images, index: 0, titre: c.code_interne })
+                      onClick={() => {
+                        if (modeBundle) basculerSelection(c.id);
+                        else if (c.images.length > 0)
+                          setApercuPhotos({ photos: c.images, index: 0, titre: c.code_interne });
+                      }}
+                      title={
+                        modeBundle
+                          ? choisi
+                            ? "Retirer du groupe"
+                            : "Ajouter au groupe"
+                          : c.images.length > 0
+                            ? "Voir les photos en grand"
+                            : undefined
                       }
-                      title={c.images.length > 0 ? "Voir les photos en grand" : undefined}
-                      aria-label={`Photos de ${c.reference}`}
-                      className={`relative mb-2.5 block h-32 w-full overflow-hidden rounded-lg border border-brand-light-grey bg-brand-paper ${
-                        c.images.length > 0 ? "cursor-zoom-in" : "cursor-default"
+                      aria-label={
+                        modeBundle ? `Sélectionner ${c.reference}` : `Photos de ${c.reference}`
+                      }
+                      className={`relative block aspect-[4/3] w-full overflow-hidden bg-brand-paper ${
+                        modeBundle
+                          ? "cursor-pointer"
+                          : c.images.length > 0
+                            ? "cursor-zoom-in"
+                            : "cursor-default"
                       }`}
                     >
                       {c.image_url ? (
@@ -476,11 +483,23 @@ export default function VentesClient({ role }: { role: Role }) {
                           src={c.image_url}
                           alt={`Photo de ${c.reference}`}
                           loading="lazy"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                         />
                       ) : (
                         <span className="flex h-full w-full items-center justify-center text-brand-grey">
-                          <IconeImage taille={26} />
+                          <IconeImage taille={30} />
+                        </span>
+                      )}
+                      {modeBundle && (
+                        <span
+                          className={`absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold shadow ${
+                            choisi
+                              ? "bg-brand-orange text-brand-white"
+                              : "bg-brand-white/90 text-brand-smooth"
+                          }`}
+                        >
+                          <IconeCoche taille={12} />
+                          {choisi ? "Sélectionné" : "Choisir"}
                         </span>
                       )}
                       {c.images.length > 1 && (
@@ -489,50 +508,58 @@ export default function VentesClient({ role }: { role: Role }) {
                           {c.images.length}
                         </span>
                       )}
+                      <span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
+                        {c.jours_en_vente} j en vente
+                      </span>
                     </button>
-                    <Link
-                      href={`/produits/${c.id}`}
-                      className="block truncate text-sm font-semibold transition hover:text-brand-crystal hover:underline"
-                      title={c.reference}
-                    >
-                      <span className="font-mono text-xs text-brand-warm-grey">
-                        {c.code_interne}
-                      </span>{" "}
-                      {c.reference}
-                    </Link>
-                    <p className="mt-1 text-xs text-brand-warm-grey">{c.categorie}</p>
-                    <dl className="mt-2 flex-1 space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <dt className="text-brand-warm-grey">Prix fixé</dt>
-                        <dd className="font-bold">
-                          {c.prix_vente_fixe !== null ? formaterDA(c.prix_vente_fixe) : "—"}
-                        </dd>
+
+                    <div className="flex flex-1 flex-col p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs text-brand-warm-grey">
+                          {c.code_interne}
+                        </span>
+                        <span className="truncate text-xs text-brand-warm-grey">{c.categorie}</span>
                       </div>
-                      {!estSocial && (
-                        <div className="flex justify-between">
-                          <dt className="text-brand-warm-grey">Marge prévue</dt>
-                          <dd
-                            className={`font-semibold ${c.marge_prevue >= 0 ? "text-succes" : "text-danger"}`}
-                          >
-                            {formaterDA(c.marge_prevue)}
-                          </dd>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <dt className="text-brand-warm-grey">En vente depuis</dt>
-                        <dd>{c.jours_en_vente} j</dd>
-                      </div>
-                    </dl>
-                    {peutVendre && !modeBundle && (
-                      <button
-                        type="button"
-                        onClick={() => ouvrirVente(c)}
-                        className="btn btn-primaire mt-3 w-full"
+                      <Link
+                        href={`/produits/${c.id}`}
+                        className="mt-1 line-clamp-2 text-sm font-semibold leading-snug transition hover:text-brand-crystal hover:underline"
+                        title={c.reference}
                       >
-                        <IconeBillet taille={15} />
-                        Vendre
-                      </button>
-                    )}
+                        {c.reference}
+                      </Link>
+                      <div className="mt-auto flex items-end justify-between gap-2 pt-2.5">
+                        <div>
+                          <span className="block text-[10px] font-semibold uppercase tracking-wide text-brand-grey">
+                            Prix fixé
+                          </span>
+                          <span className="text-lg font-extrabold leading-tight text-brand-orange">
+                            {c.prix_vente_fixe !== null ? formaterDA(c.prix_vente_fixe) : "—"}
+                          </span>
+                        </div>
+                        {!estSocial && (
+                          <div className="text-right">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-brand-grey">
+                              Marge prévue
+                            </span>
+                            <span
+                              className={`text-sm font-bold ${c.marge_prevue >= 0 ? "text-succes" : "text-danger"}`}
+                            >
+                              {formaterDA(c.marge_prevue)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {peutVendre && !modeBundle && (
+                        <button
+                          type="button"
+                          onClick={() => ouvrirVente(c)}
+                          className="btn btn-primaire mt-3 w-full justify-center"
+                        >
+                          <IconeBillet taille={15} />
+                          Vendre
+                        </button>
+                      )}
+                    </div>
                   </li>
                 );
               })}
