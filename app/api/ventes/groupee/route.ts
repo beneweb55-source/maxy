@@ -137,6 +137,34 @@ export async function POST(request: NextRequest) {
           where: { id: produit.id },
           data: { statut: "vendu", prix_vente_reel: part, date_vente: quand, en_vitrine: false },
         });
+        // Vitrine par modèle : transférer le drapeau à un exemplaire identique
+        // restant si l'unité vendue était celle qui représentait le modèle.
+        // On exclut TOUT le bundle (idsUniques), pas seulement l'unité courante :
+        // une autre unité du bundle encore « en_vente » à cet instant de la
+        // transaction sera vendue quelques itérations plus loin — lui donner le
+        // drapeau le ferait disparaître avec elle.
+        if (produit.en_vitrine) {
+          const modele = {
+            reference: { equals: produit.reference.trim(), mode: "insensitive" as const },
+            categorie: { equals: produit.categorie.trim(), mode: "insensitive" as const },
+          };
+          const encoreExpose = await tx.produit.count({
+            where: { ...modele, id: { notIn: idsUniques }, en_vitrine: true, statut: { not: "vendu" } },
+          });
+          if (encoreExpose === 0) {
+            const remplacant = await tx.produit.findFirst({
+              where: { ...modele, id: { notIn: idsUniques }, statut: { not: "vendu" } },
+              orderBy: { id: "asc" },
+              select: { id: true },
+            });
+            if (remplacant) {
+              await tx.produit.update({
+                where: { id: remplacant.id },
+                data: { en_vitrine: true },
+              });
+            }
+          }
+        }
         await tx.historiqueStatut.create({
           data: {
             produit_id: produit.id,

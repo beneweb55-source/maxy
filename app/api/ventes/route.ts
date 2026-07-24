@@ -163,6 +163,31 @@ export async function POST(request: NextRequest) {
         where: { id: produit.id },
         data: { statut: "vendu", prix_vente_reel: prix, date_vente: quand, en_vitrine: false },
       });
+      // Vitrine par modèle : si l'unité vendue représentait le modèle en
+      // vitrine, transférer le drapeau à un autre exemplaire identique en
+      // stock pour que le modèle reste exposé (avec sa quantité décrémentée).
+      if (produit.en_vitrine) {
+        const modele = {
+          reference: { equals: produit.reference.trim(), mode: "insensitive" as const },
+          categorie: { equals: produit.categorie.trim(), mode: "insensitive" as const },
+        };
+        const encoreExpose = await tx.produit.count({
+          where: { ...modele, id: { not: produit.id }, en_vitrine: true, statut: { not: "vendu" } },
+        });
+        if (encoreExpose === 0) {
+          const remplacant = await tx.produit.findFirst({
+            where: { ...modele, id: { not: produit.id }, statut: { not: "vendu" } },
+            orderBy: { id: "asc" },
+            select: { id: true },
+          });
+          if (remplacant) {
+            await tx.produit.update({
+              where: { id: remplacant.id },
+              data: { en_vitrine: true },
+            });
+          }
+        }
+      }
       await tx.historiqueStatut.create({
         data: {
           produit_id: produit.id,

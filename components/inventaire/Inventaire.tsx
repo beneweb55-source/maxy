@@ -154,7 +154,17 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
   const [modalEdition, setModalEdition] = useState<LigneProduit | null>(null);
-  const [modalSuppression, setModalSuppression] = useState<LigneProduit | null>(null);
+  // Suppression : soit des unités précises (« unites »), soit tout un modèle
+  // (« modele ») = tous les exemplaires en stock d'une référence, au-delà de la
+  // page courante. `vendusExclus` : exemplaires vendus écartés (conservés pour
+  // leur historique de vente).
+  const [modalSuppression, setModalSuppression] = useState<{
+    type: "unites" | "modele";
+    reference: string;
+    categorie: string;
+    unites: LigneProduit[];
+    vendusExclus: number;
+  } | null>(null);
   const [formulaire, setFormulaire] = useState<FormulaireProduit>(FORMULAIRE_VIDE);
   const [formPhotos, setFormPhotos] = useState<string[]>([]);
   const [formPhotosModifiees, setFormPhotosModifiees] = useState(false);
@@ -423,17 +433,66 @@ export default function Inventaire({ role }: { role: Role }) {
     }
   }
 
-  async function supprimerProduit() {
-    if (!modalSuppression) return;
+  // Ouvre la confirmation pour une ou plusieurs unités précises (écarte les
+  // exemplaires vendus, non supprimables).
+  function ouvrirSuppressionUnites(unites: LigneProduit[]) {
+    const premier = unites[0];
+    if (!premier) return;
+    const supprimables = unites
+      .filter((u) => u.statut !== "vendu")
+      .sort((a, b) => a.code_interne.localeCompare(b.code_interne));
+    setModalSuppression({
+      type: "unites",
+      reference: premier.reference,
+      categorie: premier.categorie,
+      unites: supprimables,
+      vendusExclus: unites.length - supprimables.length,
+    });
+  }
+
+  // Ouvre la confirmation pour TOUT un modèle : la suppression portera sur tous
+  // les exemplaires en stock de la référence (serveur), pas seulement ceux
+  // affichés sur la page courante.
+  function ouvrirSuppressionModele(g: GroupeProduits) {
+    const supprimables = g.unites.filter((u) => u.statut !== "vendu");
+    setModalSuppression({
+      type: "modele",
+      reference: g.reference,
+      categorie: g.categorie,
+      unites: supprimables,
+      vendusExclus: g.unites.length - supprimables.length,
+    });
+  }
+
+  async function supprimerProduits() {
+    // Le bouton n'apparaît que s'il reste des unités non vendues à supprimer
+    // (`unites` = non-vendu de la page). En mode « modèle », la suppression
+    // s'étend serveur-side à toutes les pages de la même référence.
+    if (!modalSuppression || modalSuppression.unites.length === 0) return;
     setEnvoi(true);
     try {
-      const res = await fetch(`/api/produits/${modalSuppression.id}`, { method: "DELETE" });
-      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      const charge =
+        modalSuppression.type === "modele"
+          ? { modele: { reference: modalSuppression.reference, categorie: modalSuppression.categorie } }
+          : { ids: modalSuppression.unites.map((p) => p.id) };
+      const res = await fetch(`/api/produits/masse/suppression`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(charge),
+      });
+      const corps = (await res.json().catch(() => null)) as
+        | { supprimes?: number; vendus_conserves?: number; error?: string }
+        | null;
       if (!res.ok) {
         afficher(corps?.error ?? "Erreur lors de la suppression.", "erreur");
         return;
       }
-      afficher(`Produit ${modalSuppression.code_interne} supprimé de l'inventaire.`);
+      const n = corps?.supprimes ?? modalSuppression.unites.length;
+      afficher(
+        n === 1 && modalSuppression.type === "unites"
+          ? `Produit ${modalSuppression.unites[0]?.code_interne} supprimé de l'inventaire.`
+          : `${n} produit${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""} de l'inventaire.`
+      );
       setModalSuppression(null);
       await charger();
     } catch {
@@ -854,6 +913,21 @@ export default function Inventaire({ role }: { role: Role }) {
                       Vente
                     </span>
                   </div>
+                  {peutModifier && (
+                    <button
+                      type="button"
+                      onClick={() => ouvrirSuppressionModele(g)}
+                      title={
+                        g.unites.length > 1
+                          ? `Supprimer tous les exemplaires de « ${g.reference} » d'un coup`
+                          : "Supprimer ce produit"
+                      }
+                      aria-label={`Supprimer tout le groupe ${g.reference}`}
+                      className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                    >
+                      <IconeCorbeille taille={15} />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => basculerGroupe(g.cle)}
@@ -910,7 +984,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             </button>
                             <button
                               type="button"
-                              onClick={() => setModalSuppression(p)}
+                              onClick={() => ouvrirSuppressionUnites([p])}
                               title="Supprimer"
                               aria-label={`Supprimer ${p.code_interne}`}
                               className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
@@ -1033,7 +1107,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setModalSuppression(p);
+                            ouvrirSuppressionUnites([p]);
                           }}
                           title="Supprimer"
                           aria-label={`Supprimer ${p.code_interne}`}
@@ -1265,7 +1339,17 @@ export default function Inventaire({ role }: { role: Role }) {
       </Modale>
 
       <Modale
-        titre={modalSuppression ? `Supprimer — ${modalSuppression.code_interne}` : ""}
+        titre={
+          modalSuppression
+            ? modalSuppression.unites.length === 0
+              ? "Suppression impossible"
+              : modalSuppression.type === "modele"
+                ? `Supprimer — tous les exemplaires de « ${modalSuppression.reference} »`
+                : modalSuppression.unites.length === 1
+                  ? `Supprimer — ${modalSuppression.unites[0]?.code_interne}`
+                  : `Supprimer — ${modalSuppression.unites.length} produits`
+            : ""
+        }
         ouverte={modalSuppression !== null}
         onFermer={() => setModalSuppression(null)}
       >
@@ -1273,32 +1357,82 @@ export default function Inventaire({ role }: { role: Role }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!envoi) {
-                void supprimerProduit();
+              if (!envoi && modalSuppression.unites.length > 0) {
+                void supprimerProduits();
               }
             }}
           >
-            <p className="text-sm text-brand-warm-grey">
-              Le produit <strong className="text-brand-black">{modalSuppression.reference}</strong>{" "}
-              sera définitivement retiré de l'inventaire, avec son historique de statuts et ses
-              réparations. Cette action est irréversible.
-            </p>
+            {modalSuppression.unites.length === 0 ? (
+              <p className="text-sm text-brand-warm-grey">
+                {modalSuppression.vendusExclus === 1
+                  ? "Ce produit est vendu : il ne peut pas être supprimé afin de conserver son historique de vente et son mouvement de caisse. Annulez d'abord la vente si nécessaire."
+                  : modalSuppression.vendusExclus > 1
+                    ? "Ces produits sont vendus : ils ne peuvent pas être supprimés afin de conserver leur historique de vente. Annulez d'abord la vente si nécessaire."
+                    : "Aucun produit à supprimer."}
+              </p>
+            ) : modalSuppression.type === "modele" ? (
+              <p className="text-sm text-brand-warm-grey">
+                <strong className="text-brand-black">Tous les exemplaires en stock</strong> de{" "}
+                <strong className="text-brand-black">{modalSuppression.reference}</strong> (
+                {modalSuppression.categorie}) seront définitivement retirés de l'inventaire — y
+                compris ceux des autres pages — avec leur historique de statuts et leurs réparations.
+                Cette action est irréversible.
+              </p>
+            ) : modalSuppression.unites.length === 1 ? (
+              <p className="text-sm text-brand-warm-grey">
+                Le produit{" "}
+                <strong className="text-brand-black">{modalSuppression.unites[0]?.reference}</strong>{" "}
+                sera définitivement retiré de l'inventaire, avec son historique de statuts et ses
+                réparations. Cette action est irréversible.
+              </p>
+            ) : (
+              <p className="text-sm text-brand-warm-grey">
+                Les{" "}
+                <strong className="text-brand-black">
+                  {modalSuppression.unites.length} exemplaires
+                </strong>{" "}
+                de <strong className="text-brand-black">{modalSuppression.reference}</strong> (
+                {modalSuppression.unites[0]?.code_interne} à{" "}
+                {modalSuppression.unites[modalSuppression.unites.length - 1]?.code_interne}) seront
+                définitivement retirés de l'inventaire, avec leur historique de statuts et leurs
+                réparations. Cette action est irréversible.
+              </p>
+            )}
+
+            {modalSuppression.unites.length > 0 &&
+              modalSuppression.vendusExclus > 0 &&
+              (modalSuppression.type === "modele" ? (
+                <p className="mt-2 rounded-lg bg-brand-light-grey/30 px-3 py-2 text-xs text-brand-warm-grey">
+                  Les exemplaires déjà vendus de ce modèle sont conservés (historique de vente
+                  préservé).
+                </p>
+              ) : (
+                <p className="mt-2 rounded-lg bg-brand-light-grey/30 px-3 py-2 text-xs text-brand-warm-grey">
+                  {modalSuppression.vendusExclus} exemplaire
+                  {modalSuppression.vendusExclus > 1 ? "s" : ""} vendu
+                  {modalSuppression.vendusExclus > 1 ? "s" : ""} conservé
+                  {modalSuppression.vendusExclus > 1 ? "s" : ""} (historique de vente préservé).
+                </p>
+              ))}
+
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setModalSuppression(null)}
                 className="btn btn-secondaire"
               >
-                Annuler
+                {modalSuppression.unites.length === 0 ? "Fermer" : "Annuler"}
               </button>
+              {modalSuppression.unites.length > 0 && (
                 <button
                   type="submit"
                   disabled={envoi}
                   className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center gap-1.5"
                 >
-                <IconeCorbeille taille={15} />
-                Supprimer définitivement
-              </button>
+                  <IconeCorbeille taille={15} />
+                  Supprimer définitivement
+                </button>
+              )}
             </div>
           </form>
         )}
