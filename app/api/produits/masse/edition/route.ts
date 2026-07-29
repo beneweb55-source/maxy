@@ -4,6 +4,7 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
+import { televerserPhotos } from "@/lib/stockage-images";
 
 export async function PUT(request: NextRequest) {
   const acces = await exigerUtilisateur(["technicien", "gerant", "dev"]);
@@ -59,8 +60,11 @@ export async function PUT(request: NextRequest) {
         : [];
     const resolution = await resoudreGalerie(prisma, brutes);
     if (resolution.erreur !== undefined) return erreur(400, resolution.erreur);
-    couvertureFournie = resolution.images[0] ?? null;
-    extrasFournis = resolution.images.slice(1);
+    // Téléversement avant la transaction : seules les URL sont stockées, et
+    // tous les produits édités partagent les mêmes (un seul téléversement).
+    const stockees = await televerserPhotos(resolution.images);
+    couvertureFournie = stockees[0] ?? null;
+    extrasFournis = stockees.slice(1);
   }
 
   try {

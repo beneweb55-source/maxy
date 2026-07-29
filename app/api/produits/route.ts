@@ -3,7 +3,8 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { construireFiltresProduits, construireTriProduits } from "@/lib/filtres-produits";
 import { urlPhotoProduit } from "@/lib/images";
-import { idsAvecCouverture } from "@/lib/images-flags";
+import { couverturesProduits, urlCouverture } from "@/lib/images-flags";
+import { televerserLignes } from "@/lib/stockage-images";
 import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
 
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       ]);
 
     // Présence d'une photo de couverture : booléen seul, aucune image transférée.
-    const avecCouverture = await idsAvecCouverture(produits.map((p) => p.id));
+    const avecCouverture = await couverturesProduits(produits.map((p) => p.id));
 
     const maintenant = Date.now();
     return NextResponse.json({
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
         a_jeter: p.a_jeter,
         en_vitrine: p.en_vitrine,
         prix_achat: p.prix_achat,
-        image_url: avecCouverture.has(p.id) ? urlPhotoProduit(p.id) : null,
+        image_url: urlCouverture(avecCouverture.get(p.id), p.id),
         nb_images: (avecCouverture.has(p.id) ? 1 : 0) + p._count.images,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
@@ -151,7 +152,9 @@ export async function POST(request: NextRequest) {
 
     // La même ligne validée est répétée `qty` fois (les éléments partagent la
     // référence du tableau `images`, aucune copie mémoire lourde).
-    const lignes = Array.from({ length: qty }, () => ligne);
+    // Les photos sont téléversées AVANT la transaction : la base ne stocke que
+    // leur URL (une seule fois, partagée par les `qty` exemplaires).
+    const lignes = await televerserLignes(Array.from({ length: qty }, () => ligne));
     const codes = await prisma.$transaction(
       (tx) =>
         creerProduitsGroupes(tx, {

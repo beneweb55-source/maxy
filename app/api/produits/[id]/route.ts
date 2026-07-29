@@ -7,7 +7,13 @@ import {
   validerPhoto,
 } from "@/lib/images";
 import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
-import { aUneCouverture } from "@/lib/images-flags";
+import {
+  couvertureProduit,
+  galerieProduit,
+  urlCouverture,
+  urlGalerie,
+} from "@/lib/images-flags";
+import { televerserPhotos } from "@/lib/stockage-images";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -81,13 +87,18 @@ export async function GET(
     });
     if (!p) return erreur(404, "Produit introuvable.");
 
-    // Présence de la couverture : booléen seul, sans transférer l'image.
-    const couverture = await aUneCouverture(p.id);
+    // Couverture et galerie : URL publiques du CDN si les photos sont
+    // hébergées, sinon routes proxy — jamais de base64 transféré ici.
+    const [infoCouverture, photosGalerie] = await Promise.all([
+      couvertureProduit(p.id),
+      galerieProduit(p.id),
+    ]);
+    const urlCouvertureProduit = urlCouverture(infoCouverture, p.id);
 
     // Galerie complète : la couverture d'abord, puis les photos supplémentaires.
     const galerie: string[] = [
-      ...(couverture ? [urlPhotoProduit(p.id)] : []),
-      ...p.images.map((img) => urlPhotoSupplementaire(p.id, img.id)),
+      ...(urlCouvertureProduit ? [urlCouvertureProduit] : []),
+      ...photosGalerie.map((img) => urlGalerie(img, p.id)),
     ];
 
     const coutReparations = p.reparations.reduce((s, r) => s + r.cout, 0);
@@ -100,7 +111,7 @@ export async function GET(
       a_jeter: p.a_jeter,
       en_vitrine: p.en_vitrine,
       notes: p.notes,
-      image_url: couverture ? urlPhotoProduit(p.id) : null,
+      image_url: urlCouvertureProduit,
       images: galerie,
       decision_rapport: p.decision_rapport,
       prix_achat: p.prix_achat,
@@ -219,7 +230,7 @@ export async function PUT(
     } else if (typeof image_url === "string") {
       const soucisPhoto = validerPhoto(image_url.trim());
       if (soucisPhoto) return erreur(400, soucisPhoto);
-      donnees.image_url = image_url.trim();
+      donnees.image_url = (await televerserPhotos([image_url.trim()]))[0] ?? null;
     } else {
       return erreur(400, "Photo invalide.");
     }
@@ -232,8 +243,11 @@ export async function PUT(
     if (!Array.isArray(images)) return erreur(400, "Liste de photos invalide.");
     const resolution = await resoudreGalerie(prisma, images as string[]);
     if (resolution.erreur !== undefined) return erreur(400, resolution.erreur);
-    donnees.image_url = resolution.images[0] ?? null;
-    extrasARemplacer = resolution.images.slice(1);
+    // Les nouvelles photos partent vers le stockage objet ; celles déjà
+    // hébergées sont renvoyées telles quelles.
+    const stockees = await televerserPhotos(resolution.images);
+    donnees.image_url = stockees[0] ?? null;
+    extrasARemplacer = stockees.slice(1);
   }
 
   if (en_vitrine !== undefined) {

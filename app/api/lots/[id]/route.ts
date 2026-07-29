@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { urlPhotoProduit } from "@/lib/images";
-import { idsAvecCouverture } from "@/lib/images-flags";
+import { couverturesProduits, urlCouverture } from "@/lib/images-flags";
 import { ajouterMouvement } from "@/lib/caisse-db";
 import { formaterDA } from "@/lib/caisse";
 
@@ -49,7 +49,7 @@ export async function GET(
     if (!lot) return erreur(404, "Lot introuvable.");
 
     // Présence des couvertures : booléens seuls, aucune image transférée.
-    const avecCouverture = await idsAvecCouverture(lot.produits.map((p) => p.id));
+    const avecCouverture = await couverturesProduits(lot.produits.map((p) => p.id));
 
     return NextResponse.json({
       id: lot.id,
@@ -69,7 +69,7 @@ export async function GET(
         statut: p.statut,
         en_vitrine: p.en_vitrine,
         prix_achat: p.prix_achat,
-        image_url: avecCouverture.has(p.id) ? urlPhotoProduit(p.id) : null,
+        image_url: urlCouverture(avecCouverture.get(p.id), p.id),
         nb_images: (avecCouverture.has(p.id) ? 1 : 0) + p._count.images,
         derniere_note: p.historique.at(0)?.note ?? null,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),

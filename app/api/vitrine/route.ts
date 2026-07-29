@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { urlPhotoProduit, urlPhotoSupplementaire } from "@/lib/images";
-import { idsAvecCouverture } from "@/lib/images-flags";
+import { couverturesProduits, urlCouverture } from "@/lib/images-flags";
 
 // La vitrine raisonne par MODÈLE : mettre « le principal » en vitrine suffit à
 // représenter tout le lot d'exemplaires identiques. Une seule carte par
@@ -38,7 +38,7 @@ export async function GET() {
       else groupes.set(cle, [p]);
     }
 
-    const avecCouverture = await idsAvecCouverture(exposes.map((p) => p.id));
+    const avecCouverture = await couverturesProduits(exposes.map((p) => p.id));
 
     // Un SEUL appel pour tout le stock (champs légers, aucune image) : on
     // regroupe ensuite en mémoire. Évite 2 requêtes par modèle exposé (N+1),
@@ -68,6 +68,7 @@ export async function GET() {
     const cartes = Array.from(groupes.values()).map((unites) => {
         // Représentant : la première unité avec photo, sinon la première.
         const rep = unites.find((u) => avecCouverture.has(u.id)) ?? unites[0]!;
+        const couvertureRep = urlCouverture(avecCouverture.get(rep.id), rep.id);
         const memeModele = stockParModele.get(cle(rep.reference, rep.categorie)) ?? [];
         // Quantité affichée : TOUS les exemplaires identiques encore en stock
         // (non vendus), exposés ou non.
@@ -83,9 +84,9 @@ export async function GET() {
           statut: rep.statut,
           prix_vente_fixe: rep.prix_vente_fixe,
           prix_vente_reel: rep.prix_vente_reel,
-          image_url: avecCouverture.has(rep.id) ? urlPhotoProduit(rep.id) : null,
+          image_url: couvertureRep,
           images: [
-            ...(avecCouverture.has(rep.id) ? [urlPhotoProduit(rep.id)] : []),
+            ...(couvertureRep ? [couvertureRep] : []),
             ...rep.images.map((img) => urlPhotoSupplementaire(rep.id, img.id)),
           ],
           quantite,

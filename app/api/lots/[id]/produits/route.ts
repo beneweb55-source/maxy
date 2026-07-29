@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
+import { televerserLignes } from "@/lib/stockage-images";
 
 export async function POST(
   request: NextRequest,
@@ -54,8 +55,13 @@ export async function POST(
       return erreur(400, "Impossible d'ajouter des produits : le lot n'est plus en cours de test.");
     }
 
+    // Photos téléversées vers le stockage objet avant la transaction : la base
+    // ne conserve que leur URL.
+    const lignesStockees = await televerserLignes(lignes);
+
     await prisma.$transaction(
-      (tx) => creerProduitsGroupes(tx, { lotId: lot.id, lignes, userId: user.id }),
+      (tx) =>
+        creerProduitsGroupes(tx, { lotId: lot.id, lignes: lignesStockees, userId: user.id }),
       { timeout: 120000 }
     );
 

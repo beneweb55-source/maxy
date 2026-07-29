@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { urlPhotoProduit, urlPhotoSupplementaire } from "@/lib/images";
-import { idsAvecCouverture } from "@/lib/images-flags";
+import { couverturesProduits, urlCouverture } from "@/lib/images-flags";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -34,7 +34,7 @@ export async function GET() {
         },
       },
     });
-    const avecCouverture = await idsAvecCouverture(produits.map((p) => p.id));
+    const avecCouverture = await couverturesProduits(produits.map((p) => p.id));
     const maintenant = Date.now();
     return NextResponse.json({
       produits: produits.map((p) => {
@@ -50,10 +50,12 @@ export async function GET() {
           prix_vente_fixe: p.prix_vente_fixe,
           marge_prevue: (p.prix_vente_fixe ?? 0) - p.prix_achat - coutRep,
           jours_en_vente: Math.floor((maintenant - depuis.getTime()) / JOUR_MS),
-          image_url: avecCouverture.has(p.id) ? urlPhotoProduit(p.id) : null,
+          image_url: urlCouverture(avecCouverture.get(p.id), p.id),
           // Galerie complète (couverture d'abord) pour l'aperçu plein écran.
           images: [
-            ...(avecCouverture.has(p.id) ? [urlPhotoProduit(p.id)] : []),
+            ...(urlCouverture(avecCouverture.get(p.id), p.id)
+              ? [urlCouverture(avecCouverture.get(p.id), p.id)!]
+              : []),
             ...p.images.map((img) => urlPhotoSupplementaire(p.id, img.id)),
           ],
         };

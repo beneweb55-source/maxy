@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { extensionDepuisMime, lireDataUrlImage } from "@/lib/images";
+import { estUrlPhotoDistante, extensionDepuisMime, lireDataUrlImage } from "@/lib/images";
 import { nomSur } from "@/lib/zip";
 
 // Sert une photo supplémentaire (galerie) d'un produit, décodée depuis sa
@@ -32,6 +32,12 @@ export async function GET(
     });
     if (!image || image.produit_id !== produitId) {
       return erreur(404, "Photo introuvable.");
+    }
+
+    // Photo hébergée sur le stockage objet : on redirige vers le CDN plutôt que
+    // de faire transiter les octets par la base et cette fonction.
+    if (estUrlPhotoDistante(image.data)) {
+      return NextResponse.redirect(image.data);
     }
 
     const photo = lireDataUrlImage(image.data);

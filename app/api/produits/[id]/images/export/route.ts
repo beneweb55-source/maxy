@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { extensionDepuisMime, lireDataUrlImage } from "@/lib/images";
+import { extensionDepuisMime } from "@/lib/images";
+import { lireOctetsPhoto } from "@/lib/stockage-images";
 import { creerZip, nomSur } from "@/lib/zip";
 
 // Télécharge toutes les photos d'un produit dans une archive ZIP nommée et
@@ -45,13 +46,17 @@ export async function GET(
       ...(produit.image_url ? [produit.image_url] : []),
       ...produit.images.map((img) => img.data),
     ];
-    const entrees = sources
-      .map((data) => lireDataUrlImage(data))
-      .filter((p): p is NonNullable<typeof p> => p !== null)
-      .map((photo, i) => ({
-        chemin: `${String(i + 1).padStart(2, "0")}.${extensionDepuisMime(photo.mime)}`,
-        contenu: Buffer.from(photo.base64, "base64"),
-      }));
+    // Les photos peuvent être stockées en base (base64) ou hébergées sur le
+    // stockage objet : `lireOctetsPhoto` gère les deux cas.
+    const entrees: { chemin: string; contenu: Buffer }[] = [];
+    for (const source of sources) {
+      const photo = await lireOctetsPhoto(source);
+      if (!photo) continue;
+      entrees.push({
+        chemin: `${String(entrees.length + 1).padStart(2, "0")}.${extensionDepuisMime(photo.mime)}`,
+        contenu: photo.octets,
+      });
+    }
 
     if (entrees.length === 0) return erreur(404, "Ce produit n'a aucune photo.");
 
