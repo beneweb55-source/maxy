@@ -2,15 +2,30 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
+import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
-import { IconeImage, IconeTelechargement, IconeVitrine } from "@/components/icons";
+import {
+  IconeAlerte,
+  IconeBillet,
+  IconeImage,
+  IconePlus,
+  IconeTelechargement,
+  IconeVitrine,
+} from "@/components/icons";
 
 // Une carte = un MODÈLE exposé (référence + catégorie), avec la quantité
 // d'exemplaires identiques en stock — pas une carte par unité.
+interface UniteVendable {
+  id: number;
+  code_interne: string;
+  prix_vente_fixe: number | null;
+}
+
 interface CarteVitrine {
   id: number;
   code_interne: string;
@@ -23,6 +38,7 @@ interface CarteVitrine {
   images: string[];
   quantite: number;
   ids_en_vitrine: number[];
+  vendables: UniteVendable[];
 }
 
 interface ReponseVitrine {
@@ -30,8 +46,21 @@ interface ReponseVitrine {
   produits: CarteVitrine[];
 }
 
+/** Une unité mise au panier de vente depuis la vitrine. */
+interface LignePanier {
+  id: number;
+  code_interne: string;
+  reference: string;
+  prix: number;
+}
+
+function aujourdhuiIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function Vitrine({ role }: { role: Role }) {
   const { afficher } = useToast();
+  const router = useRouter();
   const [donnees, setDonnees] = useState<ReponseVitrine | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -41,7 +70,17 @@ export default function Vitrine({ role }: { role: Role }) {
     titre: string;
   } | null>(null);
 
+  // Panier de vente : une entrée par unité sélectionnée (id de produit).
+  const [panier, setPanier] = useState<Map<number, LignePanier>>(new Map());
+  const [modalVente, setModalVente] = useState(false);
+  const [clientNom, setClientNom] = useState("");
+  const [clientTel, setClientTel] = useState("");
+  const [canal, setCanal] = useState("");
+  const [dateVente, setDateVente] = useState(aujourdhuiIso());
+  const [avertissement, setAvertissement] = useState<string | null>(null);
+
   const peutRetirer = role === "gerant" || role === "technicien" || role === "dev";
+  const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
 
   const charger = useCallback(async () => {
     setErreur(null);
@@ -76,6 +115,136 @@ export default function Vitrine({ role }: { role: Role }) {
       }
       afficher(`${carte.reference} retiré de la vitrine.`);
       await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  // Seules les unités dont le prix de vente est réellement fixé (> 0) peuvent
+  // être vendues : sans ce garde-fou, une unité restée « en vente » avec un
+  // prix vidé partirait à 0 DA dans une vente groupée (répartition au prorata).
+  function unitesVendables(carte: CarteVitrine): UniteVendable[] {
+    return carte.vendables.filter((v) => (v.prix_vente_fixe ?? 0) > 0);
+  }
+
+  // Ajoute/retire la prochaine unité vendable d'un modèle au panier.
+  function basculerPanier(carte: CarteVitrine) {
+    const dispo = unitesVendables(carte);
+    setPanier((prev) => {
+      const suivant = new Map(prev);
+      const dejaDuModele = dispo.filter((v) => suivant.has(v.id));
+      if (dejaDuModele.length > 0) {
+        // Retire la dernière unité ajoutée de ce modèle.
+        suivant.delete(dejaDuModele[dejaDuModele.length - 1]!.id);
+        return suivant;
+      }
+      const libre = dispo.find((v) => !suivant.has(v.id));
+      if (!libre) return suivant;
+      suivant.set(libre.id, {
+        id: libre.id,
+        code_interne: libre.code_interne,
+        reference: carte.reference,
+        prix: libre.prix_vente_fixe!,
+      });
+      return suivant;
+    });
+  }
+
+  /** Ajoute une unité supplémentaire du même modèle (quantité au panier). */
+  function ajouterUnite(carte: CarteVitrine) {
+    const dispo = unitesVendables(carte);
+    setPanier((prev) => {
+      const suivant = new Map(prev);
+      const libre = dispo.find((v) => !suivant.has(v.id));
+      if (!libre) {
+        afficher("Plus d'exemplaire disponible à la vente pour ce modèle.", "erreur");
+        return prev;
+      }
+      suivant.set(libre.id, {
+        id: libre.id,
+        code_interne: libre.code_interne,
+        reference: carte.reference,
+        prix: libre.prix_vente_fixe!,
+      });
+      return suivant;
+    });
+  }
+
+  function ouvrirVente() {
+    setClientNom("");
+    setClientTel("");
+    setCanal("");
+    setDateVente(aujourdhuiIso());
+    setAvertissement(null);
+    setModalVente(true);
+  }
+
+  const lignesPanier = Array.from(panier.values());
+  const totalPanier = lignesPanier.reduce((s, l) => s + l.prix, 0);
+
+  async function enregistrerVente(confirmer: boolean) {
+    if (lignesPanier.length === 0) return;
+    setEnvoi(true);
+    try {
+      const commun = {
+        canal: canal.trim() || undefined,
+        date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
+        client_nom: clientNom.trim() || undefined,
+        client_tel: clientTel.trim() || undefined,
+        confirmer: confirmer || undefined,
+      };
+      // Une seule unité → vente simple ; plusieurs → vente groupée. Dans les
+      // deux cas le serveur génère automatiquement la facture.
+      const res =
+        lignesPanier.length === 1
+          ? await fetch("/api/ventes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                produit_id: lignesPanier[0]!.id,
+                prix_vente_reel: lignesPanier[0]!.prix,
+                ...commun,
+              }),
+            })
+          : await fetch("/api/ventes/groupee", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                produit_ids: lignesPanier.map((l) => l.id),
+                prix_total: totalPanier,
+                ...commun,
+              }),
+            });
+
+      const corps = (await res.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            confirmation_required?: boolean;
+            message?: string;
+            error?: string;
+            facture_id?: number;
+            facture_numero?: string;
+          }
+        | null;
+
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la vente.", "erreur");
+        return;
+      }
+      if (corps?.confirmation_required) {
+        setAvertissement(corps.message ?? "Prix sous la marge minimum. Confirmer ?");
+        return;
+      }
+
+      afficher(
+        `Vente enregistrée — facture ${corps?.facture_numero ?? ""} créée.`
+      );
+      setModalVente(false);
+      setPanier(new Map());
+      await charger();
+      if (corps?.facture_id) router.push(`/factures/${corps.facture_id}`);
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -139,10 +308,17 @@ export default function Vitrine({ role }: { role: Role }) {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {produits.map((p) => {
             const prix = p.prix_vente_reel ?? p.prix_vente_fixe;
+            const dispo = unitesVendables(p);
+            const nbAuPanier = dispo.filter((v) => panier.has(v.id)).length;
+            const vendable = dispo.length > 0;
             return (
               <div
                 key={p.id}
-                className="group flex flex-col overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white transition hover:shadow-md"
+                className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md ${
+                  nbAuPanier > 0
+                    ? "border-brand-orange ring-2 ring-brand-orange"
+                    : "border-brand-light-grey"
+                }`}
               >
                 <button
                   type="button"
@@ -182,6 +358,11 @@ export default function Vitrine({ role }: { role: Role }) {
                       {p.images.length}
                     </span>
                   )}
+                  {nbAuPanier > 0 && (
+                    <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-brand-white shadow">
+                      {nbAuPanier} au panier
+                    </span>
+                  )}
                 </button>
                 <div className="flex flex-1 flex-col gap-1.5 p-3">
                   <div className="flex items-center justify-between gap-2">
@@ -219,6 +400,18 @@ export default function Vitrine({ role }: { role: Role }) {
                           <IconeTelechargement taille={14} />
                         </a>
                       )}
+                      {peutVendre && nbAuPanier > 0 && (
+                        <button
+                          type="button"
+                          disabled={envoi || nbAuPanier >= dispo.length}
+                          onClick={() => ajouterUnite(p)}
+                          title="Ajouter un exemplaire supplémentaire"
+                          aria-label={`Ajouter un exemplaire de ${p.reference}`}
+                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-orange disabled:opacity-40"
+                        >
+                          <IconePlus taille={14} />
+                        </button>
+                      )}
                       {peutRetirer && (
                         <button
                           type="button"
@@ -232,12 +425,179 @@ export default function Vitrine({ role }: { role: Role }) {
                       )}
                     </span>
                   </div>
+                  {peutVendre && (
+                    <button
+                      type="button"
+                      disabled={envoi || !vendable}
+                      onClick={() => basculerPanier(p)}
+                      title={
+                        vendable
+                          ? nbAuPanier > 0
+                            ? "Retirer du panier"
+                            : "Vendre ce produit"
+                          : "Aucun exemplaire « En vente » (prix à fixer)"
+                      }
+                      className={`btn mt-2 w-full justify-center ${
+                        nbAuPanier > 0 ? "btn-secondaire" : "btn-primaire"
+                      } disabled:opacity-45`}
+                    >
+                      <IconeBillet taille={14} />
+                      {nbAuPanier > 0 ? "Retirer du panier" : "Vendre"}
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Barre de vente : récapitulatif du panier, toujours visible */}
+      {peutVendre && lignesPanier.length > 0 && (
+        <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-light-grey bg-brand-white/95 p-3 shadow-lg backdrop-blur">
+          <span className="text-sm text-brand-warm-grey">
+            <strong className="text-brand-black">{lignesPanier.length}</strong> produit
+            {lignesPanier.length > 1 ? "s" : ""} · total{" "}
+            <strong className="text-brand-orange">{formaterDA(totalPanier)}</strong>
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPanier(new Map())}
+              className="btn btn-secondaire"
+            >
+              Vider
+            </button>
+            <button type="button" onClick={ouvrirVente} className="btn btn-primaire">
+              <IconeBillet taille={15} />
+              Vendre et facturer
+            </button>
+          </div>
+        </div>
+      )}
+
+      <Modale
+        titre={`Vendre — ${lignesPanier.length} produit${lignesPanier.length > 1 ? "s" : ""}`}
+        ouverte={modalVente}
+        onFermer={() => setModalVente(false)}
+      >
+        <div className="space-y-3">
+          <ul className="max-h-40 space-y-1 overflow-y-auto rounded-lg bg-brand-light-grey/25 p-2.5 text-sm">
+            {lignesPanier.map((l) => (
+              <li key={l.id} className="flex justify-between gap-2">
+                <span className="truncate" title={l.reference}>
+                  <span className="font-mono text-xs text-brand-warm-grey">{l.code_interne}</span>{" "}
+                  {l.reference}
+                </span>
+                <span className="shrink-0 font-semibold">{formaterDA(l.prix)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm">
+            Total :{" "}
+            <strong className="text-lg text-brand-orange">{formaterDA(totalPanier)}</strong>
+          </p>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="libelle mb-1.5" htmlFor="vitrine-client">
+                Nom du client
+              </label>
+              <input
+                id="vitrine-client"
+                type="text"
+                value={clientNom}
+                onChange={(e) => setClientNom(e.target.value)}
+                placeholder="Optionnel — figure sur la facture"
+                className="champ"
+              />
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="vitrine-tel">
+                Téléphone
+              </label>
+              <input
+                id="vitrine-tel"
+                type="tel"
+                value={clientTel}
+                onChange={(e) => setClientTel(e.target.value)}
+                placeholder="Optionnel"
+                className="champ"
+              />
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="vitrine-date">
+                Date
+              </label>
+              <input
+                id="vitrine-date"
+                type="date"
+                value={dateVente}
+                max={aujourdhuiIso()}
+                onChange={(e) => setDateVente(e.target.value)}
+                className="champ"
+              />
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="vitrine-canal">
+                Canal
+              </label>
+              <input
+                id="vitrine-canal"
+                type="text"
+                value={canal}
+                onChange={(e) => setCanal(e.target.value)}
+                placeholder="Boutique, Ouedkniss…"
+                className="champ"
+              />
+            </div>
+          </div>
+
+          <p className="rounded-lg bg-brand-glow/20 px-3 py-2 text-xs text-brand-smooth">
+            La facture est générée automatiquement, avec <strong>6 mois de garantie</strong> sur
+            chaque produit vendu.
+          </p>
+
+          {avertissement && (
+            <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
+              <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
+              {avertissement}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            {avertissement ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setAvertissement(null)}
+                  className="btn btn-secondaire"
+                >
+                  Revoir
+                </button>
+                <button
+                  type="button"
+                  disabled={envoi}
+                  onClick={() => void enregistrerVente(true)}
+                  className="btn btn-primaire"
+                >
+                  Vendre quand même
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                disabled={envoi || lignesPanier.length === 0}
+                onClick={() => void enregistrerVente(false)}
+                className="btn btn-primaire"
+              >
+                <IconeBillet taille={15} />
+                Enregistrer et créer la facture
+              </button>
+            )}
+          </div>
+        </div>
+      </Modale>
 
       {apercuPhotos && (
         <VisionneusePhotos

@@ -41,7 +41,9 @@ export async function GET(
     const entetes: Record<string, string> = {
       "Content-Type": photo.mime,
       "Content-Length": String(octets.byteLength),
-      "Cache-Control": "private, max-age=300",
+      // Cache long : une photo de galerie est immuable pour un id donné.
+      "Cache-Control": "private, max-age=604800, immutable",
+      ETag: `"${imgId}-${octets.byteLength}"`,
     };
     // `?download=1` : téléchargement direct, numéroté comme dans le ZIP
     // (couverture = 01, galerie = position + 1).

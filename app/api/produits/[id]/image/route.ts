@@ -35,7 +35,11 @@ export async function GET(
     const entetes: Record<string, string> = {
       "Content-Type": photo.mime,
       "Content-Length": String(octets.byteLength),
-      "Cache-Control": "private, max-age=300",
+      // Cache long : les photos pèsent lourd et transitent depuis la base.
+      // Un changement de photo change le contenu, l'ETag ci-dessous permet au
+      // navigateur de revalider sans retélécharger.
+      "Cache-Control": "private, max-age=86400, stale-while-revalidate=604800",
+      ETag: `"${produitId}-${octets.byteLength}"`,
     };
     // `?download=1` : téléchargement direct avec un nom de fichier propre
     // (la couverture est toujours la photo n°01).

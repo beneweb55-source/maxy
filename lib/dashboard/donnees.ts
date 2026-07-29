@@ -93,8 +93,23 @@ export async function chargerDonneesDashboard(
   const cleCourante = cleMois(maintenant);
   const clePrecedente = cleMois(finMoisPrecedent);
 
+  // `select` explicite (et non `include`) : sans cela Prisma rapatrie toutes les
+  // colonnes, dont `image_url` qui contient la photo en base64. Sur l'ensemble
+  // du catalogue, cela représenterait des centaines de Mo transférés à chaque
+  // affichage du tableau de bord. Le dashboard n'a besoin d'aucune image.
   const produitsPromise = prisma.produit.findMany({
-    include: {
+    select: {
+      id: true,
+      code_interne: true,
+      reference: true,
+      categorie: true,
+      statut: true,
+      a_jeter: true,
+      decision_rapport: true,
+      prix_achat: true,
+      prix_vente_fixe: true,
+      date_vente: true,
+      created_at: true,
       lot: { select: { date_entree: true } },
       reparations: { select: { cout: true, date: true } },
       historique: {

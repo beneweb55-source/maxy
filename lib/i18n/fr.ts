@@ -61,6 +61,7 @@ export const fr = {
     vitrine: "Vitrine",
     rapports: "Rapports",
     ventes: "Ventes",
+    factures: "Factures",
     caisse: "Caisse",
     administration: "Administration",
   },

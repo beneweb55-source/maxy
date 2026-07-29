@@ -6,6 +6,7 @@ import { formaterDA } from "@/lib/caisse";
 import { margeVente, seuilMargeMinimum } from "@/lib/finances";
 import { urlPhotoProduit } from "@/lib/images";
 import { idsParRole, notifier } from "@/lib/notifs";
+import { creerFacture } from "@/lib/factures";
 import { entierPositif } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
@@ -99,13 +100,16 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_id, prix_vente_reel, canal, date_vente, confirmer } = (corps ?? {}) as {
-    produit_id?: unknown;
-    prix_vente_reel?: unknown;
-    canal?: unknown;
-    date_vente?: unknown;
-    confirmer?: unknown;
-  };
+  const { produit_id, prix_vente_reel, canal, date_vente, confirmer, client_nom, client_tel } =
+    (corps ?? {}) as {
+      produit_id?: unknown;
+      prix_vente_reel?: unknown;
+      canal?: unknown;
+      date_vente?: unknown;
+      confirmer?: unknown;
+      client_nom?: unknown;
+      client_tel?: unknown;
+    };
   const produitId = Number(produit_id);
   if (!Number.isInteger(produitId)) return erreur(400, "Produit invalide.");
   const erreurPrix = entierPositif(prix_vente_reel, "Le prix de vente réel");
@@ -212,10 +216,36 @@ export async function POST(request: NextRequest) {
         `Vente enregistrée : ${produit.reference} — ${formaterDA(prix)} (${user.username})`,
         `/produits/${produit.id}`
       );
-      return vente.id;
+      // Toute vente génère automatiquement sa facture (garantie incluse).
+      const facture = await creerFacture(tx, {
+        lignes: [
+          {
+            produit_id: produit.id,
+            vente_id: vente.id,
+            code_interne: produit.code_interne,
+            designation: produit.reference,
+            categorie: produit.categorie,
+            prix,
+          },
+        ],
+        userId: user.id,
+        quand,
+        canal: canalTexte,
+        clientNom: typeof client_nom === "string" ? client_nom : null,
+        clientTel: typeof client_tel === "string" ? client_tel : null,
+      });
+      return { venteId: vente.id, facture };
     });
 
-    return NextResponse.json({ ok: true, vente_id: venteId }, { status: 201 });
+    return NextResponse.json(
+      {
+        ok: true,
+        vente_id: venteId.venteId,
+        facture_id: venteId.facture.id,
+        facture_numero: venteId.facture.numero,
+      },
+      { status: 201 }
+    );
   } catch (e) {
     console.error("POST /api/ventes", e);
     return erreur(500, "Erreur lors de l'enregistrement de la vente.");

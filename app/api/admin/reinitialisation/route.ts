@@ -18,9 +18,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // `facture_lignes` et `produit_images` sont listées explicitement :
+    // leurs colonnes produit_id / vente_id sont dénormalisées (sans clé
+    // étrangère vers produits/ventes), le CASCADE ne les atteindrait pas et
+    // d'anciennes factures survivraient à la réinitialisation.
     await prisma.$executeRawUnsafe(
       `TRUNCATE TABLE notifications, mouvements_caisse, historique_statuts,
-       reparations, ventes, produits, lots
+       reparations, facture_lignes, factures, produit_images, ventes, produits, lots
        RESTART IDENTITY CASCADE`
     );
     return NextResponse.json({ ok: true });

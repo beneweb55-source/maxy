@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { construireFiltresProduits, construireTriProduits } from "@/lib/filtres-produits";
 import { urlPhotoProduit } from "@/lib/images";
+import { idsAvecCouverture } from "@/lib/images-flags";
 import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
 
@@ -35,12 +36,26 @@ export async function GET(request: NextRequest) {
         prisma.produit.count({ where }),
         prisma.produit.aggregate({ where, _sum: { prix_achat: true } }),
         prisma.reparation.aggregate({ where: { produit: where }, _sum: { cout: true } }),
+        // `select` explicite : ne JAMAIS rapatrier `image_url` (photo base64)
+        // pour une liste — la présence d'une photo est récupérée séparément
+        // sous forme de simple booléen (voir lib/images-flags).
         prisma.produit.findMany({
           where,
           orderBy,
           skip: (page - 1) * PAR_PAGE,
           take: PAR_PAGE,
-          include: {
+          select: {
+            id: true,
+            code_interne: true,
+            reference: true,
+            categorie: true,
+            statut: true,
+            a_jeter: true,
+            en_vitrine: true,
+            prix_achat: true,
+            prix_vente_fixe: true,
+            prix_vente_reel: true,
+            created_at: true,
             lot: { select: { id: true, fournisseur: true, date_entree: true } },
             reparations: { select: { cout: true } },
             _count: { select: { images: true } },
@@ -52,6 +67,9 @@ export async function GET(request: NextRequest) {
           select: { id: true, fournisseur: true, date_entree: true },
         }),
       ]);
+
+    // Présence d'une photo de couverture : booléen seul, aucune image transférée.
+    const avecCouverture = await idsAvecCouverture(produits.map((p) => p.id));
 
     const maintenant = Date.now();
     return NextResponse.json({
@@ -73,8 +91,8 @@ export async function GET(request: NextRequest) {
         a_jeter: p.a_jeter,
         en_vitrine: p.en_vitrine,
         prix_achat: p.prix_achat,
-        image_url: p.image_url ? urlPhotoProduit(p.id) : null,
-        nb_images: (p.image_url ? 1 : 0) + p._count.images,
+        image_url: avecCouverture.has(p.id) ? urlPhotoProduit(p.id) : null,
+        nb_images: (avecCouverture.has(p.id) ? 1 : 0) + p._count.images,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
         prix_vente_reel: p.prix_vente_reel,

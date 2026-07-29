@@ -75,6 +75,31 @@ export async function POST(
         `Vente annulée par ${user.username} : ${vente.produit.reference} — ${motif.trim()}`,
         `/produits/${vente.produit.id}`
       );
+
+      // Répercussion sur la facture : une facture dont TOUTES les ventes sont
+      // annulées devient elle-même annulée. Sur une facture multi-produits,
+      // elle reste émise (le reste a bien été vendu) ; la ligne concernée est
+      // signalée comme annulée à l'affichage et à l'impression.
+      const lignes = await tx.factureLigne.findMany({
+        where: { vente_id: vente.id },
+        select: { facture_id: true },
+      });
+      for (const factureId of new Set(lignes.map((l) => l.facture_id))) {
+        const idsVentes = (
+          await tx.factureLigne.findMany({
+            where: { facture_id: factureId, vente_id: { not: null } },
+            select: { vente_id: true },
+          })
+        )
+          .map((l) => l.vente_id)
+          .filter((v): v is number => v !== null);
+        const restantes = await tx.vente.count({
+          where: { id: { in: idsVentes }, annulee: false },
+        });
+        if (restantes === 0) {
+          await tx.facture.update({ where: { id: factureId }, data: { annulee: true } });
+        }
+      }
     });
 
     return NextResponse.json({ ok: true });

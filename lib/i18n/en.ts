@@ -60,6 +60,7 @@ export const en = {
     vitrine: "Showcase",
     rapports: "Reports",
     ventes: "Sales",
+    factures: "Invoices",
     caisse: "Cash register",
     administration: "Administration",
   },

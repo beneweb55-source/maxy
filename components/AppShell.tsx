@@ -10,6 +10,7 @@ import { FournisseurToasts } from "./toast";
 import { useT } from "@/lib/i18n/contexte";
 import {
   IconeArchive,
+  IconeBillet,
   IconeCamion,
   IconeDeconnexion,
   IconeFermer,
@@ -56,6 +57,7 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     roles: ["gerant", "technicien", "dev"],
   },
   { href: "/ventes", cle: "nav.ventes", icone: IconePanier, sousChemins: [] },
+  { href: "/factures", cle: "nav.factures", icone: IconeBillet, sousChemins: [] },
   {
     href: "/caisse",
     cle: "nav.caisse",

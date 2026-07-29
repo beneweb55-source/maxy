@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { urlPhotoProduit } from "@/lib/images";
+import { idsAvecCouverture } from "@/lib/images-flags";
 import { ajouterMouvement } from "@/lib/caisse-db";
 import { formaterDA } from "@/lib/caisse";
 
@@ -20,9 +21,19 @@ export async function GET(
     const lot = await prisma.lot.findUnique({
       where: { id: lotId },
       include: {
+        // `select` explicite : ne pas rapatrier les photos base64 des produits
+        // du lot (la vue les affiche via leurs URL).
         produits: {
           orderBy: { id: "asc" },
-          include: {
+          select: {
+            id: true,
+            code_interne: true,
+            reference: true,
+            categorie: true,
+            statut: true,
+            en_vitrine: true,
+            prix_achat: true,
+            prix_vente_fixe: true,
             reparations: { select: { id: true, cout: true, description: true, date: true } },
             _count: { select: { images: true } },
             historique: {
@@ -36,6 +47,9 @@ export async function GET(
       },
     });
     if (!lot) return erreur(404, "Lot introuvable.");
+
+    // Présence des couvertures : booléens seuls, aucune image transférée.
+    const avecCouverture = await idsAvecCouverture(lot.produits.map((p) => p.id));
 
     return NextResponse.json({
       id: lot.id,
@@ -55,8 +69,8 @@ export async function GET(
         statut: p.statut,
         en_vitrine: p.en_vitrine,
         prix_achat: p.prix_achat,
-        image_url: p.image_url ? urlPhotoProduit(p.id) : null,
-        nb_images: (p.image_url ? 1 : 0) + p._count.images,
+        image_url: avecCouverture.has(p.id) ? urlPhotoProduit(p.id) : null,
+        nb_images: (avecCouverture.has(p.id) ? 1 : 0) + p._count.images,
         derniere_note: p.historique.at(0)?.note ?? null,
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,

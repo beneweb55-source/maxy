@@ -74,6 +74,7 @@ model User {
   mouvements    MouvementCaisse[]
   notifications Notification[]
   ventes        Vente[]            @relation("ventes_effectuees")
+  factures      Facture[]
 
   @@map("users")
 }
@@ -213,6 +214,46 @@ model MouvementCaisse {
   user    User     @relation(fields: [user_id], references: [id])
 
   @@map("mouvements_caisse")
+}
+
+model Facture {
+  id            Int      @id @default(autoincrement())
+  numero        String   @unique
+  date_emission DateTime @default(now())
+  client_nom    String?
+  client_tel    String?
+  total         Int
+  garantie_mois Int      @default(6)
+  garantie_fin  DateTime
+  canal         String?
+  groupe_vente  String?
+  cree_par      Int
+  annulee       Boolean  @default(false)
+
+  createur User           @relation(fields: [cree_par], references: [id])
+  lignes   FactureLigne[]
+
+  @@index([date_emission])
+  @@map("factures")
+}
+
+// Les libellés sont dénormalisés (copiés au moment de la vente) : une facture
+// doit rester lisible et exacte même si le produit est modifié ou supprimé.
+model FactureLigne {
+  id           Int      @id @default(autoincrement())
+  facture_id   Int
+  produit_id   Int?
+  vente_id     Int?
+  code_interne String
+  designation  String
+  categorie    String?
+  prix         Int
+  garantie_fin DateTime
+
+  facture Facture @relation(fields: [facture_id], references: [id], onDelete: Cascade)
+
+  @@index([facture_id])
+  @@map("facture_lignes")
 }
 
 model Notification {

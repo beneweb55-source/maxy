@@ -1,0 +1,145 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { erreur, exigerUtilisateur } from "@/lib/api";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const acces = await exigerUtilisateur();
+  if (acces.reponse) return acces.reponse;
+
+  const { id } = await params;
+  const factureId = Number(id);
+  if (!Number.isInteger(factureId)) return erreur(400, "Identifiant de facture invalide.");
+
+  try {
+    const f = await prisma.facture.findUnique({
+      where: { id: factureId },
+      select: {
+        id: true,
+        numero: true,
+        date_emission: true,
+        client_nom: true,
+        client_tel: true,
+        total: true,
+        garantie_mois: true,
+        garantie_fin: true,
+        canal: true,
+        annulee: true,
+        createur: { select: { username: true } },
+        lignes: {
+          orderBy: { id: "asc" },
+          select: {
+            id: true,
+            produit_id: true,
+            vente_id: true,
+            code_interne: true,
+            designation: true,
+            categorie: true,
+            prix: true,
+            garantie_fin: true,
+          },
+        },
+      },
+    });
+    if (!f) return erreur(404, "Facture introuvable.");
+
+    // Une ligne dont la vente a été annulée est signalée : sur une facture
+    // multi-produits, seul l'article retourné est barré (et retiré du net).
+    const idsVentes = f.lignes
+      .map((l) => l.vente_id)
+      .filter((v): v is number => v !== null);
+    const ventesAnnulees = new Set(
+      (
+        await prisma.vente.findMany({
+          where: { id: { in: idsVentes }, annulee: true },
+          select: { id: true },
+        })
+      ).map((v) => v.id)
+    );
+    const totalNet = f.lignes.reduce(
+      (s, l) => (l.vente_id !== null && ventesAnnulees.has(l.vente_id) ? s : s + l.prix),
+      0
+    );
+
+    return NextResponse.json({
+      id: f.id,
+      numero: f.numero,
+      date_emission: f.date_emission.toISOString(),
+      client_nom: f.client_nom,
+      client_tel: f.client_tel,
+      total: f.total,
+      total_net: totalNet,
+      garantie_mois: f.garantie_mois,
+      garantie_fin: f.garantie_fin.toISOString(),
+      canal: f.canal,
+      annulee: f.annulee,
+      vendeur: f.createur.username,
+      lignes: f.lignes.map((l) => ({
+        id: l.id,
+        produit_id: l.produit_id,
+        code_interne: l.code_interne,
+        designation: l.designation,
+        categorie: l.categorie,
+        prix: l.prix,
+        garantie_fin: l.garantie_fin.toISOString(),
+        annulee: l.vente_id !== null && ventesAnnulees.has(l.vente_id),
+      })),
+    });
+  } catch (e) {
+    console.error("GET /api/factures/[id]", e);
+    return erreur(500, "Erreur lors du chargement de la facture.");
+  }
+}
+
+// Renseigner/corriger les informations client après coup (nom, téléphone).
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
+  if (acces.reponse) return acces.reponse;
+
+  const { id } = await params;
+  const factureId = Number(id);
+  if (!Number.isInteger(factureId)) return erreur(400, "Identifiant de facture invalide.");
+
+  let corps: unknown;
+  try {
+    corps = await request.json();
+  } catch {
+    return erreur(400, "Requête invalide.");
+  }
+  const { client_nom, client_tel } = (corps ?? {}) as {
+    client_nom?: unknown;
+    client_tel?: unknown;
+  };
+
+  const donnees: { client_nom?: string | null; client_tel?: string | null } = {};
+  if (client_nom !== undefined) {
+    if (client_nom !== null && typeof client_nom !== "string") {
+      return erreur(400, "Nom du client invalide.");
+    }
+    donnees.client_nom = typeof client_nom === "string" && client_nom.trim() ? client_nom.trim() : null;
+  }
+  if (client_tel !== undefined) {
+    if (client_tel !== null && typeof client_tel !== "string") {
+      return erreur(400, "Téléphone du client invalide.");
+    }
+    donnees.client_tel = typeof client_tel === "string" && client_tel.trim() ? client_tel.trim() : null;
+  }
+  if (Object.keys(donnees).length === 0) return erreur(400, "Aucune modification fournie.");
+
+  try {
+    const maj = await prisma.facture.update({
+      where: { id: factureId },
+      data: donnees,
+      select: { id: true, client_nom: true, client_tel: true },
+    });
+    return NextResponse.json({ ok: true, ...maj });
+  } catch (e) {
+    console.error("PATCH /api/factures/[id]", e);
+    return erreur(500, "Erreur lors de la modification de la facture.");
+  }
+}

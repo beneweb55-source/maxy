@@ -7,6 +7,7 @@ import { formaterDA } from "@/lib/caisse";
 import { margeVente, seuilMargeMinimum } from "@/lib/finances";
 import { idsParRole, notifier } from "@/lib/notifs";
 import { entierPositif } from "@/lib/validation";
+import { creerFacture, type LigneFacture } from "@/lib/factures";
 
 /**
  * Vente groupée (bundle) : un prix total unique réparti au prorata du prix de
@@ -26,13 +27,16 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_ids, prix_total, canal, date_vente, confirmer } = (corps ?? {}) as {
-    produit_ids?: unknown;
-    prix_total?: unknown;
-    canal?: unknown;
-    date_vente?: unknown;
-    confirmer?: unknown;
-  };
+  const { produit_ids, prix_total, canal, date_vente, confirmer, client_nom, client_tel } =
+    (corps ?? {}) as {
+      produit_ids?: unknown;
+      prix_total?: unknown;
+      canal?: unknown;
+      date_vente?: unknown;
+      confirmer?: unknown;
+      client_nom?: unknown;
+      client_tel?: unknown;
+    };
 
   if (!Array.isArray(produit_ids) || produit_ids.length < 2) {
     return erreur(400, "Sélectionnez au moins deux produits pour une vente groupée.");
@@ -120,6 +124,7 @@ export async function POST(request: NextRequest) {
     const groupeVente = randomUUID();
     const venteIds = await prisma.$transaction(async (tx) => {
       const cree: number[] = [];
+      const lignesFacture: LigneFacture[] = [];
       for (let i = 0; i < ordonnes.length; i++) {
         const produit = ordonnes[i]!;
         const part = parts[i]!;
@@ -183,6 +188,14 @@ export async function POST(request: NextRequest) {
           description: `Vente groupée ${produit.reference}${canalTexte ? ` — ${canalTexte}` : ""}`,
         });
         cree.push(vente.id);
+        lignesFacture.push({
+          produit_id: produit.id,
+          vente_id: vente.id,
+          code_interne: produit.code_interne,
+          designation: produit.reference,
+          categorie: produit.categorie,
+          prix: part,
+        });
       }
       const gerants = await idsParRole(tx, "gerant");
       await notifier(
@@ -191,11 +204,27 @@ export async function POST(request: NextRequest) {
         `Vente groupée : ${ordonnes.length} produits — ${formaterDA(prixTotal)} (${user.username})`,
         `/ventes`
       );
-      return cree;
+      // Une seule facture pour toute la vente groupée (garantie incluse).
+      const facture = await creerFacture(tx, {
+        lignes: lignesFacture,
+        userId: user.id,
+        quand,
+        canal: canalTexte,
+        clientNom: typeof client_nom === "string" ? client_nom : null,
+        clientTel: typeof client_tel === "string" ? client_tel : null,
+        groupeVente,
+      });
+      return { cree, facture };
     });
 
     return NextResponse.json(
-      { ok: true, groupe_vente: groupeVente, vente_ids: venteIds },
+      {
+        ok: true,
+        groupe_vente: groupeVente,
+        vente_ids: venteIds.cree,
+        facture_id: venteIds.facture.id,
+        facture_numero: venteIds.facture.numero,
+      },
       { status: 201 }
     );
   } catch (e) {

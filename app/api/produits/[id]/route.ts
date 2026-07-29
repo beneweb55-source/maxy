@@ -7,6 +7,7 @@ import {
   validerPhoto,
 } from "@/lib/images";
 import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
+import { aUneCouverture } from "@/lib/images-flags";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -22,30 +23,70 @@ export async function GET(
   if (!Number.isInteger(produitId)) return erreur(400, "Identifiant de produit invalide.");
 
   try {
+    // `select` explicite : la fiche affiche les photos via leurs URL, jamais via
+    // la donnée base64 — inutile de la transférer depuis la base.
     const p = await prisma.produit.findUnique({
       where: { id: produitId },
-      include: {
+      select: {
+        id: true,
+        code_interne: true,
+        reference: true,
+        categorie: true,
+        statut: true,
+        a_jeter: true,
+        en_vitrine: true,
+        notes: true,
+        decision_rapport: true,
+        prix_achat: true,
+        prix_vente_fixe: true,
+        prix_vente_reel: true,
+        date_vente: true,
+        created_at: true,
         lot: { select: { id: true, fournisseur: true, date_entree: true, statut_lot: true } },
         reparations: {
           orderBy: { date: "asc" },
-          include: { user: { select: { username: true } } },
+          select: {
+            id: true,
+            cout: true,
+            description: true,
+            date: true,
+            user: { select: { username: true } },
+          },
         },
         historique: {
           orderBy: { created_at: "asc" },
-          include: { user: { select: { username: true } } },
+          select: {
+            id: true,
+            statut_avant: true,
+            statut_apres: true,
+            note: true,
+            created_at: true,
+            user: { select: { username: true } },
+          },
         },
         ventes: {
           orderBy: { date_vente: "asc" },
-          include: { vendeur: { select: { username: true } } },
+          select: {
+            id: true,
+            prix_vente_reel: true,
+            canal: true,
+            date_vente: true,
+            annulee: true,
+            motif_annulation: true,
+            vendeur: { select: { username: true } },
+          },
         },
         images: { orderBy: { position: "asc" }, select: { id: true } },
       },
     });
     if (!p) return erreur(404, "Produit introuvable.");
 
+    // Présence de la couverture : booléen seul, sans transférer l'image.
+    const couverture = await aUneCouverture(p.id);
+
     // Galerie complète : la couverture d'abord, puis les photos supplémentaires.
     const galerie: string[] = [
-      ...(p.image_url ? [urlPhotoProduit(p.id)] : []),
+      ...(couverture ? [urlPhotoProduit(p.id)] : []),
       ...p.images.map((img) => urlPhotoSupplementaire(p.id, img.id)),
     ];
 
@@ -59,7 +100,7 @@ export async function GET(
       a_jeter: p.a_jeter,
       en_vitrine: p.en_vitrine,
       notes: p.notes,
-      image_url: p.image_url ? urlPhotoProduit(p.id) : null,
+      image_url: couverture ? urlPhotoProduit(p.id) : null,
       images: galerie,
       decision_rapport: p.decision_rapport,
       prix_achat: p.prix_achat,

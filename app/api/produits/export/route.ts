@@ -19,7 +19,19 @@ export async function GET(request: NextRequest) {
     const produits = await prisma.produit.findMany({
       where: construireFiltresProduits(params),
       orderBy: construireTriProduits(params),
-      include: {
+      // `select` explicite : l'export CSV ne contient aucune image, inutile de
+      // rapatrier les photos base64 de tout le catalogue.
+      select: {
+        code_interne: true,
+        reference: true,
+        categorie: true,
+        statut: true,
+        prix_achat: true,
+        prix_vente_fixe: true,
+        prix_vente_reel: true,
+        date_vente: true,
+        notes: true,
+        created_at: true,
         lot: { select: { id: true, fournisseur: true, date_entree: true } },
         reparations: { select: { cout: true } },
       },
