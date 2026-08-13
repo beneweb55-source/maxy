@@ -14,6 +14,13 @@ export async function GET() {
       pct_reserve: parametres?.pct_reserve ?? 20,
       pct_parts: parametres?.pct_parts ?? 20,
       pct_frais: parametres?.pct_frais ?? 10,
+      entreprise_nom: parametres?.entreprise_nom ?? "Solution Maxi",
+      entreprise_adresse: parametres?.entreprise_adresse ?? "Alger, Algérie",
+      entreprise_tel: parametres?.entreprise_tel ?? "0000 00 00 00",
+      entreprise_rc: parametres?.entreprise_rc ?? "RC XXXXXXXXX",
+      entreprise_nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
+      entreprise_nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
+      entreprise_art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
     });
   } catch (e) {
     console.error("GET /api/parametres", e);
@@ -31,13 +38,34 @@ export async function PUT(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { marge_minimum_pct, objectif_reserve, pct_reinvest, pct_reserve, pct_parts, pct_frais } = (corps ?? {}) as {
+  const {
+    marge_minimum_pct,
+    objectif_reserve,
+    pct_reinvest,
+    pct_reserve,
+    pct_parts,
+    pct_frais,
+    entreprise_nom,
+    entreprise_adresse,
+    entreprise_tel,
+    entreprise_rc,
+    entreprise_nif,
+    entreprise_nis,
+    entreprise_art,
+  } = (corps ?? {}) as {
     pct_reinvest?: unknown;
     pct_reserve?: unknown;
     pct_parts?: unknown;
     pct_frais?: unknown;
     marge_minimum_pct?: unknown;
     objectif_reserve?: unknown;
+    entreprise_nom?: unknown;
+    entreprise_adresse?: unknown;
+    entreprise_tel?: unknown;
+    entreprise_rc?: unknown;
+    entreprise_nif?: unknown;
+    entreprise_nis?: unknown;
+    entreprise_art?: unknown;
   };
   if (
     typeof marge_minimum_pct !== "number" ||
@@ -68,8 +96,37 @@ export async function PUT(request: NextRequest) {
   try {
     const parametres = await prisma.parametres.upsert({
       where: { id: 1 },
-      create: { id: 1, marge_minimum_pct, objectif_reserve, pct_reinvest: pct_reinvest as number, pct_reserve: pct_reserve as number, pct_parts: pct_parts as number, pct_frais: pct_frais as number },
-      update: { marge_minimum_pct, objectif_reserve, pct_reinvest: pct_reinvest as number, pct_reserve: pct_reserve as number, pct_parts: pct_parts as number, pct_frais: pct_frais as number },
+      create: {
+        id: 1,
+        marge_minimum_pct,
+        objectif_reserve,
+        pct_reinvest: pct_reinvest as number,
+        pct_reserve: pct_reserve as number,
+        pct_parts: pct_parts as number,
+        pct_frais: pct_frais as number,
+        entreprise_nom: typeof entreprise_nom === "string" ? entreprise_nom : "Solution Maxi",
+        entreprise_adresse: typeof entreprise_adresse === "string" ? entreprise_adresse : "Alger, Algérie",
+        entreprise_tel: typeof entreprise_tel === "string" ? entreprise_tel : "0000 00 00 00",
+        entreprise_rc: typeof entreprise_rc === "string" ? entreprise_rc : "RC XXXXXXXXX",
+        entreprise_nif: typeof entreprise_nif === "string" ? entreprise_nif : "NIF XXXXXXXXX",
+        entreprise_nis: typeof entreprise_nis === "string" ? entreprise_nis : "NIS XXXXXXXXX",
+        entreprise_art: typeof entreprise_art === "string" ? entreprise_art : "ART XXXXXXXXX",
+      },
+      update: {
+        marge_minimum_pct,
+        objectif_reserve,
+        pct_reinvest: pct_reinvest as number,
+        pct_reserve: pct_reserve as number,
+        pct_parts: pct_parts as number,
+        pct_frais: pct_frais as number,
+        entreprise_nom: typeof entreprise_nom === "string" ? entreprise_nom : undefined,
+        entreprise_adresse: typeof entreprise_adresse === "string" ? entreprise_adresse : undefined,
+        entreprise_tel: typeof entreprise_tel === "string" ? entreprise_tel : undefined,
+        entreprise_rc: typeof entreprise_rc === "string" ? entreprise_rc : undefined,
+        entreprise_nif: typeof entreprise_nif === "string" ? entreprise_nif : undefined,
+        entreprise_nis: typeof entreprise_nis === "string" ? entreprise_nis : undefined,
+        entreprise_art: typeof entreprise_art === "string" ? entreprise_art : undefined,
+      },
     });
     return NextResponse.json({
       ok: true,
@@ -79,6 +136,13 @@ export async function PUT(request: NextRequest) {
       pct_reserve: parametres.pct_reserve,
       pct_parts: parametres.pct_parts,
       pct_frais: parametres.pct_frais,
+      entreprise_nom: parametres.entreprise_nom,
+      entreprise_adresse: parametres.entreprise_adresse,
+      entreprise_tel: parametres.entreprise_tel,
+      entreprise_rc: parametres.entreprise_rc,
+      entreprise_nif: parametres.entreprise_nif,
+      entreprise_nis: parametres.entreprise_nis,
+      entreprise_art: parametres.entreprise_art,
     });
   } catch (e) {
     console.error("PUT /api/parametres", e);

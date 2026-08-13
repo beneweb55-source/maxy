@@ -28,7 +28,21 @@ import {
 
 interface ReponseAdmin {
   soldes: { total: number; reserve: number; disponible: number };
-  parametres: { marge_minimum_pct: number; objectif_reserve: number; pct_reinvest: number; pct_reserve: number; pct_parts: number; pct_frais: number };
+  parametres: { 
+    marge_minimum_pct: number; 
+    objectif_reserve: number; 
+    pct_reinvest: number; 
+    pct_reserve: number; 
+    pct_parts: number; 
+    pct_frais: number;
+    entreprise_nom: string;
+    entreprise_adresse: string;
+    entreprise_tel: string;
+    entreprise_rc: string;
+    entreprise_nif: string;
+    entreprise_nis: string;
+    entreprise_art: string;
+  };
   compteurs: {
     lots: number;
     produits: number;
@@ -68,6 +82,15 @@ export default function AdminClient() {
   const [pctReserve, setPctReserve] = useState("");
   const [pctParts, setPctParts] = useState("");
   const [pctFrais, setPctFrais] = useState("");
+  
+  const [entrepriseNom, setEntrepriseNom] = useState("");
+  const [entrepriseAdresse, setEntrepriseAdresse] = useState("");
+  const [entrepriseTel, setEntrepriseTel] = useState("");
+  const [entrepriseRc, setEntrepriseRc] = useState("");
+  const [entrepriseNif, setEntrepriseNif] = useState("");
+  const [entrepriseNis, setEntrepriseNis] = useState("");
+  const [entrepriseArt, setEntrepriseArt] = useState("");
+
   const [parametresCharges, setParametresCharges] = useState(false);
 
   const [nouveauSolde, setNouveauSolde] = useState("");
@@ -99,6 +122,13 @@ export default function AdminClient() {
           setPctReserve(String(d.parametres.pct_reserve));
           setPctParts(String(d.parametres.pct_parts));
           setPctFrais(String(d.parametres.pct_frais));
+          setEntrepriseNom(d.parametres.entreprise_nom);
+          setEntrepriseAdresse(d.parametres.entreprise_adresse);
+          setEntrepriseTel(d.parametres.entreprise_tel);
+          setEntrepriseRc(d.parametres.entreprise_rc);
+          setEntrepriseNif(d.parametres.entreprise_nif);
+          setEntrepriseNis(d.parametres.entreprise_nis);
+          setEntrepriseArt(d.parametres.entreprise_art);
         }
         return true;
       });
@@ -124,6 +154,13 @@ export default function AdminClient() {
           pct_reserve: Number(pctReserve),
           pct_parts: Number(pctParts),
           pct_frais: Number(pctFrais),
+          entreprise_nom: entrepriseNom,
+          entreprise_adresse: entrepriseAdresse,
+          entreprise_tel: entrepriseTel,
+          entreprise_rc: entrepriseRc,
+          entreprise_nif: entrepriseNif,
+          entreprise_nis: entrepriseNis,
+          entreprise_art: entrepriseArt,
         }),
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -459,6 +496,51 @@ export default function AdminClient() {
                 Enregistrer
               </button>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-brand-light-grey/50">
+          <h3 className="libelle mb-3">Profil de l'entreprise (Facturation)</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">Nom de l'entreprise</label>
+              <input type="text" value={entrepriseNom} onChange={(e) => setEntrepriseNom(e.target.value)} className="champ" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">Adresse</label>
+              <input type="text" value={entrepriseAdresse} onChange={(e) => setEntrepriseAdresse(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">Téléphone</label>
+              <input type="text" value={entrepriseTel} onChange={(e) => setEntrepriseTel(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">N° RC</label>
+              <input type="text" value={entrepriseRc} onChange={(e) => setEntrepriseRc(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">NIF</label>
+              <input type="text" value={entrepriseNif} onChange={(e) => setEntrepriseNif(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">NIS</label>
+              <input type="text" value={entrepriseNis} onChange={(e) => setEntrepriseNis(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">ART</label>
+              <input type="text" value={entrepriseArt} onChange={(e) => setEntrepriseArt(e.target.value)} className="champ" />
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              disabled={envoi}
+              onClick={() => void enregistrerParametres()}
+              className="btn btn-primaire"
+            >
+              <IconeEnregistrer taille={15} />
+              Enregistrer
+            </button>
           </div>
         </div>
         <p className="mt-2 text-xs text-brand-warm-grey">

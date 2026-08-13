@@ -56,6 +56,13 @@ export async function GET() {
         pct_reserve: parametres?.pct_reserve ?? 20,
         pct_parts: parametres?.pct_parts ?? 20,
         pct_frais: parametres?.pct_frais ?? 10,
+        entreprise_nom: parametres?.entreprise_nom ?? "Solution Maxi",
+        entreprise_adresse: parametres?.entreprise_adresse ?? "Alger, Algérie",
+        entreprise_tel: parametres?.entreprise_tel ?? "0000 00 00 00",
+        entreprise_rc: parametres?.entreprise_rc ?? "RC XXXXXXXXX",
+        entreprise_nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
+        entreprise_nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
+        entreprise_art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
       },
       compteurs: {
         lots: nbLots,

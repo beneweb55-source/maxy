@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
+import { montantEnLettres } from "@/lib/nombres";
 import {
   IconeFlecheGauche,
   IconeImprimante,
@@ -37,6 +38,15 @@ interface FactureDto {
   annulee: boolean;
   vendeur: string;
   lignes: LigneFactureDto[];
+  entreprise?: {
+    nom: string;
+    adresse: string;
+    tel: string;
+    rc: string;
+    nif: string;
+    nis: string;
+    art: string;
+  };
 }
 
 function dateFr(iso: string): string {
@@ -197,26 +207,38 @@ export default function FactureDetail({
       )}
 
       {/* Document imprimable */}
-      <div className="carte print:border-0 print:p-0 print:shadow-none">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-brand-light-grey pb-4">
-          <div>
+      <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 border-b-2 border-brand-black pb-6">
+          <div className="flex-1">
             <img
               src="/brand/solutionmaxi-logo-fonce.svg"
-              alt="Solution Maxi"
-              className="h-8 w-auto"
+              alt="Logo"
+              className="h-12 w-auto mb-3"
             />
-            <p className="mt-2 text-sm font-bold text-brand-black">Solution Maxi</p>
-            <p className="text-xs text-brand-warm-grey">Matériel informatique — vente et reprise</p>
+            <h2 className="text-lg font-bold uppercase tracking-wide text-brand-black">{facture.entreprise?.nom || "Solution Maxi"}</h2>
+            <p className="text-sm font-medium mt-1">Matériel informatique — vente et reprise</p>
+            <div className="mt-3 text-xs text-brand-warm-grey space-y-0.5">
+              <p><strong>Adresse :</strong> {facture.entreprise?.adresse || "Alger, Algérie"}</p>
+              <p><strong>Tél :</strong> {facture.entreprise?.tel || "0000 00 00 00"}</p>
+            </div>
           </div>
-          <div className="text-right">
-            <h1 className="text-2xl font-extrabold tracking-tight text-brand-black">FACTURE</h1>
-            <p className="font-mono text-sm font-bold text-brand-orange">{facture.numero}</p>
-            <p className="mt-1 text-xs text-brand-warm-grey">
-              Émise le {dateFr(facture.date_emission)}
-            </p>
-            {facture.canal && (
-              <p className="text-xs text-brand-warm-grey">Canal : {facture.canal}</p>
-            )}
+          <div className="text-right flex-1 border-l-2 border-brand-light-grey pl-6 sm:border-l-0 sm:pl-0">
+            <h1 className="text-3xl font-black tracking-widest text-brand-black uppercase mb-1">FACTURE</h1>
+            <p className="text-sm font-bold text-brand-orange mb-3">N° {facture.numero}</p>
+            <div className="text-xs text-brand-warm-grey space-y-0.5">
+              <p><strong>RC :</strong> {facture.entreprise?.rc || "RC XXXXXXXXX"}</p>
+              <p><strong>NIF :</strong> {facture.entreprise?.nif || "NIF XXXXXXXXX"}</p>
+              <p><strong>NIS :</strong> {facture.entreprise?.nis || "NIS XXXXXXXXX"}</p>
+              <p><strong>ART :</strong> {facture.entreprise?.art || "ART XXXXXXXXX"}</p>
+            </div>
+            <div className="mt-3 pt-3 border-t border-brand-light-grey inline-block text-left w-full sm:w-auto sm:text-right">
+              <p className="text-xs text-brand-black">
+                <strong>Émise le :</strong> {dateFr(facture.date_emission)}
+              </p>
+              {facture.canal && (
+                <p className="text-xs text-brand-black"><strong>Canal :</strong> {facture.canal}</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -306,16 +328,25 @@ export default function FactureDetail({
                   </td>
                 </tr>
               )}
-              <tr className="border-t-2 border-brand-black/80">
-                <td colSpan={3} className="px-2 py-3 text-right font-bold">
-                  {facture.total_net !== facture.total ? "TOTAL NET (après retour)" : "TOTAL"}
+              <tr className="border-t-[3px] border-brand-black">
+                <td colSpan={3} className="px-2 py-4 text-right text-sm font-bold uppercase tracking-wide">
+                  {facture.total_net !== facture.total ? "TOTAL NET (après retour)" : "TOTAL À PAYER"}
                 </td>
-                <td className="px-2 py-3 text-right text-lg font-extrabold text-brand-orange">
+                <td className="px-2 py-4 text-right text-xl font-black text-brand-black">
                   {formaterDA(facture.total_net)}
                 </td>
               </tr>
             </tfoot>
           </table>
+        </div>
+
+        <div className="mt-4 p-4 bg-brand-light-grey/20 rounded-md print:bg-transparent print:border print:border-brand-black">
+          <p className="text-sm font-semibold text-brand-black uppercase tracking-wide mb-1">
+            Arrêtée la présente facture à la somme de :
+          </p>
+          <p className="text-sm italic font-bold text-brand-black">
+            {montantEnLettres(facture.total_net)}.
+          </p>
         </div>
 
         {/* Bon de garantie — imprimé avec la facture */}

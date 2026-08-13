@@ -5,8 +5,11 @@
   "main": "main.js",
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "NODE_ENV=production next build",
+    "dev:safe": "set NEXT_DIST_DIR=C:\\maxy-build && next dev -p 3000 -H 0.0.0.0",
+    "build": "next build",
+    "build:safe": "set NEXT_DIST_DIR=C:\\maxy-build && next build",
     "start": "next start",
+    "start:safe": "set NEXT_DIST_DIR=C:\\maxy-build && next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "db:start": "node scripts/dev-db.mjs",
@@ -37,7 +40,8 @@
     "@vercel/blob": "^2.6.1",
     "next": "^15.3.4",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "written-number": "^0.11.1"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

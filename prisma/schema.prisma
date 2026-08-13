@@ -87,6 +87,13 @@ model Parametres {
   pct_reserve       Int      @default(20)
   pct_parts         Int      @default(20)
   pct_frais         Int      @default(10)
+  entreprise_nom    String   @default("Solution Maxi")
+  entreprise_adresse String  @default("Alger, Algérie")
+  entreprise_tel    String   @default("0000 00 00 00")
+  entreprise_rc     String   @default("RC XXXXXXXXX")
+  entreprise_nif    String   @default("NIF XXXXXXXXX")
+  entreprise_nis    String   @default("NIS XXXXXXXXX")
+  entreprise_art    String   @default("ART XXXXXXXXX")
   updated_at        DateTime @updatedAt
 
   @@map("parametres")

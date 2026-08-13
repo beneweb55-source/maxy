@@ -63,6 +63,8 @@ export async function GET(
       0
     );
 
+    const parametres = await prisma.parametres.findUnique({ where: { id: 1 } });
+
     return NextResponse.json({
       id: f.id,
       numero: f.numero,
@@ -86,6 +88,15 @@ export async function GET(
         garantie_fin: l.garantie_fin.toISOString(),
         annulee: l.vente_id !== null && ventesAnnulees.has(l.vente_id),
       })),
+      entreprise: {
+        nom: parametres?.entreprise_nom ?? "Solution Maxi",
+        adresse: parametres?.entreprise_adresse ?? "Alger, Algérie",
+        tel: parametres?.entreprise_tel ?? "0000 00 00 00",
+        rc: parametres?.entreprise_rc ?? "RC XXXXXXXXX",
+        nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
+        nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
+        art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
+      },
     });
   } catch (e) {
     console.error("GET /api/factures/[id]", e);
