@@ -236,6 +236,8 @@ model Facture {
   groupe_vente  String?
   cree_par      Int
   annulee       Boolean  @default(false)
+  mode_paiement String?  @default("especes")
+  updated_at    DateTime @default(now()) @updatedAt
 
   createur User           @relation(fields: [cree_par], references: [id])
   lignes   FactureLigne[]

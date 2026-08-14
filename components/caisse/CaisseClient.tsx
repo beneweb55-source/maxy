@@ -201,12 +201,6 @@ export default function CaisseClient({ role }: { role: Role }) {
       : 100;
 
   const benefice = repartition.benefice_mois;
-  const decoupe = {
-    reserve: Math.round(benefice * 0.2),
-    parts: Math.round(benefice * 0.2),
-    frais: Math.round(benefice * 0.1),
-  };
-  const reinvest = benefice - decoupe.reserve - decoupe.parts - decoupe.frais;
 
   return (
     <div className="space-y-6 animate-entree">

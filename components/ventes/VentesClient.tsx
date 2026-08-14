@@ -113,6 +113,9 @@ export default function VentesClient({ role }: { role: Role }) {
   const [prixReel, setPrixReel] = useState("");
   const [canal, setCanal] = useState("");
   const [dateVente, setDateVente] = useState(aujourdhuiIso());
+  const [clientNom, setClientNom] = useState("");
+  const [clientTel, setClientTel] = useState("");
+  const [modePaiement, setModePaiement] = useState("especes");
   const [avertissement, setAvertissement] = useState<string | null>(null);
 
   // Recherche / filtres / tri de l'onglet « En vente » (côté client).
@@ -127,6 +130,9 @@ export default function VentesClient({ role }: { role: Role }) {
   const [prixTotalBundle, setPrixTotalBundle] = useState("");
   const [canalBundle, setCanalBundle] = useState("");
   const [dateBundle, setDateBundle] = useState(aujourdhuiIso());
+  const [clientNomBundle, setClientNomBundle] = useState("");
+  const [clientTelBundle, setClientTelBundle] = useState("");
+  const [modePaiementBundle, setModePaiementBundle] = useState("especes");
   const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
 
   const [historique, setHistorique] = useState<ReponseHistorique | null>(null);
@@ -197,6 +203,9 @@ export default function VentesClient({ role }: { role: Role }) {
     setQuantiteVente(1);
     setCanal("");
     setDateVente(aujourdhuiIso());
+    setClientNom("");
+    setClientTel("");
+    setModePaiement("especes");
     setAvertissement(null);
     setModalVente(groupe);
   }, []);
@@ -295,6 +304,9 @@ export default function VentesClient({ role }: { role: Role }) {
     setPrixTotalBundle(total > 0 ? String(total) : "");
     setCanalBundle("");
     setDateBundle(aujourdhuiIso());
+    setClientNomBundle("");
+    setClientTelBundle("");
+    setModePaiementBundle("especes");
     setAvertissementBundle(null);
     setModalBundle(true);
   }
@@ -319,6 +331,9 @@ export default function VentesClient({ role }: { role: Role }) {
           canal: canalBundle.trim() || undefined,
           date_vente: dateBundle !== aujourdhuiIso() ? dateBundle : undefined,
           confirmer: confirmer || undefined,
+          client_nom: clientNomBundle.trim() || undefined,
+          client_tel: clientTelBundle.trim() || undefined,
+          mode_paiement: modePaiementBundle,
         }),
       });
       const corps = (await res.json().catch(() => null)) as
@@ -332,8 +347,12 @@ export default function VentesClient({ role }: { role: Role }) {
         setAvertissementBundle(corps.message ?? "Prix total sous la marge minimum. Confirmer ?");
         return;
       }
+      const factureId = (corps as { facture_id?: number })?.facture_id;
+      const factureNumero = (corps as { facture_numero?: string })?.facture_numero;
       afficher(
-        `Vente groupée enregistrée : ${produit_ids.length} produits — ${formaterDA(Number(prixTotalBundle))}. Imed a été notifié.`
+        factureId
+          ? `Vente groupée enregistrée : ${produit_ids.length} produits — ${formaterDA(Number(prixTotalBundle))}. Facture ${factureNumero} créée.`
+          : `Vente groupée enregistrée : ${produit_ids.length} produits — ${formaterDA(Number(prixTotalBundle))}.`
       );
       setModalBundle(false);
       quitterModeBundle();
@@ -360,12 +379,18 @@ export default function VentesClient({ role }: { role: Role }) {
         canal: canal.trim() || undefined,
         date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
         confirmer: confirmer || undefined,
+        client_nom: clientNom.trim() || undefined,
+        client_tel: clientTel.trim() || undefined,
+        mode_paiement: modePaiement,
       } : {
         produit_id: unitesConcernees[0]!.id,
         prix_vente_reel: Number(prixReel),
         canal: canal.trim() || undefined,
         date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
         confirmer: confirmer || undefined,
+        client_nom: clientNom.trim() || undefined,
+        client_tel: clientTel.trim() || undefined,
+        mode_paiement: modePaiement,
       };
 
       const res = await fetch(url, {
@@ -384,8 +409,12 @@ export default function VentesClient({ role }: { role: Role }) {
         setAvertissement(corps.message ?? "Prix sous la marge minimum. Confirmer ?");
         return;
       }
+      const factureId = (corps as { facture_id?: number })?.facture_id;
+      const factureNumero = (corps as { facture_numero?: string })?.facture_numero;
       afficher(
-        `Vente enregistrée : ${modalVente.reference} (x${quantiteVente}) — ${formaterDA(Number(prixReel))}. Imed a été notifié.`
+        factureId
+          ? `Vente enregistrée : ${modalVente.reference} (x${quantiteVente}) — ${formaterDA(Number(prixReel))}. Facture ${factureNumero} créée.`
+          : `Vente enregistrée : ${modalVente.reference} (x${quantiteVente}) — ${formaterDA(Number(prixReel))}.`
       );
       setModalVente(null);
       await Promise.all([chargerCartes(), chargerHistorique()]);
@@ -1050,6 +1079,49 @@ export default function VentesClient({ role }: { role: Role }) {
                   ))}
                 </datalist>
               </div>
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="mode-paiement">
+                  Paiement
+                </label>
+                <select
+                  id="mode-paiement"
+                  value={modePaiement}
+                  onChange={(e) => setModePaiement(e.target.value)}
+                  className="champ"
+                >
+                  <option value="especes">Espèces</option>
+                  <option value="virement">Virement (CCP / BaridiMob)</option>
+                  <option value="cheque">Chèque</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="client-nom-vente">
+                  Nom du client
+                </label>
+                <input
+                  id="client-nom-vente"
+                  type="text"
+                  value={clientNom}
+                  onChange={(e) => setClientNom(e.target.value)}
+                  placeholder="Ex. Ahmed B."
+                  className="champ"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="client-tel-vente">
+                  Téléphone
+                </label>
+                <input
+                  id="client-tel-vente"
+                  type="tel"
+                  value={clientTel}
+                  onChange={(e) => setClientTel(e.target.value)}
+                  placeholder="0X XX XX XX XX"
+                  className="champ"
+                />
+              </div>
             </div>
 
             {avertissement && (
@@ -1216,7 +1288,50 @@ export default function VentesClient({ role }: { role: Role }) {
                 className="champ"
               />
             </div>
+            <div className="flex-1">
+              <label className="libelle mb-1.5" htmlFor="mode-paiement-bundle">
+                Paiement
+              </label>
+              <select
+                id="mode-paiement-bundle"
+                value={modePaiementBundle}
+                onChange={(e) => setModePaiementBundle(e.target.value)}
+                className="champ"
+              >
+                <option value="especes">Espèces</option>
+                <option value="virement">Virement (CCP / BaridiMob)</option>
+                <option value="cheque">Chèque</option>
+              </select>
+            </div>
           </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="client-nom-bundle">
+                  Nom du client
+                </label>
+                <input
+                  id="client-nom-bundle"
+                  type="text"
+                  value={clientNomBundle}
+                  onChange={(e) => setClientNomBundle(e.target.value)}
+                  placeholder="Ex. Ahmed B."
+                  className="champ"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="client-tel-bundle">
+                  Téléphone
+                </label>
+                <input
+                  id="client-tel-bundle"
+                  type="tel"
+                  value={clientTelBundle}
+                  onChange={(e) => setClientTelBundle(e.target.value)}
+                  placeholder="0X XX XX XX XX"
+                  className="champ"
+                />
+              </div>
+            </div>
 
           {avertissementBundle && (
             <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">

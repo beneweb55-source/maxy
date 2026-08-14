@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         OR: [
           { numero: { contains: q, mode: "insensitive" } },
           { client_nom: { contains: q, mode: "insensitive" } },
+          { client_tel: { contains: q, mode: "insensitive" } },
           { lignes: { some: { designation: { contains: q, mode: "insensitive" } } } },
           { lignes: { some: { code_interne: { contains: q, mode: "insensitive" } } } },
         ],
@@ -58,27 +59,53 @@ export async function GET(request: NextRequest) {
           annulee: true,
           canal: true,
           createur: { select: { username: true } },
-          _count: { select: { lignes: true } },
+          lignes: { select: { prix: true, vente_id: true } },
         },
       }),
     ]);
+
+    const venteIds = new Set<number>();
+    for (const f of factures) {
+      for (const l of f.lignes) {
+        if (l.vente_id !== null) venteIds.add(l.vente_id);
+      }
+    }
+
+    const ventesAnnulees = new Set(
+      (
+        await prisma.vente.findMany({
+          where: {
+            id: { in: Array.from(venteIds) },
+            annulee: true,
+          },
+          select: { id: true },
+        })
+      ).map((v) => v.id)
+    );
 
     return NextResponse.json({
       total,
       page,
       pages: Math.max(1, Math.ceil(total / PAR_PAGE)),
-      factures: factures.map((f) => ({
-        id: f.id,
-        numero: f.numero,
-        date_emission: f.date_emission.toISOString(),
-        client_nom: f.client_nom,
-        total: f.total,
-        garantie_fin: f.garantie_fin.toISOString(),
-        annulee: f.annulee,
-        canal: f.canal,
-        vendeur: f.createur.username,
-        nb_lignes: f._count.lignes,
-      })),
+      factures: factures.map((f) => {
+        const totalNet = f.lignes.reduce(
+          (s, l) => (l.vente_id !== null && ventesAnnulees.has(l.vente_id) ? s : s + l.prix),
+          0
+        );
+        return {
+          id: f.id,
+          numero: f.numero,
+          date_emission: f.date_emission.toISOString(),
+          client_nom: f.client_nom,
+          total: f.total,
+          total_net: totalNet,
+          garantie_fin: f.garantie_fin.toISOString(),
+          annulee: f.annulee,
+          canal: f.canal,
+          vendeur: f.createur.username,
+          nb_lignes: f.lignes.length,
+        };
+      }),
     });
   } catch (e) {
     console.error("GET /api/factures", e);

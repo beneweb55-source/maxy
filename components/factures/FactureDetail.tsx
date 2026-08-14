@@ -35,6 +35,7 @@ interface FactureDto {
   garantie_mois: number;
   garantie_fin: string;
   canal: string | null;
+  mode_paiement: string | null;
   annulee: boolean;
   vendeur: string;
   lignes: LigneFactureDto[];
@@ -365,6 +366,20 @@ export default function FactureDetail({
           </p>
           <p className="mt-2 text-xs text-brand-warm-grey">
             Présentez cette facture pour toute demande de prise en charge.
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-2 border-t border-brand-light-grey pt-4">
+          <p className="text-[11px] text-brand-black">
+            <strong>Mode de règlement :</strong>{" "}
+            {facture.mode_paiement === "virement"
+              ? "Virement bancaire (CCP / BaridiMob)"
+              : facture.mode_paiement === "cheque"
+                ? "Chèque"
+                : "Espèces"}
+          </p>
+          <p className="text-[10px] text-brand-warm-grey italic">
+            TVA non applicable, art. 293 B du CGI. (Régime de l&apos;IFU). Conditions de paiement : à réception de facture. Aucun escompte consenti pour paiement anticipé.
           </p>
         </div>
 

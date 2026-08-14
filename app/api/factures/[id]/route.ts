@@ -76,6 +76,7 @@ export async function GET(
       garantie_mois: f.garantie_mois,
       garantie_fin: f.garantie_fin.toISOString(),
       canal: f.canal,
+      mode_paiement: f.mode_paiement,
       annulee: f.annulee,
       vendeur: f.createur.username,
       lignes: f.lignes.map((l) => ({

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_ids, prix_total, canal, date_vente, confirmer, client_nom, client_tel } =
+  const { produit_ids, prix_total, canal, date_vente, confirmer, client_nom, client_tel, mode_paiement } =
     (corps ?? {}) as {
       produit_ids?: unknown;
       prix_total?: unknown;
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       confirmer?: unknown;
       client_nom?: unknown;
       client_tel?: unknown;
+      mode_paiement?: unknown;
     };
 
   if (!Array.isArray(produit_ids) || produit_ids.length < 2) {
@@ -212,6 +213,7 @@ export async function POST(request: NextRequest) {
         canal: canalTexte,
         clientNom: typeof client_nom === "string" ? client_nom : null,
         clientTel: typeof client_tel === "string" ? client_tel : null,
+        modePaiement: typeof mode_paiement === "string" ? mode_paiement : null,
         groupeVente,
       });
       return { cree, facture };

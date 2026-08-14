@@ -46,7 +46,7 @@ export function sensMouvement(type: TypeMouvementCaisse): SensMouvement {
 
 export function impactSolde(type: TypeMouvementCaisse, montant: number): number {
   if (!Number.isInteger(montant) || montant < 0) {
-    throw new Error("Le montant doit être un entier positif en DZD.");
+    throw new Error("Le montant doit être un entier positif ou nul en DZD.");
   }
   switch (sensMouvement(type)) {
     case "entree":

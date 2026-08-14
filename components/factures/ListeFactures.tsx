@@ -17,6 +17,7 @@ interface LigneFactureListe {
   date_emission: string;
   client_nom: string | null;
   total: number;
+  total_net: number;
   garantie_fin: string;
   annulee: boolean;
   canal: string | null;
@@ -208,7 +209,14 @@ export default function ListeFactures() {
                       </span>
                     </td>
                     <td className="px-3 py-2.5">{f.vendeur}</td>
-                    <td className="px-3 py-2.5 text-right font-bold">{formaterDA(f.total)}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      {f.total_net !== f.total && (
+                        <span className="block text-[10px] text-brand-grey line-through">
+                          {formaterDA(f.total)}
+                        </span>
+                      )}
+                      <span className="font-bold">{formaterDA(f.total_net)}</span>
+                    </td>
                   </tr>
                 );
               })}
