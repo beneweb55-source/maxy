@@ -26,6 +26,7 @@ export async function GET(
         garantie_mois: true,
         garantie_fin: true,
         canal: true,
+        mode_paiement: true,
         annulee: true,
         createur: { select: { username: true } },
         lignes: {
