@@ -322,9 +322,9 @@ export default function FactureDetail({
           </div>
 
           <div className="flex flex-col items-end flex-shrink-0">
-            <div className="flex items-center gap-1 mb-8 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 mb-8 whitespace-nowrap">
               <img
-                src="/brand/solutionmaxi-logo-fonce.svg"
+                src="/brand/solutionmaxi-icone.svg"
                 alt="Logo"
                 className="h-10 w-auto object-contain"
               />
