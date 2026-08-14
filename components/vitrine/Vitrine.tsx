@@ -152,7 +152,6 @@ export default function Vitrine({ role }: { role: Role }) {
     });
   }
 
-  /** Ajoute une unité supplémentaire du même modèle (quantité au panier). */
   function ajouterUnite(carte: CarteVitrine) {
     const dispo = unitesVendables(carte);
     setPanier((prev) => {
@@ -168,6 +167,37 @@ export default function Vitrine({ role }: { role: Role }) {
         reference: carte.reference,
         prix: libre.prix_vente_fixe!,
       });
+      return suivant;
+    });
+  }
+
+  function definirQuantitePanier(carte: CarteVitrine, qttVoulue: number) {
+    const dispo = unitesVendables(carte);
+    const qtt = Math.max(0, Math.min(qttVoulue, dispo.length));
+    
+    setPanier((prev) => {
+      const suivant = new Map(prev);
+      const dejaDuModele = dispo.filter((v) => suivant.has(v.id));
+      const nbActuel = dejaDuModele.length;
+
+      if (qtt > nbActuel) {
+        const libres = dispo.filter((v) => !suivant.has(v.id));
+        for (let i = 0; i < qtt - nbActuel; i++) {
+          const l = libres[i];
+          if (l) {
+            suivant.set(l.id, {
+              id: l.id,
+              code_interne: l.code_interne,
+              reference: carte.reference,
+              prix: l.prix_vente_fixe!,
+            });
+          }
+        }
+      } else if (qtt < nbActuel) {
+        for (let i = 0; i < nbActuel - qtt; i++) {
+          suivant.delete(dejaDuModele[dejaDuModele.length - 1 - i]!.id);
+        }
+      }
       return suivant;
     });
   }
@@ -426,24 +456,47 @@ export default function Vitrine({ role }: { role: Role }) {
                     </span>
                   </div>
                   {peutVendre && (
-                    <button
-                      type="button"
-                      disabled={envoi || !vendable}
-                      onClick={() => basculerPanier(p)}
-                      title={
-                        vendable
-                          ? nbAuPanier > 0
-                            ? "Retirer du panier"
-                            : "Vendre ce produit"
-                          : "Aucun exemplaire « En vente » (prix à fixer)"
-                      }
-                      className={`btn mt-2 w-full justify-center ${
-                        nbAuPanier > 0 ? "btn-secondaire" : "btn-primaire"
-                      } disabled:opacity-45`}
-                    >
-                      <IconeBillet taille={14} />
-                      {nbAuPanier > 0 ? "Retirer du panier" : "Vendre"}
-                    </button>
+                    <div className="mt-2 flex w-full gap-2">
+                      {nbAuPanier === 0 ? (
+                        <button
+                          type="button"
+                          disabled={envoi || !vendable}
+                          onClick={() => ajouterUnite(p)}
+                          title={vendable ? "Vendre ce produit" : "Aucun exemplaire « En vente »"}
+                          className="btn btn-primaire w-full justify-center disabled:opacity-45"
+                        >
+                          <IconeBillet taille={14} />
+                          Vendre
+                        </button>
+                      ) : (
+                        <div className="flex w-full items-center justify-between rounded-md border border-brand-orange/40 bg-brand-orange/5 p-1">
+                          <button
+                            type="button"
+                            disabled={envoi}
+                            onClick={() => definirQuantitePanier(p, nbAuPanier - 1)}
+                            className="flex h-8 w-8 items-center justify-center rounded text-brand-orange hover:bg-brand-orange/20"
+                          >
+                            -
+                          </button>
+                          <input 
+                            type="number" 
+                            min={0} 
+                            max={dispo.length}
+                            value={nbAuPanier}
+                            onChange={(e) => definirQuantitePanier(p, parseInt(e.target.value) || 0)}
+                            className="w-16 bg-transparent text-center text-sm font-bold text-brand-orange outline-none"
+                          />
+                          <button
+                            type="button"
+                            disabled={envoi || nbAuPanier >= dispo.length}
+                            onClick={() => definirQuantitePanier(p, nbAuPanier + 1)}
+                            className="flex h-8 w-8 items-center justify-center rounded text-brand-orange hover:bg-brand-orange/20 disabled:opacity-40"
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

@@ -112,6 +112,8 @@ export async function GET(
         nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
         nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
         art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
+        rib: parametres?.entreprise_rib ?? null,
+        cachet: parametres?.entreprise_cachet ?? null,
       },
     });
   } catch (e) {
