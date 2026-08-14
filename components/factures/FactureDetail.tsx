@@ -322,11 +322,11 @@ export default function FactureDetail({
           </div>
 
           <div className="flex flex-col items-end flex-shrink-0">
-            <div className="flex items-center gap-3 mb-8 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 mb-8 whitespace-nowrap">
               <img
                 src="/brand/solutionmaxi-logo-fonce.svg"
                 alt="Logo"
-                className="h-10 w-auto"
+                className="h-10 w-auto object-contain"
               />
               <div>
                 <h1 className="text-xl font-black uppercase text-brand-black leading-none">{facture.entreprise?.nom || "SOLUTION MAXI"}</h1>
@@ -383,9 +383,6 @@ export default function FactureDetail({
                   return acc;
                 }, [] as (LigneFactureDto & { qtt: number })[]);
 
-                // S'assurer qu'il y a un minimum de lignes vides pour remplir l'espace (ex: 5 lignes)
-                const lignesVides = Math.max(0, 5 - groupes.length);
-
                 return (
                   <>
                     {groupes.map((l, idx) => (
@@ -396,16 +393,6 @@ export default function FactureDetail({
                         <td className="border border-black px-2">{l.qtt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                         <td className="border border-black px-2 text-right">{l.prix.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                         <td className="border border-black px-2 text-right">{(l.prix * l.qtt).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                      </tr>
-                    ))}
-                    {Array.from({ length: lignesVides }).map((_, i) => (
-                      <tr key={`vide-${i}`} className="h-8">
-                        <td className="border border-black px-2"></td>
-                        <td className="border border-black px-2"></td>
-                        <td className="border border-black px-2"></td>
-                        <td className="border border-black px-2"></td>
-                        <td className="border border-black px-2"></td>
-                        <td className="border border-black px-2"></td>
                       </tr>
                     ))}
                   </>
