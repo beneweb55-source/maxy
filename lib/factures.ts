@@ -60,11 +60,17 @@ export async function creerFacture(
     canal?: string | null;
     clientNom?: string | null;
     clientTel?: string | null;
+    clientAdresse?: string | null;
+    clientRc?: string | null;
+    clientNif?: string | null;
+    clientAi?: string | null;
+    clientNis?: string | null;
+    typeFacture?: string | null;
     modePaiement?: string | null;
     groupeVente?: string | null;
   }
 ): Promise<{ id: number; numero: string }> {
-  const { lignes, userId, quand, canal, clientNom, clientTel, modePaiement, groupeVente } = options;
+  const { lignes, userId, quand, canal, clientNom, clientTel, clientAdresse, clientRc, clientNif, clientAi, clientNis, typeFacture, modePaiement, groupeVente } = options;
   const garantieFin = finGarantie(quand);
   const total = lignes.reduce((s, l) => s + l.prix, 0);
 
@@ -74,6 +80,12 @@ export async function creerFacture(
       date_emission: quand,
       client_nom: clientNom?.trim() || null,
       client_tel: clientTel?.trim() || null,
+      client_adresse: clientAdresse?.trim() || null,
+      client_rc: clientRc?.trim() || null,
+      client_nif: clientNif?.trim() || null,
+      client_ai: clientAi?.trim() || null,
+      client_nis: clientNis?.trim() || null,
+      type_facture: typeFacture?.trim() || "normale",
       total,
       garantie_mois: GARANTIE_MOIS,
       garantie_fin: garantieFin,

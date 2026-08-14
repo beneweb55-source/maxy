@@ -227,8 +227,14 @@ model Facture {
   id            Int      @id @default(autoincrement())
   numero        String   @unique
   date_emission DateTime @default(now())
+  type_facture  String   @default("normale") // "normale", "tva", "proforma"
   client_nom    String?
+  client_adresse String?
   client_tel    String?
+  client_rc     String?
+  client_nif    String?
+  client_ai     String?
+  client_nis    String?
   total         Int
   garantie_mois Int      @default(6)
   garantie_fin  DateTime

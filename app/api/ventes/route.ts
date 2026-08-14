@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_id, prix_vente_reel, canal, date_vente, confirmer, client_nom, client_tel, mode_paiement } =
+  const { produit_id, prix_vente_reel, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement } =
     (corps ?? {}) as {
       produit_id?: unknown;
       prix_vente_reel?: unknown;
@@ -109,6 +109,12 @@ export async function POST(request: NextRequest) {
       confirmer?: unknown;
       client_nom?: unknown;
       client_tel?: unknown;
+      client_adresse?: unknown;
+      client_rc?: unknown;
+      client_nif?: unknown;
+      client_ai?: unknown;
+      client_nis?: unknown;
+      type_facture?: unknown;
       mode_paiement?: unknown;
     };
   const produitId = Number(produit_id);
@@ -234,6 +240,12 @@ export async function POST(request: NextRequest) {
         canal: canalTexte,
         clientNom: typeof client_nom === "string" ? client_nom : null,
         clientTel: typeof client_tel === "string" ? client_tel : null,
+        clientAdresse: typeof client_adresse === "string" ? client_adresse : null,
+        clientRc: typeof client_rc === "string" ? client_rc : null,
+        clientNif: typeof client_nif === "string" ? client_nif : null,
+        clientAi: typeof client_ai === "string" ? client_ai : null,
+        clientNis: typeof client_nis === "string" ? client_nis : null,
+        typeFacture: typeof type_facture === "string" ? type_facture : null,
         modePaiement: typeof mode_paiement === "string" ? mode_paiement : null,
       });
       return { venteId: vente.id, facture };

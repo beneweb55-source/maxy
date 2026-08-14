@@ -34,6 +34,12 @@ interface FactureDto {
   total_net: number;
   garantie_mois: number;
   garantie_fin: string;
+  type_facture: string | null;
+  client_adresse: string | null;
+  client_rc: string | null;
+  client_nif: string | null;
+  client_ai: string | null;
+  client_nis: string | null;
   canal: string | null;
   mode_paiement: string | null;
   annulee: boolean;
@@ -71,6 +77,12 @@ export default function FactureDetail({
   const [editionClient, setEditionClient] = useState(false);
   const [nom, setNom] = useState("");
   const [tel, setTel] = useState("");
+  const [typeFacture, setTypeFacture] = useState("normale");
+  const [adresse, setAdresse] = useState("");
+  const [rc, setRc] = useState("");
+  const [nif, setNif] = useState("");
+  const [ai, setAi] = useState("");
+  const [nis, setNis] = useState("");
   const [envoi, setEnvoi] = useState(false);
 
   const peutModifier = role === "gerant" || role === "dev" || role === "social_media";
@@ -87,6 +99,12 @@ export default function FactureDetail({
       setFacture(f);
       setNom(f.client_nom ?? "");
       setTel(f.client_tel ?? "");
+      setTypeFacture(f.type_facture ?? "normale");
+      setAdresse(f.client_adresse ?? "");
+      setRc(f.client_rc ?? "");
+      setNif(f.client_nif ?? "");
+      setAi(f.client_ai ?? "");
+      setNis(f.client_nis ?? "");
       setErreur(null);
     } catch {
       setErreur("Impossible de joindre le serveur.");
@@ -103,7 +121,16 @@ export default function FactureDetail({
       const res = await fetch(`/api/factures/${factureId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client_nom: nom, client_tel: tel }),
+        body: JSON.stringify({ 
+          client_nom: nom, 
+          client_tel: tel,
+          type_facture: typeFacture,
+          client_adresse: adresse,
+          client_rc: rc,
+          client_nif: nif,
+          client_ai: ai,
+          client_nis: nis,
+        }),
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) {
@@ -188,6 +215,38 @@ export default function FactureDetail({
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mt-3">
+            <div>
+              <label className="libelle mb-1.5" htmlFor="client-type-facture">Type de facture</label>
+              <select id="client-type-facture" value={typeFacture} onChange={e => setTypeFacture(e.target.value)} className="champ">
+                <option value="normale">Normale</option>
+                <option value="tva">Avec TVA (19%)</option>
+                <option value="proforma">Proforma</option>
+              </select>
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="client-adresse">Adresse</label>
+              <input id="client-adresse" type="text" value={adresse} onChange={e => setAdresse(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="client-rc">RC</label>
+              <input id="client-rc" type="text" value={rc} onChange={e => setRc(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="client-nif">NIF</label>
+              <input id="client-nif" type="text" value={nif} onChange={e => setNif(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="client-nis">NIS</label>
+              <input id="client-nis" type="text" value={nis} onChange={e => setNis(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="client-ai">Art. d&apos;Imposition</label>
+              <input id="client-ai" type="text" value={ai} onChange={e => setAi(e.target.value)} className="champ" />
+            </div>
+          </div>
+
           <div className="text-right">
             <button
               type="button"
@@ -208,188 +267,188 @@ export default function FactureDetail({
       )}
 
       {/* Document imprimable */}
-      <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black">
-        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 border-b-2 border-brand-black pb-6">
-          <div className="flex-1">
-            <img
-              src="/brand/solutionmaxi-logo-fonce.svg"
-              alt="Logo"
-              className="h-12 w-auto mb-3"
-            />
-            <h2 className="text-lg font-bold uppercase tracking-wide text-brand-black">{facture.entreprise?.nom || "Solution Maxi"}</h2>
-            <p className="text-sm font-medium mt-1">Matériel informatique — vente et reprise</p>
-            <div className="mt-3 text-xs text-brand-warm-grey space-y-0.5">
-              <p><strong>Adresse :</strong> {facture.entreprise?.adresse || "Alger, Algérie"}</p>
-              <p><strong>Tél :</strong> {facture.entreprise?.tel || "0000 00 00 00"}</p>
+      <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight">
+        
+        {/* En-tête : Info entreprise à gauche, Logo à droite */}
+        <div className="flex justify-between items-start gap-4 mb-6">
+          <div className="bg-[#e5e7eb] p-4 rounded-xl rounded-tl-none w-[45%] text-xs border border-[#d1d5db] relative">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-brand-black mb-1.5">{facture.entreprise?.nom || "Solution Maxi"}</h2>
+            <p className="mb-2 font-medium">{facture.entreprise?.adresse || "Alger, Algérie"}</p>
+            <div className="grid grid-cols-[30px_1fr] gap-x-2 gap-y-0.5">
+              <span className="font-semibold">RC:</span> <span>{facture.entreprise?.rc || "RC XXXXXXXXX"}</span>
+              <span className="font-semibold">NIF:</span> <span>{facture.entreprise?.nif || "NIF XXXXXXXXX"}</span>
+              <span className="font-semibold">NIS:</span> <span>{facture.entreprise?.nis || "NIS XXXXXXXXX"}</span>
+              <span className="font-semibold">N Art:</span> <span>{facture.entreprise?.art || "ART XXXXXXXXX"}</span>
+              <span className="font-semibold">RIB:</span> <span>0000 00 00 00 00</span>
             </div>
+            {/* Petit coin stylisé en haut à gauche pour reproduire la forme de la capture (optionnel) */}
+            <div className="absolute top-0 left-0 -mt-[1px] -ml-[1px] w-4 h-4 bg-white rounded-br-xl"></div>
           </div>
-          <div className="text-right flex-1 border-l-2 border-brand-light-grey pl-6 sm:border-l-0 sm:pl-0">
-            <h1 className="text-3xl font-black tracking-widest text-brand-black uppercase mb-1">FACTURE</h1>
-            <p className="text-sm font-bold text-brand-orange mb-3">N° {facture.numero}</p>
-            <div className="text-xs text-brand-warm-grey space-y-0.5">
-              <p><strong>RC :</strong> {facture.entreprise?.rc || "RC XXXXXXXXX"}</p>
-              <p><strong>NIF :</strong> {facture.entreprise?.nif || "NIF XXXXXXXXX"}</p>
-              <p><strong>NIS :</strong> {facture.entreprise?.nis || "NIS XXXXXXXXX"}</p>
-              <p><strong>ART :</strong> {facture.entreprise?.art || "ART XXXXXXXXX"}</p>
+
+          <div className="flex flex-col items-end w-[45%]">
+            <div className="flex items-center gap-3 mb-8">
+              <img
+                src="/brand/solutionmaxi-logo-fonce.svg"
+                alt="Logo"
+                className="h-10 w-auto"
+              />
+              <div>
+                <h1 className="text-xl font-black uppercase text-brand-black leading-none">{facture.entreprise?.nom || "SOLUTION MAXI"}</h1>
+                <p className="text-[10px] font-bold italic mt-0.5 tracking-tighter">Plus de temps à perdre !</p>
+              </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-brand-light-grey inline-block text-left w-full sm:w-auto sm:text-right">
-              <p className="text-xs text-brand-black">
-                <strong>Émise le :</strong> {dateFr(facture.date_emission)}
-              </p>
-              {facture.canal && (
-                <p className="text-xs text-brand-black"><strong>Canal :</strong> {facture.canal}</p>
-              )}
+            
+            <div className="bg-[#e5e7eb] px-4 py-1.5 rounded-lg border border-[#d1d5db] text-xs font-bold w-fit">
+              Le : {dateFr(facture.date_emission)}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 border-b border-brand-light-grey py-4 sm:grid-cols-2">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-grey">
-              Client
-            </p>
-            <p className="mt-0.5 font-semibold text-brand-black">
-              {facture.client_nom || "Client comptoir"}
-            </p>
-            {facture.client_tel && (
-              <p className="text-sm text-brand-warm-grey">{facture.client_tel}</p>
-            )}
-          </div>
-          <div className="sm:text-right">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-grey">
-              Vendeur
-            </p>
-            <p className="mt-0.5 font-semibold text-brand-black">{facture.vendeur}</p>
-          </div>
+        {/* Titre facture */}
+        <div className="text-center mb-6">
+          <h2 className="text-lg font-bold">
+            {facture.type_facture === "proforma" ? "Facture proforma" : "Facture"} n°: {facture.numero}
+          </h2>
         </div>
 
-        <div className="overflow-x-auto py-4">
-          <table className="w-full text-sm">
+        {/* Informations du client */}
+        <div className="mb-6 w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
+          <p className="mb-2"><span className="font-bold">Doit</span> {facture.client_nom || "Particulier"}</p>
+          <p><span className="font-bold">Adresse:</span> {facture.client_adresse || ""}</p>
+          <p><span className="font-bold">RC:</span> {facture.client_rc || ""}</p>
+          <p><span className="font-bold">NIF:</span> {facture.client_nif || ""}</p>
+          <p><span className="font-bold">AI:</span> {facture.client_ai || ""}</p>
+          <p><span className="font-bold">NIS:</span> {facture.client_nis || ""}</p>
+        </div>
+
+        {/* Tableau des articles */}
+        <div className="mb-6">
+          <table className="w-full border-collapse border border-black text-xs text-center">
             <thead>
-              <tr className="border-b border-brand-light-grey">
-                <th className="px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-brand-grey">
-                  Code
-                </th>
-                <th className="px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-brand-grey">
-                  Désignation
-                </th>
-                <th className="px-2 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-brand-grey">
-                  Garantie jusqu&apos;au
-                </th>
-                <th className="px-2 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-brand-grey">
-                  Prix
-                </th>
+              <tr className="bg-[#d1d5db]">
+                <th className="border border-black py-1.5 px-2 font-bold w-12">Art N°</th>
+                <th className="border border-black py-1.5 px-2 font-bold text-left">Désignation</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-12">UM</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-16">QTT</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-24">Prix U HT</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-28">Montant HT</th>
               </tr>
             </thead>
             <tbody>
-              {facture.lignes.map((l) => (
-                <tr
-                  key={l.id}
-                  className={`border-b border-brand-light-grey/40 last:border-0 ${
-                    l.annulee ? "text-brand-grey" : ""
-                  }`}
-                >
-                  <td className="px-2 py-2 font-mono text-xs text-brand-warm-grey">
-                    {l.code_interne}
-                  </td>
-                  <td className="px-2 py-2">
-                    <span className={`font-medium ${l.annulee ? "line-through" : ""}`}>
-                      {l.designation}
-                    </span>
-                    {l.annulee && (
-                      <span className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-[10px] font-semibold text-danger">
-                        retourné
-                      </span>
-                    )}
-                    {l.categorie && (
-                      <span className="block text-xs text-brand-warm-grey">{l.categorie}</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-2 text-right text-xs">
-                    {l.annulee ? "—" : dateFr(l.garantie_fin)}
-                  </td>
-                  <td
-                    className={`px-2 py-2 text-right font-semibold ${
-                      l.annulee ? "line-through" : ""
-                    }`}
-                  >
-                    {formaterDA(l.prix)}
-                  </td>
-                </tr>
-              ))}
+              {(() => {
+                const groupes = facture.lignes.reduce((acc, ligne) => {
+                  if (ligne.annulee) return acc;
+                  const existant = acc.find(g => g.designation === ligne.designation && g.prix === ligne.prix);
+                  if (existant) {
+                    existant.qtt += 1;
+                  } else {
+                    acc.push({ ...ligne, qtt: 1 });
+                  }
+                  return acc;
+                }, [] as (LigneFactureDto & { qtt: number })[]);
+
+                // S'assurer qu'il y a un minimum de lignes vides pour remplir l'espace (ex: 5 lignes)
+                const lignesVides = Math.max(0, 5 - groupes.length);
+
+                return (
+                  <>
+                    {groupes.map((l, idx) => (
+                      <tr key={idx} className="h-8">
+                        <td className="border border-black px-2">{idx + 1}</td>
+                        <td className="border border-black px-2 text-left font-bold">{l.designation}</td>
+                        <td className="border border-black px-2">U</td>
+                        <td className="border border-black px-2">{l.qtt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                        <td className="border border-black px-2 text-right">{l.prix.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                        <td className="border border-black px-2 text-right">{(l.prix * l.qtt).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                    ))}
+                    {Array.from({ length: lignesVides }).map((_, i) => (
+                      <tr key={`vide-${i}`} className="h-8">
+                        <td className="border border-black px-2"></td>
+                        <td className="border border-black px-2"></td>
+                        <td className="border border-black px-2"></td>
+                        <td className="border border-black px-2"></td>
+                        <td className="border border-black px-2"></td>
+                        <td className="border border-black px-2"></td>
+                      </tr>
+                    ))}
+                  </>
+                );
+              })()}
             </tbody>
             <tfoot>
-              {facture.total_net !== facture.total && (
-                <tr>
-                  <td colSpan={3} className="px-2 pt-3 text-right text-xs text-brand-warm-grey">
-                    Total initial
-                  </td>
-                  <td className="px-2 pt-3 text-right text-xs text-brand-warm-grey line-through">
-                    {formaterDA(facture.total)}
-                  </td>
+              {facture.type_facture === "tva" ? (
+                <>
+                  <tr className="font-bold">
+                    <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
+                    <td className="border border-black px-2 py-1.5 text-right">TOTAL HT</td>
+                    <td className="border border-black px-2 py-1.5 text-right bg-white">{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                  <tr className="font-bold">
+                    <td colSpan={4} className="border-r border-transparent"></td>
+                    <td className="border border-black px-2 py-1.5 text-right">TVA 19%</td>
+                    <td className="border border-black px-2 py-1.5 text-right bg-white">{(facture.total_net * 0.19).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                  <tr className="font-bold">
+                    <td colSpan={4} className="border-r border-transparent"></td>
+                    <td className="border border-black px-2 py-1.5 text-right">Droit Timbre 1%</td>
+                    <td className="border border-black px-2 py-1.5 text-right bg-white">{Math.min(10000, facture.total_net * 1.19 * 0.01).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                  <tr className="font-bold">
+                    <td colSpan={4} className="border-r border-transparent"></td>
+                    <td className="border border-black px-2 py-1.5 text-right">TOTAL TTC</td>
+                    <td className="border border-black px-2 py-1.5 text-right bg-white">
+                      {(facture.total_net * 1.19 + Math.min(10000, facture.total_net * 1.19 * 0.01)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </>
+              ) : (
+                <tr className="font-bold">
+                  <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
+                  <td className="border border-black px-2 py-1.5 text-right">TOTAL HT</td>
+                  <td className="border border-black px-2 py-1.5 text-right bg-white">{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                 </tr>
               )}
-              <tr className="border-t-[3px] border-brand-black">
-                <td colSpan={3} className="px-2 py-4 text-right text-sm font-bold uppercase tracking-wide">
-                  {facture.total_net !== facture.total ? "TOTAL NET (après retour)" : "TOTAL À PAYER"}
-                </td>
-                <td className="px-2 py-4 text-right text-xl font-black text-brand-black">
-                  {formaterDA(facture.total_net)}
-                </td>
-              </tr>
             </tfoot>
           </table>
         </div>
 
-        <div className="mt-4 p-4 bg-brand-light-grey/20 rounded-md print:bg-transparent print:border print:border-brand-black">
-          <p className="text-sm font-semibold text-brand-black uppercase tracking-wide mb-1">
-            Arrêtée la présente facture à la somme de :
-          </p>
-          <p className="text-sm italic font-bold text-brand-black">
-            {montantEnLettres(facture.total_net)}.
-          </p>
+        {/* Cachet et signature */}
+        <div className="flex justify-end mr-12 mt-12 mb-16">
+          <div className="relative w-64 h-32">
+            <img 
+              src="/brand/cachet.png" 
+              alt="Cachet" 
+              className="absolute inset-0 w-full h-full object-contain opacity-90"
+              onError={(e) => {
+                // S'il n'y a pas d'image de cachet, on affiche un texte placeholder
+                e.currentTarget.style.display = 'none';
+                if (e.currentTarget.parentElement) {
+                  e.currentTarget.parentElement.innerHTML = '<div class="w-full h-full border border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm italic">Ajoutez cachet.png dans public/brand/</div>';
+                }
+              }}
+            />
+          </div>
         </div>
 
-        {/* Bon de garantie — imprimé avec la facture */}
-        <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/10 p-4 print:border print:border-brand-grey">
-          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-black">
-            <IconeBouclier taille={15} />
-            Bon de garantie — {facture.garantie_mois} mois
-          </p>
-          <p className="mt-1.5 text-xs text-brand-smooth">
-            Chaque produit figurant sur cette facture est garanti{" "}
-            <strong>{facture.garantie_mois} mois</strong> à compter du{" "}
-            {dateFr(facture.date_emission)}, soit jusqu&apos;au{" "}
-            <strong>{dateFr(facture.garantie_fin)}</strong>. La garantie couvre les pannes
-            matérielles constatées en usage normal. Elle ne couvre pas la casse, l&apos;oxydation,
-            les dommages dus à une mauvaise utilisation ni les interventions par un tiers.
-          </p>
-          <p className="mt-2 text-xs text-brand-warm-grey">
-            Présentez cette facture pour toute demande de prise en charge.
-          </p>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-2 border-t border-brand-light-grey pt-4">
-          <p className="text-[11px] text-brand-black">
-            <strong>Mode de règlement :</strong>{" "}
-            {facture.mode_paiement === "virement"
-              ? "Virement bancaire (CCP / BaridiMob)"
-              : facture.mode_paiement === "cheque"
-                ? "Chèque"
-                : "Espèces"}
-          </p>
-          <p className="text-[10px] text-brand-warm-grey italic">
-            TVA non applicable, art. 293 B du CGI. (Régime de l&apos;IFU). Conditions de paiement : à réception de facture. Aucun escompte consenti pour paiement anticipé.
-          </p>
-        </div>
-
-        <div className="mt-6 flex items-end justify-between gap-6">
-          <p className="text-[11px] text-brand-warm-grey">
-            Facture générée automatiquement le {dateFr(facture.date_emission)}.
-          </p>
-          <div className="text-center">
-            <div className="h-14 w-44 border-b border-brand-grey" />
-            <p className="mt-1 text-[11px] text-brand-warm-grey">Cachet et signature</p>
+        {/* Pied de page */}
+        <div className="bg-[#e5e7eb] py-3 px-6 text-xs text-brand-black mt-20">
+          <div className="text-center font-semibold mb-2 underline underline-offset-2">
+            Pour toutes informations, n&apos;hésitez pas de nous contacter
+          </div>
+          <div className="flex justify-between font-bold">
+            <div>
+              <p>Mobile :</p>
+              <p className="font-normal mt-0.5">{facture.entreprise?.tel || "0000 00 00 00"}</p>
+            </div>
+            <div>
+              <p>Courriel :</p>
+              <p className="font-normal mt-0.5">contact@{facture.entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
+            </div>
+            <div className="text-right">
+              <p>Site :</p>
+              <p className="font-normal mt-0.5">www.{facture.entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
+            </div>
           </div>
         </div>
       </div>

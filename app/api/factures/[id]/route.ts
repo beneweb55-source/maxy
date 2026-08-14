@@ -26,6 +26,12 @@ export async function GET(
         garantie_mois: true,
         garantie_fin: true,
         canal: true,
+        type_facture: true,
+        client_adresse: true,
+        client_rc: true,
+        client_nif: true,
+        client_ai: true,
+        client_nis: true,
         mode_paiement: true,
         annulee: true,
         createur: { select: { username: true } },
@@ -77,6 +83,12 @@ export async function GET(
       garantie_mois: f.garantie_mois,
       garantie_fin: f.garantie_fin.toISOString(),
       canal: f.canal,
+      type_facture: f.type_facture,
+      client_adresse: f.client_adresse,
+      client_rc: f.client_rc,
+      client_nif: f.client_nif,
+      client_ai: f.client_ai,
+      client_nis: f.client_nis,
       mode_paiement: f.mode_paiement,
       annulee: f.annulee,
       vendeur: f.createur.username,
@@ -129,7 +141,16 @@ export async function PATCH(
     client_tel?: unknown;
   };
 
-  const donnees: { client_nom?: string | null; client_tel?: string | null } = {};
+  const donnees: { 
+    client_nom?: string | null; 
+    client_tel?: string | null;
+    client_adresse?: string | null;
+    client_rc?: string | null;
+    client_nif?: string | null;
+    client_ai?: string | null;
+    client_nis?: string | null;
+    type_facture?: string;
+  } = {};
   if (client_nom !== undefined) {
     if (client_nom !== null && typeof client_nom !== "string") {
       return erreur(400, "Nom du client invalide.");
@@ -142,6 +163,31 @@ export async function PATCH(
     }
     donnees.client_tel = typeof client_tel === "string" && client_tel.trim() ? client_tel.trim() : null;
   }
+  
+  const additionalFields = [
+    "client_adresse",
+    "client_rc",
+    "client_nif",
+    "client_ai",
+    "client_nis",
+    "type_facture",
+  ] as const;
+
+  for (const field of additionalFields) {
+    const val = (corps ?? {})[field as keyof typeof corps];
+    if (val !== undefined) {
+      if (val !== null && typeof val !== "string") {
+        return erreur(400, `Le champ ${field} est invalide.`);
+      }
+      const valStr = val as string;
+      if (field === "type_facture") {
+        (donnees as any)[field] = typeof val === "string" && valStr.trim() ? valStr.trim() : "normale";
+      } else {
+        (donnees as any)[field] = typeof val === "string" && valStr.trim() ? valStr.trim() : null;
+      }
+    }
+  }
+
   if (Object.keys(donnees).length === 0) return erreur(400, "Aucune modification fournie.");
 
   try {

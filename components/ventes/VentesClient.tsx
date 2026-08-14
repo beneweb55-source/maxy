@@ -115,6 +115,12 @@ export default function VentesClient({ role }: { role: Role }) {
   const [dateVente, setDateVente] = useState(aujourdhuiIso());
   const [clientNom, setClientNom] = useState("");
   const [clientTel, setClientTel] = useState("");
+  const [typeFacture, setTypeFacture] = useState("normale");
+  const [clientAdresse, setClientAdresse] = useState("");
+  const [clientRc, setClientRc] = useState("");
+  const [clientNif, setClientNif] = useState("");
+  const [clientAi, setClientAi] = useState("");
+  const [clientNis, setClientNis] = useState("");
   const [modePaiement, setModePaiement] = useState("especes");
   const [avertissement, setAvertissement] = useState<string | null>(null);
 
@@ -132,6 +138,12 @@ export default function VentesClient({ role }: { role: Role }) {
   const [dateBundle, setDateBundle] = useState(aujourdhuiIso());
   const [clientNomBundle, setClientNomBundle] = useState("");
   const [clientTelBundle, setClientTelBundle] = useState("");
+  const [typeFactureBundle, setTypeFactureBundle] = useState("normale");
+  const [clientAdresseBundle, setClientAdresseBundle] = useState("");
+  const [clientRcBundle, setClientRcBundle] = useState("");
+  const [clientNifBundle, setClientNifBundle] = useState("");
+  const [clientAiBundle, setClientAiBundle] = useState("");
+  const [clientNisBundle, setClientNisBundle] = useState("");
   const [modePaiementBundle, setModePaiementBundle] = useState("especes");
   const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
 
@@ -205,6 +217,12 @@ export default function VentesClient({ role }: { role: Role }) {
     setDateVente(aujourdhuiIso());
     setClientNom("");
     setClientTel("");
+    setTypeFacture("normale");
+    setClientAdresse("");
+    setClientRc("");
+    setClientNif("");
+    setClientAi("");
+    setClientNis("");
     setModePaiement("especes");
     setAvertissement(null);
     setModalVente(groupe);
@@ -306,6 +324,12 @@ export default function VentesClient({ role }: { role: Role }) {
     setDateBundle(aujourdhuiIso());
     setClientNomBundle("");
     setClientTelBundle("");
+    setTypeFactureBundle("normale");
+    setClientAdresseBundle("");
+    setClientRcBundle("");
+    setClientNifBundle("");
+    setClientAiBundle("");
+    setClientNisBundle("");
     setModePaiementBundle("especes");
     setAvertissementBundle(null);
     setModalBundle(true);
@@ -333,6 +357,12 @@ export default function VentesClient({ role }: { role: Role }) {
           confirmer: confirmer || undefined,
           client_nom: clientNomBundle.trim() || undefined,
           client_tel: clientTelBundle.trim() || undefined,
+          client_adresse: clientAdresseBundle.trim() || undefined,
+          client_rc: clientRcBundle.trim() || undefined,
+          client_nif: clientNifBundle.trim() || undefined,
+          client_ai: clientAiBundle.trim() || undefined,
+          client_nis: clientNisBundle.trim() || undefined,
+          type_facture: typeFactureBundle,
           mode_paiement: modePaiementBundle,
         }),
       });
@@ -381,6 +411,12 @@ export default function VentesClient({ role }: { role: Role }) {
         confirmer: confirmer || undefined,
         client_nom: clientNom.trim() || undefined,
         client_tel: clientTel.trim() || undefined,
+        client_adresse: clientAdresse.trim() || undefined,
+        client_rc: clientRc.trim() || undefined,
+        client_nif: clientNif.trim() || undefined,
+        client_ai: clientAi.trim() || undefined,
+        client_nis: clientNis.trim() || undefined,
+        type_facture: typeFacture,
         mode_paiement: modePaiement,
       } : {
         produit_id: unitesConcernees[0]!.id,
@@ -390,6 +426,12 @@ export default function VentesClient({ role }: { role: Role }) {
         confirmer: confirmer || undefined,
         client_nom: clientNom.trim() || undefined,
         client_tel: clientTel.trim() || undefined,
+        client_adresse: clientAdresse.trim() || undefined,
+        client_rc: clientRc.trim() || undefined,
+        client_nif: clientNif.trim() || undefined,
+        client_ai: clientAi.trim() || undefined,
+        client_nis: clientNis.trim() || undefined,
+        type_facture: typeFacture,
         mode_paiement: modePaiement,
       };
 
@@ -1123,6 +1165,52 @@ export default function VentesClient({ role }: { role: Role }) {
                 />
               </div>
             </div>
+            
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="type-facture">
+                  Type de facture
+                </label>
+                <select
+                  id="type-facture"
+                  value={typeFacture}
+                  onChange={(e) => setTypeFacture(e.target.value)}
+                  className="champ"
+                >
+                  <option value="normale">Normale</option>
+                  <option value="tva">Avec TVA (19%)</option>
+                  <option value="proforma">Proforma</option>
+                </select>
+              </div>
+            </div>
+
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-semibold text-brand-orange hover:underline outline-none">
+                Informations légales de l&apos;entreprise (Optionnel)
+              </summary>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-brand-light-grey/20 rounded-lg">
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-adresse">Adresse</label>
+                  <input id="client-adresse" type="text" value={clientAdresse} onChange={e => setClientAdresse(e.target.value)} className="champ" />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-rc">RC</label>
+                  <input id="client-rc" type="text" value={clientRc} onChange={e => setClientRc(e.target.value)} className="champ" />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-nif">NIF</label>
+                  <input id="client-nif" type="text" value={clientNif} onChange={e => setClientNif(e.target.value)} className="champ" />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-nis">NIS</label>
+                  <input id="client-nis" type="text" value={clientNis} onChange={e => setClientNis(e.target.value)} className="champ" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="libelle mb-1.5" htmlFor="client-ai">Art. d&apos;Imposition</label>
+                  <input id="client-ai" type="text" value={clientAi} onChange={e => setClientAi(e.target.value)} className="champ" />
+                </div>
+              </div>
+            </details>
 
             {avertissement && (
               <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
@@ -1333,6 +1421,51 @@ export default function VentesClient({ role }: { role: Role }) {
               </div>
             </div>
 
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="type-facture-bundle">
+                  Type de facture
+                </label>
+                <select
+                  id="type-facture-bundle"
+                  value={typeFactureBundle}
+                  onChange={(e) => setTypeFactureBundle(e.target.value)}
+                  className="champ"
+                >
+                  <option value="normale">Normale</option>
+                  <option value="tva">Avec TVA (19%)</option>
+                  <option value="proforma">Proforma</option>
+                </select>
+              </div>
+            </div>
+
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-semibold text-brand-orange hover:underline outline-none">
+                Informations légales de l&apos;entreprise (Optionnel)
+              </summary>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-brand-light-grey/20 rounded-lg">
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-adresse-bundle">Adresse</label>
+                  <input id="client-adresse-bundle" type="text" value={clientAdresseBundle} onChange={e => setClientAdresseBundle(e.target.value)} className="champ" />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-rc-bundle">RC</label>
+                  <input id="client-rc-bundle" type="text" value={clientRcBundle} onChange={e => setClientRcBundle(e.target.value)} className="champ" />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-nif-bundle">NIF</label>
+                  <input id="client-nif-bundle" type="text" value={clientNifBundle} onChange={e => setClientNifBundle(e.target.value)} className="champ" />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5" htmlFor="client-nis-bundle">NIS</label>
+                  <input id="client-nis-bundle" type="text" value={clientNisBundle} onChange={e => setClientNisBundle(e.target.value)} className="champ" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="libelle mb-1.5" htmlFor="client-ai-bundle">Art. d&apos;Imposition</label>
+                  <input id="client-ai-bundle" type="text" value={clientAiBundle} onChange={e => setClientAiBundle(e.target.value)} className="champ" />
+                </div>
+              </div>
+            </details>
           {avertissementBundle && (
             <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
               <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
