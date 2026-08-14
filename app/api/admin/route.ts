@@ -63,6 +63,8 @@ export async function GET() {
         entreprise_nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
         entreprise_nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
         entreprise_art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
+        entreprise_rib: parametres?.entreprise_rib ?? null,
+        entreprise_cachet: parametres?.entreprise_cachet ?? null,
       },
       compteurs: {
         lots: nbLots,

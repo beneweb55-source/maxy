@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
+import { ajouterMouvement } from "@/lib/caisse-db";
+import { notifier } from "@/lib/notifs";
 
 export async function GET(
   _request: Request,
@@ -200,5 +202,98 @@ export async function PATCH(
   } catch (e) {
     console.error("PATCH /api/factures/[id]", e);
     return erreur(500, "Erreur lors de la modification de la facture.");
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
+  const user = acces.user;
+
+  const { id } = await params;
+  const factureId = Number(id);
+  if (!Number.isInteger(factureId)) return erreur(400, "Identifiant de facture invalide.");
+
+  try {
+    const facture = await prisma.facture.findUnique({
+      where: { id: factureId },
+      include: {
+        lignes: { select: { vente_id: true } }
+      }
+    });
+    if (!facture) return erreur(404, "Facture introuvable.");
+
+    const idsVentes = facture.lignes
+      .map((l) => l.vente_id)
+      .filter((v): v is number => v !== null);
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Pour chaque vente associée non encore annulée, on l'annule proprement (statut produit, caisse, etc)
+      if (idsVentes.length > 0) {
+        const ventes = await tx.vente.findMany({
+          where: { id: { in: idsVentes }, annulee: false },
+          include: { produit: { select: { id: true, reference: true, statut: true } } }
+        });
+
+        for (const vente of ventes) {
+          await tx.vente.update({
+            where: { id: vente.id },
+            data: {
+              annulee: true,
+              motif_annulation: "Suppression de la facture",
+              annulee_par: user.id,
+              annulee_at: new Date(),
+            },
+          });
+          
+          if (vente.produit.statut === "vendu") {
+            await tx.produit.update({
+              where: { id: vente.produit.id },
+              data: { statut: "en_vente", prix_vente_reel: null, date_vente: null },
+            });
+            await tx.historiqueStatut.create({
+              data: {
+                produit_id: vente.produit.id,
+                user_id: user.id,
+                statut_avant: "vendu",
+                statut_apres: "en_vente",
+                note: `Vente annulée suite à la suppression de facture`,
+              },
+            });
+          }
+
+          await ajouterMouvement(tx, {
+            montant: vente.prix_vente_reel,
+            type: "annulation_vente",
+            user_id: user.id,
+            produit_id: vente.produit.id,
+            description: `Annulation vente ${vente.produit.reference} — Suppression facture`,
+          });
+        }
+
+        const tous = await tx.user.findMany({ select: { id: true } });
+        if (ventes.length > 0) {
+          await notifier(
+            tx,
+            tous.map((u) => u.id),
+            `Facture ${facture.numero} supprimée et ${ventes.length} vente(s) annulée(s) par ${user.username}`,
+            "/factures"
+          );
+        }
+      }
+
+      // 2. Supprimer la facture (les lignes sont supprimées par CASCADE)
+      await tx.facture.delete({
+        where: { id: facture.id }
+      });
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("DELETE /api/factures/[id]", e);
+    return erreur(500, "Erreur lors de la suppression de la facture.");
   }
 }

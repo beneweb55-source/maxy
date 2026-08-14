@@ -42,6 +42,8 @@ interface ReponseAdmin {
     entreprise_nif: string;
     entreprise_nis: string;
     entreprise_art: string;
+    entreprise_rib: string | null;
+    entreprise_cachet: string | null;
   };
   compteurs: {
     lots: number;
@@ -90,6 +92,8 @@ export default function AdminClient() {
   const [entrepriseNif, setEntrepriseNif] = useState("");
   const [entrepriseNis, setEntrepriseNis] = useState("");
   const [entrepriseArt, setEntrepriseArt] = useState("");
+  const [entrepriseRib, setEntrepriseRib] = useState("");
+  const [entrepriseCachet, setEntrepriseCachet] = useState<string | null>(null);
 
   const [parametresCharges, setParametresCharges] = useState(false);
 
@@ -129,6 +133,8 @@ export default function AdminClient() {
           setEntrepriseNif(d.parametres.entreprise_nif);
           setEntrepriseNis(d.parametres.entreprise_nis);
           setEntrepriseArt(d.parametres.entreprise_art);
+          setEntrepriseRib(d.parametres.entreprise_rib ?? "");
+          setEntrepriseCachet(d.parametres.entreprise_cachet ?? null);
         }
         return true;
       });
@@ -161,6 +167,8 @@ export default function AdminClient() {
           entreprise_nif: entrepriseNif,
           entreprise_nis: entrepriseNis,
           entreprise_art: entrepriseArt,
+          entreprise_rib: entrepriseRib,
+          entreprise_cachet: entrepriseCachet,
         }),
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -529,6 +537,36 @@ export default function AdminClient() {
             <div>
               <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">ART</label>
               <input type="text" value={entrepriseArt} onChange={(e) => setEntrepriseArt(e.target.value)} className="champ" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">RIB</label>
+              <input type="text" value={entrepriseRib} onChange={(e) => setEntrepriseRib(e.target.value)} className="champ" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="text-xs font-semibold text-brand-warm-grey mb-1 block">Cachet (Signature pour Factures)</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 2 * 1024 * 1024) {
+                    afficher("L'image ne doit pas dépasser 2Mo.", "erreur");
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = (evt) => {
+                    setEntrepriseCachet(evt.target?.result as string);
+                  };
+                  reader.readAsDataURL(file);
+                }}
+                className="champ"
+              />
+              {entrepriseCachet && (
+                <div className="mt-2 bg-brand-light-grey/20 p-2 rounded inline-block">
+                  <img src={entrepriseCachet} alt="Cachet" className="h-16 w-auto object-contain" />
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-4 flex justify-end">

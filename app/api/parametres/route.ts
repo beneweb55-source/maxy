@@ -21,6 +21,8 @@ export async function GET() {
       entreprise_nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
       entreprise_nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
       entreprise_art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
+      entreprise_rib: parametres?.entreprise_rib ?? null,
+      entreprise_cachet: parametres?.entreprise_cachet ?? null,
     });
   } catch (e) {
     console.error("GET /api/parametres", e);
@@ -52,6 +54,8 @@ export async function PUT(request: NextRequest) {
     entreprise_nif,
     entreprise_nis,
     entreprise_art,
+    entreprise_rib,
+    entreprise_cachet,
   } = (corps ?? {}) as {
     pct_reinvest?: unknown;
     pct_reserve?: unknown;
@@ -66,6 +70,8 @@ export async function PUT(request: NextRequest) {
     entreprise_nif?: unknown;
     entreprise_nis?: unknown;
     entreprise_art?: unknown;
+    entreprise_rib?: unknown;
+    entreprise_cachet?: unknown;
   };
   if (
     typeof marge_minimum_pct !== "number" ||
@@ -111,6 +117,8 @@ export async function PUT(request: NextRequest) {
         entreprise_nif: typeof entreprise_nif === "string" ? entreprise_nif : "NIF XXXXXXXXX",
         entreprise_nis: typeof entreprise_nis === "string" ? entreprise_nis : "NIS XXXXXXXXX",
         entreprise_art: typeof entreprise_art === "string" ? entreprise_art : "ART XXXXXXXXX",
+        entreprise_rib: typeof entreprise_rib === "string" ? entreprise_rib : undefined,
+        entreprise_cachet: typeof entreprise_cachet === "string" ? entreprise_cachet : undefined,
       },
       update: {
         marge_minimum_pct,
@@ -126,6 +134,8 @@ export async function PUT(request: NextRequest) {
         entreprise_nif: typeof entreprise_nif === "string" ? entreprise_nif : undefined,
         entreprise_nis: typeof entreprise_nis === "string" ? entreprise_nis : undefined,
         entreprise_art: typeof entreprise_art === "string" ? entreprise_art : undefined,
+        entreprise_rib: typeof entreprise_rib === "string" ? entreprise_rib : undefined,
+        entreprise_cachet: typeof entreprise_cachet === "string" ? entreprise_cachet : undefined,
       },
     });
     return NextResponse.json({
@@ -143,9 +153,11 @@ export async function PUT(request: NextRequest) {
       entreprise_nif: parametres.entreprise_nif,
       entreprise_nis: parametres.entreprise_nis,
       entreprise_art: parametres.entreprise_art,
+      entreprise_rib: parametres.entreprise_rib,
+      entreprise_cachet: parametres.entreprise_cachet,
     });
   } catch (e) {
     console.error("PUT /api/parametres", e);
-    return erreur(500, "Erreur lors de l'enregistrement des paramètres.");
+    return erreur(500, "Erreur lors de la mise à jour des paramètres.");
   }
 }

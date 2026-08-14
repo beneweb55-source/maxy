@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
@@ -11,6 +12,7 @@ import {
   IconeImprimante,
   IconeBouclier,
   IconeCrayon,
+  IconeCorbeille,
 } from "@/components/icons";
 
 interface LigneFactureDto {
@@ -53,6 +55,8 @@ interface FactureDto {
     nif: string;
     nis: string;
     art: string;
+    rib: string | null;
+    cachet: string | null;
   };
 }
 
@@ -71,6 +75,7 @@ export default function FactureDetail({
   factureId: number;
   role: Role;
 }) {
+  const router = useRouter();
   const { afficher } = useToast();
   const [facture, setFacture] = useState<FactureDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -147,6 +152,26 @@ export default function FactureDetail({
     }
   }
 
+  async function supprimerFacture() {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette facture ? Cela annulera également les ventes et les mouvements de caisse associés.")) return;
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/factures/${factureId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+        afficher(corps?.error ?? "Erreur lors de la suppression.", "erreur");
+        setEnvoi(false);
+        return;
+      }
+      afficher("Facture supprimée et ventes annulées avec succès.");
+      router.push("/factures");
+      router.refresh();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+      setEnvoi(false);
+    }
+  }
+
   if (erreur && !facture) {
     return (
       <div className="alerte-erreur" role="alert">
@@ -182,6 +207,17 @@ export default function FactureDetail({
             <IconeImprimante taille={15} />
             Imprimer
           </button>
+          {peutModifier && (
+            <button
+              type="button"
+              disabled={envoi}
+              onClick={() => void supprimerFacture()}
+              className="btn bg-brand-red/10 text-brand-red hover:bg-brand-red/20"
+            >
+              <IconeCorbeille taille={15} />
+              Supprimer
+            </button>
+          )}
         </div>
       </div>
 
@@ -279,14 +315,14 @@ export default function FactureDetail({
               <span className="font-semibold">NIF:</span> <span>{facture.entreprise?.nif || "NIF XXXXXXXXX"}</span>
               <span className="font-semibold">NIS:</span> <span>{facture.entreprise?.nis || "NIS XXXXXXXXX"}</span>
               <span className="font-semibold">N Art:</span> <span>{facture.entreprise?.art || "ART XXXXXXXXX"}</span>
-              <span className="font-semibold">RIB:</span> <span>0000 00 00 00 00</span>
+              <span className="font-semibold">RIB:</span> <span>{facture.entreprise?.rib || "0000 00 00 00 00"}</span>
             </div>
             {/* Petit coin stylisé en haut à gauche pour reproduire la forme de la capture (optionnel) */}
             <div className="absolute top-0 left-0 -mt-[1px] -ml-[1px] w-4 h-4 bg-white rounded-br-xl"></div>
           </div>
 
-          <div className="flex flex-col items-end w-[45%]">
-            <div className="flex items-center gap-3 mb-8">
+          <div className="flex flex-col items-end flex-shrink-0">
+            <div className="flex items-center gap-3 mb-8 whitespace-nowrap">
               <img
                 src="/brand/solutionmaxi-logo-fonce.svg"
                 alt="Logo"
@@ -416,18 +452,13 @@ export default function FactureDetail({
         {/* Cachet et signature */}
         <div className="flex justify-end mr-12 mt-12 mb-16">
           <div className="relative w-64 h-32">
-            <img 
-              src="/brand/cachet.png" 
-              alt="Cachet" 
-              className="absolute inset-0 w-full h-full object-contain opacity-90"
-              onError={(e) => {
-                // S'il n'y a pas d'image de cachet, on affiche un texte placeholder
-                e.currentTarget.style.display = 'none';
-                if (e.currentTarget.parentElement) {
-                  e.currentTarget.parentElement.innerHTML = '<div class="w-full h-full border border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm italic">Ajoutez cachet.png dans public/brand/</div>';
-                }
-              }}
-            />
+            {(facture.entreprise?.cachet || "/brand/cachet.png") && (
+              <img 
+                src={facture.entreprise?.cachet || "/brand/cachet.png"} 
+                alt="Cachet" 
+                className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
+              />
+            )}
           </div>
         </div>
 
