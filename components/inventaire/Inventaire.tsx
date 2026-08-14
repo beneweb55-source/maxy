@@ -1523,7 +1523,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
           {modalEdition && peutStatut && (
             <div className="space-y-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-2">
                 <span className="libelle">Statut</span>
                 <BadgeStatut statut={modalEdition.unites[0]!.statut} aJeter={modalEdition.unites[0]!.a_jeter} />
               </div>
@@ -1563,7 +1563,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? "Précisez la raison"}
                     className="champ"
                   />
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-col sm:flex-row justify-end gap-2 mt-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -1587,15 +1587,15 @@ export default function Inventaire({ role }: { role: Role }) {
               )}
 
               {modalEdition.unites[0]!.statut === "hs" && (
-                <label className="flex items-center gap-2 pt-1 text-sm">
+                <label className="flex items-start gap-2 pt-1 text-sm">
                   <input
                     type="checkbox"
                     checked={modalEdition.unites[0]!.a_jeter}
                     disabled={envoi}
                     onChange={(e) => void basculerAJeter(e.target.checked)}
-                    className="accent-danger"
+                    className="mt-0.5 accent-danger shrink-0"
                   />
-                  À jeter — non récupérable pour pièces
+                  <span>À jeter — non récupérable pour pièces</span>
                 </label>
               )}
             </div>
@@ -1626,11 +1626,11 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          <div className="pt-1 text-right">
+          <div className="pt-2 text-right">
             <button
               type="submit"
               disabled={envoi || !formulaireValide}
-              className="btn btn-primaire"
+              className="btn btn-primaire w-full sm:w-auto"
             >
               Enregistrer les modifications
             </button>
