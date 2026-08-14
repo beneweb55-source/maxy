@@ -926,7 +926,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               className="champ"
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1">
               <label className="libelle mb-1.5" htmlFor="edit-cat-lot">
                 Catégorie *
@@ -940,35 +940,37 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 className="champ"
               />
             </div>
-            <div className="w-40">
-              <label className="libelle mb-1.5" htmlFor="edit-prix-lot">
-                Prix achat (DA) *
-              </label>
-              <input
-                id="edit-prix-lot"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                value={editPrix}
-                onChange={(e) => setEditPrix(e.target.value.replace(/[^\d]/g, ""))}
-                className="champ text-right"
-              />
-            </div>
-            <div className="w-24">
-              <label className="libelle mb-1.5" htmlFor="edit-quantite-lot">
-                Quantité *
-              </label>
-              <input
-                id="edit-quantite-lot"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={editQuantite}
-                onChange={(e) => setEditQuantite(e.target.value.replace(/[^\d]/g, ""))}
-                className="champ text-center"
-              />
+            <div className="flex gap-3 sm:w-64">
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="edit-prix-lot">
+                  Prix achat (DA) *
+                </label>
+                <input
+                  id="edit-prix-lot"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
+                  value={editPrix}
+                  onChange={(e) => setEditPrix(e.target.value.replace(/[^\d]/g, ""))}
+                  className="champ text-right"
+                />
+              </div>
+              <div className="w-24 shrink-0">
+                <label className="libelle mb-1.5" htmlFor="edit-quantite-lot">
+                  Quantité *
+                </label>
+                <input
+                  id="edit-quantite-lot"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  value={editQuantite}
+                  onChange={(e) => setEditQuantite(e.target.value.replace(/[^\d]/g, ""))}
+                  className="champ text-center"
+                />
+              </div>
             </div>
           </div>
           <div>
