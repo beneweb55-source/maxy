@@ -261,104 +261,191 @@ export default function ListeLots({ role }: { role: Role }) {
       )}
 
       {lots !== null && lotsFiltres !== null && lotsFiltres.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-brand-light-grey/25">
-              <tr>
-                <th className="entete-table">{t("listeLots.colLot")}</th>
-                <th className="entete-table">{t("listeLots.colDate")}</th>
-                <th className="entete-table">{t("listeLots.colFournisseur")}</th>
-                <th className="entete-table text-right">{t("listeLots.colProduits")}</th>
-                <th className="entete-table text-right">{t("listeLots.colAttendus")}</th>
-                <th className="entete-table">{t("listeLots.colProgression")}</th>
-                <th className="entete-table">{t("listeLots.colStatut")}</th>
-                <th className="entete-table text-right">{t("listeLots.colCout")}</th>
-                <th className="entete-table" />
-              </tr>
-            </thead>
-            <tbody className="">
-              {lotsFiltres.map((lot) => {
-                const pct =
-                  lot.nb_produits > 0 ? Math.round((lot.nb_testes / lot.nb_produits) * 100) : 0;
-                const infos = INFOS_STATUT_LOT[lot.statut_lot];
-                return (
-                  <tr
-                    key={lot.id}
-                    onClick={() => router.push(`/lots/${lot.id}`)}
-                    className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
-                  >
-                    <td className="px-3 py-2.5 font-bold">n°{lot.id}</td>
-                    <td className="px-3 py-2.5">
-                      {new Date(lot.date_entree).toLocaleDateString(langue === "en" ? "en-GB" : "fr-FR")}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="font-medium">{lot.fournisseur}</div>
+        <div className="space-y-4">
+          {/* Vue Mobile: Cartes */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {lotsFiltres.map((lot) => {
+              const pct = lot.nb_produits > 0 ? Math.round((lot.nb_testes / lot.nb_produits) * 100) : 0;
+              const infos = INFOS_STATUT_LOT[lot.statut_lot];
+              return (
+                <div
+                  key={lot.id}
+                  onClick={() => router.push(`/lots/${lot.id}`)}
+                  className="flex flex-col gap-3 rounded-xl border border-brand-light-grey bg-brand-white p-4 shadow-sm cursor-pointer active:scale-[0.99] transition"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg text-brand-black">n°{lot.id}</span>
+                      <span className="text-sm font-medium">{lot.fournisseur}</span>
                       {lot.description && (
                         <BadgeDescription description={lot.description} className="mt-1" />
                       )}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-bold">{lot.nb_produits}</td>
-                    <td className="px-3 py-2.5 text-right text-brand-warm-grey">{lot.quantite_attendue ?? 0}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-brand-light-grey">
-                          <div
-                            className="h-full rounded-full bg-brand-orange"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-brand-warm-grey">
-                          {t("listeLots.progressionTestes", { testes: lot.nb_testes, total: lot.nb_produits })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${infos.badge}`}
-                      >
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${infos.badge}`}>
                         {t(`statutsLot.${lot.statut_lot}`)}
                       </span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      {lot.mode_cout === "auto"
-                        ? formaterDA(lot.cout_calcule)
-                        : lot.cout_global_declare !== null
-                          ? formaterDA(lot.cout_global_declare)
-                          : "—"}
-                    </td>
-                    <td className="px-2 py-2.5">
-                      <span className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            ouvrirEdition(lot);
-                          }}
-                          title={t("commun.modifier")}
-                          aria-label={t("listeLots.modifierLot", { id: lot.id })}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                        >
-                          <IconeCrayon taille={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setModalSuppr(lot);
-                          }}
-                          title={t("commun.supprimer")}
-                          aria-label={t("listeLots.supprimerLot", { id: lot.id })}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                        >
-                          <IconeCorbeille taille={14} />
-                        </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm border-t border-brand-light-grey/50 pt-2 mt-1">
+                    <div>
+                      <span className="block text-[10px] uppercase font-semibold text-brand-warm-grey">{t("listeLots.colProduits")}</span>
+                      <span className="font-bold text-brand-black">{lot.nb_produits} <span className="text-xs text-brand-grey font-normal">/ attendus {lot.quantite_attendue ?? 0}</span></span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[10px] uppercase font-semibold text-brand-warm-grey">{t("listeLots.colCout")}</span>
+                      <span className="font-semibold text-brand-black">
+                        {lot.mode_cout === "auto"
+                          ? formaterDA(lot.cout_calcule)
+                          : lot.cout_global_declare !== null
+                            ? formaterDA(lot.cout_global_declare)
+                            : "—"}
                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+
+                  <div className="mt-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-brand-light-grey">
+                        <div className="h-full rounded-full bg-brand-orange" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs text-brand-warm-grey">
+                        {lot.nb_testes}/{lot.nb_produits} testés
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center border-t border-brand-light-grey/50 pt-2 text-xs">
+                    <span className="text-brand-warm-grey">{new Date(lot.date_entree).toLocaleDateString(langue === "en" ? "en-GB" : "fr-FR")}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          ouvrirEdition(lot);
+                        }}
+                        className="rounded-md p-1.5 text-brand-warm-grey bg-brand-light-grey/20 transition hover:bg-brand-light-grey hover:text-brand-black"
+                      >
+                        <IconeCrayon taille={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalSuppr(lot);
+                        }}
+                        className="rounded-md p-1.5 text-danger bg-danger/10 transition hover:bg-danger/20"
+                      >
+                        <IconeCorbeille taille={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Vue Bureau: Tableau */}
+          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="bg-brand-light-grey/25">
+                <tr>
+                  <th className="entete-table">{t("listeLots.colLot")}</th>
+                  <th className="entete-table">{t("listeLots.colDate")}</th>
+                  <th className="entete-table">{t("listeLots.colFournisseur")}</th>
+                  <th className="entete-table text-right">{t("listeLots.colProduits")}</th>
+                  <th className="entete-table text-right">{t("listeLots.colAttendus")}</th>
+                  <th className="entete-table">{t("listeLots.colProgression")}</th>
+                  <th className="entete-table">{t("listeLots.colStatut")}</th>
+                  <th className="entete-table text-right">{t("listeLots.colCout")}</th>
+                  <th className="entete-table" />
+                </tr>
+              </thead>
+              <tbody className="">
+                {lotsFiltres.map((lot) => {
+                  const pct =
+                    lot.nb_produits > 0 ? Math.round((lot.nb_testes / lot.nb_produits) * 100) : 0;
+                  const infos = INFOS_STATUT_LOT[lot.statut_lot];
+                  return (
+                    <tr
+                      key={lot.id}
+                      onClick={() => router.push(`/lots/${lot.id}`)}
+                      className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
+                    >
+                      <td className="px-3 py-2.5 font-bold">n°{lot.id}</td>
+                      <td className="px-3 py-2.5">
+                        {new Date(lot.date_entree).toLocaleDateString(langue === "en" ? "en-GB" : "fr-FR")}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="font-medium">{lot.fournisseur}</div>
+                        {lot.description && (
+                          <BadgeDescription description={lot.description} className="mt-1" />
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-bold">{lot.nb_produits}</td>
+                      <td className="px-3 py-2.5 text-right text-brand-warm-grey">{lot.quantite_attendue ?? 0}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-brand-light-grey">
+                            <div
+                              className="h-full rounded-full bg-brand-orange"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-brand-warm-grey">
+                            {t("listeLots.progressionTestes", { testes: lot.nb_testes, total: lot.nb_produits })}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span
+                          className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${infos.badge}`}
+                        >
+                          {t(`statutsLot.${lot.statut_lot}`)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        {lot.mode_cout === "auto"
+                          ? formaterDA(lot.cout_calcule)
+                          : lot.cout_global_declare !== null
+                            ? formaterDA(lot.cout_global_declare)
+                            : "—"}
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <span className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              ouvrirEdition(lot);
+                            }}
+                            title={t("commun.modifier")}
+                            aria-label={t("listeLots.modifierLot", { id: lot.id })}
+                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                          >
+                            <IconeCrayon taille={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalSuppr(lot);
+                            }}
+                            title={t("commun.supprimer")}
+                            aria-label={t("listeLots.supprimerLot", { id: lot.id })}
+                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                          >
+                            <IconeCorbeille taille={14} />
+                          </button>
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

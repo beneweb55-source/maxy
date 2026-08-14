@@ -9,7 +9,9 @@ import {
   IconeChevronGauche,
   IconeChevronDroite,
   IconeRecherche,
+  IconeCorbeille,
 } from "@/components/icons";
+import { useToast } from "@/components/toast";
 
 interface LigneFactureListe {
   id: number;
@@ -36,14 +38,19 @@ function dateFr(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR");
 }
 
-export default function ListeFactures() {
+export default function ListeFactures({ role }: { role?: string }) {
   const router = useRouter();
+  const { afficher } = useToast();
   const [donnees, setDonnees] = useState<ReponseFactures | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [recherche, setRecherche] = useState("");
   const [mois, setMois] = useState("");
   const [page, setPage] = useState(1);
+  const [selection, setSelection] = useState<Set<number>>(new Set());
+  const [envoi, setEnvoi] = useState(false);
+
+  const peutSupprimer = role === "gerant" || role === "dev" || role === "social_media";
 
   const charger = useCallback(async () => {
     setErreur(null);
@@ -69,6 +76,67 @@ export default function ListeFactures() {
 
   const factures = donnees?.factures ?? [];
   const maintenant = Date.now();
+
+  function toggleSelection(id: number) {
+    setSelection((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id);
+      else s.add(id);
+      return s;
+    });
+  }
+
+  function toggleTout() {
+    if (selection.size === factures.length) {
+      setSelection(new Set());
+    } else {
+      setSelection(new Set(factures.map((f) => f.id)));
+    }
+  }
+
+  async function supprimerFacture(id: number, ev?: React.MouseEvent) {
+    if (ev) ev.stopPropagation();
+    if (!window.confirm("Supprimer cette facture ? Ses ventes associées seront annulées.")) return;
+    setEnvoi(true);
+    try {
+      const res = await fetch(`/api/factures/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      afficher("Facture supprimée.");
+      setSelection((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
+      await charger();
+    } catch {
+      afficher("Erreur lors de la suppression.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  async function supprimerSelection() {
+    if (selection.size === 0) return;
+    if (!window.confirm(`Supprimer ces ${selection.size} factures ? Les ventes seront annulées.`)) return;
+    setEnvoi(true);
+    let erreurs = 0;
+    for (const id of selection) {
+      try {
+        const res = await fetch(`/api/factures/${id}`, { method: "DELETE" });
+        if (!res.ok) erreurs++;
+      } catch {
+        erreurs++;
+      }
+    }
+    if (erreurs > 0) {
+      afficher(`${erreurs} facture(s) n'ont pas pu être supprimées.`, "erreur");
+    } else {
+      afficher(`${selection.size} facture(s) supprimée(s).`);
+    }
+    setSelection(new Set());
+    await charger();
+    setEnvoi(false);
+  }
 
   return (
     <div className="space-y-6 animate-entree">
@@ -155,73 +223,222 @@ export default function ListeFactures() {
       )}
 
       {factures.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-brand-light-grey/25">
-              <tr>
-                <th className="entete-table">N°</th>
-                <th className="entete-table">Date</th>
-                <th className="entete-table">Client</th>
-                <th className="entete-table text-right">Articles</th>
-                <th className="entete-table">Garantie</th>
-                <th className="entete-table">Vendeur</th>
-                <th className="entete-table text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {factures.map((f) => {
-                const garantieActive = new Date(f.garantie_fin).getTime() > maintenant;
-                return (
-                  <tr
-                    key={f.id}
-                    onClick={() => router.push(`/factures/${f.id}`)}
-                    className={`ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer ${
-                      f.annulee ? "text-brand-grey" : ""
-                    }`}
-                  >
-                    <td className="px-3 py-2.5 font-mono text-xs font-bold text-brand-orange">
-                      {f.numero}
-                      {f.annulee && (
-                        <span className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-[10px] font-semibold text-danger">
-                          annulée
-                        </span>
+        <div className="space-y-4">
+          {/* Vue Mobile: Cartes */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {peutSupprimer && (
+              <div className="flex items-center justify-between rounded-lg bg-brand-light-grey/25 px-4 py-3 border border-brand-light-grey">
+                <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selection.size > 0 && selection.size === factures.length}
+                    ref={(input) => {
+                      if (input) {
+                        input.indeterminate = selection.size > 0 && selection.size < factures.length;
+                      }
+                    }}
+                    onChange={toggleTout}
+                    className="h-4 w-4 rounded border-brand-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                  Tout sélectionner
+                </label>
+              </div>
+            )}
+            
+            {factures.map((f) => {
+              const garantieActive = new Date(f.garantie_fin).getTime() > maintenant;
+              const estSelectionnee = selection.has(f.id);
+
+              return (
+                <div
+                  key={f.id}
+                  onClick={() => router.push(`/factures/${f.id}`)}
+                  className={`relative flex flex-col gap-2 rounded-xl border bg-brand-white p-4 shadow-sm transition active:scale-[0.99] cursor-pointer ${
+                    estSelectionnee ? "border-brand-orange ring-1 ring-brand-orange" : "border-brand-light-grey"
+                  } ${f.annulee ? "opacity-75" : ""}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      {peutSupprimer && (
+                        <input
+                          type="checkbox"
+                          checked={estSelectionnee}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => toggleSelection(f.id)}
+                          className="h-5 w-5 rounded border-brand-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
+                        />
                       )}
-                    </td>
-                    <td className="px-3 py-2.5">{dateFr(f.date_emission)}</td>
-                    <td className="px-3 py-2.5">
-                      {f.client_nom || <span className="text-brand-grey">Client comptoir</span>}
-                      {f.canal && (
-                        <span className="block text-xs text-brand-grey">{f.canal}</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-bold text-brand-orange">{f.numero}</span>
+                          {f.annulee && (
+                            <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger uppercase">
+                              Annulée
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-brand-warm-grey">{dateFr(f.date_emission)}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {f.total_net !== f.total && (
+                        <div className="text-[10px] text-brand-grey line-through">{formaterDA(f.total)}</div>
                       )}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-semibold">{f.nb_lignes}</td>
-                    <td className="px-3 py-2.5">
+                      <div className="font-bold text-brand-black">{formaterDA(f.total_net)}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-1 flex flex-col gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-brand-warm-grey">Client :</span>
+                      <span className="font-semibold text-brand-black text-right">
+                        {f.client_nom || <span className="text-brand-grey font-normal">Comptoir</span>}
+                        {f.canal && <span className="ml-1 text-xs text-brand-grey">({f.canal})</span>}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-brand-warm-grey">Garantie :</span>
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                           garantieActive
                             ? "bg-emerald-50 text-emerald-800"
                             : "bg-brand-light-grey/60 text-brand-warm-grey"
                         }`}
-                        title={`Garantie jusqu'au ${dateFr(f.garantie_fin)}`}
                       >
-                        <IconeBouclier taille={11} />
+                        <IconeBouclier taille={10} />
                         {garantieActive ? `→ ${dateFr(f.garantie_fin)}` : "expirée"}
                       </span>
-                    </td>
-                    <td className="px-3 py-2.5">{f.vendeur}</td>
-                    <td className="px-3 py-2.5 text-right">
-                      {f.total_net !== f.total && (
-                        <span className="block text-[10px] text-brand-grey line-through">
-                          {formaterDA(f.total)}
-                        </span>
+                    </div>
+                  </div>
+
+                  {peutSupprimer && (
+                    <div className="mt-2 border-t border-brand-light-grey/50 pt-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={(e) => supprimerFacture(f.id, e)}
+                        disabled={envoi}
+                        className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20 disabled:opacity-50"
+                      >
+                        <IconeCorbeille taille={14} />
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Vue Bureau: Tableau */}
+          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-brand-light-grey/25">
+                <tr>
+                  {peutSupprimer && (
+                    <th className="entete-table w-10 px-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selection.size > 0 && selection.size === factures.length}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = selection.size > 0 && selection.size < factures.length;
+                          }
+                        }}
+                        onChange={toggleTout}
+                        className="h-4 w-4 rounded border-brand-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
+                      />
+                    </th>
+                  )}
+                  <th className="entete-table">N°</th>
+                  <th className="entete-table">Date</th>
+                  <th className="entete-table">Client</th>
+                  <th className="entete-table text-right">Articles</th>
+                  <th className="entete-table">Garantie</th>
+                  <th className="entete-table">Vendeur</th>
+                  <th className="entete-table text-right">Total</th>
+                  {peutSupprimer && <th className="entete-table text-right">Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {factures.map((f) => {
+                  const garantieActive = new Date(f.garantie_fin).getTime() > maintenant;
+                  const estSelectionnee = selection.has(f.id);
+
+                  return (
+                    <tr
+                      key={f.id}
+                      onClick={() => router.push(`/factures/${f.id}`)}
+                      className={`ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer ${
+                        f.annulee ? "text-brand-grey" : ""
+                      } ${estSelectionnee ? "bg-brand-orange/5" : ""}`}
+                    >
+                      {peutSupprimer && (
+                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={estSelectionnee}
+                            onChange={() => toggleSelection(f.id)}
+                            className="h-4 w-4 rounded border-brand-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
+                          />
+                        </td>
                       )}
-                      <span className="font-bold">{formaterDA(f.total_net)}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td className="px-3 py-2.5 font-mono text-xs font-bold text-brand-orange">
+                        {f.numero}
+                        {f.annulee && (
+                          <span className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-[10px] font-semibold text-danger">
+                            annulée
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">{dateFr(f.date_emission)}</td>
+                      <td className="px-3 py-2.5">
+                        {f.client_nom || <span className="text-brand-grey">Client comptoir</span>}
+                        {f.canal && (
+                          <span className="block text-xs text-brand-grey">{f.canal}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-semibold">{f.nb_lignes}</td>
+                      <td className="px-3 py-2.5">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            garantieActive
+                              ? "bg-emerald-50 text-emerald-800"
+                              : "bg-brand-light-grey/60 text-brand-warm-grey"
+                          }`}
+                          title={`Garantie jusqu'au ${dateFr(f.garantie_fin)}`}
+                        >
+                          <IconeBouclier taille={11} />
+                          {garantieActive ? `→ ${dateFr(f.garantie_fin)}` : "expirée"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">{f.vendeur}</td>
+                      <td className="px-3 py-2.5 text-right">
+                        {f.total_net !== f.total && (
+                          <span className="block text-[10px] text-brand-grey line-through">
+                            {formaterDA(f.total)}
+                          </span>
+                        )}
+                        <span className="font-bold">{formaterDA(f.total_net)}</span>
+                      </td>
+                      {peutSupprimer && (
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            type="button"
+                            onClick={(e) => supprimerFacture(f.id, e)}
+                            disabled={envoi}
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                            title="Supprimer la facture"
+                          >
+                            <IconeCorbeille taille={15} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -248,6 +465,34 @@ export default function ListeFactures() {
             Suivant
             <IconeChevronDroite taille={15} />
           </button>
+        </div>
+      )}
+
+      {/* Barre d'action globale pour la sélection multiple */}
+      {selection.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-brand-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-6 animate-entree z-50">
+          <span className="font-semibold text-sm">
+            {selection.size} facture(s) sélectionnée(s)
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelection(new Set())}
+              disabled={envoi}
+              className="text-xs font-semibold text-brand-grey hover:text-white transition px-2"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={() => void supprimerSelection()}
+              disabled={envoi}
+              className="btn bg-danger text-white hover:bg-danger/90 border-0 shadow-lg shadow-danger/20 disabled:opacity-50"
+            >
+              <IconeCorbeille taille={15} />
+              Supprimer
+            </button>
+          </div>
         </div>
       )}
     </div>

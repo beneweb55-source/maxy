@@ -887,115 +887,202 @@ export default function VentesClient({ role }: { role: Role }) {
           )}
 
           {historique && historique.ventes.length > 0 && (
-            <div className="overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-brand-light-grey/25">
-                  <tr>
-                    <th className="entete-table">Produit</th>
-                    <th className="entete-table text-right">Prix</th>
-                    {!estSocial && <th className="entete-table text-right">Marge</th>}
-                    <th className="entete-table">Canal</th>
-                    <th className="entete-table">Vendeur</th>
-                    <th className="entete-table text-right">Date</th>
-                    {estGerant && <th className="entete-table" />}
-                  </tr>
-                </thead>
-                <tbody className="">
-                  {historique.ventes.map((v) => (
-                    <tr key={v.id} className={`ligne-table border-b border-brand-light-grey/30 last:border-0 ${v.annulee ? "text-brand-grey" : ""}`}>
-                      <td className="px-3 py-2">
-                        <span className="flex items-center gap-2">
-                          {v.image_url ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setApercuPhotos({
-                                  photos: [v.image_url!],
-                                  index: 0,
-                                  titre: v.code_interne,
-                                })
-                              }
-                              title="Voir la photo en grand"
-                              aria-label={`Photo de ${v.reference}`}
-                              className="shrink-0 cursor-zoom-in"
+            <div className="space-y-4">
+              {/* Vue Mobile: Cartes */}
+              <div className="flex flex-col gap-3 md:hidden">
+                {historique.ventes.map((v) => (
+                  <div key={v.id} className={`flex flex-col gap-3 rounded-xl border bg-brand-white p-4 shadow-sm ${v.annulee ? "opacity-75 border-brand-light-grey/50" : "border-brand-light-grey"}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        {v.image_url ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setApercuPhotos({
+                                photos: [v.image_url!],
+                                index: 0,
+                                titre: v.code_interne,
+                              })
+                            }
+                            className="shrink-0 cursor-zoom-in"
+                          >
+                            <img src={v.image_url} alt="" loading="lazy" className="h-12 w-12 rounded-lg border border-brand-light-grey object-cover" />
+                          </button>
+                        ) : (
+                          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-brand-light-grey text-brand-grey">
+                            <IconeImage taille={16} />
+                          </span>
+                        )}
+                        <div className="flex flex-col">
+                          <Link href={`/produits/${v.produit_id}`} className={`font-semibold hover:underline ${v.annulee ? "line-through" : ""}`}>
+                            <span className="font-mono text-xs text-brand-grey mr-1">{v.code_interne}</span>
+                            {v.reference}
+                          </Link>
+                          <div className="flex items-center gap-2 mt-1">
+                            {v.groupe_vente && (
+                              <span className="inline-flex items-center gap-0.5 rounded bg-brand-glow/40 px-1.5 py-0.5 text-xs font-semibold text-brand-smooth">
+                                <IconePaquet taille={11} /> Bundle
+                              </span>
+                            )}
+                            {v.annulee && (
+                              <span className="rounded bg-danger/10 px-1.5 py-0.5 text-xs font-semibold text-danger">annulée</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-brand-black">{formaterDA(v.prix_vente_reel)}</div>
+                        <div className="text-xs text-brand-warm-grey">{new Date(v.date_vente).toLocaleDateString("fr-FR")}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-1 flex flex-col gap-1 text-sm border-t border-brand-light-grey/50 pt-2">
+                      {!estSocial && (
+                        <div className="flex justify-between">
+                          <span className="text-brand-warm-grey">Marge :</span>
+                          <span className={`font-semibold ${v.annulee ? "text-brand-grey" : v.marge >= 0 ? "text-succes" : "text-danger"}`}>
+                            {formaterDA(v.marge)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-brand-warm-grey">Canal :</span>
+                        <span className="font-semibold text-brand-black">{v.canal ?? "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-brand-warm-grey">Vendeur :</span>
+                        <span className="font-semibold text-brand-black">{v.vendeur}</span>
+                      </div>
+                    </div>
+                    {estGerant && !v.annulee && (
+                      <div className="mt-1 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMotif("");
+                            setModalAnnulation(v);
+                          }}
+                          className="btn btn-secondaire text-xs text-danger hover:bg-danger/10"
+                        >
+                          Annuler la vente
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Vue Bureau: Tableau */}
+              <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead className="bg-brand-light-grey/25">
+                    <tr>
+                      <th className="entete-table">Produit</th>
+                      <th className="entete-table text-right">Prix</th>
+                      {!estSocial && <th className="entete-table text-right">Marge</th>}
+                      <th className="entete-table">Canal</th>
+                      <th className="entete-table">Vendeur</th>
+                      <th className="entete-table text-right">Date</th>
+                      {estGerant && <th className="entete-table" />}
+                    </tr>
+                  </thead>
+                  <tbody className="">
+                    {historique.ventes.map((v) => (
+                      <tr key={v.id} className={`ligne-table border-b border-brand-light-grey/30 last:border-0 ${v.annulee ? "text-brand-grey" : ""}`}>
+                        <td className="px-3 py-2">
+                          <span className="flex items-center gap-2">
+                            {v.image_url ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setApercuPhotos({
+                                    photos: [v.image_url!],
+                                    index: 0,
+                                    titre: v.code_interne,
+                                  })
+                                }
+                                title="Voir la photo en grand"
+                                aria-label={`Photo de ${v.reference}`}
+                                className="shrink-0 cursor-zoom-in"
+                              >
+                                <img
+                                  src={v.image_url}
+                                  alt=""
+                                  loading="lazy"
+                                  className="h-9 w-9 rounded-md border border-brand-light-grey object-cover"
+                                />
+                              </button>
+                            ) : (
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-dashed border-brand-light-grey text-brand-grey">
+                                <IconeImage taille={14} />
+                              </span>
+                            )}
+                            <span className="min-w-0">
+                          <Link
+                            href={`/produits/${v.produit_id}`}
+                            className={`hover:underline ${v.annulee ? "line-through" : ""}`}
+                          >
+                            <span className="font-mono text-xs text-brand-grey">
+                              {v.code_interne}
+                            </span>{" "}
+                            {v.reference}
+                          </Link>
+                          {v.groupe_vente && (
+                            <span
+                              className="ml-1 inline-flex items-center gap-0.5 rounded bg-brand-glow/40 px-1 py-0.5 text-xs font-semibold text-brand-smooth"
+                              title={`Vente groupée ${v.groupe_vente.slice(0, 8)}`}
                             >
-                              <img
-                                src={v.image_url}
-                                alt=""
-                                loading="lazy"
-                                className="h-9 w-9 rounded-md border border-brand-light-grey object-cover"
-                              />
-                            </button>
-                          ) : (
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-dashed border-brand-light-grey text-brand-grey">
-                              <IconeImage taille={14} />
+                              <IconePaquet taille={11} />
+                              Bundle
                             </span>
                           )}
-                          <span className="min-w-0">
-                        <Link
-                          href={`/produits/${v.produit_id}`}
-                          className={`hover:underline ${v.annulee ? "line-through" : ""}`}
-                        >
-                          <span className="font-mono text-xs text-brand-grey">
-                            {v.code_interne}
-                          </span>{" "}
-                          {v.reference}
-                        </Link>
-                        {v.groupe_vente && (
-                          <span
-                            className="ml-1 inline-flex items-center gap-0.5 rounded bg-brand-glow/40 px-1 py-0.5 text-xs font-semibold text-brand-smooth"
-                            title={`Vente groupée ${v.groupe_vente.slice(0, 8)}`}
-                          >
-                            <IconePaquet taille={11} />
-                            Bundle
-                          </span>
-                        )}
-                        {v.annulee && (
-                          <span
-                            className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-xs font-semibold text-danger"
-                            title={v.motif_annulation ?? undefined}
-                          >
-                            annulée
-                          </span>
-                        )}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right">{formaterDA(v.prix_vente_reel)}</td>
-                      {!estSocial && (
-                        <td
-                          className={`px-3 py-2 text-right font-semibold ${
-                            v.annulee ? "" : v.marge >= 0 ? "text-succes" : "text-danger"
-                          }`}
-                        >
-                          {formaterDA(v.marge)}
-                        </td>
-                      )}
-                      <td className="px-3 py-2">{v.canal ?? "—"}</td>
-                      <td className="px-3 py-2">{v.vendeur}</td>
-                      <td className="px-3 py-2 text-right">
-                        {new Date(v.date_vente).toLocaleDateString("fr-FR")}
-                      </td>
-                      {estGerant && (
-                        <td className="px-3 py-2 text-right">
-                          {!v.annulee && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMotif("");
-                                setModalAnnulation(v);
-                              }}
-                              className="text-xs font-semibold text-danger hover:underline"
+                          {v.annulee && (
+                            <span
+                              className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-xs font-semibold text-danger"
+                              title={v.motif_annulation ?? undefined}
                             >
-                              Annuler
-                            </button>
+                              annulée
+                            </span>
                           )}
+                            </span>
+                          </span>
                         </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <td className="px-3 py-2 text-right">{formaterDA(v.prix_vente_reel)}</td>
+                        {!estSocial && (
+                          <td
+                            className={`px-3 py-2 text-right font-semibold ${
+                              v.annulee ? "" : v.marge >= 0 ? "text-succes" : "text-danger"
+                            }`}
+                          >
+                            {formaterDA(v.marge)}
+                          </td>
+                        )}
+                        <td className="px-3 py-2">{v.canal ?? "—"}</td>
+                        <td className="px-3 py-2">{v.vendeur}</td>
+                        <td className="px-3 py-2 text-right">
+                          {new Date(v.date_vente).toLocaleDateString("fr-FR")}
+                        </td>
+                        {estGerant && (
+                          <td className="px-3 py-2 text-right">
+                            {!v.annulee && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMotif("");
+                                  setModalAnnulation(v);
+                                }}
+                                className="text-xs font-semibold text-danger hover:underline"
+                              >
+                                Annuler
+                              </button>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

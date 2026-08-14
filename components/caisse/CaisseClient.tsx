@@ -410,68 +410,111 @@ export default function CaisseClient({ role }: { role: Role }) {
         <h2 className="libelle text-brand-smooth">
           Historique ({donnees.total} mouvement{donnees.total > 1 ? "s" : ""})
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-brand-light-grey/25">
-              <tr>
-                <th className="entete-table">Date</th>
-                <th className="entete-table">Type</th>
-                <th className="entete-table">Description</th>
-                <th className="entete-table">Par</th>
-                <th className="entete-table text-right">Montant</th>
-                <th className="entete-table text-right">Solde après</th>
-              </tr>
-            </thead>
-            <tbody className="">
-              {donnees.mouvements.length === 0 && (
-                <tr className="ligne-table border-b border-brand-light-grey/30 last:border-0">
-                  <td colSpan={6} className="px-3 py-6 text-center text-brand-warm-grey">
-                    Aucun mouvement pour le moment. La caisse démarre à 0 DA — enregistrez un
-                    apport associé pour l'alimenter.
-                  </td>
+        <div className="space-y-4">
+          {/* Vue Mobile: Cartes */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {donnees.mouvements.length === 0 && (
+              <div className="carte border-dashed text-center p-6 text-brand-warm-grey text-sm">
+                Aucun mouvement pour le moment. La caisse démarre à 0 DA.
+              </div>
+            )}
+            {donnees.mouvements.map((m) => {
+              const sens = sensMouvement(m.type);
+              return (
+                <div key={m.id} className="flex flex-col gap-2 rounded-xl border border-brand-light-grey bg-brand-white p-4 shadow-sm text-sm">
+                  <div className="flex items-start justify-between border-b border-brand-light-grey/50 pb-2 mb-1">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-brand-black">{LIBELLES_TYPE[m.type]}</span>
+                      <span className="text-xs text-brand-warm-grey">
+                        {new Date(m.date).toLocaleString("fr-FR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className={`font-bold ${sens === "entree" ? "text-succes" : sens === "sortie" ? "text-danger" : "text-brand-warm-grey"}`}>
+                        {sens === "entree" ? "+" : sens === "sortie" ? "−" : "="} {formaterDA(m.montant)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-brand-warm-grey">{m.description ?? "—"}</div>
+                  <div className="flex justify-between items-center mt-1 pt-2 border-t border-brand-light-grey/50">
+                    <span className="text-xs text-brand-grey">Par: <span className="font-semibold text-brand-black">{m.par}</span></span>
+                    <span className="text-xs text-brand-grey">Solde: <span className="font-bold text-brand-black">{formaterDA(m.solde_apres)}</span></span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Vue Bureau: Tableau */}
+          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-brand-light-grey/25">
+                <tr>
+                  <th className="entete-table">Date</th>
+                  <th className="entete-table">Type</th>
+                  <th className="entete-table">Description</th>
+                  <th className="entete-table">Par</th>
+                  <th className="entete-table text-right">Montant</th>
+                  <th className="entete-table text-right">Solde après</th>
                 </tr>
-              )}
-              {donnees.mouvements.map((m) => {
-                const sens = sensMouvement(m.type);
-                return (
-                  <tr key={m.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
-                    <td className="px-3 py-2 text-xs">
-                      {new Date(m.date).toLocaleString("fr-FR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="px-3 py-2">{LIBELLES_TYPE[m.type]}</td>
-                    <td
-                      className="max-w-72 truncate px-3 py-2 text-brand-warm-grey"
-                      title={m.description ?? ""}
-                    >
-                      {m.description ?? "—"}
-                    </td>
-                    <td className="px-3 py-2">{m.par}</td>
-                    <td
-                      className={`px-3 py-2 text-right font-semibold ${
-                        sens === "entree"
-                          ? "text-succes"
-                          : sens === "sortie"
-                            ? "text-danger"
-                            : "text-brand-warm-grey"
-                      }`}
-                    >
-                      {sens === "entree" ? "+" : sens === "sortie" ? "−" : "="}{" "}
-                      {formaterDA(m.montant)}
-                    </td>
-                    <td className="px-3 py-2 text-right font-bold">
-                      {formaterDA(m.solde_apres)}
+              </thead>
+              <tbody className="">
+                {donnees.mouvements.length === 0 && (
+                  <tr className="ligne-table border-b border-brand-light-grey/30 last:border-0">
+                    <td colSpan={6} className="px-3 py-6 text-center text-brand-warm-grey">
+                      Aucun mouvement pour le moment. La caisse démarre à 0 DA — enregistrez un
+                      apport associé pour l'alimenter.
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                )}
+                {donnees.mouvements.map((m) => {
+                  const sens = sensMouvement(m.type);
+                  return (
+                    <tr key={m.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
+                      <td className="px-3 py-2 text-xs">
+                        {new Date(m.date).toLocaleString("fr-FR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="px-3 py-2">{LIBELLES_TYPE[m.type]}</td>
+                      <td
+                        className="max-w-72 truncate px-3 py-2 text-brand-warm-grey"
+                        title={m.description ?? ""}
+                      >
+                        {m.description ?? "—"}
+                      </td>
+                      <td className="px-3 py-2">{m.par}</td>
+                      <td
+                        className={`px-3 py-2 text-right font-semibold ${
+                          sens === "entree"
+                            ? "text-succes"
+                            : sens === "sortie"
+                              ? "text-danger"
+                              : "text-brand-warm-grey"
+                        }`}
+                      >
+                        {sens === "entree" ? "+" : sens === "sortie" ? "−" : "="}{" "}
+                        {formaterDA(m.montant)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-bold">
+                        {formaterDA(m.solde_apres)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
         {donnees.pages > 1 && (
           <div className="flex items-center justify-center gap-2 text-sm">

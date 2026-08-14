@@ -620,57 +620,112 @@ export default function AdminClient() {
           <IconeUtilisateurs taille={13} />
           Comptes utilisateurs
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white">
-          <table className="w-full min-w-[560px] text-sm">
-            <thead className="bg-brand-light-grey/25">
-              <tr>
-                <th className="entete-table">Identifiant</th>
-                <th className="entete-table">Rôle</th>
-                <th className="entete-table text-right">Tentatives échouées</th>
-                <th className="entete-table">Statut</th>
-                <th className="entete-table" />
-              </tr>
-            </thead>
-            <tbody className="">
-              {donnees.utilisateurs.map((u) => (
-                <tr key={u.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
-                  <td className="px-3 py-2.5 font-semibold">{u.username}</td>
-                  <td className="px-3 py-2.5">
-                    <span className="rounded-full bg-brand-light-grey/50 px-2.5 py-0.5 text-xs font-semibold text-brand-smooth">
+        <div className="space-y-4">
+          {/* Vue Mobile: Cartes */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {donnees.utilisateurs.map((u) => (
+              <div key={u.id} className="flex flex-col gap-2 rounded-xl border border-brand-light-grey bg-brand-white p-4 shadow-sm text-sm">
+                <div className="flex justify-between items-start border-b border-brand-light-grey/50 pb-2 mb-1">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-brand-black">{u.username}</span>
+                    <span className="mt-1 inline-block w-fit rounded-full bg-brand-light-grey/50 px-2 py-0.5 text-xs font-semibold text-brand-smooth">
                       {LIBELLES_ROLE[u.role]}
                     </span>
-                  </td>
-                  <td className="px-3 py-2.5 text-right">{u.login_attempts}</td>
-                  <td className="px-3 py-2.5">
+                  </div>
+                  <div className="text-right">
                     {u.verrouille ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-semibold text-danger">
-                        Verrouillé
-                        {u.locked_until &&
-                          ` jusqu'à ${new Date(u.locked_until).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-danger">
+                          Verrouillé
+                        </span>
+                        {u.locked_until && (
+                          <span className="text-[10px] text-danger mt-0.5">
+                            jusqu'à {new Date(u.locked_until).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        )}
+                      </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-succes/10 px-2.5 py-0.5 text-xs font-semibold text-succes">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-succes/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-succes">
                         Actif
                       </span>
                     )}
-                  </td>
-                  <td className="px-3 py-2.5 text-right">
-                    {(u.verrouille || u.login_attempts > 0) && (
-                      <button
-                        type="button"
-                        disabled={envoi}
-                        onClick={() => void deverrouiller(u.id)}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-crystal hover:underline"
-                      >
-                        <IconeCadenasOuvert taille={13} />
-                        Déverrouiller
-                      </button>
-                    )}
-                  </td>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center mt-1 pt-2 border-t border-brand-light-grey/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-brand-warm-grey">Tentatives échouées :</span>
+                    <span className="font-semibold text-brand-black">{u.login_attempts}</span>
+                  </div>
+                  {(u.verrouille || u.login_attempts > 0) && (
+                    <button
+                      type="button"
+                      disabled={envoi}
+                      onClick={() => void deverrouiller(u.id)}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-crystal hover:underline"
+                    >
+                      <IconeCadenasOuvert taille={13} />
+                      Déverrouiller
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Vue Bureau: Tableau */}
+          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="bg-brand-light-grey/25">
+                <tr>
+                  <th className="entete-table">Identifiant</th>
+                  <th className="entete-table">Rôle</th>
+                  <th className="entete-table text-right">Tentatives échouées</th>
+                  <th className="entete-table">Statut</th>
+                  <th className="entete-table" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="">
+                {donnees.utilisateurs.map((u) => (
+                  <tr key={u.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
+                    <td className="px-3 py-2.5 font-semibold">{u.username}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="rounded-full bg-brand-light-grey/50 px-2.5 py-0.5 text-xs font-semibold text-brand-smooth">
+                        {LIBELLES_ROLE[u.role]}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right">{u.login_attempts}</td>
+                    <td className="px-3 py-2.5">
+                      {u.verrouille ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-semibold text-danger">
+                          Verrouillé
+                          {u.locked_until &&
+                            ` jusqu'à ${new Date(u.locked_until).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-succes/10 px-2.5 py-0.5 text-xs font-semibold text-succes">
+                          Actif
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      {(u.verrouille || u.login_attempts > 0) && (
+                        <button
+                          type="button"
+                          disabled={envoi}
+                          onClick={() => void deverrouiller(u.id)}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-crystal hover:underline"
+                        >
+                          <IconeCadenasOuvert taille={13} />
+                          Déverrouiller
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

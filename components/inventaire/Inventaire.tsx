@@ -1134,145 +1134,253 @@ export default function Inventaire({ role }: { role: Role }) {
       )}
 
       {donnees && donnees.produits.length > 0 && !vueGroupee && (
-        <div className="overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className="bg-brand-light-grey/25">
-              <tr>
-                {COLONNES_TRI.filter(c => c.cle !== 'prix_achat' || !estSocial).map((c) => (
-                  <th
-                    key={c.cle}
-                    onClick={() => trierPar(c.cle)}
-                    className="entete-table cursor-pointer select-none transition hover:text-brand-black"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {c.libelle}
-                      {triActuel === c.cle &&
-                        (ordreActuel === "asc" ? (
-                          <IconeTriHaut taille={12} />
-                        ) : (
-                          <IconeTriBas taille={12} />
-                        ))}
-                    </span>
-                  </th>
-                ))}
-                <th className="entete-table text-right">Jours</th>
-                <th className="entete-table" />
-              </tr>
-            </thead>
-            <tbody className="">
-              {donnees.produits.map((p) => (
-                <tr
-                  key={p.id}
-                  onClick={() => router.push(`/produits/${p.id}`)}
-                  className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
-                >
-                  <td className="px-3 py-2 font-mono text-xs text-brand-warm-grey">
-                    {p.code_interne}
-                  </td>
-                  <td className="max-w-64 truncate px-3 py-2 font-medium" title={p.reference}>
-                    {p.reference}
-                  </td>
-                  <td className="px-3 py-2">{p.categorie}</td>
-                  <td className="px-3 py-2">
-                    <span className="inline-flex items-center gap-1.5">
-                      <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                      {p.en_vitrine && (
-                        <IconeVitrine
-                          taille={14}
-                          className="text-brand-orange"
-                          aria-label="En vitrine"
-                        />
-                      )}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-xs">
-                    {new Date(p.date_entree).toLocaleDateString("fr-FR")}
-                    <span className="block text-brand-grey">
-                      {p.lot_id
-                        ? `lot n°${p.lot_id}${p.fournisseur ? ` · ${p.fournisseur}` : ""}`
-                        : "Sans arrivage"}
-                    </span>
-                  </td>
-                  {!estSocial && (
-                    <td className="px-3 py-2 text-right">
-                      <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">Achat</span>
-                      <span className="font-semibold text-brand-black">{formaterDA(p.prix_achat)}</span>
-                      {p.cout_reparations > 0 && (
-                        <span className="block text-xs text-brand-grey">
-                          +{formaterDA(p.cout_reparations)} rép.
-                        </span>
-                      )}
-                    </td>
-                  )}
-                  <td className="px-3 py-2 text-right">
+        <div className="space-y-4">
+          {/* Vue Mobile: Cartes */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {donnees.produits.map((p) => (
+              <div
+                key={p.id}
+                onClick={() => router.push(`/produits/${p.id}`)}
+                className="relative flex flex-col gap-3 rounded-xl border border-brand-light-grey bg-brand-white p-4 shadow-sm transition active:scale-[0.99] cursor-pointer"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col">
+                    <span className="font-mono text-xs text-brand-warm-grey">{p.code_interne}</span>
+                    <span className="font-medium text-brand-black">{p.reference}</span>
+                  </div>
+                  <div className="text-right flex flex-col items-end">
                     <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">Vente</span>
                     {prixVenteAffiche(p) !== null ? (
                       <span className="font-bold text-brand-orange">
                         {formaterDA(prixVenteAffiche(p)!)}
-                        {p.statut === "vendu" && (
-                          <span className="block text-[10px] font-semibold uppercase text-brand-grey">
-                            vendu
-                          </span>
-                        )}
                       </span>
                     ) : (
                       <span className="text-brand-grey">—</span>
                     )}
-                  </td>
-                  <td className="px-3 py-2 text-right">{p.jours_stock}</td>
-                  <td className="px-2 py-2">
-                    {peutModifier && (
-                      <span className="flex items-center justify-end gap-1">
-                        {p.statut !== "vendu" && (
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light-grey/20 px-2 py-1">
+                    <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-brand-light-grey/20 px-2 py-1 text-brand-warm-grey">
+                    {p.categorie}
+                  </span>
+                  {p.en_vitrine && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/10 px-2 py-1 text-brand-orange">
+                      <IconeVitrine taille={12} /> Vitrine
+                    </span>
+                  )}
+                  {p.statut === "vendu" && (
+                    <span className="inline-flex items-center rounded-full bg-brand-grey/20 px-2 py-1 font-semibold text-brand-grey uppercase text-[10px]">
+                      vendu
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex justify-between border-t border-brand-light-grey/50 pt-2 text-xs">
+                  <div className="flex flex-col">
+                    <span className="text-brand-warm-grey">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</span>
+                    <span className="text-[10px] text-brand-grey">
+                      {p.lot_id ? `Lot ${p.lot_id}` : "Sans arrivage"}
+                    </span>
+                  </div>
+                  {!estSocial && (
+                    <div className="text-right">
+                      <span className="block text-[10px] font-semibold uppercase text-brand-grey">Achat</span>
+                      <span className="font-semibold">{formaterDA(p.prix_achat)}</span>
+                      {p.cout_reparations > 0 && <span className="block text-[10px] text-brand-grey">+{formaterDA(p.cout_reparations)}</span>}
+                    </div>
+                  )}
+                </div>
+
+                {peutModifier && (
+                  <div className="flex justify-end gap-2 border-t border-brand-light-grey/50 pt-2 mt-1">
+                    {p.statut !== "vendu" && (
+                      <button
+                        type="button"
+                        disabled={envoi}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
+                        }}
+                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
+                          p.en_vitrine
+                            ? "bg-brand-orange/10 text-brand-orange"
+                            : "bg-brand-light-grey/20 text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
+                        }`}
+                      >
+                        <IconeVitrine taille={14} /> {p.en_vitrine ? "Retirer" : "Vitrine"}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        ouvrirEdition([p], p.code_interne);
+                      }}
+                      className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black"
+                    >
+                      <IconeCrayon taille={14} /> Éditer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        ouvrirSuppressionUnites([p]);
+                      }}
+                      className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
+                    >
+                      <IconeCorbeille taille={14} /> Supprimer
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Vue Bureau: Tableau */}
+          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+            <table className="w-full min-w-[820px] text-sm">
+              <thead className="bg-brand-light-grey/25">
+                <tr>
+                  {COLONNES_TRI.filter(c => c.cle !== 'prix_achat' || !estSocial).map((c) => (
+                    <th
+                      key={c.cle}
+                      onClick={() => trierPar(c.cle)}
+                      className="entete-table cursor-pointer select-none transition hover:text-brand-black"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {c.libelle}
+                        {triActuel === c.cle &&
+                          (ordreActuel === "asc" ? (
+                            <IconeTriHaut taille={12} />
+                          ) : (
+                            <IconeTriBas taille={12} />
+                          ))}
+                      </span>
+                    </th>
+                  ))}
+                  <th className="entete-table text-right">Jours</th>
+                  <th className="entete-table" />
+                </tr>
+              </thead>
+              <tbody className="">
+                {donnees.produits.map((p) => (
+                  <tr
+                    key={p.id}
+                    onClick={() => router.push(`/produits/${p.id}`)}
+                    className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
+                  >
+                    <td className="px-3 py-2 font-mono text-xs text-brand-warm-grey">
+                      {p.code_interne}
+                    </td>
+                    <td className="max-w-64 truncate px-3 py-2 font-medium" title={p.reference}>
+                      {p.reference}
+                    </td>
+                    <td className="px-3 py-2">{p.categorie}</td>
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1.5">
+                        <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+                        {p.en_vitrine && (
+                          <IconeVitrine
+                            taille={14}
+                            className="text-brand-orange"
+                            aria-label="En vitrine"
+                          />
+                        )}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      {new Date(p.date_entree).toLocaleDateString("fr-FR")}
+                      <span className="block text-brand-grey">
+                        {p.lot_id
+                          ? `lot n°${p.lot_id}${p.fournisseur ? ` · ${p.fournisseur}` : ""}`
+                          : "Sans arrivage"}
+                      </span>
+                    </td>
+                    {!estSocial && (
+                      <td className="px-3 py-2 text-right">
+                        <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">Achat</span>
+                        <span className="font-semibold text-brand-black">{formaterDA(p.prix_achat)}</span>
+                        {p.cout_reparations > 0 && (
+                          <span className="block text-xs text-brand-grey">
+                            +{formaterDA(p.cout_reparations)} rép.
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    <td className="px-3 py-2 text-right">
+                      <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">Vente</span>
+                      {prixVenteAffiche(p) !== null ? (
+                        <span className="font-bold text-brand-orange">
+                          {formaterDA(prixVenteAffiche(p)!)}
+                          {p.statut === "vendu" && (
+                            <span className="block text-[10px] font-semibold uppercase text-brand-grey">
+                              vendu
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-brand-grey">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">{p.jours_stock}</td>
+                    <td className="px-2 py-2">
+                      {peutModifier && (
+                        <span className="flex items-center justify-end gap-1">
+                          {p.statut !== "vendu" && (
+                            <button
+                              type="button"
+                              disabled={envoi}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
+                              }}
+                              title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                              aria-label={`${p.en_vitrine ? "Retirer" : "Mettre"} ${p.code_interne} ${p.en_vitrine ? "de" : "en"} vitrine`}
+                              className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+                                p.en_vitrine
+                                  ? "text-brand-orange hover:bg-brand-orange/10"
+                                  : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
+                              }`}
+                            >
+                              <IconeVitrine taille={14} />
+                            </button>
+                          )}
                           <button
                             type="button"
-                            disabled={envoi}
                             onClick={(e) => {
                               e.stopPropagation();
-                              void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
+                              ouvrirEdition([p], p.code_interne);
                             }}
-                            title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
-                            aria-label={`${p.en_vitrine ? "Retirer" : "Mettre"} ${p.code_interne} ${p.en_vitrine ? "de" : "en"} vitrine`}
-                            className={`rounded-md p-1.5 transition disabled:opacity-40 ${
-                              p.en_vitrine
-                                ? "text-brand-orange hover:bg-brand-orange/10"
-                                : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
-                            }`}
+                            title="Modifier"
+                            aria-label={`Modifier ${p.code_interne}`}
+                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
                           >
-                            <IconeVitrine taille={14} />
+                            <IconeCrayon taille={14} />
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            ouvrirEdition([p], p.code_interne);
-                          }}
-                          title="Modifier"
-                          aria-label={`Modifier ${p.code_interne}`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                        >
-                          <IconeCrayon taille={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            ouvrirSuppressionUnites([p]);
-                          }}
-                          title="Supprimer"
-                          aria-label={`Supprimer ${p.code_interne}`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                        >
-                          <IconeCorbeille taille={14} />
-                        </button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              ouvrirSuppressionUnites([p]);
+                            }}
+                            title="Supprimer"
+                            aria-label={`Supprimer ${p.code_interne}`}
+                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                          >
+                            <IconeCorbeille taille={14} />
+                          </button>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
