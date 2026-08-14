@@ -322,13 +322,13 @@ export default function FactureDetail({
           </div>
 
           <div className="flex flex-col items-end flex-shrink-0">
-            <div className="flex items-center gap-1.5 mb-8 whitespace-nowrap">
+            <div className="flex items-center gap-1 mb-8 whitespace-nowrap">
               <img
                 src="/brand/solutionmaxi-logo-fonce.svg"
                 alt="Logo"
                 className="h-10 w-auto object-contain"
               />
-              <div>
+              <div className="flex flex-col justify-center">
                 <h1 className="text-xl font-black uppercase text-brand-black leading-none">{facture.entreprise?.nom || "SOLUTION MAXI"}</h1>
                 <p className="text-[10px] font-bold italic mt-0.5 tracking-tighter">Plus de temps à perdre !</p>
               </div>
