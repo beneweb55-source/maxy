@@ -14,6 +14,7 @@ import {
   IconeCrayon,
   IconeCorbeille,
 } from "@/components/icons";
+import GarantieCertificat from "@/components/factures/GarantieCertificat";
 
 interface LigneFactureDto {
   id: number;
@@ -89,6 +90,7 @@ export default function FactureDetail({
   const [ai, setAi] = useState("");
   const [nis, setNis] = useState("");
   const [envoi, setEnvoi] = useState(false);
+  const [vueGarantie, setVueGarantie] = useState(false);
 
   const peutModifier = role === "gerant" || role === "dev" || role === "social_media";
 
@@ -184,6 +186,15 @@ export default function FactureDetail({
   }
   if (!facture) return <p className="p-4 text-sm text-brand-warm-grey">Chargement de la facture…</p>;
 
+  if (vueGarantie) {
+    return (
+      <GarantieCertificat
+        facture={facture}
+        onRetour={() => setVueGarantie(false)}
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 animate-entree print:max-w-none print:animate-none">
       {/* Barre d'actions — masquée à l'impression */}
@@ -203,6 +214,14 @@ export default function FactureDetail({
               Informations client
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setVueGarantie(true)}
+            className="btn bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+          >
+            <IconeBouclier taille={15} />
+            Créer garantie
+          </button>
           <button type="button" onClick={() => window.print()} className="btn btn-primaire">
             <IconeImprimante taille={15} />
             Imprimer
