@@ -905,6 +905,7 @@ export default function VentesClient({ role }: { role: Role }) {
               })}
             </ul>
           )}
+          </div>
 
           {modeBundle && (
             <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-4 z-20 flex flex-col gap-3">
