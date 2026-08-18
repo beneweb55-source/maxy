@@ -1073,7 +1073,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   type="button"
                   disabled={cartItems.length === 0}
                   onClick={() => {
-                    if (cartItems.length === 1) {
+                    if (cartItems.length === 1 && cartItems[0]) {
                       setModalVente(cartItems[0].groupe);
                       setQuantiteVente(cartItems[0].qty);
                     } else {
