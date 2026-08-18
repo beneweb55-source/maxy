@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
@@ -77,10 +77,13 @@ export default function FactureDetail({
   role: Role;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const autoPrint = searchParams.get("print") === "ticket";
   const { afficher } = useToast();
   const [facture, setFacture] = useState<FactureDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [editionClient, setEditionClient] = useState(false);
+  const [formatTicket, setFormatTicket] = useState(autoPrint);
   const [nom, setNom] = useState("");
   const [tel, setTel] = useState("");
   const [typeFacture, setTypeFacture] = useState("normale");
@@ -121,6 +124,14 @@ export default function FactureDetail({
   useEffect(() => {
     void charger();
   }, [charger]);
+
+  useEffect(() => {
+    if (facture && autoPrint) {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+  }, [facture, autoPrint]);
 
   async function enregistrerClient() {
     setEnvoi(true);
@@ -226,6 +237,22 @@ export default function FactureDetail({
             <IconeImprimante taille={15} />
             Imprimer
           </button>
+          <div className="flex bg-brand-light-grey/20 rounded-lg p-1 ml-2">
+            <button
+              type="button"
+              onClick={() => setFormatTicket(false)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${!formatTicket ? 'bg-white shadow-sm text-brand-black' : 'text-brand-warm-grey hover:text-brand-black'}`}
+            >
+              A4
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormatTicket(true)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${formatTicket ? 'bg-white shadow-sm text-brand-black' : 'text-brand-warm-grey hover:text-brand-black'}`}
+            >
+              Ticket (80mm)
+            </button>
+          </div>
           {peutModifier && (
             <button
               type="button"
@@ -322,7 +349,8 @@ export default function FactureDetail({
       )}
 
       {/* Document imprimable */}
-      <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight">
+      {!formatTicket && (
+        <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight">
         
         {/* En-tête : Info entreprise à gauche, Logo à droite */}
         <div className="flex justify-between items-start gap-4 mb-6">
@@ -488,7 +516,107 @@ export default function FactureDetail({
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {formatTicket && (
+        <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-xs leading-tight mx-auto max-w-[80mm] w-full">
+          {/* En-tête Ticket */}
+          <div className="text-center mb-4 border-b border-black border-dashed pb-4">
+            <h1 className="text-lg font-black uppercase mb-1">{facture.entreprise?.nom || "SOLUTION MAXI"}</h1>
+            <p className="font-semibold">{facture.entreprise?.tel || "0000 00 00 00"}</p>
+            <p className="mb-2">{facture.entreprise?.adresse || "Alger, Algérie"}</p>
+            <div className="grid grid-cols-2 text-[10px] text-left gap-x-2">
+              <span>RC: {facture.entreprise?.rc || "RC XXXXXXXXX"}</span>
+              <span>NIF: {facture.entreprise?.nif || "NIF XXXXXXXXX"}</span>
+              <span>NIS: {facture.entreprise?.nis || "NIS XXXXXXXXX"}</span>
+              <span>Art: {facture.entreprise?.art || "ART XXXXXXXXX"}</span>
+            </div>
+          </div>
+
+          <div className="mb-4 text-center">
+            <h2 className="font-bold text-sm">TICKET DE CAISSE</h2>
+            <p className="font-bold">N° {facture.numero}</p>
+            <p>Le : {dateFr(facture.date_emission)}</p>
+          </div>
+
+          {/* Informations du client (si renseignées) */}
+          {facture.client_nom && (
+            <div className="mb-4 border-b border-black border-dashed pb-4">
+              <p><span className="font-bold">Client:</span> {facture.client_nom}</p>
+              {facture.client_tel && <p><span className="font-bold">Tel:</span> {facture.client_tel}</p>}
+            </div>
+          )}
+
+          {/* Lignes du ticket */}
+          <table className="w-full text-left mb-4">
+            <thead>
+              <tr className="border-b border-black border-dashed">
+                <th className="py-1">QTE</th>
+                <th className="py-1">ARTICLE</th>
+                <th className="py-1 text-right">MONTANT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(() => {
+                const groupes = facture.lignes.reduce((acc, ligne) => {
+                  if (ligne.annulee) return acc;
+                  const existant = acc.find(g => g.designation === ligne.designation && g.prix === ligne.prix);
+                  if (existant) {
+                    existant.qtt += 1;
+                  } else {
+                    acc.push({ ...ligne, qtt: 1 });
+                  }
+                  return acc;
+                }, [] as (LigneFactureDto & { qtt: number })[]);
+
+                return groupes.map((l, idx) => (
+                  <tr key={idx}>
+                    <td className="py-1.5 align-top font-bold">{l.qtt}x</td>
+                    <td className="py-1.5 pr-2 leading-snug">{l.designation}</td>
+                    <td className="py-1.5 align-top text-right font-bold">{(l.prix * l.qtt).toLocaleString("fr-FR")}</td>
+                  </tr>
+                ));
+              })()}
+            </tbody>
+          </table>
+
+          {/* Total Ticket */}
+          <div className="border-t border-black border-dashed pt-2 mb-6">
+            {facture.type_facture === "tva" ? (
+              <>
+                <div className="flex justify-between font-bold mb-1">
+                  <span>TOTAL HT</span>
+                  <span>{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span>TVA (19%)</span>
+                  <span>{(facture.total_net * 0.19).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span>Timbre</span>
+                  <span>{Math.min(10000, facture.total_net * 1.19 * 0.01).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
+                </div>
+                <div className="flex justify-between font-black text-base mt-2 border-t border-black pt-2">
+                  <span>TOTAL TTC</span>
+                  <span>
+                    {(facture.total_net * 1.19 + Math.min(10000, facture.total_net * 1.19 * 0.01)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between font-black text-base">
+                <span>TOTAL A PAYER</span>
+                <span>{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
+              </div>
+            )}
+          </div>
+
+          <div className="text-center font-bold text-[10px]">
+            <p className="mb-1">MERCI DE VOTRE VISITE</p>
+            <p>www.{facture.entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

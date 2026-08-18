@@ -92,8 +92,42 @@ interface ReponseHistorique {
 
 const CANAUX = ["Ouedkniss", "Facebook", "direct"];
 
-function aujourdhuiIso(): string {
-  return new Date().toISOString().slice(0, 10);
+function aujourdhuiIso() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
+function playBeep(success: boolean) {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    if (success) {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    } else {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.2);
+      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    }
+  } catch (e) {
+    console.error("Audio API error", e);
+  }
 }
 
 export default function VentesClient({ role }: { role: Role }) {
@@ -132,6 +166,7 @@ export default function VentesClient({ role }: { role: Role }) {
   // Vente groupée (bundle).
   const [modeBundle, setModeBundle] = useState(false);
   const [selection, setSelection] = useState<Map<string, number>>(new Map());
+  const [paniersEnAttente, setPaniersEnAttente] = useState<{ id: number; selection: Map<string, number>; remise: string; date: Date }[]>([]);
   const [modalBundle, setModalBundle] = useState(false);
   const [prixTotalBundle, setPrixTotalBundle] = useState("");
   const [canalBundle, setCanalBundle] = useState("");
@@ -145,6 +180,7 @@ export default function VentesClient({ role }: { role: Role }) {
   const [clientAiBundle, setClientAiBundle] = useState("");
   const [clientNisBundle, setClientNisBundle] = useState("");
   const [modePaiementBundle, setModePaiementBundle] = useState("especes");
+  const [especesRecues, setEspecesRecues] = useState("");
   const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
   const [remiseBundle, setRemiseBundle] = useState("");
   
@@ -326,6 +362,31 @@ export default function VentesClient({ role }: { role: Role }) {
   function quitterModeBundle() {
     setModeBundle(false);
     setSelection(new Map());
+    setRemiseBundle("");
+  }
+
+  function mettreEnAttente() {
+    if (selection.size === 0) return;
+    setPaniersEnAttente(prev => [
+      ...prev,
+      { id: Date.now(), selection: new Map(selection), remise: remiseBundle, date: new Date() }
+    ]);
+    setSelection(new Map());
+    setRemiseBundle("");
+    afficher("Panier mis en attente.");
+  }
+
+  function restaurerPanier(id: number) {
+    const panier = paniersEnAttente.find(p => p.id === id);
+    if (panier) {
+      if (selection.size > 0) {
+        mettreEnAttente(); // Mettre en attente l'actuel avant de restaurer
+      }
+      setSelection(new Map(panier.selection));
+      setRemiseBundle(panier.remise);
+      setPaniersEnAttente(prev => prev.filter(p => p.id !== id));
+      afficher("Panier restauré.");
+    }
   }
 
   function ouvrirBundle() {
@@ -341,6 +402,7 @@ export default function VentesClient({ role }: { role: Role }) {
     setClientAiBundle("");
     setClientNisBundle("");
     setModePaiementBundle("especes");
+    setEspecesRecues("");
     setAvertissementBundle(null);
     setModalBundle(true);
   }
@@ -394,6 +456,9 @@ export default function VentesClient({ role }: { role: Role }) {
           ? `Vente groupée enregistrée : ${produit_ids.length} produits — ${formaterDA(Number(prixTotalBundle))}. Facture ${factureNumero} créée.`
           : `Vente groupée enregistrée : ${produit_ids.length} produits — ${formaterDA(Number(prixTotalBundle))}.`
       );
+      if (factureId) {
+        window.open(`/factures/${factureId}?print=ticket`, '_blank');
+      }
       setModalBundle(false);
       quitterModeBundle();
       await Promise.all([chargerCartes(), chargerHistorique()]);
@@ -468,6 +533,9 @@ export default function VentesClient({ role }: { role: Role }) {
           ? `Vente enregistrée : ${modalVente.reference} (x${quantiteVente}) — ${formaterDA(Number(prixReel))}. Facture ${factureNumero} créée.`
           : `Vente enregistrée : ${modalVente.reference} (x${quantiteVente}) — ${formaterDA(Number(prixReel))}.`
       );
+      if (factureId) {
+        window.open(`/factures/${factureId}?print=ticket`, '_blank');
+      }
       setModalVente(null);
       await Promise.all([chargerCartes(), chargerHistorique()]);
     } catch {
@@ -588,9 +656,11 @@ export default function VentesClient({ role }: { role: Role }) {
                       if (groupe) {
                         setModeBundle(true);
                         mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
+                        playBeep(true);
                         afficher(`Produit ${produit.reference} ajouté au panier.`);
                       }
                     } else {
+                      playBeep(false);
                       afficher("Code-barres introuvable dans les produits en vente.", "erreur");
                     }
                   }
@@ -837,16 +907,44 @@ export default function VentesClient({ role }: { role: Role }) {
           )}
 
           {modeBundle && (
-            <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-4 z-20">
+            <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-4 z-20 flex flex-col gap-3">
+              {paniersEnAttente.length > 0 && (
+                <div className="carte p-3 bg-brand-orange/10 border-brand-orange/30">
+                  <h4 className="font-bold text-sm text-brand-orange mb-2">Paniers en attente ({paniersEnAttente.length})</h4>
+                  <div className="space-y-2">
+                    {paniersEnAttente.map((p) => {
+                      const nbArticles = Array.from(p.selection.values()).reduce((a,b)=>a+b,0);
+                      const heure = p.date.toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
+                      return (
+                        <div key={p.id} className="flex items-center justify-between bg-brand-white p-2 rounded border border-brand-orange/20 text-sm">
+                          <div>
+                            <span className="font-semibold text-brand-black">Panier de {heure}</span>
+                            <div className="text-xs text-brand-warm-grey">{nbArticles} article(s)</div>
+                          </div>
+                          <button onClick={() => restaurerPanier(p.id)} className="btn btn-primaire py-1 px-3 text-xs">
+                            Reprendre
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="carte flex flex-col p-4 shadow-lg border-brand-orange/20 ring-1 ring-brand-orange/10 bg-brand-white">
                 <div className="flex items-center justify-between border-b border-brand-light-grey pb-3 mb-3">
                   <h3 className="font-bold text-lg flex items-center gap-2 text-brand-black">
                     <IconePaquet taille={20} className="text-brand-orange" />
                     Ticket de caisse
                   </h3>
-                  <button onClick={quitterModeBundle} className="text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
-                    Fermer
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={mettreEnAttente} disabled={cartItems.length === 0} title="Mettre en attente" className="text-sm font-semibold text-brand-orange hover:text-brand-orange/70 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                      ⏸️ Attente
+                    </button>
+                    <button onClick={quitterModeBundle} className="text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
+                      Fermer
+                    </button>
+                  </div>
                 </div>
                 
                 {cartItems.length === 0 ? (
@@ -1542,6 +1640,35 @@ export default function VentesClient({ role }: { role: Role }) {
               </select>
             </div>
           </div>
+
+          {modePaiementBundle === "especes" && (
+            <div className="flex gap-3 pt-2 pb-1">
+              <div className="flex-1 bg-brand-light-grey/20 p-3 rounded-lg border border-brand-light-grey/50">
+                <label className="libelle mb-1.5 text-brand-black" htmlFor="especes-recues">
+                  Espèces reçues (DA)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="especes-recues"
+                    type="number"
+                    value={especesRecues}
+                    onChange={(e) => setEspecesRecues(e.target.value)}
+                    placeholder="Montant donné par le client"
+                    className="champ flex-1 font-bold text-lg"
+                  />
+                  {Number(especesRecues) > 0 && (
+                    <div className="flex flex-col whitespace-nowrap min-w-[120px]">
+                      <span className="text-[10px] uppercase font-bold text-brand-grey">Monnaie à rendre</span>
+                      <span className={`text-lg font-black ${Number(especesRecues) - Number(prixTotalBundle) >= 0 ? "text-succes" : "text-danger"}`}>
+                        {formaterDA(Number(especesRecues) - Number(prixTotalBundle))}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="libelle mb-1.5" htmlFor="client-nom-bundle">
