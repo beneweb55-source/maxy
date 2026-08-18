@@ -146,7 +146,8 @@ export default function VentesClient({ role }: { role: Role }) {
   const [clientNisBundle, setClientNisBundle] = useState("");
   const [modePaiementBundle, setModePaiementBundle] = useState("especes");
   const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
-
+  const [remiseBundle, setRemiseBundle] = useState("");
+  
   const [historique, setHistorique] = useState<ReponseHistorique | null>(null);
   const [erreurHistorique, setErreurHistorique] = useState<string | null>(null);
   const [filtreMois, setFiltreMois] = useState("");
@@ -297,6 +298,22 @@ export default function VentesClient({ role }: { role: Role }) {
     return arr;
   })();
 
+  const cartItems = (() => {
+    const arr: { groupe: GroupeEnVente; qty: number; prix: number }[] = [];
+    if (!cartes) return arr;
+    const groupes = grouperDoublonsVente(cartes);
+    for (const [cle, qty] of selection.entries()) {
+      const g = groupes.find(groupe => groupe.cle === cle);
+      if (g) {
+        arr.push({ groupe: g, qty, prix: g.prix_vente_fixe ?? 0 });
+      }
+    }
+    return arr;
+  })();
+
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.prix * item.qty, 0);
+  const totalApresRemise = cartTotal - (Number(remiseBundle) || 0);
+
   function mettreAJourSelection(cle: string, qte: number) {
     setSelection((prev) => {
       const suivant = new Map(prev);
@@ -312,14 +329,7 @@ export default function VentesClient({ role }: { role: Role }) {
   }
 
   function ouvrirBundle() {
-    let total = 0;
-    for (const [cle, qty] of selection.entries()) {
-      const groupe = grouperDoublonsVente(cartes ?? []).find(g => g.cle === cle);
-      if (groupe && groupe.prix_vente_fixe) {
-        total += groupe.prix_vente_fixe * qty;
-      }
-    }
-    setPrixTotalBundle(total > 0 ? String(total) : "");
+    setPrixTotalBundle(totalApresRemise > 0 ? String(totalApresRemise) : "");
     setCanalBundle("");
     setDateBundle(aujourdhuiIso());
     setClientNomBundle("");
@@ -554,9 +564,40 @@ export default function VentesClient({ role }: { role: Role }) {
       </div>
 
       {onglet === "en_vente" && (
-        <div className="space-y-3">
+        <div className="flex flex-col lg:flex-row gap-4 items-start">
+          <div className="flex-1 space-y-3 w-full min-w-0">
           <div className="carte flex flex-wrap items-center gap-3">
-            <div className="relative min-w-56 flex-1">
+            <div className="relative min-w-56 flex-1 border-r border-brand-light-grey pr-3 mr-3">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-orange">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="2" height="8" x="7" y="8"/><rect width="2" height="8" x="11" y="8"/><rect width="2" height="8" x="15" y="8"/></svg>
+              </span>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Scanner code-barres..."
+                className="champ pl-9 border-brand-orange ring-1 ring-brand-orange focus:ring-2 focus:border-brand-orange font-mono"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const code = e.currentTarget.value.trim();
+                    if (!code) return;
+                    e.currentTarget.value = "";
+                    const produit = cartes?.find((c) => c.code_interne.toLowerCase() === code.toLowerCase());
+                    if (produit) {
+                      const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
+                      if (groupe) {
+                        setModeBundle(true);
+                        mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
+                        afficher(`Produit ${produit.reference} ajouté au panier.`);
+                      }
+                    } else {
+                      afficher("Code-barres introuvable dans les produits en vente.", "erreur");
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div className="relative min-w-56 flex-[2]">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-grey">
                 <IconeRecherche taille={15} />
               </span>
@@ -796,21 +837,79 @@ export default function VentesClient({ role }: { role: Role }) {
           )}
 
           {modeBundle && (
-            <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 rounded-xl border border-brand-light-grey bg-brand-white/95 p-3 shadow-lg backdrop-blur">
-              <span className="text-sm text-brand-warm-grey">
-                <strong className="text-brand-black">{totalSelectionnees}</strong> produit
-                {totalSelectionnees > 1 ? "s" : ""} sélectionné{totalSelectionnees > 1 ? "s" : ""}
-              </span>
-              <button
-                type="button"
-                disabled={totalSelectionnees < 2}
-                onClick={ouvrirBundle}
-                className="btn btn-primaire"
-                title={totalSelectionnees < 2 ? "Sélectionnez au moins deux produits" : undefined}
-              >
-                <IconePaquet taille={15} />
-                Vendre ensemble
-              </button>
+            <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-4 z-20">
+              <div className="carte flex flex-col p-4 shadow-lg border-brand-orange/20 ring-1 ring-brand-orange/10 bg-brand-white">
+                <div className="flex items-center justify-between border-b border-brand-light-grey pb-3 mb-3">
+                  <h3 className="font-bold text-lg flex items-center gap-2 text-brand-black">
+                    <IconePaquet taille={20} className="text-brand-orange" />
+                    Ticket de caisse
+                  </h3>
+                  <button onClick={quitterModeBundle} className="text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
+                    Fermer
+                  </button>
+                </div>
+                
+                {cartItems.length === 0 ? (
+                   <div className="flex flex-col items-center justify-center gap-2 py-8 border-dashed border-2 rounded-lg border-brand-light-grey/50">
+                     <IconeRecherche taille={32} className="text-brand-light-grey" />
+                     <p className="text-sm text-brand-grey text-center">
+                       Panier vide.<br/>Scannez ou cliquez sur des produits.
+                     </p>
+                   </div>
+                ) : (
+                   <div className="flex flex-col gap-3 max-h-[50vh] overflow-y-auto pr-1">
+                     {cartItems.map(item => (
+                       <div key={item.groupe.cle} className="flex justify-between items-start gap-3 border-b border-brand-light-grey/30 pb-3 last:border-0">
+                         <div className="flex flex-col min-w-0 flex-1">
+                           <span className="font-semibold text-sm line-clamp-2 leading-snug" title={item.groupe.reference}>{item.groupe.reference}</span>
+                           <span className="text-xs text-brand-warm-grey mt-0.5">{item.qty} x {formaterDA(item.prix)}</span>
+                         </div>
+                         <div className="text-right flex flex-col items-end shrink-0">
+                           <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
+                           <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-md p-0.5">
+                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty - 1)} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
+                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty + 1)} disabled={item.qty >= item.groupe.unites.length} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
+                           </div>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                )}
+                
+                <div className="mt-4 pt-4 border-t-2 border-dashed border-brand-light-grey space-y-3">
+                  <div className="flex justify-between items-center text-sm text-brand-warm-grey">
+                    <span>Sous-total</span>
+                    <span className="font-medium text-brand-black">{formaterDA(cartTotal)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-brand-black font-semibold">Remise globale</span>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        value={remiseBundle} 
+                        onChange={(e) => setRemiseBundle(e.target.value)} 
+                        placeholder="0" 
+                        className="champ w-28 py-1.5 pl-2 pr-7 text-right font-bold text-brand-black focus:ring-brand-orange focus:border-brand-orange" 
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-grey pointer-events-none">DA</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-brand-light-grey/30">
+                    <span className="font-black text-lg text-brand-black uppercase">Total à payer</span>
+                    <span className="font-black text-2xl tracking-tight text-brand-orange">{formaterDA(totalApresRemise)}</span>
+                  </div>
+                </div>
+                
+                <button
+                  type="button"
+                  disabled={cartItems.length === 0}
+                  onClick={ouvrirBundle}
+                  className="btn btn-primaire mt-5 w-full justify-center py-3.5 text-base shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <IconeBillet taille={18} />
+                  Encaisser {cartItems.length > 0 && `(${totalSelectionnees} article${totalSelectionnees > 1 ? 's' : ''})`}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1375,65 +1474,29 @@ export default function VentesClient({ role }: { role: Role }) {
         onFermer={() => setModalBundle(false)}
       >
         <div className="space-y-3">
-          <ul className="max-h-40 space-y-1 overflow-y-auto rounded-lg bg-brand-light-grey/25 p-2.5 text-sm">
-            {selectionnees.map((c) => (
-              <li key={c.id} className="flex justify-between gap-2">
-                <span className="truncate" title={c.reference}>
-                  <span className="font-mono text-xs text-brand-warm-grey">{c.code_interne}</span>{" "}
-                  {c.reference}
-                </span>
-                <span className="shrink-0 text-brand-warm-grey">
-                  {c.prix_vente_fixe !== null ? formaterDA(c.prix_vente_fixe) : "—"}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-brand-warm-grey">
-            Somme des prix fixés :{" "}
-            <strong className="text-brand-black">
-              {formaterDA(selectionnees.reduce((s, c) => s + (c.prix_vente_fixe ?? 0), 0))}
-            </strong>{" "}
-            · le prix total sera réparti au prorata entre les produits.
+          <p className="text-sm text-brand-black font-semibold bg-brand-orange/10 p-3 rounded-lg border border-brand-orange/20">
+            Montant total à encaisser : {formaterDA(Number(prixTotalBundle))}
           </p>
 
-          <div>
-            <label className="libelle mb-1.5" htmlFor="prix-total-bundle">
-              Prix total de la vente groupée (DA) *
-            </label>
-            <input
-              id="prix-total-bundle"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              step={1}
-              value={prixTotalBundle}
-              onChange={(e) => {
-                setPrixTotalBundle(e.target.value.replace(/[^\d]/g, ""));
-                setAvertissementBundle(null);
-              }}
-              autoFocus
-              className="champ"
-            />
-            {!estSocial && Number(prixTotalBundle) > 0 && (
-              <p className="mt-1 text-xs">
-                Marge totale :{" "}
-                <strong
-                  className={
-                    Number(prixTotalBundle) -
-                      selectionnees.reduce((s, c) => s + c.prix_achat + c.cout_reparations, 0) >=
-                    0
-                      ? "text-succes"
-                      : "text-danger"
-                  }
-                >
-                  {formaterDA(
-                    Number(prixTotalBundle) -
-                      selectionnees.reduce((s, c) => s + c.prix_achat + c.cout_reparations, 0)
-                  )}
-                </strong>
-              </p>
-            )}
-          </div>
+          {!estSocial && Number(prixTotalBundle) > 0 && (
+            <p className="text-xs">
+              Marge totale estimée :{" "}
+              <strong
+                className={
+                  Number(prixTotalBundle) -
+                    selectionnees.reduce((s, c) => s + c.prix_achat + c.cout_reparations, 0) >=
+                  0
+                    ? "text-succes"
+                    : "text-danger"
+                }
+              >
+                {formaterDA(
+                  Number(prixTotalBundle) -
+                    selectionnees.reduce((s, c) => s + c.prix_achat + c.cout_reparations, 0)
+                )}
+              </strong>
+            </p>
+          )}
 
           <div className="flex gap-3">
             <div className="flex-1">

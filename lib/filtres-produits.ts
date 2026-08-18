@@ -21,7 +21,12 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     .split(",")
     .map((s) => s.trim())
     .filter((s): s is StatutProduit => (STATUTS_PRODUIT as readonly string[]).includes(s));
-  if (statuts.length > 0) clauses.push({ statut: { in: statuts } });
+  if (statuts.length > 0) {
+    clauses.push({ statut: { in: statuts } });
+  } else {
+    // Si aucun statut spécifique n'est demandé, on masque les vendus par défaut
+    clauses.push({ statut: { not: "vendu" } });
+  }
 
   const categorie = params.get("categorie")?.trim();
   if (categorie) clauses.push({ categorie });

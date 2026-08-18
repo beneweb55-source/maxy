@@ -21,6 +21,7 @@ import {
   IconeCorbeille,
   IconeCrayon,
   IconeImage,
+  IconeImprimante,
   IconePlus,
   IconeRecherche,
   IconeTelechargement,
@@ -173,6 +174,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formPhotosModifiees, setFormPhotosModifiees] = useState(false);
   // « En vitrine » dès la création (formulaire d'ajout).
   const [formVitrine, setFormVitrine] = useState(false);
+  const [formMettreEnVente, setFormMettreEnVente] = useState(false);
 
   const [vueGroupee, setVueGroupee] = useState(true);
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
@@ -267,6 +269,7 @@ export default function Inventaire({ role }: { role: Role }) {
     setFormPhotosModifiees(false);
     setCibleStatut(null);
     setNoteStatut("");
+    setFormMettreEnVente(false);
     setModalEdition({ unites, titre });
     if (premier.nb_images > 1) {
       void fetch(`/api/produits/${premier.id}`)
@@ -458,6 +461,7 @@ export default function Inventaire({ role }: { role: Role }) {
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
           prix_vente_fixe: formulaire.prix_vente_fixe.trim() ? Number(formulaire.prix_vente_fixe) : null,
+          mettre_en_vente: formMettreEnVente,
           ...(formPhotosModifiees ? { images: formPhotos } : {}),
         }),
       });
@@ -673,6 +677,24 @@ export default function Inventaire({ role }: { role: Role }) {
             </span>
             <span className="block text-xs text-brand-warm-grey">
               Exposé physiquement en vitrine — indépendant de la mise en vente en ligne.
+            </span>
+          </span>
+        </label>
+      )}
+      {modalEdition !== null && (
+        <label className="sm:col-span-2 flex items-start gap-2.5 rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={formMettreEnVente}
+            onChange={(e) => setFormMettreEnVente(e.target.checked)}
+            className="mt-0.5 accent-brand-orange"
+          />
+          <span>
+            <span className="inline-flex items-center gap-1.5 font-semibold text-brand-orange">
+              Mettre en vente
+            </span>
+            <span className="block text-xs text-brand-warm-grey mt-0.5">
+              Applique immédiatement le statut « En vente » à tous les exemplaires modifiés (si un prix de vente est fixé).
             </span>
           </span>
         </label>
@@ -1026,6 +1048,15 @@ export default function Inventaire({ role }: { role: Role }) {
                         </button>
                       );
                     })()}
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/imprimer-etiquettes?ids=${g.unites.map(u => u.id).join(',')}`, '_blank')}
+                      title="Imprimer les étiquettes pour ce modèle"
+                      aria-label={`Imprimer tout le groupe ${g.reference}`}
+                      className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                    >
+                      <IconeImprimante taille={15} />
+                    </button>
                     {peutModifier && (
                       <button
                         type="button"
@@ -1092,6 +1123,13 @@ export default function Inventaire({ role }: { role: Role }) {
                       );
                     })()}
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => window.open(`/imprimer-etiquettes?ids=${g.unites.map(u => u.id).join(',')}`, '_blank')}
+                        className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
+                      >
+                        <IconeImprimante taille={14} /> Imprimer
+                      </button>
                       <button
                         type="button"
                         onClick={() => ouvrirEdition(g.unites, g.reference)}
@@ -1164,6 +1202,15 @@ export default function Inventaire({ role }: { role: Role }) {
                                 <IconeVitrine taille={14} />
                               </button>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => window.open(`/imprimer-etiquettes?ids=${p.id}`, '_blank')}
+                              title="Imprimer"
+                              aria-label={`Imprimer étiquette ${p.code_interne}`}
+                              className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                            >
+                              <IconeImprimante taille={14} />
+                            </button>
                             <button
                               type="button"
                               onClick={() => ouvrirEdition([p], p.code_interne)}
@@ -1275,6 +1322,16 @@ export default function Inventaire({ role }: { role: Role }) {
                         <IconeVitrine taille={14} /> {p.en_vitrine ? "Retirer" : "Vitrine"}
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`/imprimer-etiquettes?ids=${p.id}`, '_blank');
+                      }}
+                      className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black"
+                    >
+                      <IconeImprimante taille={14} /> Imprimer
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1410,6 +1467,18 @@ export default function Inventaire({ role }: { role: Role }) {
                               <IconeVitrine taille={14} />
                             </button>
                           )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`/imprimer-etiquettes?ids=${p.id}`, '_blank');
+                            }}
+                            title="Imprimer"
+                            aria-label={`Imprimer étiquette ${p.code_interne}`}
+                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                          >
+                            <IconeImprimante taille={14} />
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {

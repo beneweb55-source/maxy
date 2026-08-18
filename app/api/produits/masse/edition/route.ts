@@ -17,7 +17,7 @@ export async function PUT(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { ids, reference, categorie, prix_achat, image_url, images, quantite, prix_vente_fixe, a_jeter } = (corps ?? {}) as {
+  const { ids, reference, categorie, prix_achat, image_url, images, quantite, prix_vente_fixe, a_jeter, mettre_en_vente } = (corps ?? {}) as {
     ids?: unknown;
     reference?: unknown;
     categorie?: unknown;
@@ -27,6 +27,7 @@ export async function PUT(request: NextRequest) {
     quantite?: unknown;
     prix_vente_fixe?: unknown;
     a_jeter?: unknown;
+    mettre_en_vente?: unknown;
   };
 
   if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id) => Number.isInteger(Number(id)))) {
@@ -139,19 +140,25 @@ export async function PUT(request: NextRequest) {
 
         // Si modification de prix de vente sur des produits "ok", ils passent "en_vente"
         if (modifPrixVente && donnees.prix_vente_fixe !== null) {
-          const produitsOk = produits.filter(p => p.statut === "ok" && idsAUpdate.includes(p.id));
-          if (produitsOk.length > 0) {
+          const forceVente = mettre_en_vente === true;
+          const produitsAChanger = produits.filter(p => 
+            idsAUpdate.includes(p.id) && 
+            p.statut !== "vendu" &&
+            (forceVente || p.statut === "ok")
+          );
+          
+          if (produitsAChanger.length > 0) {
             await tx.produit.updateMany({
-              where: { id: { in: produitsOk.map(p => p.id) } },
+              where: { id: { in: produitsAChanger.map(p => p.id) } },
               data: { statut: "en_vente" },
             });
             await tx.historiqueStatut.createMany({
-              data: produitsOk.map(p => ({
+              data: produitsAChanger.map(p => ({
                 produit_id: p.id,
                 user_id: user.id,
-                statut_avant: "ok",
+                statut_avant: p.statut,
                 statut_apres: "en_vente",
-                note: "Prix fixé depuis l'inventaire (masse)",
+                note: forceVente ? "Mis en vente depuis l'inventaire (masse)" : "Prix fixé depuis l'inventaire (masse)",
               })),
             });
           }
