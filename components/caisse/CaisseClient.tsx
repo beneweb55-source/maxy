@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
@@ -233,20 +234,24 @@ export default function CaisseClient({ role }: { role: Role }) {
     titre: string;
   } | null>(null);
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
-      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA" || document.activeElement?.tagName === "SELECT") return;
-      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        const searchInput = document.getElementById("scanner-pos") as HTMLInputElement;
-        if (searchInput) {
-          searchInput.focus();
-        }
+  const handleScan = useCallback((code: string) => {
+    if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
+    const produit = cartes?.find((c) => c.code_interne.toLowerCase() === code.toLowerCase());
+    if (produit) {
+      const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
+      if (groupe) {
+        setModeBundle(true);
+        mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
+        playBeep(true);
+        afficher(`Produit ${produit.reference} ajouté au panier.`);
       }
+    } else {
+      playBeep(false);
+      afficher("Code-barres introuvable dans les produits en vente.", "erreur");
     }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [modalBundle, modalRetrait, modalVente, modalAnnulation]);
+  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, cartes, selection, afficher, grouperDoublonsVente, mettreAJourSelection, playBeep]);
+
+  useBarcodeScanner(handleScan);
 
   const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
   const estGerant = role === "gerant";
@@ -590,6 +595,7 @@ export default function CaisseClient({ role }: { role: Role }) {
         window.open(`/factures/${factureId}?print=ticket`, '_blank');
       }
       setModalVente(null);
+      quitterModeBundle();
       await Promise.all([chargerCartes(), chargerHistorique(), chargerStatsJour()]);
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -690,6 +696,18 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Recette du jour</span>
                 <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
               </div>
+              <button 
+                onClick={() => {
+                  if (window.confirm("Êtes-vous sûr de vouloir vider la caisse ? Les compteurs de la journée repartiront à 0.")) {
+                    fetch('/api/caisse/vider', { method: 'POST' })
+                      .then(() => chargerStatsJour())
+                      .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
+                  }
+                }}
+                className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded shadow-sm transition"
+              >
+                Vider la Caisse
+              </button>
             </div>
           )}
           <HorlogeLive />
@@ -717,19 +735,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                     const code = e.currentTarget.value.trim();
                     if (!code) return;
                     e.currentTarget.value = "";
-                    const produit = cartes?.find((c) => c.code_interne.toLowerCase() === code.toLowerCase());
-                    if (produit) {
-                      const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
-                      if (groupe) {
-                        setModeBundle(true);
-                        mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
-                        playBeep(true);
-                        afficher(`Produit ${produit.reference} ajouté au panier.`);
-                      }
-                    } else {
-                      playBeep(false);
-                      afficher("Code-barres introuvable dans les produits en vente.", "erreur");
-                    }
+                    handleScan(code);
                   }
                 }}
               />
@@ -1066,7 +1072,14 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <button
                   type="button"
                   disabled={cartItems.length === 0}
-                  onClick={ouvrirBundle}
+                  onClick={() => {
+                    if (cartItems.length === 1) {
+                      setModalVente(cartItems[0].groupe);
+                      setQuantiteVente(cartItems[0].qty);
+                    } else {
+                      ouvrirBundle();
+                    }
+                  }}
                   className="btn btn-primaire mt-5 w-full justify-center py-3.5 text-base shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <IconeBillet taille={18} />

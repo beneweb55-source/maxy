@@ -96,6 +96,7 @@ model Parametres {
   entreprise_art    String   @default("ART XXXXXXXXX")
   entreprise_rib    String?
   entreprise_cachet String?
+  caisse_vide_a     DateTime?
   updated_at        DateTime @updatedAt
 
   @@map("parametres")

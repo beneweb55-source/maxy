@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
 import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
@@ -246,6 +247,25 @@ export default function VentesClient({ role }: { role: Role }) {
   useEffect(() => {
     void chargerCartes();
   }, [chargerCartes]);
+
+  const handleScan = useCallback((code: string) => {
+    if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
+    const produit = cartes?.find((c) => c.code_interne.toLowerCase() === code.toLowerCase());
+    if (produit) {
+      const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
+      if (groupe) {
+        setModeBundle(true);
+        mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
+        playBeep(true);
+        afficher(`Produit ${produit.reference} ajouté au panier.`);
+      }
+    } else {
+      playBeep(false);
+      afficher("Code-barres introuvable dans les produits en vente.", "erreur");
+    }
+  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, cartes, selection, afficher, grouperDoublonsVente, mettreAJourSelection, playBeep]);
+
+  useBarcodeScanner(handleScan);
 
   const ouvrirVente = useCallback((groupe: GroupeEnVente) => {
     setPrixReel(groupe.prix_vente_fixe !== null ? String(groupe.prix_vente_fixe) : "");
@@ -537,6 +557,7 @@ export default function VentesClient({ role }: { role: Role }) {
         window.open(`/factures/${factureId}?print=ticket`, '_blank');
       }
       setModalVente(null);
+      quitterModeBundle();
       await Promise.all([chargerCartes(), chargerHistorique()]);
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -650,19 +671,7 @@ export default function VentesClient({ role }: { role: Role }) {
                     const code = e.currentTarget.value.trim();
                     if (!code) return;
                     e.currentTarget.value = "";
-                    const produit = cartes?.find((c) => c.code_interne.toLowerCase() === code.toLowerCase());
-                    if (produit) {
-                      const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
-                      if (groupe) {
-                        setModeBundle(true);
-                        mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
-                        playBeep(true);
-                        afficher(`Produit ${produit.reference} ajouté au panier.`);
-                      }
-                    } else {
-                      playBeep(false);
-                      afficher("Code-barres introuvable dans les produits en vente.", "erreur");
-                    }
+                    handleScan(code);
                   }
                 }}
               />
@@ -1002,7 +1011,14 @@ export default function VentesClient({ role }: { role: Role }) {
                 <button
                   type="button"
                   disabled={cartItems.length === 0}
-                  onClick={ouvrirBundle}
+                  onClick={() => {
+                    if (cartItems.length === 1) {
+                      setModalVente(cartItems[0].groupe);
+                      setQuantiteVente(cartItems[0].qty);
+                    } else {
+                      ouvrirBundle();
+                    }
+                  }}
                   className="btn btn-primaire mt-5 w-full justify-center py-3.5 text-base shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <IconeBillet taille={18} />

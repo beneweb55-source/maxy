@@ -9,13 +9,19 @@ export async function GET() {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const params = await prisma.parametres.findFirst({ select: { caisse_vide_a: true } });
+
+  let startTime = new Date();
+  startTime.setHours(0, 0, 0, 0);
+  
+  if (params?.caisse_vide_a && params.caisse_vide_a > startTime) {
+    startTime = params.caisse_vide_a;
+  }
 
   const ventes = await prisma.vente.findMany({
     where: {
       date_vente: {
-        gte: today,
+        gte: startTime,
       },
       annulee: false,
     },

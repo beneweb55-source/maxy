@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
       mode_paiement?: unknown;
     };
 
-  if (!Array.isArray(produit_ids) || produit_ids.length < 2) {
-    return erreur(400, "Sélectionnez au moins deux produits pour une vente groupée.");
+  if (!Array.isArray(produit_ids) || produit_ids.length < 1) {
+    return erreur(400, "Sélectionnez au moins un produit pour une vente groupée.");
   }
   const ids = produit_ids.map((v) => Number(v));
   if (ids.some((v) => !Number.isInteger(v))) {
