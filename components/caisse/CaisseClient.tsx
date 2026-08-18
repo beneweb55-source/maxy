@@ -175,8 +175,8 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [filtreCategorie, setFiltreCategorie] = useState("");
   const [triCartes, setTriCartes] = useState("");
 
-  // Vente groupée (bundle).
-  const [modeBundle, setModeBundle] = useState(false);
+  // Vente groupée (bundle) toujours active (Panier POS).
+  const [modeBundle, setModeBundle] = useState(true);
   const [selection, setSelection] = useState<Map<string, number>>(new Map());
   const [paniersEnAttente, setPaniersEnAttente] = useState<{ id: number; selection: Map<string, number>; remise: string; date: Date }[]>([]);
   const [modalBundle, setModalBundle] = useState(false);
@@ -372,7 +372,6 @@ export default function CaisseClient({ role }: { role: Role }) {
   }
 
   function quitterModeBundle() {
-    setModeBundle(false);
     setSelection(new Map());
     setRemiseBundle("");
   }
@@ -629,8 +628,8 @@ export default function CaisseClient({ role }: { role: Role }) {
     <div className="flex flex-col h-screen max-h-screen bg-brand-light-grey/10">
       <header className="bg-brand-black text-brand-white p-3 shrink-0 flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-4">
-          <Link href="/ventes" className="btn btn-secondaire py-1 px-3 bg-white/10 text-white hover:bg-white/20 border-white/20">
-            ← Quitter Caisse
+          <Link href="/caisse" className="btn btn-secondaire py-1 px-3 bg-white/10 text-white hover:bg-white/20 border-white/20">
+            ← Retour au Tableau de Bord
           </Link>
           <div className="font-black text-lg tracking-wide uppercase flex items-center gap-2">
             <IconePaquet taille={20} className="text-brand-orange" />
@@ -725,21 +724,11 @@ export default function CaisseClient({ role }: { role: Role }) {
               <option value="marge_desc">Marge ↓</option>
               <option value="anciennete">Ancienneté ↓</option>
             </select>
-            {peutVendre &&
-              (modeBundle ? (
-                <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire">
-                  Annuler la sélection
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setModeBundle(true)}
-                  className="btn btn-secondaire"
-                >
-                  <IconePaquet taille={15} />
-                  Vente groupée
-                </button>
-              ))}
+            {peutVendre && (
+              <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire">
+                Vider le panier
+              </button>
+            )}
           </div>
 
           {erreurCartes && (
@@ -761,7 +750,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               Aucun produit ne correspond à la recherche.
             </p>
           )}
-          {cartes !== null && groupesFiltres.length > 0 && (
+          {cartes !== null && groupesFiltres.length > 0 && rechercheEnVente.trim() !== "" && (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {groupesFiltres.map((g) => {
                 const qtySelected = selection.get(g.cle) ?? 0;
@@ -965,7 +954,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                       ⏸️ Attente
                     </button>
                     <button onClick={quitterModeBundle} className="text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
-                      Fermer
+                      Vider
                     </button>
                   </div>
                 </div>
@@ -987,9 +976,10 @@ export default function CaisseClient({ role }: { role: Role }) {
                          </div>
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
-                           <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-md p-0.5">
-                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty - 1)} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
-                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty + 1)} disabled={item.qty >= item.groupe.unites.length} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
+                           <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
+                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty - 1)} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
+                             <span className="font-bold text-lg min-w-[20px] text-center">{item.qty}</span>
+                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty + 1)} disabled={item.qty >= item.groupe.unites.length} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
                            </div>
                          </div>
                        </div>

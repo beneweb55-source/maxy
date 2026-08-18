@@ -207,7 +207,10 @@ export default function CaisseDashboard({ role }: { role: Role }) {
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Caisse</h1>
         <div className="flex gap-2">
-          <Link href="/caisse/rapport" className="btn btn-primaire">
+          <Link href="/pos" className="btn btn-primaire bg-brand-orange border-brand-orange hover:bg-brand-orange/90 text-white font-black shadow-md flex items-center gap-2">
+            <span className="text-xl">🛒</span> Ouvrir la Caisse Enregistreuse
+          </Link>
+          <Link href="/caisse/rapport" className="btn btn-secondaire">
             Créer un rapport
           </Link>
           <a href="/api/caisse/export" className="btn btn-secondaire">
