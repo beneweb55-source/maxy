@@ -48,7 +48,7 @@ export default function Modale({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={titre}
@@ -61,11 +61,11 @@ export default function Modale({
       />
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 flex max-h-[calc(100dvh-2rem)] w-full ${
+        className={`relative z-10 flex max-h-[95dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
           large ? "max-w-2xl" : "max-w-md"
-        } flex-col overflow-hidden rounded-2xl border border-brand-light-grey bg-brand-white shadow-2xl`}
+        } flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl border border-brand-light-grey bg-brand-white shadow-2xl`}
       >
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-light-grey/70 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-light-grey/70 px-4 py-3 sm:px-6 sm:py-4">
           <h2 className="text-base font-bold tracking-tight">{titre}</h2>
           <button
             type="button"
@@ -76,7 +76,7 @@ export default function Modale({
             <IconeFermer taille={18} />
           </button>
         </div>
-        <div className="overflow-y-auto overscroll-contain px-6 py-5">{children}</div>
+        <div className="overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">{children}</div>
       </div>
     </div>,
     document.body

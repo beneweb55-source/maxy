@@ -684,27 +684,27 @@ export default function Inventaire({ role }: { role: Role }) {
 
   return (
     <div className="space-y-6 animate-entree">
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-2 pb-2 border-b border-brand-light-grey/50">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Inventaire</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
           <button
             type="button"
             onClick={() => setVueGroupee((v) => !v)}
-            className="btn btn-secondaire"
+            className="btn btn-secondaire w-full sm:w-auto justify-center"
           >
             {vueGroupee ? "Vue détaillée" : "Vue groupée"}
           </button>
           {estGerant && (
             <a
               href={`/api/produits/export?${searchParams?.toString() || ""}`}
-              className="btn btn-secondaire"
+              className="btn btn-secondaire w-full sm:w-auto justify-center"
             >
               <IconeTelechargement taille={15} />
               Export CSV
             </a>
           )}
           {peutModifier && (
-            <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
+            <button type="button" onClick={ouvrirAjout} className="btn btn-primaire w-full sm:w-auto justify-center">
               <IconePlus taille={15} />
               Ajouter un produit
             </button>
@@ -713,7 +713,7 @@ export default function Inventaire({ role }: { role: Role }) {
       </div>
 
       <div className="carte space-y-3">
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
           <form
             className="relative min-w-56 flex-1"
             onSubmit={(e) => {
@@ -735,7 +735,7 @@ export default function Inventaire({ role }: { role: Role }) {
           <select
             value={searchParams?.get("categorie") ?? ""}
             onChange={(e) => majUrl({ categorie: e.target.value || null })}
-            className="champ w-auto"
+            className="champ w-full sm:w-auto"
           >
             <option value="">Toutes catégories</option>
             {(donnees?.categories ?? []).map((c) => (
@@ -753,7 +753,7 @@ export default function Inventaire({ role }: { role: Role }) {
               if (v === "__sans__") majUrl({ sans_lot: "1", lot: null });
               else majUrl({ lot: v || null, sans_lot: null });
             }}
-            className="champ w-auto"
+            className="champ w-full sm:w-auto"
           >
             <option value="">Tous les lots</option>
             <option value="__sans__">Sans arrivage (ajout direct)</option>
@@ -763,7 +763,7 @@ export default function Inventaire({ role }: { role: Role }) {
               </option>
             ))}
           </select>
-          <label className="flex items-center gap-1.5 text-sm text-brand-warm-grey">
+          <label className="flex items-center justify-between sm:justify-start gap-1.5 text-sm text-brand-warm-grey w-full sm:w-auto">
             <input
               type="date"
               value={searchParams?.get("du") ?? ""}
@@ -824,7 +824,7 @@ export default function Inventaire({ role }: { role: Role }) {
               else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc" });
               else majUrl({ tri: null, ordre: null });
             }}
-            className="champ w-auto"
+            className="champ w-full sm:w-auto"
             aria-label="Trier par prix"
             title="Trier par prix d'achat"
           >
@@ -979,6 +979,18 @@ export default function Inventaire({ role }: { role: Role }) {
                       Vente
                     </span>
                   </div>
+                  <div className="flex sm:hidden flex-col items-end gap-1">
+                    <div className="text-right text-sm">
+                      <span className="font-bold text-brand-orange">
+                        {g.venteMin === null
+                          ? "—"
+                          : g.venteMin === g.venteMax
+                            ? formaterDA(g.venteMin)
+                            : `${formaterDA(g.venteMin)}`}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-1">
                   {peutModifier &&
                     (() => {
                       const nonVendu = g.unites.filter((u) => u.statut !== "vendu");
@@ -1040,6 +1052,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       <IconeCorbeille taille={15} />
                     </button>
                   )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => basculerGroupe(g.cle)}
@@ -1052,16 +1065,61 @@ export default function Inventaire({ role }: { role: Role }) {
                     />
                   </button>
                 </div>
+                {peutModifier && (
+                  <div className="flex sm:hidden items-center justify-between border-t border-brand-light-grey/50 px-4 py-2 bg-brand-light-grey/10">
+                    {(() => {
+                      const nonVendu = g.unites.filter((u) => u.statut !== "vendu");
+                      const exposeIds = g.unites.filter((u) => u.en_vitrine).map((u) => u.id);
+                      const enVitrine = g.enVitrine > 0;
+                      const desactive = envoi || (!enVitrine && nonVendu.length === 0);
+                      return (
+                        <button
+                          type="button"
+                          disabled={desactive}
+                          onClick={() =>
+                            enVitrine
+                              ? void basculerVitrineIds(exposeIds, false, g.reference)
+                              : void basculerVitrineIds([nonVendu[0]!.id], true, g.reference)
+                          }
+                          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
+                            enVitrine
+                              ? "bg-brand-orange/10 text-brand-orange"
+                              : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
+                          }`}
+                        >
+                          <IconeVitrine taille={14} /> {enVitrine ? "Retirer" : "Vitrine"}
+                        </button>
+                      );
+                    })()}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => ouvrirEdition(g.unites, g.reference)}
+                        className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
+                      >
+                        <IconeCrayon taille={14} /> Éditer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => ouvrirSuppressionModele(g)}
+                        className="flex items-center gap-1.5 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
+                      >
+                        <IconeCorbeille taille={14} /> Supprimer
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {ouvert && (
                   <ul className="divide-y divide-brand-light-grey/60 border-t border-brand-light-grey">
                     {g.unites.map((p) => (
-                      <li key={p.id} className="flex items-center gap-2 px-4 py-2 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/produits/${p.id}`)}
-                          className="min-w-0 flex-1 text-left transition hover:text-brand-crystal"
-                        >
+                      <li key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-2 text-sm">
+                        <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto sm:flex-1">
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/produits/${p.id}`)}
+                            className="min-w-0 flex-1 text-left transition hover:text-brand-crystal"
+                          >
                           <span className="font-mono text-xs text-brand-warm-grey">
                             {p.code_interne}
                           </span>{" "}
@@ -1075,16 +1133,19 @@ export default function Inventaire({ role }: { role: Role }) {
                               : ""}
                           </span>
                         </button>
-                        <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                        {p.en_vitrine && (
-                          <IconeVitrine
-                            taille={14}
-                            className="shrink-0 text-brand-orange"
-                            aria-label="En vitrine"
-                          />
-                        )}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+                            {p.en_vitrine && (
+                              <IconeVitrine
+                                taille={14}
+                                className="shrink-0 text-brand-orange"
+                                aria-label="En vitrine"
+                              />
+                            )}
+                          </div>
+                        </div>
                         {peutModifier && (
-                          <>
+                          <div className="flex items-center justify-end gap-1 mt-1 sm:mt-0">
                             {p.statut !== "vendu" && (
                               <button
                                 type="button"
@@ -1121,7 +1182,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             >
                               <IconeCorbeille taille={14} />
                             </button>
-                          </>
+                          </div>
                         )}
                       </li>
                     ))}
@@ -1492,11 +1553,11 @@ export default function Inventaire({ role }: { role: Role }) {
             </select>
           </div>
           {champsProduit}
-          <div className="pt-1 text-right">
+          <div className="pt-2 text-right">
             <button
               type="submit"
               disabled={envoi || !formulaireValide}
-              className="btn btn-primaire"
+              className="btn btn-primaire w-full sm:w-auto justify-center"
             >
               <IconePlus taille={15} />
               Ajouter le produit
@@ -1630,7 +1691,7 @@ export default function Inventaire({ role }: { role: Role }) {
             <button
               type="submit"
               disabled={envoi || !formulaireValide}
-              className="btn btn-primaire w-full sm:w-auto"
+              className="btn btn-primaire w-full sm:w-auto justify-center"
             >
               Enregistrer les modifications
             </button>
@@ -1715,11 +1776,11 @@ export default function Inventaire({ role }: { role: Role }) {
                 </p>
               ))}
 
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setModalSuppression(null)}
-                className="btn btn-secondaire"
+                className="btn btn-secondaire w-full sm:w-auto justify-center"
               >
                 {modalSuppression.unites.length === 0 ? "Fermer" : "Annuler"}
               </button>
@@ -1727,7 +1788,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 <button
                   type="submit"
                   disabled={envoi}
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center gap-1.5"
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                 >
                   <IconeCorbeille taille={15} />
                   Supprimer définitivement
