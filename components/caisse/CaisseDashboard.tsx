@@ -39,12 +39,12 @@ export const LIBELLES_TYPE: Record<TypeMouvement, string> = {
   achat_lot: "Achat de lot",
   vente: "Vente",
   annulation_vente: "Annulation de vente",
-  apport_associe: "Apport associ├®",
-  achat_piece: "Achat de pi├¿ce",
+  apport_associe: "Apport associé",
+  achat_piece: "Achat de pièce",
   frais: "Frais",
   retrait_parts: "Retrait des parts",
-  transfert_reserve: "Transfert r├®serve",
-  reinvest: "R├®investissement",
+  transfert_reserve: "Transfert réserve",
+  reinvest: "Réinvestissement",
 };
 
 export default function CaisseDashboard({ role }: { role: Role }) {
@@ -126,7 +126,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
         return;
       }
       afficher(
-        `Mouvement enregistr├® : ${LIBELLES_TYPE[typeMouvement]} ÔÇö ${formaterDA(Number(montant))}.`
+        `Mouvement enregistré : ${LIBELLES_TYPE[typeMouvement]} — ${formaterDA(Number(montant))}.`
       );
       setMontant("");
       setDescription("");
@@ -163,17 +163,17 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           }
         | null;
       if (!res.ok) {
-        afficher(corps?.error ?? "Erreur lors de la r├®partition.", "erreur");
+        afficher(corps?.error ?? "Erreur lors de la répartition.", "erreur");
         return;
       }
       if (corps?.confirmation_required) {
-        setConfirmationRepartition(corps.message ?? "Confirmer la r├®partition ?");
+        setConfirmationRepartition(corps.message ?? "Confirmer la répartition ?");
         return;
       }
       afficher(
         corps?.parts_vers_reserve
-          ? "R├®partition appliqu├®e ÔÇö parts redirig├®es vers la r├®serve."
-          : "R├®partition mensuelle appliqu├®e (4 mouvements cr├®├®s)."
+          ? "Répartition appliquée — parts redirigées vers la réserve."
+          : "Répartition mensuelle appliquée (4 mouvements créés)."
       );
       setConfirmationRepartition(null);
       await rafraichir();
@@ -192,7 +192,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
     );
   }
   if (!donnees)
-    return <p className="p-4 text-sm text-brand-warm-grey">Chargement de la caisseÔÇª</p>;
+    return <p className="p-4 text-sm text-brand-warm-grey">Chargement de la caisse…</p>;
 
   const { soldes, parametres, repartition } = donnees;
   const pctAtteintReserve =
@@ -208,7 +208,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Caisse</h1>
         <div className="flex gap-2">
           <Link href="/caisse/rapport" className="btn btn-primaire">
-            Cr├®er un rapport
+            Créer un rapport
           </Link>
           <a href="/api/caisse/export" className="btn btn-secondaire">
             <IconeTelechargement taille={15} />
@@ -223,7 +223,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           <p className="mt-2 text-2xl font-bold tracking-tight">{formaterDA(soldes.total)}</p>
         </div>
         <div className="carte">
-          <p className="libelle">Fonds de r├®serve</p>
+          <p className="libelle">Fonds de réserve</p>
           <p className="mt-2 text-2xl font-bold tracking-tight">{formaterDA(soldes.reserve)}</p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-brand-light-grey">
             <div
@@ -236,7 +236,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           </p>
         </div>
         <div className="carte">
-          <p className="libelle">Disponible hors r├®serve</p>
+          <p className="libelle">Disponible hors réserve</p>
           <p className="mt-2 text-2xl font-bold tracking-tight">
             {formaterDA(soldes.disponible)}
           </p>
@@ -245,23 +245,23 @@ export default function CaisseDashboard({ role }: { role: Role }) {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <section className="carte">
-          <h2 className="libelle text-brand-smooth">├ëvolution du solde ÔÇö 6 mois</h2>
+          <h2 className="libelle text-brand-smooth">Évolution du solde — 6 mois</h2>
           <GraphiqueLigne donnees={donnees.graphique_soldes} />
         </section>
 
         <section className="carte">
           <h2 className="libelle text-brand-smooth">
-            R├®partition mensuelle ÔÇö {repartition.mois}
+            Répartition mensuelle — {repartition.mois}
           </h2>
           {repartition.deja_appliquee ? (
             <p className="bandeau-succes mt-3 flex items-center gap-2">
               <IconeCocheCercle taille={15} />
-              R├®partition d├®j├á appliqu├®e ce mois-ci (une seule par mois).
+              Répartition déjà appliquée ce mois-ci (une seule par mois).
             </p>
           ) : (
             <div className="mt-3 space-y-3">
               <p className="text-sm">
-                B├®n├®fice du mois (somme des marges des ventes) :{" "}
+                Bénéfice du mois (somme des marges des ventes) :{" "}
                 <strong>{formaterDA(benefice)}</strong>
               </p>
               {benefice > 0 && (
@@ -276,14 +276,14 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                     <tbody className="divide-y divide-brand-light-grey/50">
                       <tr>
                         <td className="py-2 text-brand-warm-grey flex items-center gap-2">
-                          R├®investissement
+                          Réinvestissement
                           <input type="number" min="0" max="100" value={pctReinvest} onChange={e => setPctReinvest(Number(e.target.value))} className="w-16 champ px-1 py-0.5 text-center" /> %
                         </td>
                         <td className="py-2 text-right font-semibold">{formaterDA(Math.round(benefice * (pctReinvest / 100)))}</td>
                       </tr>
                       <tr>
                         <td className="py-2 text-brand-warm-grey flex items-center gap-2">
-                          Fonds de r├®serve
+                          Fonds de réserve
                           <input type="number" min="0" max="100" value={pctReserve} onChange={e => setPctReserve(Number(e.target.value))} className="w-16 champ px-1 py-0.5 text-center" /> %
                         </td>
                         <td className="py-2 text-right font-semibold">
@@ -292,7 +292,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                       </tr>
                       <tr>
                         <td className="py-2 text-brand-warm-grey flex items-center gap-2">
-                          Parts associ├®s
+                          Parts associés
                           <input type="number" min="0" max="100" value={pctParts} onChange={e => setPctParts(Number(e.target.value))} className="w-16 champ px-1 py-0.5 text-center" /> %
                         </td>
                         <td className="py-2 text-right font-semibold">
@@ -318,17 +318,17 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                   disabled={envoi || benefice <= 0 || (pctReinvest + pctReserve + pctParts + pctFrais !== 100)}
                   onClick={() => {
                     setConfirmationRepartition(
-                      `Confirmez-vous la r├®partition de ${formaterDA(benefice)} avec ces pourcentages : R├®invest. (${pctReinvest}%), R├®serve (${pctReserve}%), Parts (${pctParts}%), Frais (${pctFrais}%) ?`
+                      `Confirmez-vous la répartition de ${formaterDA(benefice)} avec ces pourcentages : Réinvest. (${pctReinvest}%), Réserve (${pctReserve}%), Parts (${pctParts}%), Frais (${pctFrais}%) ?`
                     );
                   }}
-                  title={benefice <= 0 ? "Aucun b├®n├®fice ├á r├®partir ce mois-ci" : undefined}
+                  title={benefice <= 0 ? "Aucun bénéfice à répartir ce mois-ci" : undefined}
                   className="btn btn-primaire w-full"
                 >
-                  Appliquer la r├®partition
+                  Appliquer la répartition
                 </button>
               ) : (
                 <p className="text-xs text-brand-warm-grey">
-                  Seul le g├®rant applique la r├®partition.
+                  Seul le gérant applique la répartition.
                 </p>
               )}
             </div>
@@ -354,7 +354,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                   <option key={t} value={t}>
                     {LIBELLES_TYPE[t as TypeMouvement]} (
                     {sensMouvement(t) === "entree"
-                      ? "entr├®e"
+                      ? "entrée"
                       : sensMouvement(t) === "sortie"
                         ? "sortie"
                         : "neutre"}
@@ -400,8 +400,8 @@ export default function CaisseDashboard({ role }: { role: Role }) {
             </button>
           </div>
           <p className="mt-2 text-xs text-brand-warm-grey">
-            Les mouvements achat de lot, vente et annulation de vente sont cr├®├®s automatiquement
-            par le syst├¿me. Rien ne se supprime jamais.
+            Les mouvements achat de lot, vente et annulation de vente sont créés automatiquement
+            par le système. Rien ne se supprime jamais.
           </p>
         </section>
       )}
@@ -415,7 +415,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           <div className="flex flex-col gap-3 md:hidden">
             {donnees.mouvements.length === 0 && (
               <div className="carte border-dashed text-center p-6 text-brand-warm-grey text-sm">
-                Aucun mouvement pour le moment. La caisse d├®marre ├á 0 DA.
+                Aucun mouvement pour le moment. La caisse démarre à 0 DA.
               </div>
             )}
             {donnees.mouvements.map((m) => {
@@ -437,11 +437,11 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                     </div>
                     <div className="text-right">
                       <span className={`font-bold ${sens === "entree" ? "text-succes" : sens === "sortie" ? "text-danger" : "text-brand-warm-grey"}`}>
-                        {sens === "entree" ? "+" : sens === "sortie" ? "ÔêÆ" : "="} {formaterDA(m.montant)}
+                        {sens === "entree" ? "+" : sens === "sortie" ? "−" : "="} {formaterDA(m.montant)}
                       </span>
                     </div>
                   </div>
-                  <div className="text-brand-warm-grey">{m.description ?? "ÔÇö"}</div>
+                  <div className="text-brand-warm-grey">{m.description ?? "—"}</div>
                   <div className="flex justify-between items-center mt-1 pt-2 border-t border-brand-light-grey/50">
                     <span className="text-xs text-brand-grey">Par: <span className="font-semibold text-brand-black">{m.par}</span></span>
                     <span className="text-xs text-brand-grey">Solde: <span className="font-bold text-brand-black">{formaterDA(m.solde_apres)}</span></span>
@@ -461,15 +461,15 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                   <th className="entete-table">Description</th>
                   <th className="entete-table">Par</th>
                   <th className="entete-table text-right">Montant</th>
-                  <th className="entete-table text-right">Solde apr├¿s</th>
+                  <th className="entete-table text-right">Solde après</th>
                 </tr>
               </thead>
               <tbody className="">
                 {donnees.mouvements.length === 0 && (
                   <tr className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                     <td colSpan={6} className="px-3 py-6 text-center text-brand-warm-grey">
-                      Aucun mouvement pour le moment. La caisse d├®marre ├á 0 DA ÔÇö enregistrez un
-                      apport associ├® pour l'alimenter.
+                      Aucun mouvement pour le moment. La caisse démarre à 0 DA — enregistrez un
+                      apport associé pour l'alimenter.
                     </td>
                   </tr>
                 )}
@@ -491,7 +491,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                         className="max-w-72 truncate px-3 py-2 text-brand-warm-grey"
                         title={m.description ?? ""}
                       >
-                        {m.description ?? "ÔÇö"}
+                        {m.description ?? "—"}
                       </td>
                       <td className="px-3 py-2">{m.par}</td>
                       <td
@@ -503,7 +503,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                               : "text-brand-warm-grey"
                         }`}
                       >
-                        {sens === "entree" ? "+" : sens === "sortie" ? "ÔêÆ" : "="}{" "}
+                        {sens === "entree" ? "+" : sens === "sortie" ? "−" : "="}{" "}
                         {formaterDA(m.montant)}
                       </td>
                       <td className="px-3 py-2 text-right font-bold">
@@ -525,7 +525,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               className="btn btn-secondaire"
             >
               <IconeChevronGauche taille={15} />
-              Pr├®c├®dent
+              Précédent
             </button>
             <span className="px-2 text-brand-warm-grey">
               Page {page} / {donnees.pages}
@@ -594,7 +594,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
             onClick={() => void appliquerRepartition(true)}
             className="btn btn-primaire"
           >
-            Confirmer la r├®partition
+            Confirmer la répartition
           </button>
         </div>
       </Modale>
@@ -618,7 +618,7 @@ function GraphiqueLigne({ donnees }: { donnees: { jour: {label: string, solde: n
   const series = donnees ? donnees[granularite] : [];
 
   if (!series || series.length === 0) {
-    return <p className="mt-3 text-sm text-brand-warm-grey">Aucune donn├®e pour cette p├®riode.</p>;
+    return <p className="mt-3 text-sm text-brand-warm-grey">Aucune donnée pour cette période.</p>;
   }
 
   const largeur = 480;
@@ -659,7 +659,7 @@ function GraphiqueLigne({ donnees }: { donnees: { jour: {label: string, solde: n
           onClick={() => setGranularite('an')}
           className={`px-2 py-1 text-xs rounded-md font-medium transition ${granularite === 'an' ? 'bg-brand-orange text-white' : 'bg-brand-light-grey/30 text-brand-smooth hover:bg-brand-light-grey/50'}`}
         >
-          Ann├®e
+          Année
         </button>
       </div>
       <div className="overflow-x-auto pb-2">
