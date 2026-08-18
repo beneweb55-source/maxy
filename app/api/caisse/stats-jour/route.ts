@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { utilisateurCourant } from "@/lib/session";
 
 export async function GET() {
   const user = await utilisateurCourant();
-  if (!user || user.role !== "admin") {
+  if (!user || (user.role !== "gerant" && user.role !== "dev")) {
     // Dans le cas où un simple vendeur pourrait utiliser la caisse, ajuster ici
-    if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
 
   const today = new Date();

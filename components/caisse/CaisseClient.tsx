@@ -1870,5 +1870,6 @@ export default function CaisseClient({ role }: { role: Role }) {
         )}
       </Modale>
     </div>
+    </div>
   );
 }

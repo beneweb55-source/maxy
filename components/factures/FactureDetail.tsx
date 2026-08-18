@@ -516,6 +516,7 @@ export default function FactureDetail({
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {formatTicket && (
