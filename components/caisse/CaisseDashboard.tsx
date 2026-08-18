@@ -12,6 +12,7 @@ import {
   IconeChevronDroite,
   IconeCocheCercle,
   IconeTelechargement,
+  IconePanier,
 } from "@/components/icons";
 
 interface MouvementDto {
@@ -208,7 +209,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Caisse</h1>
         <div className="flex gap-2">
           <Link href="/pos" className="btn btn-primaire bg-brand-orange border-brand-orange hover:bg-brand-orange/90 text-white font-black shadow-md flex items-center gap-2">
-            <span className="text-xl">🛒</span> Ouvrir la Caisse Enregistreuse
+            <IconePanier taille={20} /> Ouvrir la Caisse Enregistreuse
           </Link>
           <Link href="/caisse/rapport" className="btn btn-secondaire">
             Créer un rapport

@@ -78,7 +78,7 @@ export default function FactureDetail({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const autoPrint = searchParams.get("print") === "ticket";
+  const autoPrint = searchParams.get("print") === "ticket" || searchParams.get("print") === "auto";
   const { afficher } = useToast();
   const [facture, setFacture] = useState<FactureDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);

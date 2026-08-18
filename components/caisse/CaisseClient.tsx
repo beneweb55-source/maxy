@@ -130,6 +130,24 @@ function playBeep(success: boolean) {
   }
 }
 
+function HorlogeLive() {
+  const [temps, setTemps] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTemps(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <div className="flex flex-col text-right ml-4 border-l border-white/20 pl-4">
+      <span className="font-black text-xl leading-none text-brand-white tracking-widest">
+        {temps.toLocaleTimeString("fr-DZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+      </span>
+      <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block mt-1">
+        {temps.toLocaleDateString("fr-DZ", { weekday: "short", day: "2-digit", month: "short" })}
+      </span>
+    </div>
+  );
+}
+
 export default function CaisseClient({ role }: { role: Role }) {
   const { afficher } = useToast();
   const searchParams = useSearchParams();
@@ -195,6 +213,11 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [especesRecues, setEspecesRecues] = useState("");
   const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
   const [remiseBundle, setRemiseBundle] = useState("");
+  const [impressionAuto, setImpressionAuto] = useState(false);
+  useEffect(() => {
+    const saved = localStorage.getItem("impressionAuto");
+    if (saved) setImpressionAuto(saved === "true");
+  }, []);
   
   const [historique, setHistorique] = useState<ReponseHistorique | null>(null);
   const [erreurHistorique, setErreurHistorique] = useState<string | null>(null);
@@ -209,6 +232,21 @@ export default function CaisseClient({ role }: { role: Role }) {
     index: number;
     titre: string;
   } | null>(null);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA" || document.activeElement?.tagName === "SELECT") return;
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const searchInput = document.getElementById("scanner-pos") as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [modalBundle, modalRetrait, modalVente, modalAnnulation]);
 
   const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
   const estGerant = role === "gerant";
@@ -419,6 +457,10 @@ export default function CaisseClient({ role }: { role: Role }) {
   }
 
   async function enregistrerVenteGroupee(confirmer: boolean) {
+    if (modePaiementBundle === "credit" && !clientNomBundle.trim()) {
+      afficher("Veuillez saisir le nom du client pour une vente à crédit.", "erreur");
+      return;
+    }
     setEnvoi(true);
     try {
         const produit_ids: number[] = [];
@@ -468,7 +510,7 @@ export default function CaisseClient({ role }: { role: Role }) {
           : `Vente groupée enregistrée : ${produit_ids.length} produits — ${formaterDA(Number(prixTotalBundle))}.`
       );
       if (factureId) {
-        window.open(`/factures/${factureId}?print=ticket`, '_blank');
+        window.open(`/factures/${factureId}?print=${impressionAuto ? "auto" : "ticket"}`, '_blank');
       }
       setModalBundle(false);
       quitterModeBundle();
@@ -637,18 +679,21 @@ export default function CaisseClient({ role }: { role: Role }) {
           </div>
         </div>
         
-        {statsJour && (
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Ventes aujourd'hui</span>
-              <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
+        <div className="flex items-center gap-6">
+          {statsJour && (
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Ventes aujourd'hui</span>
+                <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Recette du jour</span>
+                <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
+              </div>
             </div>
-            <div className="text-right">
-              <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Recette du jour</span>
-              <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
-            </div>
-          </div>
-        )}
+          )}
+          <HorlogeLive />
+        </div>
       </header>
 
       <div className="flex-1 overflow-hidden flex flex-col p-4">
@@ -661,6 +706,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="2" height="8" x="7" y="8"/><rect width="2" height="8" x="11" y="8"/><rect width="2" height="8" x="15" y="8"/></svg>
               </span>
               <input
+                id="scanner-pos"
                 type="text"
                 autoFocus
                 placeholder="Scanner code-barres..."
@@ -1004,6 +1050,12 @@ export default function CaisseClient({ role }: { role: Role }) {
                       />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-grey pointer-events-none">DA</span>
                     </div>
+                  </div>
+                  <div className="flex justify-end gap-1 mt-1">
+                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.05).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-5%</button>
+                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.10).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-10%</button>
+                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.15).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-15%</button>
+                    <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-danger/20 text-brand-black">X</button>
                   </div>
                   <div className="flex justify-between items-center pt-2 mt-2 border-t border-brand-light-grey/30">
                     <span className="font-black text-lg text-brand-black uppercase">Total à payer</span>
@@ -1650,6 +1702,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <option value="especes">Espèces</option>
                 <option value="virement">Virement (CCP / BaridiMob)</option>
                 <option value="cheque">Chèque</option>
+                <option value="credit">Crédit (Dette)</option>
               </select>
             </div>
           </div>
@@ -1677,6 +1730,12 @@ export default function CaisseClient({ role }: { role: Role }) {
                       </span>
                     </div>
                   )}
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 bg-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">1000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 bg-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">2000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 bg-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">5000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues(prixTotalBundle)} className="flex-1 py-1 bg-brand-orange text-white border border-brand-orange rounded shadow-sm text-sm font-bold hover:bg-brand-orange/90 transition">Exact</button>
                 </div>
               </div>
             </div>
@@ -1763,7 +1822,12 @@ export default function CaisseClient({ role }: { role: Role }) {
             </div>
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center justify-between mt-4">
+            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-brand-black">
+              <input type="checkbox" checked={impressionAuto} onChange={(e) => { setImpressionAuto(e.target.checked); localStorage.setItem("impressionAuto", e.target.checked.toString()); }} className="rounded text-brand-orange focus:ring-brand-orange h-4 w-4" />
+              Impression auto & Tiroir-caisse
+            </label>
+            <div className="flex justify-end gap-2">
             {avertissementBundle ? (
               <>
                 <button
@@ -1793,6 +1857,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 Enregistrer la vente groupée
               </button>
             )}
+          </div>
           </div>
         </div>
       </Modale>
