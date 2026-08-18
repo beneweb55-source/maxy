@@ -112,7 +112,7 @@ interface GroupeProduits {
 function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
   const groupes = new Map<string, LigneProduit[]>();
   for (const p of produits) {
-    const cle = `${p.reference.trim().toLowerCase()}|${p.categorie.trim().toLowerCase()}`;
+    const cle = `${p.lot_id ?? "sans-lot"}|${p.reference.trim().toLowerCase()}|${p.categorie.trim().toLowerCase()}`;
     const existant = groupes.get(cle);
     if (existant) existant.push(p);
     else groupes.set(cle, [p]);

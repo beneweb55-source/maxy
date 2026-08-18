@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { LangueProvider } from "@/lib/i18n/contexte";
@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   title: "SolutionMaxi",
   description: "Plateforme de gestion de Stock / Revente Solution Maxi",
 };
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default async function RootLayout({
   children,

@@ -1,6 +1,6 @@
 import type { StatutProduit } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { calculerSoldes, formaterDA, type MouvementPourCalcul } from "@/lib/caisse";
+import { calculerSoldes, formaterDA, soldeApres, type MouvementPourCalcul, type TypeMouvementCaisse } from "@/lib/caisse";
 import { libelleStatut } from "@/lib/statuts";
 import type { Utilisateur } from "@/lib/session";
 import type { CleKpi, ConfigDashboard, SourceGraphique, SourceTableau } from "./config";
@@ -97,7 +97,15 @@ export async function chargerDonneesDashboard(
   // colonnes, dont `image_url` qui contient la photo en base64. Sur l'ensemble
   // du catalogue, cela représenterait des centaines de Mo transférés à chaque
   // affichage du tableau de bord. Le dashboard n'a besoin d'aucune image.
+  const seuilHistorique = debutMoisUTC(maintenant, -13); // 13 mois glissants
+
   const produitsPromise = prisma.produit.findMany({
+    where: {
+      OR: [
+        { statut: { not: "vendu" } },
+        { date_vente: { gte: seuilHistorique } }
+      ]
+    },
     select: {
       id: true,
       code_interne: true,
@@ -121,6 +129,7 @@ export async function chargerDonneesDashboard(
   });
   const ventesPromise = besoinVentes
     ? prisma.vente.findMany({
+        where: { date_vente: { gte: seuilHistorique } },
         include: {
           produit: {
             select: {
@@ -135,6 +144,7 @@ export async function chargerDonneesDashboard(
     : null;
   const mouvementsPromise = besoinMouvements
     ? prisma.mouvementCaisse.findMany({
+        where: { date: { gte: seuilHistorique } },
         orderBy: { date: "asc" },
         select: { type: true, montant: true, date: true },
       })
@@ -195,12 +205,32 @@ export async function chargerDonneesDashboard(
     kpis.ca_mois = kpiMensuel(caParMois);
   }
   if (clesKpi.has("cash_disponible")) {
-    const enCalcul = (liste: typeof mouvements): MouvementPourCalcul[] =>
-      liste.map((m) => ({ type: m.type, montant: m.montant }));
-    const actuel = calculerSoldes(enCalcul(mouvements)).disponible;
-    const avant = calculerSoldes(
-      enCalcul(mouvements.filter((m) => m.date < debutMoisCourant))
-    ).disponible;
+    const [statGlobal, statAvant] = await Promise.all([
+      prisma.mouvementCaisse.groupBy({
+        by: ['type'],
+        _sum: { montant: true },
+      }),
+      prisma.mouvementCaisse.groupBy({
+        by: ['type'],
+        _sum: { montant: true },
+        where: { date: { lt: debutMoisCourant } },
+      })
+    ]);
+
+    const calcSolde = (groupes: typeof statGlobal) => {
+      let total = 0;
+      let reserve = 0;
+      for (const g of groupes) {
+        const montant = g._sum.montant ?? 0;
+        const type = g.type as TypeMouvementCaisse;
+        if (type === "transfert_reserve") reserve += montant;
+        total = soldeApres(total, type, montant);
+      }
+      return total - reserve;
+    };
+
+    const actuel = calcSolde(statGlobal);
+    const avant = calcSolde(statAvant);
     kpis.cash_disponible = { valeur: actuel, variation_pct: variation(actuel, avant) };
   }
   if (clesKpi.has("valeur_stock") || clesKpi.has("temps_stock_moyen")) {

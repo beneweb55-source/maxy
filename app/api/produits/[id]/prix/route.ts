@@ -38,19 +38,40 @@ export async function POST(
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.produit.update({
-        where: { id: produit.id },
+      let idsAUpdate = [produit.id];
+      let produitsToUpdate = [produit];
+
+      if (produit.lot_id !== null) {
+        const identiques = await tx.produit.findMany({
+          where: {
+            lot_id: produit.lot_id,
+            reference: produit.reference,
+            categorie: produit.categorie,
+          }
+        });
+        // We only update price for products that are not sold.
+        produitsToUpdate = identiques.filter(p => p.statut !== "vendu");
+        idsAUpdate = produitsToUpdate.map(p => p.id);
+      }
+
+      await tx.produit.updateMany({
+        where: { id: { in: idsAUpdate } },
         data: { prix_vente_fixe: prix, statut: "en_vente" },
       });
-      await tx.historiqueStatut.create({
-        data: {
-          produit_id: produit.id,
+
+      const historiques = produitsToUpdate
+        .filter(p => p.statut === "ok")
+        .map(p => ({
+          produit_id: p.id,
           user_id: user.id,
-          statut_avant: "ok",
-          statut_apres: "en_vente",
-          note: `Prix fixé : ${formaterDA(prix)}`,
-        },
-      });
+          statut_avant: "ok" as const,
+          statut_apres: "en_vente" as const,
+          note: p.id === produit.id ? `Prix fixé : ${formaterDA(prix)}` : `Prix fixé en cascade : ${formaterDA(prix)}`,
+        }));
+      
+      if (historiques.length > 0) {
+        await tx.historiqueStatut.createMany({ data: historiques });
+      }
     });
 
     return NextResponse.json({ ok: true });

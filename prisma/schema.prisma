@@ -143,6 +143,10 @@ model Produit {
   ventes      Vente[]
   images      ProduitImage[]
 
+  @@index([lot_id])
+  @@index([statut])
+  @@index([categorie])
+  @@index([lot_id, reference, categorie])
   @@map("produits")
 }
 
@@ -175,6 +179,8 @@ model Vente {
   produit Produit @relation(fields: [produit_id], references: [id])
   vendeur User    @relation("ventes_effectuees", fields: [vendu_par], references: [id])
 
+  @@index([produit_id])
+  @@index([date_vente])
   @@map("ventes")
 }
 
@@ -189,6 +195,7 @@ model Reparation {
   produit Produit @relation(fields: [produit_id], references: [id])
   user    User    @relation(fields: [user_id], references: [id])
 
+  @@index([produit_id])
   @@map("reparations")
 }
 
@@ -204,6 +211,7 @@ model HistoriqueStatut {
   produit Produit @relation(fields: [produit_id], references: [id])
   user    User    @relation(fields: [user_id], references: [id])
 
+  @@index([produit_id])
   @@map("historique_statuts")
 }
 
@@ -222,6 +230,9 @@ model MouvementCaisse {
   lot     Lot?     @relation(fields: [lot_id], references: [id])
   user    User     @relation(fields: [user_id], references: [id])
 
+  @@index([produit_id])
+  @@index([lot_id])
+  @@index([date])
   @@map("mouvements_caisse")
 }
 

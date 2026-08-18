@@ -294,23 +294,82 @@ export async function PUT(
     }
 
     const maj = await prisma.$transaction(async (tx) => {
-      if (modifPrixVente && donnees.prix_vente_fixe !== null && produit.statut === "ok") {
-        donnees.statut = "en_vente";
-        await tx.historiqueStatut.create({
-          data: {
-            produit_id: produit.id,
-            user_id: user.id,
-            statut_avant: "ok",
-            statut_apres: "en_vente",
-            note: "Prix fixé depuis l'inventaire",
-          },
+      let produitsIdentiques = [produit];
+      
+      // Si le produit fait partie d'un lot, on recherche tous les produits identiques
+      // (même lot, référence, catégorie) pour leur appliquer les modifications de base (prix, réf, images).
+      if (produit.lot_id !== null) {
+        produitsIdentiques = await tx.produit.findMany({
+          where: {
+            lot_id: produit.lot_id,
+            reference: produit.reference,
+            categorie: produit.categorie,
+          }
         });
       }
-      const m = await tx.produit.update({ where: { id: produitId }, data: donnees });
-      if (extrasARemplacer !== null) {
-        await remplacerImagesSupplementaires(tx, produitId, extrasARemplacer);
+
+      // Séparer les données qui s'appliquent à tous les produits identiques
+      // de celles qui ne s'appliquent qu'à l'unité spécifique (vitrine, a_jeter).
+      const donneesCommunes: any = {};
+      if (donnees.reference !== undefined) donneesCommunes.reference = donnees.reference;
+      if (donnees.categorie !== undefined) donneesCommunes.categorie = donnees.categorie;
+      if (donnees.prix_achat !== undefined) donneesCommunes.prix_achat = donnees.prix_achat;
+      if (modifPrixVente) donneesCommunes.prix_vente_fixe = donnees.prix_vente_fixe;
+      if (donnees.image_url !== undefined) donneesCommunes.image_url = donnees.image_url;
+
+      const donneesUnite: any = { ...donneesCommunes };
+      if (donnees.en_vitrine !== undefined) donneesUnite.en_vitrine = donnees.en_vitrine;
+      if (donnees.a_jeter !== undefined) donneesUnite.a_jeter = donnees.a_jeter;
+
+      let m;
+
+      for (const p of produitsIdentiques) {
+        if (p.id === produitId) {
+          // Produit ciblé explicitement
+          const d = { ...donneesUnite };
+          if (modifPrixVente && donnees.prix_vente_fixe !== null && p.statut === "ok") {
+            d.statut = "en_vente";
+            await tx.historiqueStatut.create({
+              data: {
+                produit_id: p.id,
+                user_id: user.id,
+                statut_avant: "ok",
+                statut_apres: "en_vente",
+                note: "Prix fixé depuis l'inventaire",
+              },
+            });
+          }
+          m = await tx.produit.update({ where: { id: p.id }, data: d });
+          if (extrasARemplacer !== null) {
+            await remplacerImagesSupplementaires(tx, p.id, extrasARemplacer);
+          }
+        } else {
+          // Autres produits identiques du même lot (on exclut les vendus pour les prix de vente)
+          if (p.statut === "vendu" && modifPrixVente) continue;
+
+          const d = { ...donneesCommunes };
+          if (modifPrixVente && donnees.prix_vente_fixe !== null && p.statut === "ok") {
+            d.statut = "en_vente";
+            await tx.historiqueStatut.create({
+              data: {
+                produit_id: p.id,
+                user_id: user.id,
+                statut_avant: "ok",
+                statut_apres: "en_vente",
+                note: "Prix fixé en cascade (produits identiques du lot)",
+              },
+            });
+          }
+          if (Object.keys(d).length > 0) {
+             await tx.produit.update({ where: { id: p.id }, data: d });
+             if (extrasARemplacer !== null) {
+               await remplacerImagesSupplementaires(tx, p.id, extrasARemplacer);
+             }
+          }
+        }
       }
-      return m;
+
+      return m!;
     });
 
     return NextResponse.json({
