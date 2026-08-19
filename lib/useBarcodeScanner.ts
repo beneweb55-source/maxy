@@ -12,8 +12,8 @@ export function useBarcodeScanner(onScan: (code: string) => void) {
       if (e.target && (e.target as HTMLElement).tagName === "TEXTAREA") return;
       
       const now = Date.now();
-      // Un lecteur de code-barres tape très vite (souvent moins de 30ms entre chaque frappe)
-      if (now - lastTime.current > 50) {
+      // Tolérance augmentée à 150ms pour gérer la latence Bluetooth et le réveil de la douchette
+      if (now - lastTime.current > 150) {
         buffer.current = ""; // Réinitialiser si on tape trop lentement (frappe humaine)
       }
       

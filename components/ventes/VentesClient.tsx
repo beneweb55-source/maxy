@@ -246,6 +246,11 @@ export default function VentesClient({ role }: { role: Role }) {
 
   useEffect(() => {
     void chargerCartes();
+    // Auto-resync toutes les 15 secondes
+    const interval = setInterval(() => {
+      void chargerCartes();
+    }, 15000);
+    return () => clearInterval(interval);
   }, [chargerCartes]);
 
   const handleScan = useCallback((code: string) => {

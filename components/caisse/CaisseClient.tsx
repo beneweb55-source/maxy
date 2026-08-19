@@ -305,6 +305,12 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   useEffect(() => {
     void chargerCartes();
+    // Auto-resync toutes les 15 secondes pour toujours avoir le stock à jour
+    // si un autre vendeur fait une vente depuis un autre poste.
+    const interval = setInterval(() => {
+      void chargerCartes();
+    }, 15000);
+    return () => clearInterval(interval);
   }, [chargerCartes]);
 
   const ouvrirVente = useCallback((groupe: GroupeEnVente) => {
