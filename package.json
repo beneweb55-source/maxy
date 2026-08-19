@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
     "dev:safe": "set NEXT_DIST_DIR=C:\\maxy-build && next dev -p 3000 -H 0.0.0.0",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "build:safe": "set NEXT_DIST_DIR=C:\\maxy-build && next build",
     "start": "next start",
     "start:safe": "set NEXT_DIST_DIR=C:\\maxy-build && next start",

@@ -157,15 +157,20 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [onglet, setOnglet] = useState<"en_vente" | "historique">("en_vente");
   const [envoi, setEnvoi] = useState(false);
   const [statsJour, setStatsJour] = useState<{ total: number; nombre: number } | null>(null);
+  const [statsJourErreur, setStatsJourErreur] = useState<string | null>(null);
 
   const chargerStatsJour = useCallback(async () => {
     try {
       const res = await fetch("/api/caisse/stats-jour");
       if (res.ok) {
         setStatsJour(await res.json());
+        setStatsJourErreur(null);
+      } else {
+        setStatsJourErreur("Erreur de chargement des statistiques.");
       }
     } catch (e) {
       console.error(e);
+      setStatsJourErreur("Impossible de joindre le serveur.");
     }
   }, []);
 
@@ -196,8 +201,8 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   // Vente groupée (bundle) toujours active (Panier POS).
   const [modeBundle, setModeBundle] = useState(true);
-  const [selection, setSelection] = useState<Map<string, number>>(new Map());
-  const [paniersEnAttente, setPaniersEnAttente] = useState<{ id: number; selection: Map<string, number>; remise: string; date: Date }[]>([]);
+  const [selection, setSelection] = useState<Map<string, Set<number>>>(new Map());
+  const [paniersEnAttente, setPaniersEnAttente] = useState<{ id: number; selection: Map<string, Set<number>>; remise: string; date: Date }[]>([]);
   const [modalBundle, setModalBundle] = useState(false);
   const [prixTotalBundle, setPrixTotalBundle] = useState("");
   const [canalBundle, setCanalBundle] = useState("");
@@ -241,7 +246,7 @@ export default function CaisseClient({ role }: { role: Role }) {
       const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
       if (groupe) {
         setModeBundle(true);
-        mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
+        ajouterASelection(groupe.cle, produit.id);
         playBeep(true);
         afficher(`Produit ${produit.reference} ajouté au panier.`);
       }
@@ -249,7 +254,7 @@ export default function CaisseClient({ role }: { role: Role }) {
       playBeep(false);
       afficher("Code-barres introuvable dans les produits en vente.", "erreur");
     }
-  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, cartes, selection, afficher, grouperDoublonsVente, mettreAJourSelection, playBeep]);
+  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, cartes, selection, afficher, grouperDoublonsVente, ajouterASelection, playBeep]);
 
   useBarcodeScanner(handleScan);
 
@@ -374,29 +379,25 @@ export default function CaisseClient({ role }: { role: Role }) {
     return tri;
   })();
 
-  const totalSelectionnees = Array.from(selection.values()).reduce((a, b) => a + b, 0);
+  const totalSelectionnees = Array.from(selection.values()).reduce((a, b) => a + b.size, 0);
 
   const selectionnees = (() => {
-    const arr: CarteEnVente[] = [];
-    if (!cartes) return arr;
-    const groupes = grouperDoublonsVente(cartes);
-    for (const [cle, qty] of selection.entries()) {
-      const g = groupes.find(groupe => groupe.cle === cle);
-      if (g) {
-        arr.push(...g.unites.slice(0, qty));
-      }
+    const ids: number[] = [];
+    if (!cartes) return [];
+    for (const [cle, setIds] of selection.entries()) {
+      ids.push(...Array.from(setIds));
     }
-    return arr;
+    return cartes.filter(c => ids.includes(c.id));
   })();
 
   const cartItems = (() => {
     const arr: { groupe: GroupeEnVente; qty: number; prix: number }[] = [];
     if (!cartes) return arr;
     const groupes = grouperDoublonsVente(cartes);
-    for (const [cle, qty] of selection.entries()) {
+    for (const [cle, setIds] of selection.entries()) {
       const g = groupes.find(groupe => groupe.cle === cle);
       if (g) {
-        arr.push({ groupe: g, qty, prix: g.prix_vente_fixe ?? 0 });
+        arr.push({ groupe: g, qty: setIds.size, prix: g.prix_vente_fixe ?? 0 });
       }
     }
     return arr;
@@ -405,11 +406,43 @@ export default function CaisseClient({ role }: { role: Role }) {
   const cartTotal = cartItems.reduce((sum, item) => sum + item.prix * item.qty, 0);
   const totalApresRemise = cartTotal - (Number(remiseBundle) || 0);
 
-  function mettreAJourSelection(cle: string, qte: number) {
+  function ajouterASelection(cle: string, produitId?: number) {
     setSelection((prev) => {
       const suivant = new Map(prev);
-      if (qte <= 0) suivant.delete(cle);
-      else suivant.set(cle, qte);
+      const s = suivant.get(cle) ? new Set(suivant.get(cle)) : new Set<number>();
+      
+      if (produitId) {
+        s.add(produitId);
+      } else {
+        if (cartes) {
+          const groupes = grouperDoublonsVente(cartes);
+          const g = groupes.find(x => x.cle === cle);
+          if (g) {
+            const dispo = g.unites.find(u => !s.has(u.id));
+            if (dispo) s.add(dispo.id);
+          }
+        }
+      }
+      suivant.set(cle, s);
+      return suivant;
+    });
+  }
+
+  function retirerDeSelection(cle: string) {
+    setSelection((prev) => {
+      const suivant = new Map(prev);
+      const s = suivant.get(cle);
+      if (s && s.size > 0) {
+        const nouveauSet = new Set(s);
+        const last = Array.from(nouveauSet).pop();
+        if (last !== undefined) nouveauSet.delete(last);
+        
+        if (nouveauSet.size === 0) {
+          suivant.delete(cle);
+        } else {
+          suivant.set(cle, nouveauSet);
+        }
+      }
       return suivant;
     });
   }
@@ -469,10 +502,11 @@ export default function CaisseClient({ role }: { role: Role }) {
     setEnvoi(true);
     try {
         const produit_ids: number[] = [];
-        for (const [cle, qty] of selection.entries()) {
-          const groupe = grouperDoublonsVente(cartes ?? []).find(g => g.cle === cle);
+        const groupes = grouperDoublonsVente(cartes ?? []);
+        for (const [cle, setIds] of selection.entries()) {
+          const groupe = groupes.find(g => g.cle === cle);
           if (groupe) {
-            produit_ids.push(...groupe.unites.slice(0, qty).map(u => u.id));
+            produit_ids.push(...Array.from(setIds));
           }
         }
         
@@ -686,28 +720,38 @@ export default function CaisseClient({ role }: { role: Role }) {
         </div>
         
         <div className="flex items-center gap-6">
-          {statsJour && (
+          {(statsJour || statsJourErreur) && (
             <div className="flex items-center gap-6">
-              <div className="text-right">
-                <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Ventes aujourd'hui</span>
-                <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Recette du jour</span>
-                <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
-              </div>
-              <button 
-                onClick={() => {
-                  if (window.confirm("Êtes-vous sûr de vouloir vider la caisse ? Les compteurs de la journée repartiront à 0.")) {
-                    fetch('/api/caisse/vider', { method: 'POST' })
-                      .then(() => chargerStatsJour())
-                      .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
-                  }
-                }}
-                className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded shadow-sm transition"
-              >
-                Vider la Caisse
-              </button>
+              {statsJourErreur ? (
+                <div className="text-right">
+                  <span className="text-sm text-red-500 font-medium">{statsJourErreur}</span>
+                </div>
+              ) : statsJour ? (
+                <>
+                  <div className="text-right">
+                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Ventes aujourd'hui</span>
+                    <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Recette du jour</span>
+                    <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
+                  </div>
+                </>
+              ) : null}
+              {peutVendre && (
+                <button 
+                  onClick={() => {
+                    if (window.confirm("Êtes-vous sûr de vouloir vider la caisse ? Les compteurs de la journée repartiront à 0.")) {
+                      fetch('/api/caisse/vider', { method: 'POST' })
+                        .then(() => chargerStatsJour())
+                        .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded shadow-sm transition"
+                >
+                  Vider la Caisse
+                </button>
+              )}
             </div>
           )}
           <HorlogeLive />
@@ -805,7 +849,7 @@ export default function CaisseClient({ role }: { role: Role }) {
           {cartes !== null && groupesFiltres.length > 0 && rechercheEnVente.trim() !== "" && (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {groupesFiltres.map((g) => {
-                const qtySelected = selection.get(g.cle) ?? 0;
+                const qtySelected = selection.get(g.cle)?.size ?? 0;
                 const choisi = qtySelected > 0;
                 const c = g.unites[0]!;
                 return (
@@ -831,7 +875,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                         }`}
                         onClick={() => {
                           if (modeBundle) {
-                            if (!choisi) mettreAJourSelection(g.cle, 1);
+                            if (!choisi) ajouterASelection(g.cle);
                           } else if (c.images.length > 0) {
                             setApercuPhotos({ photos: c.images, index: 0, titre: c.code_interne });
                           }
@@ -867,16 +911,16 @@ export default function CaisseClient({ role }: { role: Role }) {
                             <div className="flex h-7 items-center gap-3 rounded-full bg-brand-white/95 px-2 font-bold shadow ring-1 ring-brand-orange">
                               <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); mettreAJourSelection(g.cle, qtySelected - 1); }}
+                                onClick={(e) => { e.stopPropagation(); retirerDeSelection(g.cle); }}
                                 className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white"
                               >
                                 -
                               </button>
-                              <span className="text-xs text-brand-orange">{qtySelected}</span>
+                              <span className="w-8 text-center text-xs text-brand-orange">{qtySelected}</span>
                               <button
                                 type="button"
                                 disabled={qtySelected >= g.unites.length}
-                                onClick={(e) => { e.stopPropagation(); mettreAJourSelection(g.cle, qtySelected + 1); }}
+                                onClick={(e) => { e.stopPropagation(); ajouterASelection(g.cle); }}
                                 className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white disabled:opacity-30 disabled:hover:bg-brand-light-grey/50 disabled:hover:text-brand-black"
                               >
                                 +
@@ -977,7 +1021,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   <h4 className="font-bold text-sm text-brand-orange mb-2">Paniers en attente ({paniersEnAttente.length})</h4>
                   <div className="space-y-2">
                     {paniersEnAttente.map((p) => {
-                      const nbArticles = Array.from(p.selection.values()).reduce((a,b)=>a+b,0);
+                      const nbArticles = Array.from(p.selection.values()).reduce((a,b)=>a+b.size,0);
                       const heure = p.date.toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
                       return (
                         <div key={p.id} className="flex items-center justify-between bg-brand-white p-2 rounded border border-brand-orange/20 text-sm">
@@ -1029,9 +1073,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
                            <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
-                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty - 1)} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
-                             <span className="font-bold text-lg min-w-[20px] text-center">{item.qty}</span>
-                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty + 1)} disabled={item.qty >= item.groupe.unites.length} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
+                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
+                             <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
+                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
                            </div>
                          </div>
                        </div>

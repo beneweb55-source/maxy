@@ -166,8 +166,8 @@ export default function VentesClient({ role }: { role: Role }) {
 
   // Vente groupée (bundle).
   const [modeBundle, setModeBundle] = useState(false);
-  const [selection, setSelection] = useState<Map<string, number>>(new Map());
-  const [paniersEnAttente, setPaniersEnAttente] = useState<{ id: number; selection: Map<string, number>; remise: string; date: Date }[]>([]);
+  const [selection, setSelection] = useState<Map<string, Set<number>>>(new Map());
+  const [paniersEnAttente, setPaniersEnAttente] = useState<{ id: number; selection: Map<string, Set<number>>; remise: string; date: Date }[]>([]);
   const [modalBundle, setModalBundle] = useState(false);
   const [prixTotalBundle, setPrixTotalBundle] = useState("");
   const [canalBundle, setCanalBundle] = useState("");
@@ -255,7 +255,7 @@ export default function VentesClient({ role }: { role: Role }) {
       const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
       if (groupe) {
         setModeBundle(true);
-        mettreAJourSelection(groupe.cle, (selection.get(groupe.cle) ?? 0) + 1);
+        ajouterASelection(groupe.cle, produit.id);
         playBeep(true);
         afficher(`Produit ${produit.reference} ajouté au panier.`);
       }
@@ -263,7 +263,7 @@ export default function VentesClient({ role }: { role: Role }) {
       playBeep(false);
       afficher("Code-barres introuvable dans les produits en vente.", "erreur");
     }
-  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, cartes, selection, afficher, grouperDoublonsVente, mettreAJourSelection, playBeep]);
+  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, cartes, selection, afficher, grouperDoublonsVente, ajouterASelection, playBeep]);
 
   useBarcodeScanner(handleScan);
 
@@ -339,29 +339,25 @@ export default function VentesClient({ role }: { role: Role }) {
     return tri;
   })();
 
-  const totalSelectionnees = Array.from(selection.values()).reduce((a, b) => a + b, 0);
+  const totalSelectionnees = Array.from(selection.values()).reduce((a, b) => a + b.size, 0);
 
   const selectionnees = (() => {
-    const arr: CarteEnVente[] = [];
-    if (!cartes) return arr;
-    const groupes = grouperDoublonsVente(cartes);
-    for (const [cle, qty] of selection.entries()) {
-      const g = groupes.find(groupe => groupe.cle === cle);
-      if (g) {
-        arr.push(...g.unites.slice(0, qty));
-      }
+    const ids: number[] = [];
+    if (!cartes) return [];
+    for (const [cle, setIds] of selection.entries()) {
+      ids.push(...Array.from(setIds));
     }
-    return arr;
+    return cartes.filter(c => ids.includes(c.id));
   })();
 
   const cartItems = (() => {
     const arr: { groupe: GroupeEnVente; qty: number; prix: number }[] = [];
     if (!cartes) return arr;
     const groupes = grouperDoublonsVente(cartes);
-    for (const [cle, qty] of selection.entries()) {
+    for (const [cle, setIds] of selection.entries()) {
       const g = groupes.find(groupe => groupe.cle === cle);
       if (g) {
-        arr.push({ groupe: g, qty, prix: g.prix_vente_fixe ?? 0 });
+        arr.push({ groupe: g, qty: setIds.size, prix: g.prix_vente_fixe ?? 0 });
       }
     }
     return arr;
@@ -370,11 +366,43 @@ export default function VentesClient({ role }: { role: Role }) {
   const cartTotal = cartItems.reduce((sum, item) => sum + item.prix * item.qty, 0);
   const totalApresRemise = cartTotal - (Number(remiseBundle) || 0);
 
-  function mettreAJourSelection(cle: string, qte: number) {
+  function ajouterASelection(cle: string, produitId?: number) {
     setSelection((prev) => {
       const suivant = new Map(prev);
-      if (qte <= 0) suivant.delete(cle);
-      else suivant.set(cle, qte);
+      const s = suivant.get(cle) ? new Set(suivant.get(cle)) : new Set<number>();
+      
+      if (produitId) {
+        s.add(produitId);
+      } else {
+        if (cartes) {
+          const groupes = grouperDoublonsVente(cartes);
+          const g = groupes.find(x => x.cle === cle);
+          if (g) {
+            const dispo = g.unites.find(u => !s.has(u.id));
+            if (dispo) s.add(dispo.id);
+          }
+        }
+      }
+      suivant.set(cle, s);
+      return suivant;
+    });
+  }
+
+  function retirerDeSelection(cle: string) {
+    setSelection((prev) => {
+      const suivant = new Map(prev);
+      const s = suivant.get(cle);
+      if (s && s.size > 0) {
+        const nouveauSet = new Set(s);
+        const last = Array.from(nouveauSet).pop();
+        if (last !== undefined) nouveauSet.delete(last);
+        
+        if (nouveauSet.size === 0) {
+          suivant.delete(cle);
+        } else {
+          suivant.set(cle, nouveauSet);
+        }
+      }
       return suivant;
     });
   }
@@ -431,10 +459,11 @@ export default function VentesClient({ role }: { role: Role }) {
     setEnvoi(true);
     try {
         const produit_ids: number[] = [];
-        for (const [cle, qty] of selection.entries()) {
-          const groupe = grouperDoublonsVente(cartes ?? []).find(g => g.cle === cle);
+        const groupes = grouperDoublonsVente(cartes ?? []);
+        for (const [cle, setIds] of selection.entries()) {
+          const groupe = groupes.find(g => g.cle === cle);
           if (groupe) {
-            produit_ids.push(...groupe.unites.slice(0, qty).map(u => u.id));
+            produit_ids.push(...Array.from(setIds));
           }
         }
         
@@ -751,7 +780,7 @@ export default function VentesClient({ role }: { role: Role }) {
           {cartes !== null && groupesFiltres.length > 0 && (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {groupesFiltres.map((g) => {
-                const qtySelected = selection.get(g.cle) ?? 0;
+                const qtySelected = selection.get(g.cle)?.size ?? 0;
                 const choisi = qtySelected > 0;
                 const c = g.unites[0]!;
                 return (
@@ -777,7 +806,7 @@ export default function VentesClient({ role }: { role: Role }) {
                         }`}
                         onClick={() => {
                           if (modeBundle) {
-                            if (!choisi) mettreAJourSelection(g.cle, 1);
+                            if (!choisi) ajouterASelection(g.cle);
                           } else if (c.images.length > 0) {
                             setApercuPhotos({ photos: c.images, index: 0, titre: c.code_interne });
                           }
@@ -813,7 +842,7 @@ export default function VentesClient({ role }: { role: Role }) {
                             <div className="flex h-7 items-center gap-3 rounded-full bg-brand-white/95 px-2 font-bold shadow ring-1 ring-brand-orange">
                               <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); mettreAJourSelection(g.cle, qtySelected - 1); }}
+                                onClick={(e) => { e.stopPropagation(); retirerDeSelection(g.cle); }}
                                 className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white"
                               >
                                 -
@@ -822,7 +851,7 @@ export default function VentesClient({ role }: { role: Role }) {
                               <button
                                 type="button"
                                 disabled={qtySelected >= g.unites.length}
-                                onClick={(e) => { e.stopPropagation(); mettreAJourSelection(g.cle, qtySelected + 1); }}
+                                onClick={(e) => { e.stopPropagation(); ajouterASelection(g.cle); }}
                                 className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white disabled:opacity-30 disabled:hover:bg-brand-light-grey/50 disabled:hover:text-brand-black"
                               >
                                 +
@@ -923,7 +952,7 @@ export default function VentesClient({ role }: { role: Role }) {
                   <h4 className="font-bold text-sm text-brand-orange mb-2">Paniers en attente ({paniersEnAttente.length})</h4>
                   <div className="space-y-2">
                     {paniersEnAttente.map((p) => {
-                      const nbArticles = Array.from(p.selection.values()).reduce((a,b)=>a+b,0);
+                      const nbArticles = Array.from(p.selection.values()).reduce((a,b)=>a+b.size,0);
                       const heure = p.date.toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
                       return (
                         <div key={p.id} className="flex items-center justify-between bg-brand-white p-2 rounded border border-brand-orange/20 text-sm">
@@ -975,8 +1004,9 @@ export default function VentesClient({ role }: { role: Role }) {
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
                            <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-md p-0.5">
-                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty - 1)} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
-                             <button onClick={() => mettreAJourSelection(item.groupe.cle, item.qty + 1)} disabled={item.qty >= item.groupe.unites.length} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
+                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
+                             <span className="font-bold min-w-[16px] text-center">{item.qty}</span>
+                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
                            </div>
                          </div>
                        </div>
