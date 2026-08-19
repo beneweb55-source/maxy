@@ -155,6 +155,39 @@ function HorlogeLive() {
   );
 }
 
+function UptimeCaisse() {
+  const [debut] = useState(new Date());
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - debut.getTime()) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [debut]);
+
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  
+  const formatted = [
+    h.toString().padStart(2, '0'),
+    m.toString().padStart(2, '0'),
+    s.toString().padStart(2, '0')
+  ].join(':');
+
+  return (
+    <div className="flex flex-col text-right ml-4 border-l border-white/20 pl-4">
+      <span className="font-black text-xl leading-none text-brand-orange tracking-widest font-mono">
+        {formatted}
+      </span>
+      <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block mt-1">
+        Session Caisse
+      </span>
+    </div>
+  );
+}
+
 export default function CaisseClient({ role }: { role: Role }) {
   const { afficher } = useToast();
   const searchParams = useSearchParams();
@@ -766,6 +799,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               )}
             </div>
           )}
+          <UptimeCaisse />
           <HorlogeLive />
         </div>
       </header>
