@@ -16,6 +16,12 @@ import {
   IconeImage,
   IconePaquet,
   IconeRecherche,
+  IconeStore,
+  IconeCorbeille,
+  IconePause,
+  IconePlus,
+  IconeMoins,
+  IconeFermer,
 } from "@/components/icons";
 
 interface CarteEnVente {
@@ -791,7 +797,7 @@ export default function VentesClient({ role }: { role: Role }) {
                 return (
                   <li
                     key={g.cle}
-                    className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md ${
+                    className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md effet-lumiere ${
                       modeBundle && choisi
                         ? "border-brand-orange ring-2 ring-brand-orange"
                         : "border-brand-light-grey"
@@ -982,11 +988,11 @@ export default function VentesClient({ role }: { role: Role }) {
                     Ticket de caisse
                   </h3>
                   <div className="flex items-center gap-3">
-                    <button onClick={mettreEnAttente} disabled={cartItems.length === 0} title="Mettre en attente" className="text-sm font-semibold text-brand-orange hover:text-brand-orange/70 transition disabled:opacity-30 disabled:cursor-not-allowed">
-                      ⏸️ Attente
+                    <button onClick={mettreEnAttente} disabled={cartItems.length === 0} title="Mettre en attente" className="flex items-center gap-1.5 text-sm font-semibold text-brand-orange hover:text-brand-orange/70 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                      <IconePause taille={14} /> Attente
                     </button>
-                    <button onClick={quitterModeBundle} className="text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
-                      Fermer
+                    <button onClick={quitterModeBundle} className="flex items-center gap-1.5 text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
+                      <IconeFermer taille={14} /> Fermer
                     </button>
                   </div>
                 </div>
@@ -1009,9 +1015,9 @@ export default function VentesClient({ role }: { role: Role }) {
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
                            <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-md p-0.5">
-                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
-                             <span className="font-bold min-w-[16px] text-center">{item.qty}</span>
-                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-6 w-6 bg-brand-white shadow-sm rounded flex items-center justify-center text-lg font-medium transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
+                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10"><IconeMoins taille={18} /></button>
+                             <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
+                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
                            </div>
                          </div>
                        </div>

@@ -169,6 +169,30 @@ export const IconePlus = creerIcone(
   </>
 );
 
+export const IconeMoins = creerIcone(
+  "Moins",
+  <>
+    <path d="M5 12h14" />
+  </>
+);
+
+export const IconePause = creerIcone(
+  "Pause",
+  <>
+    <rect x="6" y="4" width="4" height="16" rx="1" />
+    <rect x="14" y="4" width="4" height="16" rx="1" />
+  </>
+);
+
+export const IconeStore = creerIcone(
+  "Store",
+  <>
+    <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
+    <path d="M4 12v8a2 2 0 0 0 2 2h2V14h8v8h2a2 2 0 0 0 2-2v-8" />
+    <path d="M2 7h20v2H2z" />
+  </>
+);
+
 export const IconeCorbeille = creerIcone(
   "Corbeille",
   <>

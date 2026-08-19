@@ -16,6 +16,12 @@ import {
   IconeImage,
   IconePaquet,
   IconeRecherche,
+  IconeStore,
+  IconeCorbeille,
+  IconePause,
+  IconePlus,
+  IconeMoins,
+  IconeFermer,
 } from "@/components/icons";
 
 interface CarteEnVente {
@@ -720,7 +726,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             ← Retour au Tableau de Bord
           </Link>
           <div className="font-black text-lg tracking-wide uppercase flex items-center gap-2">
-            <IconePaquet taille={20} className="text-brand-orange" />
+            <IconeStore taille={20} className="text-brand-orange" />
             Mode Caisse
           </div>
         </div>
@@ -828,7 +834,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             </select>
             {peutVendre && (
               <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire">
-                Vider le panier
+                <IconeCorbeille taille={14} /> Vider le panier
               </button>
             )}
           </div>
@@ -861,7 +867,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 return (
                   <li
                     key={g.cle}
-                    className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md ${
+                    className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md effet-lumiere ${
                       modeBundle && choisi
                         ? "border-brand-orange ring-2 ring-brand-orange"
                         : "border-brand-light-grey"
@@ -1052,11 +1058,11 @@ export default function CaisseClient({ role }: { role: Role }) {
                     Ticket de caisse
                   </h3>
                   <div className="flex items-center gap-3">
-                    <button onClick={mettreEnAttente} disabled={cartItems.length === 0} title="Mettre en attente" className="text-sm font-semibold text-brand-orange hover:text-brand-orange/70 transition disabled:opacity-30 disabled:cursor-not-allowed">
-                      ⏸️ Attente
+                    <button onClick={mettreEnAttente} disabled={cartItems.length === 0} title="Mettre en attente" className="flex items-center gap-1.5 text-sm font-semibold text-brand-orange hover:text-brand-orange/70 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                      <IconePause taille={14} /> Attente
                     </button>
-                    <button onClick={quitterModeBundle} className="text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
-                      Vider
+                    <button onClick={quitterModeBundle} className="flex items-center gap-1.5 text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
+                      <IconeCorbeille taille={14} /> Vider
                     </button>
                   </div>
                 </div>
@@ -1079,9 +1085,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
                            <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
-                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10">-</button>
+                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10"><IconeMoins taille={18} /></button>
                              <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
-                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center text-2xl font-bold transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white">+</button>
+                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
                            </div>
                          </div>
                        </div>
@@ -1111,7 +1117,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                     <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.05).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-5%</button>
                     <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.10).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-10%</button>
                     <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.15).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-15%</button>
-                    <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-danger/20 text-brand-black">X</button>
+                    <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 bg-brand-light-grey/30 rounded flex items-center justify-center hover:bg-danger/20 text-brand-black" title="Retirer la remise"><IconeFermer taille={12} /></button>
                   </div>
                   <div className="flex justify-between items-center pt-2 mt-2 border-t border-brand-light-grey/30">
                     <span className="font-black text-lg text-brand-black uppercase">Total à payer</span>
