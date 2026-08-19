@@ -21,15 +21,56 @@
 }
 
 @layer base {
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-brand-paper: #020617; /* Slate 950 */
-      --color-brand-white: #0F172A; /* Slate 900 */
-      --color-brand-black: #F8FAFC; /* Slate 50 */
-      --color-brand-smooth: #E2E8F0; /* Slate 200 */
-      --color-brand-light-grey: #1E293B; /* Slate 800 */
-      --color-brand-glow: #0F172A; /* Ombre profonde */
-    }
+  /* ========================================= */
+  /* SYSTEME DE VARIABLES : THÈME CLAIR (Light) */
+  /* ========================================= */
+  :root, :root[data-theme="light"] {
+    --color-sidebar-bg: #1E293B; /* Sidebar sombre en light mode */
+    --shadow-carte: 0 4px 6px -1px rgba(15, 23, 42, 0.02), 0 2px 4px -2px rgba(15, 23, 42, 0.02), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    --shadow-carte-hover: 0 10px 15px -3px rgba(15, 23, 42, 0.03), 0 4px 6px -4px rgba(15, 23, 42, 0.03), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    --bg-carte: rgba(255, 255, 255, 0.75);
+    --bg-alerte-erreur: rgba(239, 68, 68, 0.1);
+    --border-alerte-erreur: rgba(239, 68, 68, 0.2);
+    --text-alerte-erreur: #DC2626;
+    --bg-alerte-info: rgba(59, 130, 246, 0.1);
+    --border-alerte-info: rgba(59, 130, 246, 0.2);
+    --text-alerte-info: #2563EB;
+    --bg-alerte-succes: rgba(16, 185, 129, 0.1);
+    --border-alerte-succes: rgba(16, 185, 129, 0.2);
+    --text-alerte-succes: #059669;
+    --bg-encart-marque: rgba(249, 115, 22, 0.1);
+    --border-encart-marque: rgba(249, 115, 22, 0.2);
+    --text-encart-marque: #EA580C;
+  }
+
+  /* ========================================= */
+  /* SYSTEME DE VARIABLES : THÈME SOMBRE (Dark) */
+  /* ========================================= */
+  :root[data-theme="dark"] {
+    --color-brand-paper: #09090b; /* Zinc 950 */
+    --color-brand-white: #18181b; /* Zinc 900 */
+    --color-brand-black: #fafafa; /* Zinc 50 */
+    --color-brand-smooth: #e4e4e7; /* Zinc 200 */
+    --color-brand-light-grey: #27272a; /* Zinc 800 */
+    --color-brand-glow: #09090b;
+    --color-sidebar-bg: #09090b; /* Bordure transparente ou fine pour séparer */
+    
+    --shadow-carte: 0 4px 6px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    --shadow-carte-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --bg-carte: rgba(24, 24, 27, 0.75); /* Zinc 900 avec opacité */
+
+    --bg-alerte-erreur: rgba(239, 68, 68, 0.15);
+    --border-alerte-erreur: rgba(239, 68, 68, 0.3);
+    --text-alerte-erreur: #FCA5A5;
+    --bg-alerte-info: rgba(59, 130, 246, 0.15);
+    --border-alerte-info: rgba(59, 130, 246, 0.3);
+    --text-alerte-info: #93C5FD;
+    --bg-alerte-succes: rgba(16, 185, 129, 0.15);
+    --border-alerte-succes: rgba(16, 185, 129, 0.3);
+    --text-alerte-succes: #6EE7B7;
+    --bg-encart-marque: rgba(249, 115, 22, 0.15);
+    --border-encart-marque: rgba(249, 115, 22, 0.3);
+    --text-encart-marque: #FDBA74;
   }
 
   body {
@@ -77,45 +118,21 @@
 }
 
 @layer components {
-  /* Cartes avec un véritable effet Glassmorphism Premium */
+  /* Cartes avec un véritable effet Glassmorphism Premium (Dynamique) */
   .carte {
     border-radius: 1rem;
     border: 1px solid var(--color-brand-light-grey);
-    background-color: rgba(255, 255, 255, 0.75);
+    background-color: var(--bg-carte);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: 
-      0 4px 6px -1px rgba(15, 23, 42, 0.02), 
-      0 2px 4px -2px rgba(15, 23, 42, 0.02),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow-carte);
     padding: 1.5rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  @media (prefers-color-scheme: dark) {
-    .carte {
-      background-color: rgba(15, 23, 42, 0.75);
-      box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.2), 
-        0 2px 4px -2px rgba(0, 0, 0, 0.2),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    }
-  }
   .carte:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 
-      0 10px 15px -3px rgba(15, 23, 42, 0.03), 
-      0 4px 6px -4px rgba(15, 23, 42, 0.03),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    background-color: var(--bg-carte);
+    box-shadow: var(--shadow-carte-hover);
     transform: translateY(-2px);
-  }
-  @media (prefers-color-scheme: dark) {
-    .carte:hover {
-      background-color: rgba(15, 23, 42, 0.9);
-      box-shadow: 
-        0 10px 15px -3px rgba(0, 0, 0, 0.3), 
-        0 4px 6px -4px rgba(0, 0, 0, 0.3),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    }
   }
 
   /* Boutons modernisés avec micro-animations */
@@ -259,11 +276,11 @@
   /* Bandeaux et alertes modernisés avec fond pastel (dynamiques) */
   .alerte-erreur {
     border-radius: 0.75rem;
-    background-color: rgba(239, 68, 68, 0.1); /* Red avec opacité */
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background-color: var(--bg-alerte-erreur);
+    border: 1px solid var(--border-alerte-erreur);
     padding: 1rem;
     font-size: 14px;
-    color: #DC2626; /* Red 600 */
+    color: var(--text-alerte-erreur);
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -271,36 +288,29 @@
   
   .bandeau-info {
     border-radius: 0.75rem;
-    background-color: rgba(59, 130, 246, 0.1); /* Blue avec opacité */
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background-color: var(--bg-alerte-info);
+    border: 1px solid var(--border-alerte-info);
     padding: 1rem;
     font-size: 14px;
-    color: #2563EB; /* Blue 600 */
+    color: var(--text-alerte-info);
   }
   
   .bandeau-succes {
     border-radius: 0.75rem;
-    background-color: rgba(16, 185, 129, 0.1); /* Emerald avec opacité */
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background-color: var(--bg-alerte-succes);
+    border: 1px solid var(--border-alerte-succes);
     padding: 1rem;
     font-size: 14px;
-    color: #059669; /* Emerald 600 */
+    color: var(--text-alerte-succes);
   }
   
   .encart-marque {
     border-radius: 0.75rem;
-    background-color: rgba(249, 115, 22, 0.1);
-    border: 1px solid rgba(249, 115, 22, 0.2);
+    background-color: var(--bg-encart-marque);
+    border: 1px solid var(--border-encart-marque);
     padding: 1rem;
     font-size: 14px;
-    color: #EA580C; /* Orange 600 */
-  }
-  
-  @media (prefers-color-scheme: dark) {
-    .alerte-erreur { color: #FCA5A5; }
-    .bandeau-info { color: #93C5FD; }
-    .bandeau-succes { color: #6EE7B7; }
-    .encart-marque { color: #FDBA74; }
+    color: var(--text-encart-marque);
   }
 }
 

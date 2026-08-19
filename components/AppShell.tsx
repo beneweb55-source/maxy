@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import ClocheNotifications from "./ClocheNotifications";
 import SelecteurLangue from "./SelecteurLangue";
+import ThemeToggle from "./ThemeToggle";
 import { FournisseurToasts } from "./toast";
 import { useT } from "@/lib/i18n/contexte";
 import {
@@ -158,15 +159,15 @@ export default function AppShell({
 
   return (
     <FournisseurToasts>
-      <div className="min-h-screen print:bg-white font-inter text-brand-black">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-brand-smooth shadow-2xl shadow-brand-smooth/20 lg:block print:hidden">
+      <div className="min-h-screen print:bg-white font-inter text-brand-black transition-colors duration-300 ease-in-out">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden transition-colors duration-300 ease-in-out">
           {contenuSidebar}
         </aside>
 
         {menuOuvert && (
           <div className="fixed inset-0 z-50 lg:hidden print:hidden">
-            <div className="absolute inset-0 bg-brand-smooth/40 backdrop-blur-sm transition-opacity" onClick={() => setMenuOuvert(false)} />
-            <div className="absolute left-0 top-0 h-full w-64 bg-brand-smooth shadow-2xl">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setMenuOuvert(false)} />
+            <div className="absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl transition-colors duration-300 ease-in-out">
               <button
                 type="button"
                 onClick={() => setMenuOuvert(false)}
@@ -194,6 +195,7 @@ export default function AppShell({
               {t("entete.titrePlateforme")}
             </span>
             <div className="ml-auto flex items-center gap-3">
+              <ThemeToggle />
               <SelecteurLangue />
               <ClocheNotifications />
             </div>
