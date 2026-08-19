@@ -145,7 +145,7 @@ function HorlogeLive() {
   }, []);
   return (
     <div className="flex flex-col text-right ml-4 border-l border-white/20 pl-4">
-      <span className="font-black text-xl leading-none text-brand-white tracking-widest">
+      <span className="font-black text-xl leading-none text-white tracking-widest">
         {temps.toLocaleTimeString("fr-DZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
       </span>
       <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block mt-1">
