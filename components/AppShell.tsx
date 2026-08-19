@@ -121,8 +121,8 @@ export default function AppShell({
               aria-current={actif ? "page" : undefined}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
                 actif
-                  ? "bg-gradient-to-r from-brand-orange to-[#EA580C] text-brand-white shadow-md shadow-brand-orange/20 translate-x-1"
-                  : "text-brand-grey hover:bg-white/5 hover:text-brand-white hover:translate-x-1"
+                  ? "bg-gradient-to-r from-brand-orange to-[#EA580C] text-white shadow-md shadow-brand-orange/20 translate-x-1"
+                  : "text-brand-grey hover:bg-white/5 hover:text-white hover:translate-x-1"
               }`}
             >
               <Icone taille={18} className={actif ? "opacity-100" : "opacity-70"} />
@@ -134,11 +134,11 @@ export default function AppShell({
 
       <div className="p-4">
         <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3 backdrop-blur-sm border border-white/5 transition-colors hover:bg-white/10">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-orange to-[#EA580C] shadow-sm text-sm font-bold uppercase text-brand-white">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-orange to-[#EA580C] shadow-sm text-sm font-bold uppercase text-white">
             {user.username.slice(0, 2)}
           </span>
           <span className="min-w-0 flex-1 leading-tight">
-            <span className="block truncate text-sm font-semibold text-brand-white">
+            <span className="block truncate text-sm font-semibold text-white">
               {user.username}
             </span>
             <span className="block text-xs text-brand-grey">{t(`roles.${user.role}`)}</span>
@@ -148,7 +148,7 @@ export default function AppShell({
             onClick={() => void deconnexion()}
             title={t("entete.deconnexion")}
             aria-label={t("entete.deconnexion")}
-            className="rounded-lg p-2 text-brand-grey transition hover:bg-white/10 hover:text-brand-white"
+            className="rounded-lg p-2 text-brand-grey transition hover:bg-white/10 hover:text-white"
           >
             <IconeDeconnexion taille={17} />
           </button>
