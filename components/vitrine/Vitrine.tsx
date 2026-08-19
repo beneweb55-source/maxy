@@ -18,8 +18,7 @@ import {
   IconeVitrine,
 } from "@/components/icons";
 
-// Une carte = un MODÈLE exposé (référence + catégorie), avec la quantité
-// d'exemplaires identiques en stock — pas une carte par unité.
+
 interface UniteVendable {
   id: number;
   code_interne: string;
@@ -46,7 +45,6 @@ interface ReponseVitrine {
   produits: CarteVitrine[];
 }
 
-/** Une unité mise au panier de vente depuis la vitrine. */
 interface LignePanier {
   id: number;
   code_interne: string;
@@ -70,7 +68,6 @@ export default function Vitrine({ role }: { role: Role }) {
     titre: string;
   } | null>(null);
 
-  // Panier de vente : une entrée par unité sélectionnée (id de produit).
   const [panier, setPanier] = useState<Map<number, LignePanier>>(new Map());
   const [modalVente, setModalVente] = useState(false);
   const [clientNom, setClientNom] = useState("");
@@ -122,21 +119,17 @@ export default function Vitrine({ role }: { role: Role }) {
     }
   }
 
-  // Seules les unités dont le prix de vente est réellement fixé (> 0) peuvent
-  // être vendues : sans ce garde-fou, une unité restée « en vente » avec un
-  // prix vidé partirait à 0 DA dans une vente groupée (répartition au prorata).
+
   function unitesVendables(carte: CarteVitrine): UniteVendable[] {
     return carte.vendables.filter((v) => (v.prix_vente_fixe ?? 0) > 0);
   }
 
-  // Ajoute/retire la prochaine unité vendable d'un modèle au panier.
   function basculerPanier(carte: CarteVitrine) {
     const dispo = unitesVendables(carte);
     setPanier((prev) => {
       const suivant = new Map(prev);
       const dejaDuModele = dispo.filter((v) => suivant.has(v.id));
       if (dejaDuModele.length > 0) {
-        // Retire la dernière unité ajoutée de ce modèle.
         suivant.delete(dejaDuModele[dejaDuModele.length - 1]!.id);
         return suivant;
       }
@@ -225,8 +218,7 @@ export default function Vitrine({ role }: { role: Role }) {
         client_tel: clientTel.trim() || undefined,
         confirmer: confirmer || undefined,
       };
-      // Une seule unité → vente simple ; plusieurs → vente groupée. Dans les
-      // deux cas le serveur génère automatiquement la facture.
+    
       const res =
         lignesPanier.length === 1
           ? await fetch("/api/ventes", {

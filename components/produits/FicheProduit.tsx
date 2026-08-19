@@ -46,6 +46,8 @@ interface ProduitDto {
   prix_vente_fixe: number | null;
   prix_vente_reel: number | null;
   date_vente: string | null;
+  quantite: number;
+  ids_modele: number[];
   marge: number | null;
   jours_stock: number;
   date_entree: string;
@@ -92,7 +94,7 @@ export default function FicheProduit({
   const [coutReparation, setCoutReparation] = useState("");
   const [descReparation, setDescReparation] = useState("");
   const [modalEdition, setModalEdition] = useState(false);
-  const [edition, setEdition] = useState({ reference: "", categorie: "", prix_achat: "" });
+  const [edition, setEdition] = useState({ reference: "", categorie: "", prix_achat: "", quantite: "1" });
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
   const [editPhotosModifiees, setEditPhotosModifiees] = useState(false);
   const [modalSuppression, setModalSuppression] = useState(false);
@@ -193,6 +195,7 @@ export default function FicheProduit({
       reference: produit.reference,
       categorie: produit.categorie,
       prix_achat: String(produit.prix_achat),
+      quantite: String(produit.quantite),
     });
     setEditPhotos(produit.images);
     setEditPhotosModifiees(false);
@@ -813,6 +816,20 @@ export default function FicheProduit({
             </div>
           </div>
           <div>
+            <label className="libelle mb-1.5" htmlFor="edit-quantite">
+              Quantité totale *
+            </label>
+            <input
+              id="edit-quantite"
+              type="number"
+              min={1}
+              step={1}
+              value={edition.quantite}
+              onChange={(e) => setEdition({ ...edition, quantite: e.target.value.replace(/[^\d]/g, "") })}
+              className="champ text-right"
+            />
+          </div>
+          <div>
             <label className="libelle mb-1.5">Photos du produit</label>
             <ChampPhotos
               photos={editPhotos}
@@ -831,13 +848,17 @@ export default function FicheProduit({
                 !edition.reference.trim() ||
                 !edition.categorie.trim() ||
                 !Number.isInteger(Number(edition.prix_achat)) ||
-                Number(edition.prix_achat) < 0
+                Number(edition.prix_achat) < 0 ||
+                !Number.isInteger(Number(edition.quantite)) ||
+                Number(edition.quantite) < 1
               }
               onClick={() =>
-                void appel(`/api/produits/${produitId}`, "PUT", {
+                void appel(`/api/produits/masse/edition`, "PUT", {
+                  ids: produit.ids_modele,
                   reference: edition.reference.trim(),
                   categorie: edition.categorie.trim(),
                   prix_achat: Number(edition.prix_achat),
+                  quantite: Number(edition.quantite),
                   ...(editPhotosModifiees ? { images: editPhotos } : {}),
                 }).then((ok) => {
                   if (ok) {

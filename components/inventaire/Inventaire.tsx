@@ -264,6 +264,7 @@ export default function Inventaire({ role }: { role: Role }) {
       prix_achat: String(premier.prix_achat),
       lot_id: premier.lot_id ? String(premier.lot_id) : "",
       prix_vente_fixe: premier.prix_vente_fixe !== null ? String(premier.prix_vente_fixe) : "",
+      quantite: String(unites.length),
     });
     setFormPhotos(premier.image_url ? [premier.image_url] : []);
     setFormPhotosModifiees(false);
@@ -462,6 +463,7 @@ export default function Inventaire({ role }: { role: Role }) {
           prix_achat: Number(formulaire.prix_achat),
           prix_vente_fixe: formulaire.prix_vente_fixe.trim() ? Number(formulaire.prix_vente_fixe) : null,
           mettre_en_vente: formMettreEnVente,
+          quantite: Number(formulaire.quantite),
           ...(formPhotosModifiees ? { images: formPhotos } : {}),
         }),
       });
@@ -610,25 +612,23 @@ export default function Inventaire({ role }: { role: Role }) {
           className="champ text-right"
         />
       </div>
-      {modalEdition === null && (
-        <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
-          <label className="libelle mb-1.5" htmlFor="quantite-produit">
-            Quantité *
-          </label>
-          <input
-            id="quantite-produit"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
-            value={formulaire.quantite}
-            onChange={(e) =>
-              setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
-            }
-            className="champ text-right"
-          />
-        </div>
-      )}
+      <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
+        <label className="libelle mb-1.5" htmlFor="quantite-produit">
+          Quantité *
+        </label>
+        <input
+          id="quantite-produit"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          step={1}
+          value={formulaire.quantite}
+          onChange={(e) =>
+            setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
+          }
+          className="champ text-right"
+        />
+      </div>
       {modalEdition !== null && (
         <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
           <label

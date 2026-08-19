@@ -102,6 +102,20 @@ export async function GET(
     ];
 
     const coutReparations = p.reparations.reduce((s, r) => s + r.cout, 0);
+    
+    // Pour permettre l'édition de la quantité globale du modèle depuis la fiche :
+    const produitsIdentiques = p.lot_id !== null 
+      ? await prisma.produit.findMany({
+          where: {
+            lot_id: p.lot_id,
+            reference: p.reference,
+            categorie: p.categorie,
+          },
+          select: { id: true }
+        })
+      : [{ id: p.id }];
+    const ids_modele = produitsIdentiques.map(pi => pi.id);
+
     return NextResponse.json({
       id: p.id,
       code_interne: p.code_interne,
@@ -114,6 +128,8 @@ export async function GET(
       image_url: urlCouvertureProduit,
       images: galerie,
       decision_rapport: p.decision_rapport,
+      ids_modele,
+      quantite: ids_modele.length,
       prix_achat: p.prix_achat,
       cout_reparations: coutReparations,
       prix_vente_fixe: p.prix_vente_fixe,
