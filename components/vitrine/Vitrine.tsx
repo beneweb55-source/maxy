@@ -368,7 +368,7 @@ export default function Vitrine({ role }: { role: Role }) {
                   )}
                   {p.quantite > 1 && (
                     <span
-                      className="absolute left-2 top-2 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-brand-white shadow"
+                      className="absolute left-2 top-2 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-white shadow"
                       title={`${p.quantite} exemplaires identiques en stock`}
                     >
                       ×{p.quantite}
@@ -381,7 +381,7 @@ export default function Vitrine({ role }: { role: Role }) {
                     </span>
                   )}
                   {nbAuPanier > 0 && (
-                    <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-brand-white shadow">
+                    <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-white shadow">
                       {nbAuPanier} au panier
                     </span>
                   )}

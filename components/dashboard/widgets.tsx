@@ -126,7 +126,7 @@ function ActionsRapides({
           <Link key={action.href + action.libelle} href={action.href} className="btn btn-secondaire hover-lift shadow-sm">
             {action.libelle}
             {compteur !== null && compteur > 0 && (
-              <span className="rounded-full bg-brand-orange px-1.5 py-0.5 text-xs font-bold text-brand-white">
+              <span className="rounded-full bg-brand-orange px-1.5 py-0.5 text-xs font-bold text-white">
                 {compteur}
               </span>
             )}

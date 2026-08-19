@@ -534,7 +534,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                         className="h-12 w-12 rounded-lg border border-brand-light-grey object-cover"
                       />
                       {p.nb_images > 1 && (
-                        <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-brand-white shadow">
+                        <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white shadow">
                           {p.nb_images}
                         </span>
                       )}

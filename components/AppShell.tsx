@@ -172,7 +172,7 @@ export default function AppShell({
                 type="button"
                 onClick={() => setMenuOuvert(false)}
                 aria-label={t("entete.fermerMenu")}
-                className="absolute right-3 top-5 rounded-lg p-2 text-brand-grey hover:text-brand-white"
+                className="absolute right-3 top-5 rounded-lg p-2 text-brand-grey hover:text-white"
               >
                 <IconeFermer taille={18} />
               </button>

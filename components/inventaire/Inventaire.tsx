@@ -945,7 +945,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   <span
                     className={`inline-flex h-7 shrink-0 items-center justify-center rounded-full px-2.5 text-sm font-bold ${
                       multiple
-                        ? "bg-brand-orange text-brand-white"
+                        ? "bg-brand-orange text-white"
                         : "bg-brand-light-grey/60 text-brand-warm-grey"
                     }`}
                   >
@@ -1747,7 +1747,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 onClick={() => void basculerVitrine()}
                 className={
                   modalEdition.unites[0]!.en_vitrine
-                    ? "btn bg-brand-orange text-brand-white hover:bg-brand-orange/90"
+                    ? "btn bg-brand-orange text-white hover:bg-brand-orange/90"
                     : "btn btn-secondaire"
                 }
               >

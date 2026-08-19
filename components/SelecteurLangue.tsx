@@ -27,9 +27,9 @@ export default function SelecteurLangue({ sombre = false }: { sombre?: boolean }
             aria-pressed={actif}
             className={`rounded-md px-2 py-1 uppercase tracking-wide transition ${
               actif
-                ? "bg-brand-orange text-brand-white"
+                ? "bg-brand-orange text-white"
                 : sombre
-                  ? "text-brand-grey hover:text-brand-white"
+                  ? "text-brand-grey hover:text-white"
                   : "text-brand-warm-grey hover:text-brand-black"
             }`}
           >

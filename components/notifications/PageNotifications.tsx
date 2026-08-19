@@ -76,7 +76,7 @@ export default function PageNotifications() {
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black flex items-center gap-2">
           {t("notifications.titre")}
           {nonLues > 0 && (
-            <span className="rounded-full bg-brand-orange px-2 py-0.5 text-xs font-bold text-brand-white">
+            <span className="rounded-full bg-brand-orange px-2 py-0.5 text-xs font-bold text-white">
               {nonLues} {t(nonLues > 1 ? "notifications.nonLuesP" : "notifications.nonLuesS")}
             </span>
           )}

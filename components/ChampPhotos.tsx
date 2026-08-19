@@ -177,7 +177,7 @@ export default function ChampPhotos({
                 />
               </button>
               {index === 0 && (
-                <span className="pointer-events-none absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-brand-white shadow">
+                <span className="pointer-events-none absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
                   <IconeEtoile taille={10} />
                   {t("champPhotos.couverture")}
                 </span>

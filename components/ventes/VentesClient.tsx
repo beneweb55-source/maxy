@@ -854,7 +854,7 @@ export default function VentesClient({ role }: { role: Role }) {
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); retirerDeSelection(g.cle); }}
-                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white"
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-white"
                               >
                                 -
                               </button>
@@ -863,7 +863,7 @@ export default function VentesClient({ role }: { role: Role }) {
                                 type="button"
                                 disabled={qtySelected >= g.unites.length}
                                 onClick={(e) => { e.stopPropagation(); ajouterASelection(g.cle); }}
-                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-brand-white disabled:opacity-30 disabled:hover:bg-brand-light-grey/50 disabled:hover:text-brand-black"
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-white disabled:opacity-30 disabled:hover:bg-brand-light-grey/50 disabled:hover:text-brand-black"
                               >
                                 +
                               </button>

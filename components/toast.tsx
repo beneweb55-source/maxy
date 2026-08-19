@@ -41,8 +41,8 @@ export function FournisseurToasts({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className={`pointer-events-auto flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-medium text-brand-white shadow-lg ${
-              t.type === "succes" ? "bg-brand-smooth" : "bg-danger"
+            className={`pointer-events-auto flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg ${
+              t.type === "succes" ? "bg-succes" : "bg-danger"
             }`}
           >
             <span className="mt-0.5 shrink-0" aria-hidden>
