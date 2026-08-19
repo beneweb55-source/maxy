@@ -54,7 +54,7 @@ export default function ImprimerEtiquettes() {
           body { margin: 0; padding: 0; background: white; }
           .no-print { display: none !important; }
           .page-break { page-break-after: always; }
-          @page { margin: 0; size: 50mm 30mm; } /* Format standard pour étiquettes */
+          @page { margin: 0; size: 50mm 30mm landscape; } /* Format standard pour étiquettes */
         }
         @media screen {
           .print-container { padding: 2rem; background: #f0f0f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
@@ -72,19 +72,19 @@ export default function ImprimerEtiquettes() {
           key={`${etiquette.id}-${index}`} 
           className="etiquette flex flex-col items-center justify-center bg-white w-[50mm] h-[30mm] overflow-hidden page-break p-1"
         >
-          <div className="text-[9px] font-bold text-center leading-tight mb-1 truncate w-full px-1">
+          <div className="text-[10px] font-bold text-center leading-tight mb-1 truncate w-full px-1">
             {etiquette.reference}
           </div>
           <Barcode 
             value={etiquette.code_interne} 
-            width={1.2} 
-            height={35} 
-            fontSize={10}
-            margin={0}
+            width={1.5} 
+            height={30} 
+            fontSize={11}
+            margin={10}
             displayValue={true}
           />
           {etiquette.prix_vente && (
-            <div className="text-[10px] font-extrabold mt-0.5">
+            <div className="text-[11px] font-extrabold mt-0.5">
               {etiquette.prix_vente} DA
             </div>
           )}
