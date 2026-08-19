@@ -207,7 +207,7 @@ export default function FactureDetail({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 animate-entree print:max-w-none print:animate-none">
+    <div className="mx-auto max-w-3xl space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-screen p-4 sm:p-6 rounded-2xl">
       {/* Barre d'actions — masquée à l'impression */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50 print:hidden">
         <Link href="/factures" className="lien inline-flex items-center gap-1.5 text-sm">

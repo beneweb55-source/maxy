@@ -24,7 +24,7 @@
   /* ========================================= */
   /* SYSTEME DE VARIABLES : THÈME CLAIR (Light) */
   /* ========================================= */
-  :root, :root[data-theme="light"] {
+  :root, :root[data-theme="light"], .force-light-mode {
     --color-sidebar-bg: #1E293B; /* Sidebar sombre en light mode */
     --shadow-carte: 0 4px 6px -1px rgba(15, 23, 42, 0.02), 0 2px 4px -2px rgba(15, 23, 42, 0.02), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
     --shadow-carte-hover: 0 10px 15px -3px rgba(15, 23, 42, 0.03), 0 4px 6px -4px rgba(15, 23, 42, 0.03), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
@@ -52,6 +52,8 @@
     --color-brand-black: #fafafa; /* Zinc 50 */
     --color-brand-smooth: #e4e4e7; /* Zinc 200 */
     --color-brand-light-grey: #27272a; /* Zinc 800 */
+    --color-brand-grey: #d4d4d8; /* Zinc 300 : Texte secondaire (Très lisible) */
+    --color-brand-warm-grey: #a1a1aa; /* Zinc 400 : Labels (Lisible) */
     --color-brand-glow: #09090b;
     --color-sidebar-bg: #09090b; /* Bordure transparente ou fine pour séparer */
     
