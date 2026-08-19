@@ -104,7 +104,7 @@ export default function AppShell({
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        <p className="libelle px-3 pb-2 text-brand-grey/70">{t("nav.navigation")}</p>
+        <p className="libelle px-4 pb-3 text-brand-grey/60">{t("nav.navigation")}</p>
         {navigation.map((item) => {
           const actif =
             item.href === "/"
@@ -118,22 +118,22 @@ export default function AppShell({
               href={item.href}
               onClick={() => setMenuOuvert(false)}
               aria-current={actif ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
                 actif
-                  ? "bg-brand-orange text-brand-white"
-                  : "text-brand-grey hover:bg-white/5 hover:text-brand-white"
+                  ? "bg-gradient-to-r from-brand-orange to-[#EA580C] text-brand-white shadow-md shadow-brand-orange/20 translate-x-1"
+                  : "text-brand-grey hover:bg-white/5 hover:text-brand-white hover:translate-x-1"
               }`}
             >
-              <Icone taille={17} />
+              <Icone taille={18} className={actif ? "opacity-100" : "opacity-70"} />
               {t(item.cle)}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-white/10 p-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-bold uppercase text-brand-white">
+      <div className="p-4">
+        <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3 backdrop-blur-sm border border-white/5 transition-colors hover:bg-white/10">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-orange to-[#EA580C] shadow-sm text-sm font-bold uppercase text-brand-white">
             {user.username.slice(0, 2)}
           </span>
           <span className="min-w-0 flex-1 leading-tight">
@@ -158,14 +158,14 @@ export default function AppShell({
 
   return (
     <FournisseurToasts>
-      <div className="min-h-screen print:bg-white">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 bg-brand-smooth lg:block print:hidden">
+      <div className="min-h-screen print:bg-white font-inter text-brand-black">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-brand-smooth shadow-2xl shadow-brand-smooth/20 lg:block print:hidden">
           {contenuSidebar}
         </aside>
 
         {menuOuvert && (
           <div className="fixed inset-0 z-50 lg:hidden print:hidden">
-            <div className="absolute inset-0 bg-brand-smooth/20 backdrop-blur-sm" onClick={() => setMenuOuvert(false)} />
+            <div className="absolute inset-0 bg-brand-smooth/40 backdrop-blur-sm transition-opacity" onClick={() => setMenuOuvert(false)} />
             <div className="absolute left-0 top-0 h-full w-64 bg-brand-smooth shadow-2xl">
               <button
                 type="button"
@@ -180,8 +180,8 @@ export default function AppShell({
           </div>
         )}
 
-        <div className="lg:pl-60">
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-brand-light-grey bg-brand-white/90 px-4 backdrop-blur lg:px-6 print:hidden">
+        <div className="lg:pl-64 transition-all duration-300 ease-in-out">
+          <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-brand-light-grey/60 bg-brand-white/80 px-4 backdrop-blur-xl lg:px-8 print:hidden">
             <button
               type="button"
               onClick={() => setMenuOuvert(true)}
@@ -190,7 +190,7 @@ export default function AppShell({
             >
               <IconeMenu taille={18} />
             </button>
-            <span className="hidden text-sm font-medium text-brand-warm-grey lg:block">
+            <span className="hidden text-sm font-semibold text-brand-smooth lg:block font-outfit tracking-wide">
               {t("entete.titrePlateforme")}
             </span>
             <div className="ml-auto flex items-center gap-3">
@@ -199,7 +199,7 @@ export default function AppShell({
             </div>
           </header>
 
-          <main className="min-w-0 p-4 lg:p-6 print:p-0">{children}</main>
+          <main className="min-w-0 p-4 lg:p-8 print:p-0">{children}</main>
         </div>
       </div>
     </FournisseurToasts>

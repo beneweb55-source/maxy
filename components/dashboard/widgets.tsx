@@ -87,14 +87,15 @@ function BlocKpis({
         const positive = v !== null && (inverse ? v < 0 : v > 0);
         const negative = v !== null && (inverse ? v > 0 : v < 0);
         return (
-          <div key={cle} className="carte">
-            <p className="libelle text-brand-warm-grey/80">{def.libelle}</p>
-            <p className="mt-3 text-3xl font-extrabold tracking-tight text-brand-black">
+          <div key={cle} className="carte relative overflow-hidden group/kpi">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-brand-orange/5 to-transparent opacity-0 group-hover/kpi:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+            <p className="libelle text-brand-warm-grey/80 relative z-10">{def.libelle}</p>
+            <p className="mt-3 text-3xl font-extrabold tracking-tight text-brand-black font-outfit relative z-10">
               {valeurFormatee(cle, kpi.valeur)}
             </p>
             {comparaison && (
               <p
-                className={`mt-1.5 inline-flex items-center gap-1 text-xs font-semibold ${
+                className={`mt-1.5 inline-flex items-center gap-1 text-xs font-semibold relative z-10 ${
                   positive ? "text-succes" : negative ? "text-danger" : "text-brand-grey"
                 }`}
               >
@@ -204,8 +205,8 @@ function GraphiqueBarres({
         <svg viewBox={`0 0 ${largeur} ${hauteur}`} className="h-40 w-full min-w-[320px]" role="img">
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F86822" />
-              <stop offset="100%" stopColor="#FC997E" stopOpacity="0.6" />
+              <stop offset="0%" stopColor="#F97316" />
+              <stop offset="100%" stopColor="#FDBA74" stopOpacity="0.4" />
             </linearGradient>
           </defs>
           {series.map((s, i) => {
@@ -393,9 +394,9 @@ function Activites({ activites }: { activites: Activite[] }) {
           <li key={i} className="flex items-start gap-3 py-2 text-sm">
             <span
               aria-hidden
-              className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-glow/40 text-brand-orange"
+              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-glow to-brand-light-orange/30 text-brand-orange shadow-sm"
             >
-              <Icone taille={14} />
+              <Icone taille={15} />
             </span>
             <div className="min-w-0">
               <p className="truncate" title={a.message}>

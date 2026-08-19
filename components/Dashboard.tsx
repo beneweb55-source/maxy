@@ -65,8 +65,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-entree">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{config.titre}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-brand-light-grey/60 mb-6">
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black font-outfit">{config.titre}</h1>
         <p className="flex items-center gap-2 text-xs text-brand-grey">
           {actualiseA &&
             `Actualisé à ${actualiseA.toLocaleTimeString("fr-FR", {
@@ -88,16 +88,17 @@ export default function Dashboard() {
         {config.widgets.map((widget, index) =>
           widgetSansCarte(widget) ? (
             <div key={widget.id} className={`col-span-1 ${CLASSE_TAILLE[widget.taille]} animate-entree`} style={{ animationDelay: `${index * 50}ms` }}>
-              {widget.titre && <h2 className="libelle mb-3 text-brand-smooth/80">{widget.titre}</h2>}
+              {widget.titre && <h2 className="libelle mb-3 text-brand-smooth/80 font-semibold">{widget.titre}</h2>}
               <RenduWidget widget={widget} donnees={donnees} role={reponse.role} />
             </div>
           ) : (
             <section
               key={widget.id}
-              className={`carte col-span-1 ${CLASSE_TAILLE[widget.taille]} animate-entree flex flex-col`} style={{ animationDelay: `${index * 50}ms` }}
+              className={`carte col-span-1 ${CLASSE_TAILLE[widget.taille]} animate-entree flex flex-col relative overflow-hidden group/carte`} style={{ animationDelay: `${index * 50}ms` }}
             >
-              {widget.titre && <h2 className="libelle mb-4 text-brand-smooth/80">{widget.titre}</h2>}
-              <div className="flex-1">
+              <div className="absolute -inset-4 bg-gradient-to-tr from-brand-orange/5 to-transparent opacity-0 group-hover/carte:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+              {widget.titre && <h2 className="libelle mb-4 text-brand-smooth/80 relative z-10">{widget.titre}</h2>}
+              <div className="flex-1 relative z-10">
                 <RenduWidget widget={widget} donnees={donnees} role={reponse.role} />
               </div>
             </section>

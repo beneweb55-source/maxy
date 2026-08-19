@@ -16,11 +16,11 @@ export default function BadgeStatut({
   return (
     <span className="inline-flex items-center gap-1">
       <span
-        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${infos.badge}`}
+        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider shadow-sm border border-current/10 ${infos.badge}`}
       >
         <span
           aria-hidden
-          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          className="h-1.5 w-1.5 shrink-0 rounded-full shadow-[0_0_4px_currentColor]"
           style={{ backgroundColor: statut === "vendu" ? "#FFFFFF" : infos.hex }}
         />
         {t(`statuts.${statut}`)}

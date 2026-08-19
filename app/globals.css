@@ -1,206 +1,276 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-brand-orange: #F86822;
-  --color-brand-black: #000000;
+  --color-brand-orange: #F97316; /* Orange moderne et vibrant (Orange 500) */
+  --color-brand-black: #0F172A; /* Slate 900 : Noir profond mais plus doux */
   --color-brand-white: #FFFFFF;
-  --color-brand-crystal: #1770E5;
-  --color-brand-smooth: #2E2D2D;
-  --color-brand-light-orange: #FC997E;
-  --color-brand-glow: #F9D7CD;
-  --color-brand-light-grey: #E6E6E6;
-  --color-brand-grey: #C2C3CC;
-  --color-brand-warm-grey: #7C7572;
-  --color-brand-paper: #FDF8F6;
-  --color-succes: #059669;
-  --color-danger: #DC2626;
-  --color-attention: #D97706;
+  --color-brand-crystal: #3B82F6; /* Blue 500 : Bleu clair premium */
+  --color-brand-smooth: #1E293B; /* Slate 800 : Gris très foncé pour le texte fort */
+  --color-brand-light-orange: #FDBA74; /* Orange 300 */
+  --color-brand-glow: #FFEDD5; /* Orange 100 : Halo très doux */
+  --color-brand-light-grey: #E2E8F0; /* Slate 200 : Bordures subtiles */
+  --color-brand-grey: #94A3B8; /* Slate 400 : Texte secondaire */
+  --color-brand-warm-grey: #64748B; /* Slate 500 : Texte tertiaire et labels */
+  --color-brand-paper: #F8FAFC; /* Slate 50 : Fond global très clair et frais */
+  --color-succes: #10B981; /* Emerald 500 */
+  --color-danger: #EF4444; /* Red 500 */
+  --color-attention: #F59E0B; /* Amber 500 */
   --font-inter: 'Inter', sans-serif;
+  --font-outfit: 'Outfit', sans-serif;
 }
 
 @layer base {
   body {
     font-family: var(--font-inter);
     background-color: var(--color-brand-paper);
-    background-image: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.8), transparent 50%), radial-gradient(circle at 90% 90%, rgba(248, 104, 34, 0.04), transparent 50%);
+    /* Dégradés d'arrière-plan très subtils pour un effet de profondeur moderne */
+    background-image: 
+      radial-gradient(circle at 0% 0%, rgba(249, 115, 22, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
     background-attachment: fixed;
     color: var(--color-brand-black);
     font-size: 15px;
-    line-height: 1.7;
+    line-height: 1.6;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1, h2, h3 {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-outfit);
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.25;
+    color: var(--color-brand-smooth);
   }
   h1 {
-    font-size: 26px;
+    font-size: 28px;
     letter-spacing: -0.03em;
   }
   h2 {
-    font-size: 20px;
+    font-size: 22px;
   }
   h3 {
-    font-size: 17px;
+    font-size: 18px;
   }
   ::selection {
     background-color: var(--color-brand-glow);
-    color: var(--color-brand-black);
+    color: var(--color-brand-orange);
   }
   @media print {
     body {
       background-color: var(--color-brand-white);
+      background-image: none;
     }
   }
 }
 
 @layer components {
+  /* Cartes avec un véritable effet Glassmorphism Premium */
   .carte {
-    border-radius: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.04), 0 2px 8px -2px rgba(0, 0, 0, 0.02);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 
+      0 4px 6px -1px rgba(15, 23, 42, 0.02), 
+      0 2px 4px -2px rgba(15, 23, 42, 0.02),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
     padding: 1.5rem;
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .carte:hover {
-    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.06), 0 4px 12px -3px rgba(0, 0, 0, 0.03);
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 
+      0 10px 15px -3px rgba(15, 23, 42, 0.03), 
+      0 4px 6px -4px rgba(15, 23, 42, 0.03),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    transform: translateY(-2px);
   }
+
+  /* Boutons modernisés avec micro-animations */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-2, 0.5rem);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-2, 0.5rem) var(--spacing-4, 1rem);
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
     font-size: 14px;
-    font-weight: 700;
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.15s, color 0.15s, border-color 0.15s, filter 0.15s;
+    font-weight: 600;
+    font-family: var(--font-inter);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     white-space: nowrap;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid transparent;
   }
   .btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1.5px);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(0);
   }
   .btn:disabled {
-    opacity: 0.45;
+    opacity: 0.5;
     cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
   }
+
   .btn-primaire {
     background-color: var(--color-brand-orange);
     color: var(--color-brand-white);
+    box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.25);
   }
   .btn-primaire:hover:not(:disabled) {
-    filter: brightness(0.92);
+    background-color: #EA580C; /* Orange 600 */
+    box-shadow: 0 6px 20px 0 rgba(249, 115, 22, 0.35);
   }
+
   .btn-secondaire {
-    border: 1px solid var(--color-brand-light-grey);
     background-color: var(--color-brand-white);
     color: var(--color-brand-smooth);
+    border-color: var(--color-brand-light-grey);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
   }
   .btn-secondaire:hover:not(:disabled) {
     background-color: var(--color-brand-paper);
     border-color: var(--color-brand-grey);
+    color: var(--color-brand-black);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
   }
+
   .btn-danger {
     background-color: var(--color-danger);
     color: var(--color-brand-white);
+    box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.25);
   }
   .btn-danger:hover:not(:disabled) {
-    filter: brightness(0.9);
+    background-color: #DC2626; /* Red 600 */
+    box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.35);
   }
+
   .btn-crystal {
     background-color: var(--color-brand-crystal);
     color: var(--color-brand-white);
+    box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.25);
   }
   .btn-crystal:hover:not(:disabled) {
-    filter: brightness(0.92);
+    background-color: #2563EB; /* Blue 600 */
+    box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.35);
   }
+
+  /* Champs de formulaire plus doux et focus state élégant */
   .champ {
     width: 100%;
-    border-radius: var(--radius-lg);
+    border-radius: 0.75rem;
     border: 1px solid var(--color-brand-light-grey);
     background-color: var(--color-brand-white);
-    padding: var(--spacing-2, 0.5rem) var(--spacing-3, 0.75rem);
-    font-size: 16px;
+    padding: 0.625rem 0.875rem;
+    font-size: 15px;
     outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.02) inset;
+    color: var(--color-brand-black);
   }
   .champ:focus {
     border-color: var(--color-brand-orange);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-orange) 18%, transparent);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+    background-color: var(--color-brand-white);
   }
+  .champ::placeholder {
+    color: var(--color-brand-grey);
+  }
+
+  /* Typographie utilitaire */
   .libelle {
     display: block;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--color-brand-warm-grey);
+    font-family: var(--font-inter);
   }
+
+  /* Tableaux plus épurés */
   .entete-table {
-    padding: 1rem 0.75rem;
+    padding: 1rem 1rem;
     text-align: left;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     color: var(--color-brand-warm-grey);
+    border-bottom: 1px solid var(--color-brand-light-grey);
   }
   .ligne-table {
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5); /* light-grey transparent */
+  }
+  .ligne-table:last-child {
+    border-bottom: none;
   }
   .ligne-table:hover {
-    background-color: rgba(253, 248, 246, 0.7); /* brand-paper avec opacité */
+    background-color: rgba(248, 250, 252, 0.8); /* brand-paper */
   }
+
   .lien {
     font-weight: 500;
     color: var(--color-brand-crystal);
+    transition: color 0.2s;
   }
   .lien:hover {
+    color: #2563EB;
     text-decoration: underline;
+    text-underline-offset: 2px;
   }
+
+  /* Bandeaux et alertes modernisés avec fond pastel */
   .alerte-erreur {
-    border-radius: var(--radius-lg);
-    background-color: color-mix(in srgb, var(--color-danger) 7%, white);
-    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    border-radius: 0.75rem;
+    background-color: #FEF2F2; /* Red 50 */
+    border: 1px solid #FEE2E2; /* Red 100 */
+    padding: 1rem;
     font-size: 14px;
-    color: color-mix(in srgb, var(--color-danger) 88%, black);
+    color: #991B1B; /* Red 800 */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
+  
   .bandeau-info {
-    border-radius: var(--radius-lg);
-    border: 1px solid color-mix(in srgb, var(--color-brand-crystal) 22%, transparent);
-    background-color: color-mix(in srgb, var(--color-brand-crystal) 7%, white);
-    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    border-radius: 0.75rem;
+    background-color: #EFF6FF; /* Blue 50 */
+    border: 1px solid #DBEAFE; /* Blue 100 */
+    padding: 1rem;
     font-size: 14px;
-    color: color-mix(in srgb, var(--color-brand-crystal) 82%, black);
+    color: #1E40AF; /* Blue 800 */
   }
+  
   .bandeau-succes {
-    border-radius: var(--radius-lg);
-    background-color: color-mix(in srgb, var(--color-succes) 8%, white);
-    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    border-radius: 0.75rem;
+    background-color: #ECFDF5; /* Emerald 50 */
+    border: 1px solid #D1FAE5; /* Emerald 100 */
+    padding: 1rem;
     font-size: 14px;
-    color: color-mix(in srgb, var(--color-succes) 85%, black);
+    color: #065F46; /* Emerald 800 */
   }
+  
   .encart-marque {
-    border-radius: var(--radius-lg);
-    border: 1px solid color-mix(in srgb, var(--color-brand-orange) 25%, transparent);
-    background-color: color-mix(in srgb, var(--color-brand-glow) 45%, white);
-    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    border-radius: 0.75rem;
+    background-color: var(--color-brand-glow);
+    border: 1px solid var(--color-brand-light-orange);
+    padding: 1rem;
     font-size: 14px;
-    color: color-mix(in srgb, var(--color-brand-orange) 75%, black);
+    color: #C2410C; /* Orange 700 */
   }
 }
 
 @layer utilities {
   .animate-entree {
-    animation: entree-douce 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: entree-douce 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   
   .delai-100 { animation-delay: 100ms; }
@@ -210,7 +280,7 @@
   @keyframes entree-douce {
     0% {
       opacity: 0;
-      transform: translateY(15px);
+      transform: translateY(20px);
     }
     100% {
       opacity: 1;
@@ -219,10 +289,10 @@
   }
 
   .hover-lift {
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.05);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
   }
 }

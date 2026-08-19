@@ -62,25 +62,25 @@ export default function TableurProduits({
   }
 
   const classeCellule =
-    "w-full border-0 bg-transparent px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-crystal/40 rounded";
+    "w-full border-0 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange/20 focus:bg-brand-orange/5 rounded-md transition-colors font-medium";
 
   return (
     <div ref={conteneur}>
-      <div className="overflow-x-auto rounded-lg border border-brand-light-grey">
+      <div className="overflow-x-auto rounded-xl border border-brand-light-grey/60 bg-brand-white shadow-sm">
         <table className="w-full min-w-[520px] text-sm">
-          <thead className="bg-brand-light-grey/25">
+          <thead className="bg-brand-paper">
             <tr>
-              <th className="entete-table w-8 px-2 py-2">#</th>
-              <th className="entete-table px-2 py-2">{t("tableur.reference")}</th>
-              <th className="entete-table w-44 px-2 py-2">{t("tableur.categorie")}</th>
-              <th className="entete-table w-36 px-2 py-2">{t("tableur.prixAchat")}</th>
+              <th className="entete-table w-8 px-3 py-3">#</th>
+              <th className="entete-table px-3 py-3">{t("tableur.reference")}</th>
+              <th className="entete-table w-44 px-3 py-3">{t("tableur.categorie")}</th>
+              <th className="entete-table w-36 px-3 py-3">{t("tableur.prixAchat")}</th>
               <th className="w-10" />
             </tr>
           </thead>
           <tbody className="">
             {lignes.map((ligne, i) => (
-              <tr key={i} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
-                <td className="px-2 py-1 text-xs text-brand-grey">{i + 1}</td>
+              <tr key={i} className="ligne-table border-b border-brand-light-grey/30 last:border-0 group">
+                <td className="px-3 py-2 text-xs font-medium text-brand-grey/60 text-center">{i + 1}</td>
                 <td>
                   <input
                     data-champ="reference"
