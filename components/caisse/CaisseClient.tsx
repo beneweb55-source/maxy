@@ -867,7 +867,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 return (
                   <li
                     key={g.cle}
-                    className={`group flex flex-col overflow-hidden rounded-xl border bg-white/80 backdrop-blur-lg transition hover:shadow-md effet-lumiere ${
+                    className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white/80 backdrop-blur-lg transition hover:shadow-md effet-lumiere ${
                       modeBundle && choisi
                         ? "border-brand-orange ring-2 ring-brand-orange"
                         : "border-brand-light-grey"
@@ -1801,9 +1801,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                   )}
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 bg-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">1000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 bg-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">2000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 bg-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">5000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">1000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">2000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">5000 DA</button>
                   <button type="button" onClick={() => setEspecesRecues(prixTotalBundle)} className="flex-1 py-1 bg-brand-orange text-white border border-brand-orange rounded shadow-sm text-sm font-bold hover:bg-brand-orange/90 transition">Exact</button>
                 </div>
               </div>

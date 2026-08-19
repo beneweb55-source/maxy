@@ -21,13 +21,24 @@
 }
 
 @layer base {
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-brand-paper: #020617; /* Slate 950 */
+      --color-brand-white: #0F172A; /* Slate 900 */
+      --color-brand-black: #F8FAFC; /* Slate 50 */
+      --color-brand-smooth: #E2E8F0; /* Slate 200 */
+      --color-brand-light-grey: #1E293B; /* Slate 800 */
+      --color-brand-glow: #0F172A; /* Ombre profonde */
+    }
+  }
+
   body {
     font-family: var(--font-inter);
     background-color: var(--color-brand-paper);
     /* Dégradés d'arrière-plan très subtils pour un effet de profondeur moderne */
     background-image: 
-      radial-gradient(circle at 0% 0%, rgba(249, 115, 22, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+      radial-gradient(circle at 0% 0%, rgba(249, 115, 22, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
     background-attachment: fixed;
     color: var(--color-brand-black);
     font-size: 15px;
@@ -69,7 +80,7 @@
   /* Cartes avec un véritable effet Glassmorphism Premium */
   .carte {
     border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--color-brand-light-grey);
     background-color: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -80,6 +91,15 @@
     padding: 1.5rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  @media (prefers-color-scheme: dark) {
+    .carte {
+      background-color: rgba(15, 23, 42, 0.75);
+      box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.2), 
+        0 2px 4px -2px rgba(0, 0, 0, 0.2),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+  }
   .carte:hover {
     background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 
@@ -87,6 +107,15 @@
       0 4px 6px -4px rgba(15, 23, 42, 0.03),
       inset 0 0 0 1px rgba(255, 255, 255, 0.6);
     transform: translateY(-2px);
+  }
+  @media (prefers-color-scheme: dark) {
+    .carte:hover {
+      background-color: rgba(15, 23, 42, 0.9);
+      box-shadow: 
+        0 10px 15px -3px rgba(0, 0, 0, 0.3), 
+        0 4px 6px -4px rgba(0, 0, 0, 0.3),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
   }
 
   /* Boutons modernisés avec micro-animations */
@@ -227,14 +256,14 @@
     text-underline-offset: 2px;
   }
 
-  /* Bandeaux et alertes modernisés avec fond pastel */
+  /* Bandeaux et alertes modernisés avec fond pastel (dynamiques) */
   .alerte-erreur {
     border-radius: 0.75rem;
-    background-color: #FEF2F2; /* Red 50 */
-    border: 1px solid #FEE2E2; /* Red 100 */
+    background-color: rgba(239, 68, 68, 0.1); /* Red avec opacité */
+    border: 1px solid rgba(239, 68, 68, 0.2);
     padding: 1rem;
     font-size: 14px;
-    color: #991B1B; /* Red 800 */
+    color: #DC2626; /* Red 600 */
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -242,29 +271,36 @@
   
   .bandeau-info {
     border-radius: 0.75rem;
-    background-color: #EFF6FF; /* Blue 50 */
-    border: 1px solid #DBEAFE; /* Blue 100 */
+    background-color: rgba(59, 130, 246, 0.1); /* Blue avec opacité */
+    border: 1px solid rgba(59, 130, 246, 0.2);
     padding: 1rem;
     font-size: 14px;
-    color: #1E40AF; /* Blue 800 */
+    color: #2563EB; /* Blue 600 */
   }
   
   .bandeau-succes {
     border-radius: 0.75rem;
-    background-color: #ECFDF5; /* Emerald 50 */
-    border: 1px solid #D1FAE5; /* Emerald 100 */
+    background-color: rgba(16, 185, 129, 0.1); /* Emerald avec opacité */
+    border: 1px solid rgba(16, 185, 129, 0.2);
     padding: 1rem;
     font-size: 14px;
-    color: #065F46; /* Emerald 800 */
+    color: #059669; /* Emerald 600 */
   }
   
   .encart-marque {
     border-radius: 0.75rem;
-    background-color: var(--color-brand-glow);
-    border: 1px solid var(--color-brand-light-orange);
+    background-color: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.2);
     padding: 1rem;
     font-size: 14px;
-    color: #C2410C; /* Orange 700 */
+    color: #EA580C; /* Orange 600 */
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .alerte-erreur { color: #FCA5A5; }
+    .bandeau-info { color: #93C5FD; }
+    .bandeau-succes { color: #6EE7B7; }
+    .encart-marque { color: #FDBA74; }
   }
 }
 

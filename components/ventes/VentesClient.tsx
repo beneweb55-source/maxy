@@ -797,7 +797,7 @@ export default function VentesClient({ role }: { role: Role }) {
                 return (
                   <li
                     key={g.cle}
-                    className={`group flex flex-col overflow-hidden rounded-xl border bg-white/80 backdrop-blur-lg transition hover:shadow-md effet-lumiere ${
+                    className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white/80 backdrop-blur-lg transition hover:shadow-md effet-lumiere ${
                       modeBundle && choisi
                         ? "border-brand-orange ring-2 ring-brand-orange"
                         : "border-brand-light-grey"
