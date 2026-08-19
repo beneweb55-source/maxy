@@ -720,9 +720,9 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   return (
     <div className="flex flex-col h-screen max-h-screen bg-brand-light-grey/10">
-      <header className="bg-brand-black text-brand-white p-3 shrink-0 flex items-center justify-between shadow-md z-10">
+      <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-4">
-          <Link href="/caisse" className="btn btn-secondaire py-1 px-3 bg-white/10 text-white hover:bg-white/20 border-white/20">
+          <Link href="/caisse" className="btn py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
             ← Retour au Tableau de Bord
           </Link>
           <div className="font-black text-lg tracking-wide uppercase flex items-center gap-2">
