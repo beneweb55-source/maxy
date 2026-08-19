@@ -778,7 +778,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                     <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Recette du jour</span>
+                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Chiffre d'affaires</span>
                     <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
                   </div>
                 </>
