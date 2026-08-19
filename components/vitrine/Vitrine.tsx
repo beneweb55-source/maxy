@@ -336,7 +336,7 @@ export default function Vitrine({ role }: { role: Role }) {
             return (
               <div
                 key={p.id}
-                className={`group flex flex-col overflow-hidden rounded-xl border bg-brand-white transition hover:shadow-md effet-lumiere ${
+                className={`group flex flex-col overflow-hidden rounded-xl border bg-white/80 backdrop-blur-lg transition hover:shadow-md effet-lumiere ${
                   nbAuPanier > 0
                     ? "border-brand-orange ring-2 ring-brand-orange"
                     : "border-brand-light-grey"
