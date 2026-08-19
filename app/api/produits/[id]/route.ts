@@ -104,10 +104,10 @@ export async function GET(
     const coutReparations = p.reparations.reduce((s, r) => s + r.cout, 0);
     
     // Pour permettre l'édition de la quantité globale du modèle depuis la fiche :
-    const produitsIdentiques = p.lot_id !== null 
+    const produitsIdentiques = p.lot !== null 
       ? await prisma.produit.findMany({
           where: {
-            lot_id: p.lot_id,
+            lot_id: p.lot.id,
             reference: p.reference,
             categorie: p.categorie,
           },
