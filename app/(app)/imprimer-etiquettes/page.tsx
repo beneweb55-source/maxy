@@ -54,7 +54,7 @@ export default function ImprimerEtiquettes() {
           body { margin: 0; padding: 0; background: white; }
           .no-print { display: none !important; }
           .page-break { page-break-after: always; }
-          @page { margin: 0; size: 58mm 43mm landscape; } /* Format standard pour étiquettes */
+          @page { margin: 0; size: 58mm 43mm; } /* Format standard pour étiquettes */
         }
         @media screen {
           .print-container { padding: 2rem; background: #f0f0f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
@@ -77,9 +77,9 @@ export default function ImprimerEtiquettes() {
           </div>
           <Barcode 
             value={etiquette.code_interne} 
-            width={1.5} 
-            height={30} 
-            fontSize={11}
+            width={2} 
+            height={40} 
+            fontSize={12}
             margin={10}
             displayValue={true}
           />

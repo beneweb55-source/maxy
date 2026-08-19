@@ -371,7 +371,7 @@ export default function VentesClient({ role }: { role: Role }) {
       const suivant = new Map(prev);
       const s = suivant.get(cle) ? new Set(suivant.get(cle)) : new Set<number>();
       
-      if (produitId) {
+      if (produitId && !s.has(produitId)) {
         s.add(produitId);
       } else {
         if (cartes) {
