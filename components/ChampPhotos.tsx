@@ -211,9 +211,10 @@ export default function ChampPhotos({
       if (hoveredIndex !== null && hoveredIndex !== draggedIndex) {
         // Appliquer le changement d'ordre
         const newPhotos = [...photos];
-        const [moved] = newPhotos.splice(draggedIndex, 1);
-        newPhotos.splice(hoveredIndex, 0, moved);
-        
+        const moved = newPhotos.splice(draggedIndex, 1)[0];
+        if (moved !== undefined) {
+          newPhotos.splice(hoveredIndex, 0, moved);
+        }
         // Si l'index 0 a changé, on pourrait notifier "Nouvelle couverture"
         if (hoveredIndex === 0 || draggedIndex === 0) {
           afficher(t("champPhotos.nouvelleCouverture", "Nouvelle couverture définie"), "succes");
