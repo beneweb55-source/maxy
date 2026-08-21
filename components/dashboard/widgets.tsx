@@ -28,6 +28,7 @@ import type {
 } from "@/lib/dashboard/types";
 import BadgeStatut from "@/components/BadgeStatut";
 import { ICONES_ACTIVITE, IconeTendanceBas, IconeTendanceHaut } from "@/components/icons";
+import { useT } from "@/lib/i18n/contexte";
 
 export function RenduWidget({
   widget,
@@ -74,6 +75,7 @@ function BlocKpis({
   cles: CleKpi[];
   kpis: Partial<Record<CleKpi, Kpi>>;
 }) {
+  const t = useT();
   const visibles = cles.filter((c) => kpis[c] !== undefined);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -89,7 +91,7 @@ function BlocKpis({
         return (
           <div key={cle} className="carte relative overflow-hidden group/kpi">
             <div className="absolute -inset-4 bg-gradient-to-tr from-brand-orange/5 to-transparent opacity-0 group-hover/kpi:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
-            <p className="libelle text-brand-warm-grey/80 relative z-10">{def.libelle}</p>
+            <p className="libelle text-brand-warm-grey/80 relative z-10">{t(def.libelle)}</p>
             <p className="mt-3 text-3xl font-extrabold tracking-tight text-brand-black font-outfit relative z-10">
               {valeurFormatee(cle, kpi.valeur)}
             </p>
@@ -118,13 +120,14 @@ function ActionsRapides({
   actions: ActionRapide[];
   compteurs: Record<string, number>;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map((action) => {
         const compteur = action.badge ? (compteurs[action.badge] ?? 0) : null;
         return (
           <Link key={action.href + action.libelle} href={action.href} className="btn btn-secondaire hover-lift shadow-sm">
-            {action.libelle}
+            {t(action.libelle)}
             {compteur !== null && compteur > 0 && (
               <span className="rounded-full bg-brand-orange px-1.5 py-0.5 text-xs font-bold text-white">
                 {compteur}

@@ -6,6 +6,7 @@ import {
   IconeImprimante,
   IconeFlecheGauche,
 } from "@/components/icons";
+import { useLangue } from "@/lib/i18n/contexte";
 
 interface LigneFactureDto {
   id: number;
@@ -90,6 +91,7 @@ export default function GarantieCertificat({
   facture: FactureDto;
   onRetour: () => void;
 }) {
+  const { t } = useLangue();
   const [dureeMois, setDureeMois] = useState(facture.garantie_mois || 6);
   const [lignesSelectionnees, setLignesSelectionnees] = useState<Set<number>>(
     () => new Set(facture.lignes.filter((l) => !l.annulee).map((l) => l.id))
@@ -127,7 +129,7 @@ export default function GarantieCertificat({
           className="lien inline-flex items-center gap-1.5 text-sm"
         >
           <IconeFlecheGauche taille={14} />
-          Retour à la facture
+          {t("garantie.retourFacture")}
         </button>
         <div className="flex items-center gap-2">
           <button
@@ -136,7 +138,7 @@ export default function GarantieCertificat({
             className="btn btn-primaire"
           >
             <IconeImprimante taille={15} />
-            Imprimer la garantie
+            {t("garantie.imprimer")}
           </button>
         </div>
       </div>
@@ -145,16 +147,16 @@ export default function GarantieCertificat({
       <div className="carte space-y-4 print:hidden">
         <h3 className="text-base font-bold flex items-center gap-2">
           <IconeBouclier taille={18} />
-          Paramètres de la garantie
+          {t("garantie.parametres")}
         </h3>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+        <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex-1">
             <label
               className="libelle mb-1.5"
               htmlFor="duree-garantie"
             >
-              Durée de la garantie
+              {t("garantie.duree")}
             </label>
             <select
               id="duree-garantie"
@@ -169,8 +171,8 @@ export default function GarantieCertificat({
               ))}
             </select>
           </div>
-          <div>
-            <p className="libelle mb-1.5">Période couverte</p>
+          <div className="flex-1">
+            <p className="libelle mb-1.5">{t("garantie.periode")}</p>
             <div className="flex items-center gap-2 text-sm font-semibold text-brand-black py-2">
               <span className="rounded-lg bg-emerald-50 text-emerald-800 px-3 py-1 text-xs">
                 {dateFr(facture.date_emission)}
@@ -186,7 +188,7 @@ export default function GarantieCertificat({
         {lignesActives.length > 1 && (
           <div>
             <p className="libelle mb-2">
-              Articles couverts par la garantie
+              {t("garantie.produitsCouverts")}
             </p>
             <div className="space-y-1.5">
               {lignesActives.map((l) => (
@@ -256,7 +258,7 @@ export default function GarantieCertificat({
             </div>
 
             <div className="bg-[#e5e7eb] px-4 py-1.5 rounded-lg border border-[#d1d5db] text-xs font-bold w-fit">
-              Le : {dateFr(facture.date_emission)}
+              {t("facture.le")} : {dateFr(facture.date_emission)}
             </div>
           </div>
         </div>
@@ -279,10 +281,10 @@ export default function GarantieCertificat({
             </svg>
             <div>
               <h2 className="text-lg font-black uppercase tracking-wide text-emerald-900">
-                Certificat de Garantie
+                {t("garantie.certificat")}
               </h2>
               <p className="text-[11px] font-semibold text-emerald-700 mt-0.5">
-                Réf. Facture n° {facture.numero}
+                {t("facture.ref")} {facture.numero}
               </p>
             </div>
           </div>
@@ -292,21 +294,21 @@ export default function GarantieCertificat({
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
             <p className="font-bold text-sm mb-2 uppercase tracking-wider border-b border-black/20 pb-1">
-              Bénéficiaire
+              {t("garantie.beneficiaire")}
             </p>
             <p>
-              <span className="font-bold">Nom :</span>{" "}
-              {facture.client_nom || "Particulier"}
+              <span className="font-bold">{t("client.nom")} :</span>{" "}
+              {facture.client_nom || t("client.particulier")}
             </p>
             {facture.client_tel && (
               <p>
-                <span className="font-bold">Tél :</span>{" "}
+                <span className="font-bold">{t("client.tel")} :</span>{" "}
                 {facture.client_tel}
               </p>
             )}
             {facture.client_adresse && (
               <p>
-                <span className="font-bold">Adresse :</span>{" "}
+                <span className="font-bold">{t("client.adresse")} :</span>{" "}
                 {facture.client_adresse}
               </p>
             )}
@@ -314,17 +316,17 @@ export default function GarantieCertificat({
 
           <div className="border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
             <p className="font-bold text-sm mb-2 uppercase tracking-wider border-b border-black/20 pb-1">
-              Conditions
+              {t("garantie.conditions")}
             </p>
             <p>
-              <span className="font-bold">Durée :</span> {dureeMois} mois
+              <span className="font-bold">{t("garantie.duree")} :</span> {dureeMois} {t("garantie.mois")}
             </p>
             <p>
-              <span className="font-bold">Début :</span>{" "}
+              <span className="font-bold">{t("garantie.debut")} :</span>{" "}
               {dateFrLongue(facture.date_emission)}
             </p>
             <p>
-              <span className="font-bold">Expiration :</span>{" "}
+              <span className="font-bold">{t("garantie.expiration")} :</span>{" "}
               <span className="font-bold text-emerald-800">
                 {dateFrLongue(dateFin.toISOString())}
               </span>
@@ -335,7 +337,7 @@ export default function GarantieCertificat({
         {/* Tableau des articles couverts */}
         <div className="mb-6">
           <p className="font-bold text-sm mb-2 uppercase tracking-wider">
-            Article(s) couvert(s) par la garantie
+            {t("garantie.articlesCouverts")}
           </p>
           <table className="w-full border-collapse border border-black text-xs text-center">
             <thead>
@@ -344,18 +346,18 @@ export default function GarantieCertificat({
                   N°
                 </th>
                 <th className="border border-black py-1.5 px-2 font-bold w-28">
-                  Code
+                  {t("produit.code")}
                 </th>
                 <th className="border border-black py-1.5 px-2 font-bold text-left">
-                  Désignation
+                  {t("produit.designation")}
                 </th>
                 {lignesFiltrees.some((l) => l.categorie) && (
                   <th className="border border-black py-1.5 px-2 font-bold">
-                    Catégorie
+                    {t("produit.categorie")}
                   </th>
                 )}
                 <th className="border border-black py-1.5 px-2 font-bold w-32">
-                  Garantie jusqu&apos;au
+                  {t("garantie.jusquAu")}
                 </th>
               </tr>
             </thead>
@@ -386,42 +388,25 @@ export default function GarantieCertificat({
         {/* Termes et conditions */}
         <div className="mb-6 text-xs leading-relaxed border border-black/30 rounded-lg p-4 bg-gray-50 print:bg-white">
           <p className="font-bold text-sm mb-2 uppercase tracking-wider">
-            Termes et conditions
+            {t("garantie.termesConditions")}
           </p>
           <ol className="list-decimal list-inside space-y-1 text-[11px]">
-            <li>
-              La garantie couvre les défauts de fabrication et les pannes
-              techniques survenant dans des conditions normales
-              d&apos;utilisation.
-            </li>
-            <li>
-              La garantie ne couvre pas les dommages causés par une
-              mauvaise utilisation, des chocs, l&apos;humidité, ou toute
-              intervention non autorisée.
-            </li>
-            <li>
-              Le produit doit être retourné dans son état d&apos;origine
-              avec ce certificat de garantie et la facture correspondante.
-            </li>
-            <li>
-              La réparation ou le remplacement sera effectué dans un délai
-              raisonnable après réception du produit.
-            </li>
-            <li>
-              Ce certificat de garantie est strictement personnel et non
-              transférable.
-            </li>
+            <li>{t("garantie.cond1")}</li>
+            <li>{t("garantie.cond2")}</li>
+            <li>{t("garantie.cond3")}</li>
+            <li>{t("garantie.cond4")}</li>
+            <li>{t("garantie.cond5")}</li>
           </ol>
         </div>
 
         {/* Cachet et signatures */}
-        <div className="flex justify-between items-end mt-8 mb-8">
+        <div className="flex justify-between items-start mb-8 border-b-2 border-brand-black pb-4">
           <div className="text-center">
             <p className="text-xs font-bold mb-12 uppercase">
-              Signature du client
+              {t("garantie.signatureClient")}
             </p>
             <div className="border-t border-black w-44 pt-1 text-[10px] text-brand-warm-grey">
-              Lu et approuvé
+              {t("garantie.luApprouve")}
             </div>
           </div>
 

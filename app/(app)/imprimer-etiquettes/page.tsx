@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Barcode from "react-barcode";
+import { useLangue } from "@/lib/i18n/contexte";
 
 interface EtiquetteData {
   id: number;
@@ -12,6 +13,7 @@ interface EtiquetteData {
 }
 
 export default function ImprimerEtiquettes() {
+  const { t } = useLangue();
   const searchParams = useSearchParams();
   const [etiquettes, setEtiquettes] = useState<EtiquetteData[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export default function ImprimerEtiquettes() {
   }, [searchParams]);
 
   if (erreur) return <div className="p-8 text-danger">{erreur}</div>;
-  if (etiquettes.length === 0) return <div className="p-8">Chargement des étiquettes...</div>;
+  if (etiquettes.length === 0) return <div className="p-8">{t("inventaire.chargementEtiquettes")}</div>;
 
   return (
     <div className="print-container">

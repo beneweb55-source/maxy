@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useT } from "@/lib/i18n/contexte";
 import type { Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
@@ -98,6 +99,7 @@ function BoutonTransition({ avant, cible }: { avant: StatutProduit; cible: Statu
 
 export default function EcranLot({ lotId, role }: { lotId: number; role: Role }) {
   const { afficher } = useToast();
+  const t = useT();
   const [lot, setLot] = useState<LotDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -383,12 +385,12 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       <div className="alerte-erreur" role="alert">
         {erreur}{" "}
         <Link href="/arrivages" className="underline">
-          Retour aux arrivages
+          {t("ecranLot.retourArrivages")}
         </Link>
       </div>
     );
   }
-  if (!lot) return <p className="p-4 text-sm text-brand-warm-grey">Chargement du lot…</p>;
+  if (!lot) return <p className="p-4 text-sm text-brand-warm-grey">{t("ecranLot.chargement")}</p>;
 
   const nbTestes = lot.produits.filter(
     (p) => p.statut !== "recu" && p.statut !== "en_test"
@@ -404,18 +406,22 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
     <div className="mx-auto max-w-2xl space-y-6 animate-entree pb-24">
       <Link href="/arrivages" className="lien inline-flex items-center gap-1.5 text-sm">
         <IconeFlecheGauche taille={14} />
-        Arrivages
+        {t("ecranLot.retourArrivages")}
       </Link>
 
       <div className="carte">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-brand-black pb-1">
-              Lot n°{lot.id} — {lot.fournisseur}
+              {t("ecranLot.titreLot", { id: lot.id, fournisseur: lot.fournisseur })}
             </h1>
             <p className="text-xs text-brand-warm-grey">
-              {new Date(lot.date_entree).toLocaleDateString("fr-FR")} · {lot.produits.length}{" "}
-              produit{lot.produits.length > 1 ? "s" : ""} · {formaterDA(totalAchat)}
+              {t("ecranLot.infosSup", {
+                date: new Date(lot.date_entree).toLocaleDateString("fr-FR"),
+                n: lot.produits.length,
+                s: lot.produits.length > 1 ? "s" : "",
+                cout: formaterDA(totalAchat)
+              }).replace("{n} ", "").replace("  ", " ")}
               {lot.description ? ` · ${lot.description}` : ""}
             </p>
           </div>
@@ -428,7 +434,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             <div className="h-full rounded-full bg-brand-orange" style={{ width: `${pct}%` }} />
           </div>
           <span className="text-xs font-semibold text-brand-warm-grey">
-            {nbTestes}/{lot.produits.length} testés
+            {t("ecranLot.testesSur", { testes: nbTestes, total: lot.produits.length })}
           </span>
         </div>
       </div>
@@ -437,16 +443,16 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-brand-grey">
-              Coût du lot · mode {lot.mode_cout === "auto" ? "automatique" : "manuel"}
+              {t("ecranLot.coutLot", { mode: lot.mode_cout === "auto" ? t("ecranLot.modeAuto") : t("ecranLot.modeManuel") })}
             </p>
             {lot.mode_cout === "auto" ? (
               <p className="mt-0.5 text-sm">
-                Coût calculé (Σ prix d'achat) :{" "}
+                {t("ecranLot.coutCalcule")}{" "}
                 <strong className="text-brand-black">{formaterDA(montantCout)}</strong>
               </p>
             ) : (
               <p className="mt-0.5 text-sm">
-                Coût global déclaré :{" "}
+                {t("ecranLot.coutDeclare")}{" "}
                 <strong className="text-brand-black">
                   {lot.cout_global_declare !== null ? formaterDA(lot.cout_global_declare) : "—"}
                 </strong>
@@ -470,37 +476,37 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               disabled={envoi || montantCout <= 0}
               onClick={() => void validerCout()}
               className="btn btn-primaire"
-              title={montantCout <= 0 ? "Ajoutez des produits ou un coût déclaré" : undefined}
+              title={montantCout <= 0 ? t("ecranLot.erreurCout") : undefined}
             >
               <IconePortefeuille taille={15} />
-              Valider le coût ({formaterDA(montantCout)})
+              {t("ecranLot.validerCout", { montant: formaterDA(montantCout) })}
             </button>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-              Coût à valider par le gérant
+              {t("ecranLot.attenteValidation")}
             </span>
           )}
         </div>
         {!lot.cout_valide && estGerant && (
           <p className="text-xs text-brand-warm-grey">
-            La validation retire {formaterDA(montantCout)} de la caisse (mouvement d'achat du lot).
+            {t("ecranLot.explicationValidation", { montant: formaterDA(montantCout) })}
           </p>
         )}
       </div>
 
       {lot.statut_lot === "teste" && (
         <div className="bandeau-info">
-          Test clôturé — rapport prêt.{" "}
+          {t("ecranLot.rapportPret")}{" "}
           <Link href={`/rapports/${lot.id}`} className="font-semibold underline">
-            Voir le rapport
+            {t("ecranLot.voirRapport")}
           </Link>
         </div>
       )}
       {lot.statut_lot === "valide" && (
         <div className="bandeau-succes">
-          Rapport validé par le gérant.{" "}
+          {t("ecranLot.rapportValide")}{" "}
           <Link href={`/rapports/${lot.id}`} className="font-semibold underline">
-            Voir le rapport
+            {t("ecranLot.voirRapport")}
           </Link>
         </div>
       )}
@@ -560,8 +566,8 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                       </div>
                     )}
                     <p className="text-xs text-brand-warm-grey">
-                      {p.categorie} · achat {formaterDA(p.prix_achat)}
-                      {p.cout_reparations > 0 && ` · réparations ${formaterDA(p.cout_reparations)}`}
+                      {p.categorie} · {t("ecranLot.achat")} {formaterDA(p.prix_achat)}
+                      {p.cout_reparations > 0 && ` · ${t("ecranLot.reparations")} ${formaterDA(p.cout_reparations)}`}
                     </p>
                   </div>
                 </div>
@@ -596,7 +602,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                       className="btn border border-dashed border-brand-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
                     >
                       <IconePlus taille={14} />
-                      Réparation
+                      {t("ecranLot.reparation")}
                     </button>
                   )}
                   {estGerant && p.statut === "ok" && (
@@ -609,7 +615,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                       }}
                       className="btn btn-primaire"
                     >
-                      Fixer le prix de vente ({nb})
+                      {t("ecranLot.fixerPrix", { n: nb })}
                     </button>
                   )}
                   <button
@@ -619,7 +625,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                     className="btn btn-secondaire"
                   >
                     <IconeCrayon taille={14} />
-                    Modifier ({nb})
+                    {t("ecranLot.modifier", { n: nb })}
                   </button>
                   <button
                     type="button"
@@ -628,7 +634,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                     className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
                   >
                     <IconeCorbeille taille={14} />
-                    Supprimer ({nb})
+                    {t("ecranLot.supprimer", { n: nb })}
                   </button>
                 </div>
               )}
@@ -645,7 +651,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             className="lien inline-flex items-center gap-1.5 text-sm"
           >
             <IconePlus taille={14} />
-            {ajoutOuvert ? "Masquer l'ajout" : "Ajouter un produit"}
+            {ajoutOuvert ? t("ecranLot.masquerAjout") : t("ecranLot.ajouterProduit")}
           </button>
           {ajoutOuvert && (
             <form
@@ -659,26 +665,26 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="libelle mb-1.5">Référence *</label>
+                  <label className="libelle mb-1.5">{t("ecranLot.reference")}</label>
                   <input type="text" className="champ" value={nouvRef} onChange={e => setNouvRef(e.target.value)} />
                 </div>
                 <div>
-                  <label className="libelle mb-1.5">Catégorie *</label>
+                  <label className="libelle mb-1.5">{t("ecranLot.categorie")}</label>
                   <input type="text" list="cat-exist" className="champ" value={nouvCat} onChange={e => setNouvCat(e.target.value)} />
                   <datalist id="cat-exist">
                     {categoriesExistantes.map(c => <option key={c} value={c} />)}
                   </datalist>
                 </div>
                 <div>
-                  <label className="libelle mb-1.5">Prix d'achat (DA) *</label>
+                  <label className="libelle mb-1.5">{t("ecranLot.prixAchat")}</label>
                   <input type="number" inputMode="numeric" min="0" step="1" className="champ" value={nouvPrix} onChange={e => setNouvPrix(e.target.value.replace(/[^\d]/g, ""))} />
                 </div>
                 <div>
-                  <label className="libelle mb-1.5">Quantité *</label>
+                  <label className="libelle mb-1.5">{t("ecranLot.quantite")}</label>
                   <input type="number" inputMode="numeric" min="1" step="1" className="champ" value={nouvQuantite} onChange={e => setNouvQuantite(e.target.value.replace(/[^\d]/g, ""))} />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="libelle mb-1.5">Photos du produit</label>
+                  <label className="libelle mb-1.5">{t("ecranLot.photos")}</label>
                   <ChampPhotos photos={nouvPhotos} onChange={setNouvPhotos} disabled={envoi} />
                 </div>
               </div>
@@ -688,7 +694,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                   disabled={envoi || !nouvRef.trim() || !nouvCat.trim() || !nouvPrix.trim()}
                   className="btn btn-primaire"
                 >
-                  Ajouter au lot
+                  {t("ecranLot.ajouterAuLot")}
                 </button>
               </div>
             </form>
@@ -700,9 +706,9 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-light-grey bg-brand-white p-3 lg:pl-60">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <p className="text-xs text-brand-warm-grey">
-              {lot.quantite_attendue !== null && lot.produits.length !== lot.quantite_attendue ? `Erreur d'écart : ${lot.produits.length} produit(s) ajoutés, ${lot.quantite_attendue} attendus.` : (nbRecus > 0
-                ? `${nbRecus} produit${nbRecus > 1 ? "s" : ""} encore en « Reçu »`
-                : "Tous les produits sont testés, quantité conforme.")}
+              {lot.quantite_attendue !== null && lot.produits.length !== lot.quantite_attendue ? t("ecranLot.erreurEcart", { n: lot.produits.length, attendu: lot.quantite_attendue }) : (nbRecus > 0
+                ? t("ecranLot.nbRecus", { n: nbRecus })
+                : t("ecranLot.testConforme"))}
             </p>
             <div className="flex gap-2">
               {(lot.quantite_attendue !== null && lot.produits.length !== lot.quantite_attendue) && (
@@ -711,7 +717,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                   onClick={() => setModalManque(true)}
                   className="btn btn-danger"
                 >
-                  Signaler écart
+                  {t("ecranLot.signalerEcart")}
                 </button>
               )}
               <button
@@ -721,7 +727,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 className="btn btn-primaire"
               >
                 <IconeCoche taille={15} />
-                Clôturer le test
+                {t("ecranLot.cloturerTest")}
               </button>
             </div>
           </div>
@@ -731,7 +737,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       <Modale
         titre={
           modalNote
-            ? `${modalNote.produits.length} produit(s) → ${INFOS_STATUT[modalNote.cible].libelle}`
+            ? t("ecranLot.titreNote", { n: modalNote.produits.length, statut: INFOS_STATUT[modalNote.cible].libelle })
             : ""
         }
         ouverte={modalNote !== null}
@@ -759,14 +765,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             disabled={!noteTexte.trim() || envoi}
             className="btn btn-primaire"
           >
-            Confirmer le changement
+            {t("ecranLot.confirmerChangement")}
           </button>
         </div>
         </form>
       </Modale>
 
       <Modale
-        titre={modalReparation ? `Réparation — ${modalReparation.code_interne}` : ""}
+        titre={modalReparation ? t("ecranLot.reparationCode", { code: modalReparation.code_interne }) : ""}
         ouverte={modalReparation !== null}
         onFermer={() => setModalReparation(null)}
       >
@@ -791,7 +797,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         <div className="space-y-3">
           <div>
             <label className="libelle mb-1.5" htmlFor="cout-rep">
-              Coût (DA) *
+              {t("ecranLot.coutDA")} *
             </label>
             <input
               id="cout-rep"
@@ -806,14 +812,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           </div>
           <div>
             <label className="libelle mb-1.5" htmlFor="desc-rep">
-              Description *
+              {t("ecranLot.description")} *
             </label>
             <input
               id="desc-rep"
               type="text"
               value={descReparation}
               onChange={(e) => setDescReparation(e.target.value)}
-              placeholder="Ex. Remplacement de la dalle"
+              placeholder={t("ecranLot.placeholderRep")}
               className="champ"
             />
           </div>
@@ -823,7 +829,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               disabled={envoi || !coutReparation.trim() || !descReparation.trim()}
               className="btn btn-primaire"
             >
-              Enregistrer la réparation
+              {t("ecranLot.enregistrerRep")}
             </button>
           </div>
         </div>
@@ -831,7 +837,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       </Modale>
 
       <Modale
-        titre="Signaler un écart à Imed"
+        titre={t("ecranLot.signalerEcart")}
         ouverte={modalManque}
         onFermer={() => setModalManque(false)}
       >
@@ -844,7 +850,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           }}
         >
         <p className="text-sm text-brand-warm-grey mb-3">
-          Précisez le problème rencontré (ex: "Il manque 2 produits par rapport à la quantité attendue").
+          {t("ecranLot.explicationEcart")}
         </p>
         <textarea
           value={msgManque}
@@ -854,21 +860,21 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         />
         <div className="flex justify-end gap-2">
           <button type="button" onClick={() => setModalManque(false)} className="btn btn-secondaire">
-            Annuler
+            {t("ecranLot.annuler")}
           </button>
           <button
             type="submit"
             disabled={envoi || !msgManque.trim()}
             className="btn btn-danger"
           >
-            Envoyer l'alerte
+            {t("ecranLot.envoyerAlerte")}
           </button>
         </div>
         </form>
       </Modale>
 
       <Modale
-        titre="Clôturer le test du lot"
+        titre={t("ecranLot.cloturerTest")}
         ouverte={modalCloture}
         onFermer={() => setModalCloture(false)}
       >
@@ -881,26 +887,25 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           }}
         >
         <p className="text-sm text-brand-warm-grey">
-          Le rapport sera généré et Imed notifié pour validation. Les statuts resteront
-          modifiables jusqu'à la validation du rapport.
+          {t("ecranLot.explicationCloture")}
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={() => setModalCloture(false)} className="btn btn-secondaire">
-            Annuler
+            {t("ecranLot.annuler")}
           </button>
           <button
             type="submit"
             disabled={envoi}
             className="btn btn-primaire"
           >
-            Clôturer
+            {t("ecranLot.cloturer")}
           </button>
         </div>
         </form>
       </Modale>
 
       <Modale
-        titre={modalEdit ? `Modifier — ${modalEdit.length} produit(s)` : ""}
+        titre={modalEdit ? t("ecranLot.modifierN", { n: modalEdit.length }) : ""}
         ouverte={modalEdit !== null}
         onFermer={() => setModalEdit(null)}
       >
@@ -915,7 +920,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
         >
           <div>
             <label className="libelle mb-1.5" htmlFor="edit-ref-lot">
-              Référence *
+              {t("ecranLot.reference")} *
             </label>
             <input
               id="edit-ref-lot"
@@ -929,7 +934,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1">
               <label className="libelle mb-1.5" htmlFor="edit-cat-lot">
-                Catégorie *
+                {t("ecranLot.categorie")} *
               </label>
               <input
                 id="edit-cat-lot"
@@ -943,7 +948,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             <div className="flex gap-3 sm:w-64">
               <div className="flex-1">
                 <label className="libelle mb-1.5" htmlFor="edit-prix-lot">
-                  Prix achat (DA) *
+                  {t("ecranLot.prixAchat")} *
                 </label>
                 <input
                   id="edit-prix-lot"
@@ -958,7 +963,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               </div>
               <div className="w-24 shrink-0">
                 <label className="libelle mb-1.5" htmlFor="edit-quantite-lot">
-                  Quantité *
+                  {t("ecranLot.quantite")} *
                 </label>
                 <input
                   id="edit-quantite-lot"
@@ -974,7 +979,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             </div>
           </div>
           <div>
-            <label className="libelle mb-1.5">Photos du produit</label>
+            <label className="libelle mb-1.5">{t("ecranLot.photos")}</label>
             <ChampPhotos
               photos={editPhotos}
               onChange={(p) => {
@@ -990,14 +995,14 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               disabled={envoi || !editRef.trim() || !editCat.trim() || !editPrix.trim() || !editQuantite.trim()}
               className="btn btn-primaire"
             >
-              Enregistrer les modifications
+              {t("ecranLot.enregistrerModifs")}
             </button>
           </div>
         </form>
       </Modale>
 
       <Modale
-        titre={modalSuppr ? `Supprimer — ${modalSuppr.length} produit(s)` : ""}
+        titre={modalSuppr ? t("ecranLot.supprimerN", { n: modalSuppr.length }) : ""}
         ouverte={modalSuppr !== null}
         onFermer={() => setModalSuppr(null)}
       >
@@ -1011,9 +1016,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             }}
           >
             <p className="text-sm text-brand-warm-grey">
-              Les <strong className="text-brand-black">{modalSuppr.length} produit(s)</strong> seront
-              définitivement retirés du lot, avec leur historique de statuts et leurs réparations. Cette
-              action est irréversible.
+              {t("ecranLot.explicationSuppression", { n: modalSuppr.length })}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button

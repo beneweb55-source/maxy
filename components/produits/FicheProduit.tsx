@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/contexte";
 import type { DecisionRapport, Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
@@ -83,6 +84,7 @@ export default function FicheProduit({
 }) {
   const router = useRouter();
   const { afficher } = useToast();
+  const t = useT();
   const [produit, setProduit] = useState<ProduitDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -171,7 +173,7 @@ export default function FicheProduit({
       </div>
     );
   }
-  if (!produit) return <p className="p-4 text-sm text-brand-warm-grey">Chargement du produit…</p>;
+  if (!produit) return <p className="p-4 text-sm text-brand-warm-grey">{t("ficheProduit.chargement")}</p>;
 
   const cibles = peutModifierStatut ? (TRANSITIONS_MANUELLES[produit.statut] ?? []) : [];
   const vendu = produit.statut === "vendu";
@@ -237,7 +239,7 @@ export default function FicheProduit({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <section className="carte">
-          <h2 className="libelle text-brand-smooth">Identité</h2>
+          <h2 className="libelle text-brand-smooth">{t("ficheProduit.identite")}</h2>
           {produit.images.length > 0 && (
             <div className="mt-2.5 space-y-2">
               <div className="relative">
@@ -307,41 +309,41 @@ export default function FicheProduit({
           )}
           <dl className="mt-2.5 space-y-1.5 text-sm">
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Statut</dt>
+              <dt className="text-brand-warm-grey">{t("inventaire.statut")}</dt>
               <dd>
                 <BadgeStatut statut={produit.statut} />
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Vitrine</dt>
+              <dt className="text-brand-warm-grey">{t("ficheProduit.vitrine")}</dt>
               <dd className="font-semibold">
                 {produit.en_vitrine ? (
                   <span className="inline-flex items-center gap-1 text-brand-orange">
-                    <IconeVitrine taille={13} /> Exposé
+                    <IconeVitrine taille={13} /> {t("ficheProduit.expose")}
                   </span>
                 ) : (
-                  <span className="text-brand-grey">Non exposé</span>
+                  <span className="text-brand-grey">{t("ficheProduit.nonExpose")}</span>
                 )}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Catégorie</dt>
+              <dt className="text-brand-warm-grey">{t("inventaire.colCategorie")}</dt>
               <dd className="font-semibold">{produit.categorie}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Lot d'origine</dt>
+              <dt className="text-brand-warm-grey">{t("ficheProduit.lotOrigine")}</dt>
               <dd>
                 {produit.lot ? (
                   <Link href={`/lots/${produit.lot.id}`} className="lien">
                     n°{produit.lot.id} — {produit.lot.fournisseur}
                   </Link>
                 ) : (
-                  <span className="text-brand-grey">Ajout direct (sans arrivage)</span>
+                  <span className="text-brand-grey">{t("ficheProduit.ajoutDirect")}</span>
                 )}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Date d'entrée</dt>
+              <dt className="text-brand-warm-grey">{t("ficheProduit.dateEntree")}</dt>
               <dd>
                 {new Date(produit.lot?.date_entree ?? produit.date_entree).toLocaleDateString(
                   "fr-FR"
@@ -349,7 +351,7 @@ export default function FicheProduit({
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Jours en stock</dt>
+              <dt className="text-brand-warm-grey">{t("ficheProduit.joursEnStock")}</dt>
               <dd
                 className={
                   produit.jours_stock > 30 && !vendu ? "font-bold text-brand-orange" : ""
@@ -360,7 +362,7 @@ export default function FicheProduit({
             </div>
             {produit.decision_rapport && (
               <div className="flex justify-between gap-2">
-                <dt className="text-brand-warm-grey">Décision rapport</dt>
+                <dt className="text-brand-warm-grey">{t("ficheProduit.decisionRapport")}</dt>
                 <dd className="font-semibold">
                   {produit.decision_rapport === "reparer"
                     ? "Réparer"
@@ -374,16 +376,16 @@ export default function FicheProduit({
         </section>
 
         <section className="carte">
-          <h2 className="libelle text-brand-smooth">Finances</h2>
+          <h2 className="libelle text-brand-smooth">{t("ficheProduit.finances")}</h2>
           <dl className="mt-2.5 space-y-1.5 text-sm">
             {!estSocial && (
               <>
                 <div className="flex justify-between gap-2">
-                  <dt className="text-brand-warm-grey">Prix d'achat</dt>
+                  <dt className="text-brand-warm-grey">{t("ficheProduit.prixAchat")}</dt>
                   <dd className="font-semibold">{formaterDA(produit.prix_achat)}</dd>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <dt className="text-brand-warm-grey">Total réparations</dt>
+                  <dt className="text-brand-warm-grey">{t("ficheProduit.totalReparations")}</dt>
                   <dd className="font-semibold">
                     {produit.cout_reparations > 0 ? formaterDA(produit.cout_reparations) : "—"}
                   </dd>
@@ -391,20 +393,20 @@ export default function FicheProduit({
               </>
             )}
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Prix de vente fixé</dt>
+              <dt className="text-brand-warm-grey">{t("ficheProduit.prixVenteFixe")}</dt>
               <dd className="font-semibold">
                 {produit.prix_vente_fixe !== null ? formaterDA(produit.prix_vente_fixe) : "—"}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-brand-warm-grey">Prix de vente réel</dt>
+              <dt className="text-brand-warm-grey">{t("ficheProduit.prixVenteReel")}</dt>
               <dd className="font-semibold">
                 {produit.prix_vente_reel !== null ? formaterDA(produit.prix_vente_reel) : "—"}
               </dd>
             </div>
             {!estSocial && (
               <div className="flex justify-between gap-2 border-t border-brand-light-grey/70 pt-1.5">
-                <dt className="text-brand-warm-grey">Marge</dt>
+                <dt className="text-brand-warm-grey">{t("ficheProduit.marge")}</dt>
                 <dd
                   className={`font-bold ${
                     produit.marge === null
@@ -435,7 +437,7 @@ export default function FicheProduit({
 
       {montrerActions && (
         <section className="carte">
-          <h2 className="libelle text-brand-smooth">Actions</h2>
+          <h2 className="libelle text-brand-smooth">{t("ficheProduit.actions")}</h2>
           <div className="mt-2.5 flex flex-wrap gap-2">
             {cibles.map((cible) => {
               const Icone = ICONES_STATUT[cible];
@@ -533,7 +535,7 @@ export default function FicheProduit({
 
       {produit.ventes.length > 0 && (
         <section className="carte">
-          <h2 className="libelle text-brand-smooth">Ventes</h2>
+          <h2 className="libelle text-brand-smooth">{t("ficheProduit.ventes")}</h2>
           <ul className="mt-2.5 text-sm">
             {produit.ventes.map((v) => (
               <li key={v.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0 flex items-center justify-between py-2 px-1">
@@ -554,7 +556,7 @@ export default function FicheProduit({
       )}
 
       <section className="carte">
-        <h2 className="libelle text-brand-smooth">Historique complet</h2>
+        <h2 className="libelle text-brand-smooth">{t("ficheProduit.historiqueComplet")}</h2>
         <ol className="mt-3 space-y-0">
           {produit.historique.map((h, i) => (
             <li key={h.id} className="relative flex gap-3 pb-4">
@@ -601,7 +603,7 @@ export default function FicheProduit({
       </section>
 
       <section className="carte">
-        <h2 className="libelle text-brand-smooth">Notes libres</h2>
+        <h2 className="libelle text-brand-smooth">{t("ficheProduit.notesLibres")}</h2>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -838,7 +840,7 @@ export default function FicheProduit({
             />
           </div>
           <div>
-            <label className="libelle mb-1.5">Photos du produit</label>
+            <label className="libelle mb-1.5">{t("inventaire.photos")}</label>
             <ChampPhotos
               photos={editPhotos}
               onChange={(p) => {

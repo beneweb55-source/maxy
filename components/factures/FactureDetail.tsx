@@ -14,6 +14,7 @@ import {
   IconeCrayon,
   IconeCorbeille,
 } from "@/components/icons";
+import { useLangue } from "@/lib/i18n/contexte";
 import GarantieCertificat from "@/components/factures/GarantieCertificat";
 
 interface LigneFactureDto {
@@ -80,6 +81,7 @@ export default function FactureDetail({
   const searchParams = useSearchParams();
   const autoPrint = searchParams.get("print") === "ticket" || searchParams.get("print") === "auto";
   const { afficher } = useToast();
+  const { t } = useLangue();
   const [facture, setFacture] = useState<FactureDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [editionClient, setEditionClient] = useState(false);
@@ -300,27 +302,27 @@ export default function FactureDetail({
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mt-3">
             <div>
-              <label className="libelle mb-1.5" htmlFor="client-type-facture">Type de facture</label>
+              <label className="libelle mb-1.5" htmlFor="client-type-facture">{t("factures.typeFacture")}</label>
               <select id="client-type-facture" value={typeFacture} onChange={e => setTypeFacture(e.target.value)} className="champ">
-                <option value="normale">Normale</option>
+                <option value="normale">{t("factureNormale")}</option>
                 <option value="tva">Avec TVA (19%)</option>
-                <option value="proforma">Proforma</option>
+                <option value="proforma">{t("factureProforma")}</option>
               </select>
             </div>
             <div>
-              <label className="libelle mb-1.5" htmlFor="client-adresse">Adresse</label>
+              <label className="libelle mb-1.5" htmlFor="client-adresse">{t("factures.adresse")}</label>
               <input id="client-adresse" type="text" value={adresse} onChange={e => setAdresse(e.target.value)} className="champ" />
             </div>
             <div>
-              <label className="libelle mb-1.5" htmlFor="client-rc">RC</label>
+              <label className="libelle mb-1.5" htmlFor="client-rc">{t("factures.rc")}</label>
               <input id="client-rc" type="text" value={rc} onChange={e => setRc(e.target.value)} className="champ" />
             </div>
             <div>
-              <label className="libelle mb-1.5" htmlFor="client-nif">NIF</label>
+              <label className="libelle mb-1.5" htmlFor="client-nif">{t("factures.nif")}</label>
               <input id="client-nif" type="text" value={nif} onChange={e => setNif(e.target.value)} className="champ" />
             </div>
             <div>
-              <label className="libelle mb-1.5" htmlFor="client-nis">NIS</label>
+              <label className="libelle mb-1.5" htmlFor="client-nis">{t("factures.nis")}</label>
               <input id="client-nis" type="text" value={nis} onChange={e => setNis(e.target.value)} className="champ" />
             </div>
             <div>
@@ -358,11 +360,11 @@ export default function FactureDetail({
             <h2 className="text-sm font-bold uppercase tracking-wide text-brand-black mb-1.5">{facture.entreprise?.nom || "Solution Maxi"}</h2>
             <p className="mb-2 font-medium">{facture.entreprise?.adresse || "Alger, Algérie"}</p>
             <div className="grid grid-cols-[30px_1fr] gap-x-2 gap-y-0.5">
-              <span className="font-semibold">RC:</span> <span>{facture.entreprise?.rc || "RC XXXXXXXXX"}</span>
-              <span className="font-semibold">NIF:</span> <span>{facture.entreprise?.nif || "NIF XXXXXXXXX"}</span>
-              <span className="font-semibold">NIS:</span> <span>{facture.entreprise?.nis || "NIS XXXXXXXXX"}</span>
-              <span className="font-semibold">N Art:</span> <span>{facture.entreprise?.art || "ART XXXXXXXXX"}</span>
-              <span className="font-semibold">RIB:</span> <span>{facture.entreprise?.rib || "0000 00 00 00 00"}</span>
+              <span className="font-semibold">{t("factures.rc")}:</span> <span>{facture.entreprise?.rc || "RC XXXXXXXXX"}</span>
+              <span className="font-semibold">{t("factures.nif")}:</span> <span>{facture.entreprise?.nif || "NIF XXXXXXXXX"}</span>
+              <span className="font-semibold">{t("factures.nis")}:</span> <span>{facture.entreprise?.nis || "NIS XXXXXXXXX"}</span>
+              <span className="font-semibold">{t("factures.art")}:</span> <span>{facture.entreprise?.art || "ART XXXXXXXXX"}</span>
+              <span className="font-semibold">{t("factures.rib")}:</span> <span>{facture.entreprise?.rib || "0000 00 00 00 00"}</span>
             </div>
             {/* Petit coin stylisé en haut à gauche pour reproduire la forme de la capture (optionnel) */}
             <div className="absolute top-0 left-0 -mt-[1px] -ml-[1px] w-4 h-4 bg-white rounded-br-xl"></div>
@@ -396,7 +398,7 @@ export default function FactureDetail({
 
         {/* Informations du client */}
         <div className="mb-6 w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
-          <p className="mb-2"><span className="font-bold">Doit</span> {facture.client_nom || "Particulier"}</p>
+          <p className="mb-2"><span className="font-bold">{t("factures.doit")}</span> {facture.client_nom || "Particulier"}</p>
           <p><span className="font-bold">Adresse:</span> {facture.client_adresse || ""}</p>
           <p><span className="font-bold">RC:</span> {facture.client_rc || ""}</p>
           <p><span className="font-bold">NIF:</span> {facture.client_nif || ""}</p>
@@ -410,11 +412,11 @@ export default function FactureDetail({
             <thead>
               <tr className="bg-[#d1d5db]">
                 <th className="border border-black py-1.5 px-2 font-bold w-12">Art N°</th>
-                <th className="border border-black py-1.5 px-2 font-bold text-left">Désignation</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-12">UM</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-16">QTT</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-24">Prix U HT</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-28">Montant HT</th>
+                <th className="border border-black py-1.5 px-2 font-bold text-left">{t("factures.designation")}</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-12">{t("factures.um")}</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-16">{t("factures.qtt")}</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-24">{t("factures.prixUHT")}</th>
+                <th className="border border-black py-1.5 px-2 font-bold w-28">{t("factures.montantHT")}</th>
               </tr>
             </thead>
             <tbody>
@@ -436,7 +438,7 @@ export default function FactureDetail({
                       <tr key={idx} className="h-8">
                         <td className="border border-black px-2">{idx + 1}</td>
                         <td className="border border-black px-2 text-left font-bold">{l.designation}</td>
-                        <td className="border border-black px-2">U</td>
+                        <td className="border border-black px-2">{t("factures.um")}</td>
                         <td className="border border-black px-2">{l.qtt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                         <td className="border border-black px-2 text-right">{l.prix.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                         <td className="border border-black px-2 text-right">{(l.prix * l.qtt).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
@@ -451,7 +453,7 @@ export default function FactureDetail({
                 <>
                   <tr className="font-bold">
                     <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
-                    <td className="border border-black px-2 py-1.5 text-right">TOTAL HT</td>
+                    <td className="border border-black px-2 py-1.5 text-right">{t("factures.totalHT")}</td>
                     <td className="border border-black px-2 py-1.5 text-right bg-white">{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                   </tr>
                   <tr className="font-bold">
@@ -466,7 +468,7 @@ export default function FactureDetail({
                   </tr>
                   <tr className="font-bold">
                     <td colSpan={4} className="border-r border-transparent"></td>
-                    <td className="border border-black px-2 py-1.5 text-right">TOTAL TTC</td>
+                    <td className="border border-black px-2 py-1.5 text-right">{t("factures.totalTTC")}</td>
                     <td className="border border-black px-2 py-1.5 text-right bg-white">
                       {(facture.total_net * 1.19 + Math.min(10000, facture.total_net * 1.19 * 0.01)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}
                     </td>
@@ -475,7 +477,7 @@ export default function FactureDetail({
               ) : (
                 <tr className="font-bold">
                   <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
-                  <td className="border border-black px-2 py-1.5 text-right">TOTAL HT</td>
+                  <td className="border border-black px-2 py-1.5 text-right">{t("factures.totalHT")}</td>
                   <td className="border border-black px-2 py-1.5 text-right bg-white">{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                 </tr>
               )}
@@ -535,7 +537,7 @@ export default function FactureDetail({
           </div>
 
           <div className="mb-4 text-center">
-            <h2 className="font-bold text-sm">TICKET DE CAISSE</h2>
+            <h2 className="font-bold text-sm">{t("factures.ticketCaisse")}</h2>
             <p className="font-bold">N° {facture.numero}</p>
             <p>Le : {dateFr(facture.date_emission)}</p>
           </div>
@@ -552,9 +554,9 @@ export default function FactureDetail({
           <table className="w-full text-left mb-4">
             <thead>
               <tr className="border-b border-black border-dashed">
-                <th className="py-1">QTE</th>
-                <th className="py-1">ARTICLE</th>
-                <th className="py-1 text-right">MONTANT</th>
+                <th className="py-1">{t("factures.qtt")}</th>
+                <th className="py-1">{t("factures.article")}</th>
+                <th className="py-1 text-right">{t("factures.montant")}</th>
               </tr>
             </thead>
             <tbody>
@@ -586,7 +588,7 @@ export default function FactureDetail({
             {facture.type_facture === "tva" ? (
               <>
                 <div className="flex justify-between font-bold mb-1">
-                  <span>TOTAL HT</span>
+                  <span>{t("factures.totalHT")}</span>
                   <span>{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
                 </div>
                 <div className="flex justify-between mb-1">
@@ -594,11 +596,11 @@ export default function FactureDetail({
                   <span>{(facture.total_net * 0.19).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
                 </div>
                 <div className="flex justify-between mb-1">
-                  <span>Timbre</span>
+                  <span>{t("factures.timbre")}</span>
                   <span>{Math.min(10000, facture.total_net * 1.19 * 0.01).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
                 </div>
                 <div className="flex justify-between font-black text-base mt-2 border-t border-black pt-2">
-                  <span>TOTAL TTC</span>
+                  <span>{t("factures.totalTTC")}</span>
                   <span>
                     {(facture.total_net * 1.19 + Math.min(10000, facture.total_net * 1.19 * 0.01)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA
                   </span>
@@ -606,14 +608,14 @@ export default function FactureDetail({
               </>
             ) : (
               <div className="flex justify-between font-black text-base">
-                <span>TOTAL A PAYER</span>
+                <span>{t("factures.totalAPayer")}</span>
                 <span>{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} DA</span>
               </div>
             )}
           </div>
 
           <div className="text-center font-bold text-[10px]">
-            <p className="mb-1">MERCI DE VOTRE VISITE</p>
+            <p className="mb-1">{t("factures.merci")}</p>
             <p>www.{facture.entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
           </div>
         </div>

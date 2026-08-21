@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { IconeImprimante, IconeCocheCercle } from "@/components/icons";
+import { useLangue } from "@/lib/i18n/contexte";
 
 interface BoutonImpressionProps {
   ids: number[];
@@ -16,6 +17,7 @@ export default function BoutonImpression({
   className = "",
   texte,
 }: BoutonImpressionProps) {
+  const { t } = useLangue();
   const [imprimee, setImprimee] = useState(dejaImprimee);
 
   const imprimer = () => {
@@ -37,7 +39,7 @@ export default function BoutonImpression({
       className={`inline-flex items-center gap-1.5 transition-colors ${
         imprimee ? "text-success hover:text-success/80" : "text-brand-warm-grey hover:text-brand-dark-grey"
       } ${className}`}
-      title={imprimee ? "Étiquette imprimée" : "Imprimer l'étiquette"}
+      title={imprimee ? t("inventaire.etiquetteImprimee") : t("inventaire.imprimerEtiquetteGenerique")}
     >
       {imprimee ? (
         <IconeCocheCercle taille={16} />

@@ -31,6 +31,7 @@ import {
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
+import { useT } from "@/lib/i18n/contexte";
 
 interface LigneProduit {
   id: number;
@@ -64,13 +65,13 @@ interface ReponseInventaire {
 }
 
 const COLONNES_TRI = [
-  { cle: "code_interne", libelle: "Code" },
-  { cle: "reference", libelle: "Référence" },
-  { cle: "categorie", libelle: "Catégorie" },
-  { cle: "statut", libelle: "Statut" },
-  { cle: "date_entree", libelle: "Entrée" },
-  { cle: "prix_achat", libelle: "Prix achat" },
-  { cle: "prix_vente_fixe", libelle: "Prix vente" },
+  { cle: "code_interne", libelle: "inventaire.colCode" },
+  { cle: "reference", libelle: "inventaire.colReference" },
+  { cle: "categorie", libelle: "inventaire.colCategorie" },
+  { cle: "statut", libelle: "inventaire.colStatut" },
+  { cle: "date_entree", libelle: "inventaire.colJours" },
+  { cle: "prix_achat", libelle: "inventaire.colPrixAchat" },
+  { cle: "prix_vente_fixe", libelle: "inventaire.colPrixVente" },
 ] as const;
 
 interface FormulaireProduit {
@@ -149,6 +150,7 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
 export default function Inventaire({ role }: { role: Role }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useT();
   const { afficher } = useToast();
 
   const [q, setQ] = useState(searchParams?.get("q") ?? "");
@@ -669,7 +671,7 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
       <div className="sm:col-span-2 mt-2">
-        <label className="libelle mb-1.5">Photos du produit</label>
+        <label className="libelle mb-1.5">{t("inventaire.photos")}</label>
         <ChampPhotos
           photos={formPhotos}
           onChange={(p) => {
@@ -689,7 +691,7 @@ export default function Inventaire({ role }: { role: Role }) {
           />
           <span>
             <span className="inline-flex items-center gap-1.5 font-semibold text-brand-black">
-              <IconeVitrine taille={14} /> Mettre en vitrine
+              <IconeVitrine taille={14} /> {t("inventaire.mettreEnVitrine")}
             </span>
             <span className="block text-xs text-brand-warm-grey">
               Exposé physiquement en vitrine — indépendant de la mise en vente en ligne.
@@ -723,7 +725,7 @@ export default function Inventaire({ role }: { role: Role }) {
   return (
     <div className="space-y-6 animate-entree">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-2 pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Inventaire</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("inventaire.titre")}</h1>
         <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
           <button
             type="button"
@@ -758,7 +760,7 @@ export default function Inventaire({ role }: { role: Role }) {
               setQ(valeur);
               majUrl({ q: valeur.trim() || null });
             }}
-            placeholder="Rechercher par référence, code ou notes..."
+            placeholder={t("inventaire.recherche")}
             debounceMs={300}
             className="flex-1"
           />
@@ -768,7 +770,7 @@ export default function Inventaire({ role }: { role: Role }) {
               onChange={(e) => majUrl({ categorie: e.target.value || null })}
               className="champ w-full sm:w-auto"
             >
-              <option value="">Toutes catégories</option>
+              <option value="">{t("inventaire.toutesCategories")}</option>
               {(donnees?.categories ?? []).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -782,8 +784,8 @@ export default function Inventaire({ role }: { role: Role }) {
               }}
               className="champ w-full sm:w-auto"
             >
-              <option value="">Tous les arrivages</option>
-              <option value="__sans__">Sans arrivage</option>
+              <option value="">{t("inventaire.tousArrivages")}</option>
+              <option value="__sans__">{t("inventaire.sansArrivage")}</option>
               {(donnees?.lots ?? []).map((l) => (
                 <option key={l.id} value={l.id}>{l.libelle}</option>
               ))}
@@ -800,16 +802,16 @@ export default function Inventaire({ role }: { role: Role }) {
               }}
               className="champ w-full sm:w-auto"
             >
-              <option value="">Tri par défaut</option>
-              <option value="prix_asc">Prix achat croissant</option>
-              <option value="prix_desc">Prix achat décroissant</option>
+              <option value="">{t("inventaire.triDefaut")}</option>
+              <option value="prix_asc">{t("inventaire.prixAsc")}</option>
+              <option value="prix_desc">{t("inventaire.prixDesc")}</option>
             </select>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap gap-1.5 flex-1">
-            <span className="text-sm font-semibold text-brand-warm-grey mr-2 hidden sm:inline-block">Statut :</span>
+            <span className="text-sm font-semibold text-brand-warm-grey mr-2 hidden sm:inline-block">{t("inventaire.statut")}</span>
             {statutsVisibles.map((s) => (
               <button
                 key={s}
@@ -833,7 +835,7 @@ export default function Inventaire({ role }: { role: Role }) {
               className={`text-sm font-medium transition flex items-center gap-1.5 px-2 py-1 rounded-md ${afficherPlusFiltres ? 'text-brand-orange bg-brand-orange/10' : 'text-brand-warm-grey hover:bg-brand-light-grey/50'}`}
             >
               <IconeTriBas taille={14} />
-              Plus de filtres
+              {t("inventaire.plusFiltres")}
             </button>
             {nbFiltresActifs > 0 && (
               <button
@@ -928,7 +930,7 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
       {!erreur && donnees === null && (
-        <p className="text-sm text-brand-warm-grey">Chargement de l'inventaire…</p>
+        <p className="p-4 text-sm text-brand-warm-grey">{t("inventaire.chargement")}</p>
       )}
       {donnees && donnees.produits.length === 0 && (
         <div className="carte border-dashed p-10 text-center flex flex-col items-center justify-center space-y-4">
@@ -937,7 +939,7 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
           <div className="space-y-1">
             <p className="text-base font-semibold text-brand-smooth">
-              {nbFiltresActifs > 0 ? "Aucun produit ne correspond à votre recherche" : "Votre inventaire est vide"}
+              {t("inventaire.aucunProduit")}
             </p>
             <p className="text-sm text-brand-warm-grey max-w-sm mx-auto">
               {nbFiltresActifs > 0 
@@ -1031,7 +1033,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           ? formaterDA(g.prixMin)
                           : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
                       </span>
-                      <span className="block text-[10px] font-semibold uppercase text-brand-grey mt-0.5">Achat unitaire</span>
+                      <span className="block text-[10px] font-semibold uppercase text-brand-grey mt-0.5">{t("inventaire.achatUnitaire")}</span>
                     </div>
                   )}
                   <div className="hidden shrink-0 rounded-lg bg-brand-glow/25 px-2.5 py-1 text-right text-sm sm:block">
@@ -1043,7 +1045,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
                     </span>
                     <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mt-0.5">
-                      Vente
+                      {t("inventaire.vente")}
                     </span>
                   </div>
                   <div className="flex sm:hidden flex-col items-end gap-1">
@@ -1075,13 +1077,13 @@ export default function Inventaire({ role }: { role: Role }) {
                           }
                           title={
                             enVitrine
-                              ? "Retirer de la vitrine"
-                              : "Mettre en vitrine (le modèle apparaît avec sa quantité)"
+                              ? t("inventaire.retirerVitrine")
+                              : t("inventaire.mettreVitrine")
                           }
                           aria-label={
                             enVitrine
-                              ? `Retirer ${g.reference} de la vitrine`
-                              : `Mettre ${g.reference} en vitrine`
+                              ? t("inventaire.retirerReferenceVitrine", { ref: g.reference })
+                              : t("inventaire.mettreReferenceVitrine", { ref: g.reference })
                           }
                           className={`rounded-md p-1.5 transition disabled:opacity-40 ${
                             enVitrine
@@ -1102,8 +1104,8 @@ export default function Inventaire({ role }: { role: Role }) {
                       <button
                         type="button"
                         onClick={() => ouvrirEdition(g.unites, g.reference)}
-                        title="Modifier tous les exemplaires"
-                        aria-label={`Modifier tout le groupe ${g.reference}`}
+                        title={t("inventaire.editerTout")}
+                        aria-label={t("inventaire.editerGroupe", { ref: g.reference })}
                         className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
                       >
                         <IconeCrayon taille={15} />
@@ -1115,10 +1117,10 @@ export default function Inventaire({ role }: { role: Role }) {
                       onClick={() => ouvrirSuppressionModele(g)}
                       title={
                         g.unites.length > 1
-                          ? `Supprimer tous les exemplaires de « ${g.reference} » d'un coup`
-                          : "Supprimer ce produit"
+                          ? t("inventaire.supprimerTous", { ref: g.reference })
+                          : t("inventaire.supprimerProduit")
                       }
-                      aria-label={`Supprimer tout le groupe ${g.reference}`}
+                      aria-label={t("inventaire.supprimerGroupe", { ref: g.reference })}
                       className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
                     >
                       <IconeCorbeille taille={15} />
@@ -1128,7 +1130,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   <button
                     type="button"
                     onClick={() => basculerGroupe(g.cle)}
-                    aria-label={ouvert ? "Réduire" : "Développer"}
+                    aria-label={ouvert ? t("inventaire.reduire") : t("inventaire.developper")}
                     className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
                   >
                     <IconeChevronBas
@@ -1159,7 +1161,7 @@ export default function Inventaire({ role }: { role: Role }) {
                               : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
                           }`}
                         >
-                          <IconeVitrine taille={14} /> {enVitrine ? "Retirer" : "Vitrine"}
+                          <IconeVitrine taille={14} /> {enVitrine ? t("inventaire.retirer") : t("inventaire.vitrine")}
                         </button>
                       );
                     })()}
@@ -1168,21 +1170,21 @@ export default function Inventaire({ role }: { role: Role }) {
                         ids={g.unites.map(u => u.id)} 
                         dejaImprimee={g.unites.every(u => u.etiquette_imprimee)} 
                         className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey" 
-                        texte="Imprimer"
+                        texte={t("inventaire.imprimer")}
                       />
                       <button
                         type="button"
                         onClick={() => ouvrirEdition(g.unites, g.reference)}
                         className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
                       >
-                        <IconeCrayon taille={14} /> Éditer
+                        <IconeCrayon taille={14} /> {t("inventaire.editer")}
                       </button>
                       <button
                         type="button"
                         onClick={() => ouvrirSuppressionModele(g)}
                         className="flex items-center gap-1.5 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
                       >
-                        <IconeCorbeille taille={14} /> Supprimer
+                        <IconeCorbeille taille={14} /> {t("inventaire.supprimer")}
                       </button>
                     </div>
                   </div>
@@ -1202,12 +1204,12 @@ export default function Inventaire({ role }: { role: Role }) {
                             {p.code_interne}
                           </span>{" "}
                           <span className="text-xs text-brand-grey">
-                            {p.lot_id ? `lot n°${p.lot_id}` : "sans arrivage"}
-                            {` · achat ${formaterDA(p.prix_achat)}`} · {p.jours_stock} j
+                            {p.lot_id ? t("inventaire.lotNumero", { n: p.lot_id }) : t("inventaire.sansArrivage")}
+                            {` · ${t("inventaire.achat")} ${formaterDA(p.prix_achat)}`} · {t("inventaire.joursNb", { n: p.jours_stock })}
                           </span>{" "}
                           <span className="text-xs font-bold text-brand-orange">
                             {prixVenteAffiche(p) !== null
-                              ? `vente ${formaterDA(prixVenteAffiche(p)!)}`
+                              ? `${t("inventaire.vente")} ${formaterDA(prixVenteAffiche(p)!)}`
                               : ""}
                           </span>
                         </button>
@@ -1217,7 +1219,7 @@ export default function Inventaire({ role }: { role: Role }) {
                               <IconeVitrine
                                 taille={14}
                                 className="shrink-0 text-brand-orange"
-                                aria-label="En vitrine"
+                                aria-label={t("inventaire.enVitrine")}
                               />
                             )}
                           </div>
@@ -1231,8 +1233,8 @@ export default function Inventaire({ role }: { role: Role }) {
                                 onClick={() =>
                                   void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)
                                 }
-                                title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
-                                aria-label={`${p.en_vitrine ? "Retirer" : "Mettre"} ${p.code_interne} ${p.en_vitrine ? "de" : "en"} vitrine`}
+                                title={p.en_vitrine ? t("inventaire.retirerVitrine") : t("inventaire.mettreVitrine")}
+                                aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
                                 className={`rounded-md p-1.5 transition disabled:opacity-40 ${
                                   p.en_vitrine
                                     ? "text-brand-orange hover:bg-brand-orange/10"
@@ -1250,8 +1252,8 @@ export default function Inventaire({ role }: { role: Role }) {
                             <button
                               type="button"
                               onClick={() => ouvrirEdition([p], p.code_interne)}
-                              title="Modifier"
-                              aria-label={`Modifier ${p.code_interne}`}
+                              title={t("inventaire.editer")}
+                              aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
                               className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
                             >
                               <IconeCrayon taille={14} />
@@ -1259,8 +1261,8 @@ export default function Inventaire({ role }: { role: Role }) {
                             <button
                               type="button"
                               onClick={() => ouvrirSuppressionUnites([p])}
-                              title="Supprimer"
-                              aria-label={`Supprimer ${p.code_interne}`}
+                              title={t("inventaire.supprimer")}
+                              aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
                               className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
                             >
                               <IconeCorbeille taille={14} />
@@ -1279,7 +1281,6 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {donnees && donnees.produits.length > 0 && !vueGroupee && (
         <div className="space-y-4">
-          {/* Vue Mobile: Cartes */}
           <div className="flex flex-col gap-3 md:hidden">
             {donnees.produits.map((p) => (
               <div
@@ -1293,7 +1294,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     <span className="font-medium text-brand-black">{p.reference}</span>
                   </div>
                   <div className="text-right flex flex-col items-end">
-                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">Vente</span>
+                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">{t("inventaire.vente")}</span>
                     {prixVenteAffiche(p) !== null ? (
                       <span className="font-bold text-brand-orange">
                         {formaterDA(prixVenteAffiche(p)!)}
@@ -1313,12 +1314,12 @@ export default function Inventaire({ role }: { role: Role }) {
                   </span>
                   {p.en_vitrine && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/10 px-2 py-1 text-brand-orange">
-                      <IconeVitrine taille={12} /> Vitrine
+                      <IconeVitrine taille={12} /> {t("inventaire.vitrine")}
                     </span>
                   )}
                   {p.statut === "vendu" && (
                     <span className="inline-flex items-center rounded-full bg-brand-grey/20 px-2 py-1 font-semibold text-brand-grey uppercase text-[10px]">
-                      vendu
+                      {t("inventaire.statutVendu")}
                     </span>
                   )}
                 </div>
@@ -1327,12 +1328,12 @@ export default function Inventaire({ role }: { role: Role }) {
                   <div className="flex flex-col">
                     <span className="text-brand-warm-grey">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</span>
                     <span className="text-[10px] text-brand-grey">
-                      {p.lot_id ? `Lot ${p.lot_id}` : "Sans arrivage"}
+                      {p.lot_id ? t("inventaire.lotShort", { n: p.lot_id }) : t("inventaire.sansArrivage")}
                     </span>
                   </div>
                   {!estSocial && (
                     <div className="text-right">
-                      <span className="block text-[10px] font-semibold uppercase text-brand-grey">Achat</span>
+                      <span className="block text-[10px] font-semibold uppercase text-brand-grey">{t("inventaire.achat")}</span>
                       <span className="font-semibold">{formaterDA(p.prix_achat)}</span>
                       {p.cout_reparations > 0 && <span className="block text-[10px] text-brand-grey">+{formaterDA(p.cout_reparations)}</span>}
                     </div>
@@ -1355,14 +1356,14 @@ export default function Inventaire({ role }: { role: Role }) {
                             : "bg-brand-light-grey/20 text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
                         }`}
                       >
-                        <IconeVitrine taille={14} /> {p.en_vitrine ? "Retirer" : "Vitrine"}
+                        <IconeVitrine taille={14} /> {p.en_vitrine ? t("inventaire.retirer") : t("inventaire.vitrine")}
                       </button>
                     )}
                     <BoutonImpression 
                       ids={[p.id]} 
                       dejaImprimee={p.etiquette_imprimee} 
                       className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black" 
-                      texte="Imprimer"
+                      texte={t("inventaire.imprimer")}
                     />
                     <button
                       type="button"
@@ -1372,7 +1373,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       }}
                       className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black"
                     >
-                      <IconeCrayon taille={14} /> Éditer
+                      <IconeCrayon taille={14} /> {t("inventaire.editer")}
                     </button>
                     <button
                       type="button"
@@ -1382,7 +1383,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       }}
                       className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
                     >
-                      <IconeCorbeille taille={14} /> Supprimer
+                      <IconeCorbeille taille={14} /> {t("inventaire.supprimer")}
                     </button>
                   </div>
                 )}
@@ -1390,7 +1391,6 @@ export default function Inventaire({ role }: { role: Role }) {
             ))}
           </div>
 
-          {/* Vue Bureau: Tableau */}
           <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
             <table className="w-full min-w-[820px] text-sm">
               <thead className="bg-brand-light-grey/25">
@@ -1402,7 +1402,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       className="entete-table cursor-pointer select-none transition hover:text-brand-black"
                     >
                       <span className="inline-flex items-center gap-1">
-                        {c.libelle}
+                        {t(c.libelle)}
                         {triActuel === c.cle &&
                           (ordreActuel === "asc" ? (
                             <IconeTriHaut taille={12} />
@@ -1412,7 +1412,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       </span>
                     </th>
                   ))}
-                  <th className="entete-table text-right">Jours</th>
+                  <th className="entete-table text-right">{t("inventaire.jours")}</th>
                   <th className="entete-table" />
                 </tr>
               </thead>
@@ -1437,7 +1437,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           <IconeVitrine
                             taille={14}
                             className="text-brand-orange"
-                            aria-label="En vitrine"
+                            aria-label={t("inventaire.enVitrine")}
                           />
                         )}
                       </span>
@@ -1446,29 +1446,29 @@ export default function Inventaire({ role }: { role: Role }) {
                       {new Date(p.date_entree).toLocaleDateString("fr-FR")}
                       <span className="block text-brand-grey">
                         {p.lot_id
-                          ? `lot n°${p.lot_id}${p.fournisseur ? ` · ${p.fournisseur}` : ""}`
-                          : "Sans arrivage"}
+                          ? t("inventaire.lotLong", { n: p.lot_id, f: p.fournisseur || "" })
+                          : t("inventaire.sansArrivage")}
                       </span>
                     </td>
                     {!estSocial && (
                       <td className="px-3 py-2 text-right">
-                        <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">Achat</span>
+                        <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">{t("inventaire.achat")}</span>
                         <span className="font-semibold text-brand-black">{formaterDA(p.prix_achat)}</span>
                         {p.cout_reparations > 0 && (
                           <span className="block text-xs text-brand-grey">
-                            +{formaterDA(p.cout_reparations)} rép.
+                            +{formaterDA(p.cout_reparations)} {t("inventaire.reparationsAbr")}
                           </span>
                         )}
                       </td>
                     )}
                     <td className="px-3 py-2 text-right">
-                      <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">Vente</span>
+                      <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">{t("inventaire.vente")}</span>
                       {prixVenteAffiche(p) !== null ? (
                         <span className="font-bold text-brand-orange">
                           {formaterDA(prixVenteAffiche(p)!)}
                           {p.statut === "vendu" && (
                             <span className="block text-[10px] font-semibold uppercase text-brand-grey">
-                              vendu
+                              {t("inventaire.statutVendu")}
                             </span>
                           )}
                         </span>
@@ -1488,8 +1488,8 @@ export default function Inventaire({ role }: { role: Role }) {
                                 e.stopPropagation();
                                 void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
                               }}
-                              title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
-                              aria-label={`${p.en_vitrine ? "Retirer" : "Mettre"} ${p.code_interne} ${p.en_vitrine ? "de" : "en"} vitrine`}
+                              title={p.en_vitrine ? t("inventaire.retirerVitrine") : t("inventaire.mettreVitrine")}
+                              aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
                               className={`rounded-md p-1.5 transition disabled:opacity-40 ${
                                 p.en_vitrine
                                   ? "text-brand-orange hover:bg-brand-orange/10"
@@ -1505,8 +1505,8 @@ export default function Inventaire({ role }: { role: Role }) {
                               e.stopPropagation();
                               window.open(`/imprimer-etiquettes?ids=${p.id}`, '_blank');
                             }}
-                            title="Imprimer"
-                            aria-label={`Imprimer étiquette ${p.code_interne}`}
+                            title={t("inventaire.imprimer")}
+                            aria-label={t("inventaire.imprimerEtiquette", { code: p.code_interne })}
                             className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
                           >
                             <IconeImprimante taille={14} />
@@ -1517,8 +1517,8 @@ export default function Inventaire({ role }: { role: Role }) {
                               e.stopPropagation();
                               ouvrirEdition([p], p.code_interne);
                             }}
-                            title="Modifier"
-                            aria-label={`Modifier ${p.code_interne}`}
+                            title={t("inventaire.editer")}
+                            aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
                             className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
                           >
                             <IconeCrayon taille={14} />
@@ -1529,8 +1529,8 @@ export default function Inventaire({ role }: { role: Role }) {
                               e.stopPropagation();
                               ouvrirSuppressionUnites([p]);
                             }}
-                            title="Supprimer"
-                            aria-label={`Supprimer ${p.code_interne}`}
+                            title={t("inventaire.supprimer")}
+                            aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
                             className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
                           >
                             <IconeCorbeille taille={14} />
@@ -1555,7 +1555,7 @@ export default function Inventaire({ role }: { role: Role }) {
             className="btn btn-secondaire"
           >
             <IconeChevronGauche taille={15} />
-            Précédent
+            {t("inventaire.precedent")}
           </button>
           <div className="flex items-center gap-1 px-2">
             {(() => {
@@ -1612,14 +1612,14 @@ export default function Inventaire({ role }: { role: Role }) {
             onClick={() => majUrl({ page: String(page + 1) })}
             className="btn btn-secondaire"
           >
-            Suivant
+            {t("inventaire.suivant")}
             <IconeChevronDroite taille={15} />
           </button>
         </div>
       )}
 
       <Modale
-        titre="Ajouter un produit"
+        titre={t("inventaire.ajouterProduitTitre")}
         ouverte={modalAjout}
         onFermer={() => {
           setModalAjout(false);
@@ -1637,7 +1637,7 @@ export default function Inventaire({ role }: { role: Role }) {
         >
           <div>
             <label className="libelle mb-1.5" htmlFor="lot-produit">
-              Lot de rattachement (Optionnel)
+              {t("inventaire.lotRattachement")}
             </label>
             <select
               id="lot-produit"
@@ -1645,7 +1645,7 @@ export default function Inventaire({ role }: { role: Role }) {
               onChange={(e) => setFormulaire({ ...formulaire, lot_id: e.target.value })}
               className="champ"
             >
-              <option value="">Stock indépendant (aucun arrivage)</option>
+              <option value="">{t("inventaire.stockIndependant")}</option>
               {(donnees?.lots ?? []).map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.libelle}
@@ -1661,14 +1661,16 @@ export default function Inventaire({ role }: { role: Role }) {
               className="btn btn-primaire w-full sm:w-auto justify-center"
             >
               <IconePlus taille={15} />
-              Ajouter le produit
+              {t("inventaire.ajouterAction")}
             </button>
           </div>
         </form>
       </Modale>
 
       <Modale
-        titre={modalEdition ? `Modifier — ${modalEdition.titre}` : ""}
+        titre={modalEdition ? (modalEdition.unites.length === 1
+            ? t("inventaire.editerProduitTitre", { code: modalEdition.unites[0]!.code_interne })
+            : t("inventaire.editionMasseTitre", { n: modalEdition.unites.length })) : ""}
         ouverte={modalEdition !== null}
         onFermer={() => setModalEdition(null)}
       >
@@ -1686,7 +1688,7 @@ export default function Inventaire({ role }: { role: Role }) {
           {modalEdition && peutStatut && (
             <div className="space-y-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
               <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-2">
-                <span className="libelle">Statut</span>
+                <span className="libelle">{t("inventaire.statut")}</span>
                 <BadgeStatut statut={modalEdition.unites[0]!.statut} aJeter={modalEdition.unites[0]!.a_jeter} />
               </div>
 
@@ -1702,7 +1704,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   disabled={envoi || cibleStatut !== null}
                   className="champ text-sm py-1.5"
                 >
-                  <option value="">Changer le statut vers...</option>
+                  <option value="">{t("inventaire.changerStatut")}</option>
                   {STATUTS_PRODUIT.filter((s) => s !== modalEdition.unites[0]!.statut).map((s) => (
                     <option key={s} value={s}>
                       {INFOS_STATUT[s].libelle}
@@ -1714,7 +1716,7 @@ export default function Inventaire({ role }: { role: Role }) {
               {cibleStatut && (
                 <div className="space-y-2 rounded-lg bg-brand-white p-2.5">
                   <label className="libelle" htmlFor="note-statut-inv">
-                    Note obligatoire — {INFOS_STATUT[cibleStatut].libelle}
+                    {t("inventaire.noteObligatoire", { statut: INFOS_STATUT[cibleStatut].libelle })}
                   </label>
                   <textarea
                     id="note-statut-inv"
@@ -1722,7 +1724,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     onChange={(e) => setNoteStatut(e.target.value)}
                     rows={2}
                     autoFocus
-                    placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? "Précisez la raison"}
+                    placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? t("inventaire.precisezRaison")}
                     className="champ"
                   />
                   <div className="flex flex-col sm:flex-row justify-end gap-2 mt-3">
@@ -1734,7 +1736,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       }}
                       className="btn btn-secondaire"
                     >
-                      Annuler
+                      {t("inventaire.annuler")}
                     </button>
                     <button
                       type="button"
@@ -1742,7 +1744,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       onClick={() => void changerStatut(cibleStatut)}
                       className="btn btn-primaire"
                     >
-                      Confirmer le statut
+                      {t("inventaire.confirmerStatut")}
                     </button>
                   </div>
                 </div>
@@ -1757,7 +1759,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     onChange={(e) => void basculerAJeter(e.target.checked)}
                     className="mt-0.5 accent-danger shrink-0"
                   />
-                  <span>À jeter — non récupérable pour pièces</span>
+                  <span>{t("inventaire.aJeterNonRecuperable")}</span>
                 </label>
               )}
             </div>
@@ -1767,10 +1769,10 @@ export default function Inventaire({ role }: { role: Role }) {
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
               <div className="min-w-0">
                 <span className="libelle inline-flex items-center gap-1.5">
-                  <IconeVitrine taille={14} /> Vitrine
+                  <IconeVitrine taille={14} /> {t("inventaire.vitrine")}
                 </span>
                 <p className="text-xs text-brand-warm-grey">
-                  Exposé physiquement en vitrine — indépendant de la vente en ligne.
+                  {t("inventaire.vitrineDescription")}
                 </p>
               </div>
               <button
@@ -1783,7 +1785,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     : "btn btn-secondaire"
                 }
               >
-                {modalEdition.unites[0]!.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                {modalEdition.unites[0]!.en_vitrine ? t("inventaire.retirerVitrine") : t("inventaire.mettreVitrine")}
               </button>
             </div>
           )}
@@ -1794,7 +1796,7 @@ export default function Inventaire({ role }: { role: Role }) {
               disabled={envoi || !formulaireValide}
               className="btn btn-primaire w-full sm:w-auto justify-center"
             >
-              Enregistrer les modifications
+              {t("inventaire.enregistrerModifications")}
             </button>
           </div>
         </form>
@@ -1804,12 +1806,12 @@ export default function Inventaire({ role }: { role: Role }) {
         titre={
           modalSuppression
             ? modalSuppression.unites.length === 0
-              ? "Suppression impossible"
+              ? t("inventaire.suppressionImpossible")
               : modalSuppression.type === "modele"
-                ? `Supprimer — tous les exemplaires de « ${modalSuppression.reference} »`
+                ? t("inventaire.supprimerModeleTitre", { ref: modalSuppression.reference })
                 : modalSuppression.unites.length === 1
-                  ? `Supprimer — ${modalSuppression.unites[0]?.code_interne}`
-                  : `Supprimer — ${modalSuppression.unites.length} produits`
+                  ? t("inventaire.supprimerUniteTitre", { code: modalSuppression.unites[0]!.code_interne })
+                  : t("inventaire.supprimerMasseTitre", { n: modalSuppression.unites.length })
             : ""
         }
         ouverte={modalSuppression !== null}
@@ -1827,37 +1829,25 @@ export default function Inventaire({ role }: { role: Role }) {
             {modalSuppression.unites.length === 0 ? (
               <p className="text-sm text-brand-warm-grey">
                 {modalSuppression.vendusExclus === 1
-                  ? "Ce produit est vendu : il ne peut pas être supprimé afin de conserver son historique de vente et son mouvement de caisse. Annulez d'abord la vente si nécessaire."
+                  ? t("inventaire.suppressionImpossibleVendu")
                   : modalSuppression.vendusExclus > 1
-                    ? "Ces produits sont vendus : ils ne peuvent pas être supprimés afin de conserver leur historique de vente. Annulez d'abord la vente si nécessaire."
-                    : "Aucun produit à supprimer."}
+                    ? t("inventaire.suppressionImpossibleVendus", { n: modalSuppression.vendusExclus })
+                    : t("inventaire.aucuneSuppression")}
               </p>
             ) : modalSuppression.type === "modele" ? (
               <p className="text-sm text-brand-warm-grey">
-                <strong className="text-brand-black">Tous les exemplaires en stock</strong> de{" "}
-                <strong className="text-brand-black">{modalSuppression.reference}</strong> (
-                {modalSuppression.categorie}) seront définitivement retirés de l'inventaire — y
-                compris ceux des autres pages — avec leur historique de statuts et leurs réparations.
-                Cette action est irréversible.
+                {t("inventaire.suppressionModeleAvertissement", { ref: modalSuppression.reference, cat: modalSuppression.categorie })}
               </p>
             ) : modalSuppression.unites.length === 1 ? (
               <p className="text-sm text-brand-warm-grey">
-                Le produit{" "}
-                <strong className="text-brand-black">{modalSuppression.unites[0]?.reference}</strong>{" "}
-                sera définitivement retiré de l'inventaire, avec son historique de statuts et ses
-                réparations. Cette action est irréversible.
+                {t("inventaire.suppressionUniteAvertissement", { ref: modalSuppression.unites[0]!.reference })}
               </p>
             ) : (
               <p className="text-sm text-brand-warm-grey">
-                Les{" "}
-                <strong className="text-brand-black">
-                  {modalSuppression.unites.length} exemplaires
-                </strong>{" "}
-                de <strong className="text-brand-black">{modalSuppression.reference}</strong> (
-                {modalSuppression.unites[0]?.code_interne} à{" "}
-                {modalSuppression.unites[modalSuppression.unites.length - 1]?.code_interne}) seront
-                définitivement retirés de l'inventaire, avec leur historique de statuts et leurs
-                réparations. Cette action est irréversible.
+                {t("inventaire.suppressionMasseAvertissement", { n: modalSuppression.unites!.length })}
+                <strong className="text-brand-black">{modalSuppression.reference}</strong> (
+                {modalSuppression.unites[0]?.code_interne} {t("inventaire.a")} {" "}
+                {modalSuppression.unites[modalSuppression.unites.length - 1]?.code_interne}) {t("inventaire.suppressionIreversible")}
               </p>
             )}
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/contexte";
 import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
@@ -59,8 +60,9 @@ function aujourdhuiIso(): string {
 }
 
 export default function Vitrine({ role }: { role: Role }) {
-  const { afficher } = useToast();
   const router = useRouter();
+  const { afficher } = useToast();
+  const t = useT();
   const [donnees, setDonnees] = useState<ReponseVitrine | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -284,11 +286,10 @@ export default function Vitrine({ role }: { role: Role }) {
         <div>
           <h1 className="inline-flex items-center gap-2 text-3xl font-extrabold tracking-tight text-brand-black">
             <IconeVitrine taille={26} />
-            Vitrine
+            {t("vitrine.titre")}
           </h1>
           <p className="mt-1 text-sm text-brand-warm-grey">
-            Modèles exposés physiquement en vitrine — un article représente tous ses exemplaires
-            identiques en stock.
+            {t("vitrine.sousTitre")}
           </p>
         </div>
       </div>
@@ -301,29 +302,28 @@ export default function Vitrine({ role }: { role: Role }) {
 
       {donnees && (
         <p className="text-sm text-brand-warm-grey">
-          <strong className="text-brand-black">{donnees.total}</strong> modèle
-          {donnees.total > 1 ? "s" : ""} en vitrine ·{" "}
+          <strong className="text-brand-black">{donnees.total}</strong>{" "}
+          {t("vitrine.modelesVitrine", { n: "", s: donnees.total > 1 ? "s" : "" }).replace("{n} ", "")}{" "}
           <strong className="text-brand-black">
             {produits.reduce((s, p) => s + p.quantite, 0)}
           </strong>{" "}
-          exemplaire{produits.reduce((s, p) => s + p.quantite, 0) > 1 ? "s" : ""} en stock
+          {t("vitrine.exemplairesStock", { n: "", s: produits.reduce((s, p) => s + p.quantite, 0) > 1 ? "s" : "" }).replace("· {n} ", "").replace("·  ", "")}
         </p>
       )}
 
       {!erreur && donnees === null && (
-        <p className="text-sm text-brand-warm-grey">Chargement de la vitrine…</p>
+        <p className="text-sm text-brand-warm-grey">{t("vitrine.chargement")}</p>
       )}
 
       {donnees && produits.length === 0 && (
         <div className="carte border-dashed p-8 text-center text-sm text-brand-warm-grey">
           <IconeVitrine taille={32} className="mx-auto mb-3 text-brand-grey" />
-          <p className="font-semibold text-brand-black">Aucun produit en vitrine.</p>
+          <p className="font-semibold text-brand-black">{t("vitrine.vide")}</p>
           <p className="mt-1">
-            Depuis la fiche d&apos;un produit ou l&apos;inventaire, utilisez « Mettre en vitrine »
-            sur un seul exemplaire : il représentera tout le stock du modèle.
+            {t("vitrine.videDesc")}
           </p>
           <Link href="/inventaire" className="btn btn-primaire mt-4">
-            Aller à l&apos;inventaire
+            {t("navigation.inventaire")}
           </Link>
         </div>
       )}
@@ -384,7 +384,7 @@ export default function Vitrine({ role }: { role: Role }) {
                   )}
                   {nbAuPanier > 0 && (
                     <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-brand-orange px-2 py-0.5 text-[11px] font-bold text-white shadow">
-                      {nbAuPanier} au panier
+                      {nbAuPanier} {t("vitrine.ajouterPanier")}
                     </span>
                   )}
                 </button>
@@ -405,7 +405,7 @@ export default function Vitrine({ role }: { role: Role }) {
                     {p.quantite > 1 && (
                       <span className="font-semibold text-brand-orange">
                         {" "}
-                        · {p.quantite} en stock
+                        · {p.quantite} {t("vitrine.totalPanier")}
                       </span>
                     )}
                   </p>
@@ -444,7 +444,7 @@ export default function Vitrine({ role }: { role: Role }) {
                           className="rounded-md px-2 py-1 text-xs font-semibold text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
                           title="Retirer ce modèle de la vitrine"
                         >
-                          Retirer
+                          {t("vitrine.retirerVitrine")}
                         </button>
                       )}
                     </span>
@@ -460,7 +460,7 @@ export default function Vitrine({ role }: { role: Role }) {
                           className="btn btn-primaire w-full justify-center disabled:opacity-45"
                         >
                           <IconeBillet taille={14} />
-                          Vendre
+                          {t("vitrine.vendre")}
                         </button>
                       ) : (
                         <div className="flex w-full items-center justify-between rounded-md border border-brand-orange/40 bg-brand-orange/5 p-1">
@@ -498,7 +498,7 @@ export default function Vitrine({ role }: { role: Role }) {
                         ids={dispo.map(v => v.id)} 
                         dejaImprimee={dispo.every(v => v.etiquette_imprimee)} 
                         className="flex items-center gap-1.5 rounded-lg bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
-                        texte="Imprimer"
+                        texte={t("vitrine.imprimer")}
                       />
                     </div>
                   )}
@@ -513,8 +513,7 @@ export default function Vitrine({ role }: { role: Role }) {
       {peutVendre && lignesPanier.length > 0 && (
         <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-light-grey bg-brand-white/95 p-3 shadow-lg backdrop-blur">
           <span className="text-sm text-brand-warm-grey">
-            <strong className="text-brand-black">{lignesPanier.length}</strong> produit
-            {lignesPanier.length > 1 ? "s" : ""} · total{" "}
+            <strong className="text-brand-black">{lignesPanier.length}</strong> {t("vitrine.produitsPanier", { n: lignesPanier.length })} · {t("vitrine.totalPanier")} {" "}
             <strong className="text-brand-orange">{formaterDA(totalPanier)}</strong>
           </span>
           <div className="flex items-center gap-2">
@@ -523,18 +522,18 @@ export default function Vitrine({ role }: { role: Role }) {
               onClick={() => setPanier(new Map())}
               className="btn btn-secondaire"
             >
-              Vider
+              {t("vitrine.viderPanier")}
             </button>
             <button type="button" onClick={ouvrirVente} className="btn btn-primaire">
               <IconeBillet taille={15} />
-              Vendre et facturer
+              {t("vitrine.vendreFacturer")}
             </button>
           </div>
         </div>
       )}
 
       <Modale
-        titre={`Vendre — ${lignesPanier.length} produit${lignesPanier.length > 1 ? "s" : ""}`}
+        titre={t("vitrine.vendre")}
         ouverte={modalVente}
         onFermer={() => setModalVente(false)}
       >
@@ -551,14 +550,14 @@ export default function Vitrine({ role }: { role: Role }) {
             ))}
           </ul>
           <p className="text-sm">
-            Total :{" "}
+            {t("vitrine.totalPanier")} :{" "}
             <strong className="text-lg text-brand-orange">{formaterDA(totalPanier)}</strong>
           </p>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="libelle mb-1.5" htmlFor="vitrine-client">
-                Nom du client
+                {t("vitrine.nomClient")}
               </label>
               <input
                 id="vitrine-client"

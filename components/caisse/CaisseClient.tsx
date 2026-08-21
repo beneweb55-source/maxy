@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useT } from "@/lib/i18n/contexte";
 import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
 import { rechercheTolérante } from "@/lib/recherche";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -192,6 +193,7 @@ function UptimeCaisse() {
 
 export default function CaisseClient({ role }: { role: Role }) {
   const { afficher } = useToast();
+  const t = useT();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [initTermine, setInitTermine] = useState(false);
@@ -799,11 +801,11 @@ export default function CaisseClient({ role }: { role: Role }) {
               ) : statsJour ? (
                 <>
                   <div className="text-right">
-                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Ventes aujourd'hui</span>
+                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">{t("caisse.ventesAujourdhui")}</span>
                     <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">Chiffre d'affaires</span>
+                    <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">{t("caisse.chiffreAffaires")}</span>
                     <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
                   </div>
                 </>
@@ -866,7 +868,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               onChange={(e) => setFiltreCategorie(e.target.value)}
               className="champ w-auto"
             >
-              <option value="">Toutes catégories</option>
+              <option value="">{t("caisse.toutesCategories")}</option>
               {categoriesEnVente.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -879,15 +881,15 @@ export default function CaisseClient({ role }: { role: Role }) {
               className="champ w-auto"
               aria-label="Trier les produits en vente"
             >
-              <option value="">Tri : défaut</option>
-              <option value="prix_asc">Prix ↑</option>
-              <option value="prix_desc">Prix ↓</option>
-              <option value="marge_desc">Marge ↓</option>
-              <option value="anciennete">Ancienneté ↓</option>
+              <option value="">{t("caisse.triDefaut")}</option>
+              <option value="prix_asc">{t("caisse.prixAsc")}</option>
+              <option value="prix_desc">{t("caisse.prixDesc")}</option>
+              <option value="marge_desc">{t("caisse.margeDesc")}</option>
+              <option value="anciennete">{t("caisse.anciennete")}</option>
             </select>
             {peutVendre && (
               <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire">
-                <IconeCorbeille taille={14} /> Vider le panier
+                <IconeCorbeille taille={14} /> {t("caisse.viderPanier")}
               </button>
             )}
           </div>
@@ -898,7 +900,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             </div>
           )}
           {!erreurCartes && cartes === null && (
-            <p className="text-sm text-brand-warm-grey">Chargement…</p>
+            <p className="text-sm text-brand-warm-grey">{t("commun.chargement")}</p>
           )}
           {cartes !== null && cartes.length === 0 && (
             <p className="carte border-dashed p-6 text-sm text-brand-warm-grey">
@@ -1083,7 +1085,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             <div className="w-full lg:w-[450px] shrink-0 flex flex-col gap-3 h-full overflow-y-auto pb-24 pr-2">
               {paniersEnAttente.length > 0 && (
                 <div className="carte p-3 bg-brand-orange/10 border-brand-orange/30">
-                  <h4 className="font-bold text-sm text-brand-orange mb-2">Paniers en attente ({paniersEnAttente.length})</h4>
+                  <h4 className="font-bold text-sm text-brand-orange mb-2">{t("caisse.paniersEnAttente", { n: paniersEnAttente.length })}</h4>
                   <div className="space-y-2">
                     {paniersEnAttente.map((p) => {
                       const nbArticles = Array.from(p.selection.values()).reduce((a,b)=>a+b.size,0);
@@ -1091,7 +1093,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                       return (
                         <div key={p.id} className="flex items-center justify-between bg-brand-white p-2 rounded border border-brand-orange/20 text-sm">
                           <div>
-                            <span className="font-semibold text-brand-black">Panier de {heure}</span>
+                            <span className="font-semibold text-brand-black">{t("caisse.panierDe", { heure })}</span>
                             <div className="text-xs text-brand-warm-grey">{nbArticles} article(s)</div>
                           </div>
                           <button onClick={() => restaurerPanier(p.id)} className="btn btn-primaire py-1 px-3 text-xs">
@@ -1108,14 +1110,14 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <div className="flex items-center justify-between border-b border-brand-light-grey pb-3 mb-3">
                   <h3 className="font-bold text-lg flex items-center gap-2 text-brand-black">
                     <IconePaquet taille={20} className="text-brand-orange" />
-                    Ticket de caisse
+                    {t("factures.ticketCaisse")}
                   </h3>
                   <div className="flex items-center gap-3">
                     <button onClick={mettreEnAttente} disabled={cartItems.length === 0} title="Mettre en attente" className="flex items-center gap-1.5 text-sm font-semibold text-brand-orange hover:text-brand-orange/70 transition disabled:opacity-30 disabled:cursor-not-allowed">
-                      <IconePause taille={14} /> Attente
+                      <IconePause taille={14} /> {t("caisse.attente")}
                     </button>
                     <button onClick={quitterModeBundle} className="flex items-center gap-1.5 text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
-                      <IconeCorbeille taille={14} /> Vider
+                      <IconeCorbeille taille={14} /> {t("caisse.vider")}
                     </button>
                   </div>
                 </div>
@@ -1124,7 +1126,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                    <div className="flex flex-col items-center justify-center gap-2 py-8 border-dashed border-2 rounded-lg border-brand-light-grey/50">
                      <IconeRecherche taille={32} className="text-brand-light-grey" />
                      <p className="text-sm text-brand-grey text-center">
-                       Panier vide.<br/>Scannez ou cliquez sur des produits.
+                       {t("caisse.panierVideDesc")}
                      </p>
                    </div>
                 ) : (
@@ -1150,11 +1152,11 @@ export default function CaisseClient({ role }: { role: Role }) {
                 
                 <div className="mt-4 pt-4 border-t-2 border-dashed border-brand-light-grey space-y-3">
                   <div className="flex justify-between items-center text-sm text-brand-warm-grey">
-                    <span>Sous-total</span>
+                    <span>{t("caisse.sousTotal")}</span>
                     <span className="font-medium text-brand-black">{formaterDA(cartTotal)}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-brand-black font-semibold">Remise globale</span>
+                    <span className="text-brand-black font-semibold">{t("caisse.remise")}</span>
                     <div className="relative">
                       <input 
                         type="number" 
@@ -1173,7 +1175,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                     <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 bg-brand-light-grey/30 rounded flex items-center justify-center hover:bg-danger/20 text-brand-black" title="Retirer la remise"><IconeFermer taille={12} /></button>
                   </div>
                   <div className="flex justify-between items-center pt-2 mt-2 border-t border-brand-light-grey/30">
-                    <span className="font-black text-lg text-brand-black uppercase">Total à payer</span>
+                    <span className="font-black text-lg text-brand-black uppercase">{t("caisse.totalNet")}</span>
                     <span className="font-black text-2xl tracking-tight text-brand-orange">{formaterDA(totalApresRemise)}</span>
                   </div>
                 </div>
@@ -1214,7 +1216,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               onChange={(e) => setFiltreVendeur(e.target.value)}
               className="champ w-auto"
             >
-              <option value="">Tous les vendeurs</option>
+              <option value="">{t("caisse.tousVendeurs")}</option>
               {(historique?.vendeurs ?? []).map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.username}
@@ -1262,7 +1264,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             </div>
           )}
           {!erreurHistorique && historique === null && (
-            <p className="text-sm text-brand-warm-grey">Chargement…</p>
+            <p className="text-sm text-brand-warm-grey">{t("commun.chargement")}</p>
           )}
           {historique && historique.ventes.length === 0 && (
             <p className="carte border-dashed p-6 text-sm text-brand-warm-grey">
@@ -1305,7 +1307,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                           <div className="flex items-center gap-2 mt-1">
                             {v.groupe_vente && (
                               <span className="inline-flex items-center gap-0.5 rounded bg-brand-glow/40 px-1.5 py-0.5 text-xs font-semibold text-brand-smooth">
-                                <IconePaquet taille={11} /> Bundle
+                                <IconePaquet taille={11} /> {t("caisse.bundle")}
                               </span>
                             )}
                             {v.annulee && (
@@ -1323,18 +1325,18 @@ export default function CaisseClient({ role }: { role: Role }) {
                     <div className="mt-1 flex flex-col gap-1 text-sm border-t border-brand-light-grey/50 pt-2">
                       {!estSocial && (
                         <div className="flex justify-between">
-                          <span className="text-brand-warm-grey">Marge :</span>
+                          <span className="text-brand-warm-grey">{t("caisse.margeLabel")}</span>
                           <span className={`font-semibold ${v.annulee ? "text-brand-grey" : v.marge >= 0 ? "text-succes" : "text-danger"}`}>
                             {formaterDA(v.marge)}
                           </span>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-brand-warm-grey">Canal :</span>
+                        <span className="text-brand-warm-grey">{t("caisse.canalLabel")}</span>
                         <span className="font-semibold text-brand-black">{v.canal ?? "—"}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-brand-warm-grey">Vendeur :</span>
+                        <span className="text-brand-warm-grey">{t("caisse.vendeurLabel")}</span>
                         <span className="font-semibold text-brand-black">{v.vendeur}</span>
                       </div>
                     </div>
@@ -1361,12 +1363,12 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <table className="w-full min-w-[720px] text-sm">
                   <thead className="bg-brand-light-grey/25">
                     <tr>
-                      <th className="entete-table">Produit</th>
-                      <th className="entete-table text-right">Prix</th>
-                      {!estSocial && <th className="entete-table text-right">Marge</th>}
-                      <th className="entete-table">Canal</th>
-                      <th className="entete-table">Vendeur</th>
-                      <th className="entete-table text-right">Date</th>
+                      <th className="entete-table">{t("caisse.colProduit")}</th>
+                      <th className="entete-table text-right">{t("caisse.colPrix")}</th>
+                      {!estSocial && <th className="entete-table text-right">{t("caisse.colMarge")}</th>}
+                      <th className="entete-table">{t("caisse.colCanal")}</th>
+                      <th className="entete-table">{t("caisse.colVendeur")}</th>
+                      <th className="entete-table text-right">{t("caisse.colDate")}</th>
                       {estGerant && <th className="entete-table" />}
                     </tr>
                   </thead>
@@ -1602,9 +1604,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                   onChange={(e) => setModePaiement(e.target.value)}
                   className="champ"
                 >
-                  <option value="especes">Espèces</option>
-                  <option value="virement">Virement (CCP / BaridiMob)</option>
-                  <option value="cheque">Chèque</option>
+                  <option value="especes">{t("caisse.especes")}</option>
+                  <option value="virement">{t("caisse.virementCCP")}</option>
+                  <option value="cheque">{t("caisse.cheque")}</option>
                 </select>
               </div>
             </div>
@@ -1648,9 +1650,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                   onChange={(e) => setTypeFacture(e.target.value)}
                   className="champ"
                 >
-                  <option value="normale">Normale</option>
-                  <option value="tva">Avec TVA (19%)</option>
-                  <option value="proforma">Proforma</option>
+                  <option value="normale">{t("caisse.factureNormale")}</option>
+                  <option value="tva">{t("caisse.factureTVA")}</option>
+                  <option value="proforma">{t("caisse.factureProforma")}</option>
                 </select>
               </div>
             </div>
@@ -1661,7 +1663,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               </summary>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-brand-light-grey/20 rounded-lg">
                 <div>
-                  <label className="libelle mb-1.5" htmlFor="client-adresse">Adresse</label>
+                  <label className="libelle mb-1.5" htmlFor="client-adresse">{t("caisse.adresse")}</label>
                   <input id="client-adresse" type="text" value={clientAdresse} onChange={e => setClientAdresse(e.target.value)} className="champ" />
                 </div>
                 <div>
@@ -1677,7 +1679,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   <input id="client-nis" type="text" value={clientNis} onChange={e => setClientNis(e.target.value)} className="champ" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="libelle mb-1.5" htmlFor="client-ai">Art. d&apos;Imposition</label>
+                  <label className="libelle mb-1.5" htmlFor="client-ai">{t("caisse.artImposition")}</label>
                   <input id="client-ai" type="text" value={clientAi} onChange={e => setClientAi(e.target.value)} className="champ" />
                 </div>
               </div>
@@ -1821,10 +1823,10 @@ export default function CaisseClient({ role }: { role: Role }) {
                 onChange={(e) => setModePaiementBundle(e.target.value)}
                 className="champ"
               >
-                <option value="especes">Espèces</option>
-                <option value="virement">Virement (CCP / BaridiMob)</option>
-                <option value="cheque">Chèque</option>
-                <option value="credit">Crédit (Dette)</option>
+                <option value="especes">{t("caisse.especes")}</option>
+                <option value="virement">{t("caisse.virementCCP")}</option>
+                <option value="cheque">{t("caisse.cheque")}</option>
+                <option value="credit">{t("caisse.credit")}</option>
               </select>
             </div>
           </div>
@@ -1846,7 +1848,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   />
                   {Number(especesRecues) > 0 && (
                     <div className="flex flex-col whitespace-nowrap min-w-[120px]">
-                      <span className="text-[10px] uppercase font-bold text-brand-grey">Monnaie à rendre</span>
+                      <span className="text-[10px] uppercase font-bold text-brand-grey">{t("caisse.monnaieARendre")}</span>
                       <span className={`text-lg font-black ${Number(especesRecues) - Number(prixTotalBundle) >= 0 ? "text-succes" : "text-danger"}`}>
                         {formaterDA(Number(especesRecues) - Number(prixTotalBundle))}
                       </span>
@@ -1857,7 +1859,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">1000 DA</button>
                   <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">2000 DA</button>
                   <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">5000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues(prixTotalBundle)} className="flex-1 py-1 bg-brand-orange text-white border border-brand-orange rounded shadow-sm text-sm font-bold hover:bg-brand-orange/90 transition">Exact</button>
+                  <button type="button" onClick={() => setEspecesRecues(prixTotalBundle)} className="flex-1 py-1 bg-brand-orange text-white border border-brand-orange rounded shadow-sm text-sm font-bold hover:bg-brand-orange/90 transition">{t("caisse.exact")}</button>
                 </div>
               </div>
             </div>
@@ -1903,9 +1905,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                   onChange={(e) => setTypeFactureBundle(e.target.value)}
                   className="champ"
                 >
-                  <option value="normale">Normale</option>
-                  <option value="tva">Avec TVA (19%)</option>
-                  <option value="proforma">Proforma</option>
+                  <option value="normale">{t("caisse.factureNormale")}</option>
+                  <option value="tva">{t("caisse.factureTVA")}</option>
+                  <option value="proforma">{t("caisse.factureProforma")}</option>
                 </select>
               </div>
             </div>
@@ -1916,7 +1918,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               </summary>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-brand-light-grey/20 rounded-lg">
                 <div>
-                  <label className="libelle mb-1.5" htmlFor="client-adresse-bundle">Adresse</label>
+                  <label className="libelle mb-1.5" htmlFor="client-adresse-bundle">{t("caisse.adresse")}</label>
                   <input id="client-adresse-bundle" type="text" value={clientAdresseBundle} onChange={e => setClientAdresseBundle(e.target.value)} className="champ" />
                 </div>
                 <div>
@@ -1932,7 +1934,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   <input id="client-nis-bundle" type="text" value={clientNisBundle} onChange={e => setClientNisBundle(e.target.value)} className="champ" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="libelle mb-1.5" htmlFor="client-ai-bundle">Art. d&apos;Imposition</label>
+                  <label className="libelle mb-1.5" htmlFor="client-ai-bundle">{t("caisse.artImposition")}</label>
                   <input id="client-ai-bundle" type="text" value={clientAiBundle} onChange={e => setClientAiBundle(e.target.value)} className="champ" />
                 </div>
               </div>

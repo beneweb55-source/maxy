@@ -14,6 +14,7 @@ import {
   IconeTelechargement,
   IconeStore,
 } from "@/components/icons";
+import { useT } from "@/lib/i18n/contexte";
 
 interface MouvementDto {
   id: number;
@@ -37,19 +38,20 @@ interface ReponseCaisse {
 }
 
 export const LIBELLES_TYPE: Record<TypeMouvement, string> = {
-  achat_lot: "Achat de lot",
-  vente: "Vente",
-  annulation_vente: "Annulation de vente",
-  apport_associe: "Apport associé",
-  achat_piece: "Achat de pièce",
-  frais: "Frais",
-  retrait_parts: "Retrait des parts",
-  transfert_reserve: "Transfert réserve",
-  reinvest: "Réinvestissement",
+  achat_lot: "caisseDashboard.types.achat_lot",
+  vente: "caisseDashboard.types.vente",
+  annulation_vente: "caisseDashboard.types.annulation_vente",
+  apport_associe: "caisseDashboard.types.apport_associe",
+  achat_piece: "caisseDashboard.types.achat_piece",
+  frais: "caisseDashboard.types.frais",
+  retrait_parts: "caisseDashboard.types.retrait_parts",
+  transfert_reserve: "caisseDashboard.types.transfert_reserve",
+  reinvest: "caisseDashboard.types.reinvest",
 };
 
 export default function CaisseDashboard({ role }: { role: Role }) {
   const { afficher } = useToast();
+  const t = useT();
   const [donnees, setDonnees] = useState<ReponseCaisse | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -127,7 +129,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
         return;
       }
       afficher(
-        `Mouvement enregistré : ${LIBELLES_TYPE[typeMouvement]} — ${formaterDA(Number(montant))}.`
+        `Mouvement enregistré : ${t(LIBELLES_TYPE[typeMouvement])} — ${formaterDA(Number(montant))}.`
       );
       setMontant("");
       setDescription("");
@@ -206,7 +208,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
   return (
     <div className="space-y-6 animate-entree">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Caisse</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("caisseDashboard.titreCaisse")}</h1>
         <div className="flex gap-2">
           <Link href="/pos" className="btn btn-primaire bg-brand-orange border-brand-orange hover:bg-brand-orange/90 text-white font-black shadow-md flex items-center gap-2">
             <IconeStore taille={20} /> Ouvrir la Caisse Enregistreuse
@@ -223,11 +225,11 @@ export default function CaisseDashboard({ role }: { role: Role }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="carte">
-          <p className="libelle">Solde total</p>
+          <p className="libelle">{t("caisseDashboard.soldeTotal")}</p>
           <p className="mt-2 text-2xl font-bold tracking-tight">{formaterDA(soldes.total)}</p>
         </div>
         <div className="carte">
-          <p className="libelle">Fonds de réserve</p>
+          <p className="libelle">{t("caisseDashboard.fondsReserve")}</p>
           <p className="mt-2 text-2xl font-bold tracking-tight">{formaterDA(soldes.reserve)}</p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-brand-light-grey">
             <div
@@ -240,7 +242,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           </p>
         </div>
         <div className="carte">
-          <p className="libelle">Disponible hors réserve</p>
+          <p className="libelle">{t("caisseDashboard.disponible")}</p>
           <p className="mt-2 text-2xl font-bold tracking-tight">
             {formaterDA(soldes.disponible)}
           </p>
@@ -271,7 +273,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               {benefice > 0 && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center bg-brand-light-grey/20 p-2 rounded text-sm">
-                    <span className="text-brand-warm-grey">Total des pourcentages</span>
+                    <span className="text-brand-warm-grey">{t("caisseDashboard.totalPourcentages")}</span>
                     <span className={`font-bold ${pctReinvest + pctReserve + pctParts + pctFrais !== 100 ? "text-danger" : "text-succes"}`}>
                       {pctReinvest + pctReserve + pctParts + pctFrais} %
                     </span>
@@ -342,7 +344,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
 
       {estGerant && (
         <section className="carte">
-          <h2 className="libelle text-brand-smooth">Nouveau mouvement manuel</h2>
+          <h2 className="libelle text-brand-smooth">{t("caisseDashboard.nouveauMouvementManuel")}</h2>
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <div>
               <label className="libelle mb-1.5" htmlFor="type-mvt">
@@ -354,12 +356,12 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                 onChange={(e) => setTypeMouvement(e.target.value as TypeMouvement)}
                 className="champ w-auto"
               >
-                {TYPES_MANUELS.map((t) => (
-                  <option key={t} value={t}>
-                    {LIBELLES_TYPE[t as TypeMouvement]} (
-                    {sensMouvement(t) === "entree"
+                {TYPES_MANUELS.map((t_m) => (
+                  <option key={t_m} value={t_m}>
+                    {t(LIBELLES_TYPE[t_m])} (
+                    {sensMouvement(t_m) === "entree"
                       ? "entrée"
-                      : sensMouvement(t) === "sortie"
+                      : sensMouvement(t_m) === "sortie"
                         ? "sortie"
                         : "neutre"}
                     )
@@ -428,7 +430,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                 <div key={m.id} className="flex flex-col gap-2 rounded-xl border border-brand-light-grey bg-brand-white p-4 shadow-sm text-sm">
                   <div className="flex items-start justify-between border-b border-brand-light-grey/50 pb-2 mb-1">
                     <div className="flex flex-col">
-                      <span className="font-semibold text-brand-black">{LIBELLES_TYPE[m.type]}</span>
+                      <span className="font-semibold text-brand-black">{t(LIBELLES_TYPE[m.type])}</span>
                       <span className="text-xs text-brand-warm-grey">
                         {new Date(m.date).toLocaleString("fr-FR", {
                           day: "2-digit",
@@ -460,12 +462,12 @@ export default function CaisseDashboard({ role }: { role: Role }) {
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-brand-light-grey/25">
                 <tr>
-                  <th className="entete-table">Date</th>
-                  <th className="entete-table">Type</th>
-                  <th className="entete-table">Description</th>
-                  <th className="entete-table">Par</th>
-                  <th className="entete-table text-right">Montant</th>
-                  <th className="entete-table text-right">Solde après</th>
+                  <th className="entete-table">{t("caisseDashboard.colDate")}</th>
+                  <th className="entete-table">{t("caisseDashboard.colType")}</th>
+                  <th className="entete-table">{t("caisseDashboard.colMotif")}</th>
+                  <th className="entete-table">{t("caisseDashboard.par")}</th>
+                  <th className="entete-table text-right">{t("caisseDashboard.colMontant")}</th>
+                  <th className="entete-table text-right">{t("caisseDashboard.soldeApres")}</th>
                 </tr>
               </thead>
               <tbody className="">
@@ -490,7 +492,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                           minute: "2-digit",
                         })}
                       </td>
-                      <td className="px-3 py-2">{LIBELLES_TYPE[m.type]}</td>
+                      <td className="px-3 py-2">{t(LIBELLES_TYPE[m.type])}</td>
                       <td
                         className="max-w-72 truncate px-3 py-2 text-brand-warm-grey"
                         title={m.description ?? ""}

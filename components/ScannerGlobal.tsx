@@ -3,15 +3,17 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
 import { useToast } from "@/components/toast";
+import { useT } from "@/lib/i18n/contexte";
 
 export default function ScannerGlobal() {
   const router = useRouter();
   const pathname = usePathname();
   const { afficher } = useToast();
+  const t = useT();
 
   useBarcodeScanner((code) => {
     if (pathname !== "/caisse") {
-      afficher(`Scan détecté : ${code} - Redirection vers la caisse...`);
+      afficher(t("scannerGlobal.redirection", { code }));
       const searchParams = new URLSearchParams();
       searchParams.set("scan_code", code);
       searchParams.set("t", Date.now().toString());

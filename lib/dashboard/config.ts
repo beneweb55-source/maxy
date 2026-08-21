@@ -10,21 +10,21 @@ export interface DefinitionKpi {
 }
 
 export const CATALOGUE_KPI = {
-  benefice_mois: { libelle: "Bénéfice du mois", format: "da", comparaison: true },
-  cash_disponible: { libelle: "Cash disponible", format: "da", comparaison: true },
-  valeur_stock: { libelle: "Valeur du stock", format: "da", comparaison: true },
+  benefice_mois: { libelle: "dashboard.kpi.benefice_mois", format: "da", comparaison: true },
+  cash_disponible: { libelle: "dashboard.kpi.cash_disponible", format: "da", comparaison: true },
+  valeur_stock: { libelle: "dashboard.kpi.valeur_stock", format: "da", comparaison: true },
   temps_stock_moyen: {
-    libelle: "Temps de stock moyen",
+    libelle: "dashboard.kpi.temps_stock_moyen",
     format: "jours",
     variationInversee: true,
     comparaison: true,
   },
-  ca_mois: { libelle: "Chiffre d'affaires du mois", format: "da", comparaison: true },
-  nb_en_vente: { libelle: "Produits en vente", format: "nombre", comparaison: false },
-  nb_en_stock: { libelle: "Produits en stock", format: "nombre", comparaison: false },
-  valeur_en_vente: { libelle: "Valeur en vente", format: "da", comparaison: false },
-  mon_ca_mois: { libelle: "Mes ventes du mois", format: "da", comparaison: true },
-  mes_ventes_mois: { libelle: "Mes ventes (nombre)", format: "nombre", comparaison: true },
+  ca_mois: { libelle: "dashboard.kpi.ca_mois", format: "da", comparaison: true },
+  nb_en_vente: { libelle: "dashboard.kpi.nb_en_vente", format: "nombre", comparaison: false },
+  nb_en_stock: { libelle: "dashboard.kpi.nb_en_stock", format: "nombre", comparaison: false },
+  valeur_en_vente: { libelle: "dashboard.kpi.valeur_en_vente", format: "da", comparaison: false },
+  mon_ca_mois: { libelle: "dashboard.kpi.mon_ca_mois", format: "da", comparaison: true },
+  mes_ventes_mois: { libelle: "dashboard.kpi.mes_ventes_mois", format: "nombre", comparaison: true },
 } satisfies Record<string, DefinitionKpi>;
 
 export type CleKpi = keyof typeof CATALOGUE_KPI;
@@ -112,7 +112,7 @@ export interface ConfigDashboard {
 }
 
 const CONFIG_GERANT: ConfigDashboard = {
-  titre: "Tableau de bord — Gérant",
+  titre: "dashboard.titreGerant",
   modules: ["arrivages", "rapports", "inventaire", "ventes", "caisse"],
   filtres: [],
   widgets: [
@@ -125,49 +125,49 @@ const CONFIG_GERANT: ConfigDashboard = {
     {
       id: "actions-gerant",
       type: "actions_rapides",
-      titre: "Actions rapides",
+      titre: "dashboard.actionsRapides",
       taille: "pleine",
       actions: [
-        { libelle: "Créer un arrivage", href: "/arrivages/nouveau" },
-        { libelle: "Ajouter un produit", href: "/inventaire?ajouter=1" },
-        { libelle: "Valider les rapports", href: "/rapports", badge: "rapports_a_valider" },
-        { libelle: "Fixer les prix", href: "/inventaire?statuts=ok", badge: "produits_a_tarifer" },
-        { libelle: "Gérer la caisse", href: "/caisse" },
-        { libelle: "Administration", href: "/administration" },
+        { libelle: "dashboard.creerArrivage", href: "/arrivages/nouveau" },
+        { libelle: "dashboard.ajouterProduit", href: "/inventaire?ajouter=1" },
+        { libelle: "dashboard.validerRapports", href: "/rapports", badge: "rapports_a_valider" },
+        { libelle: "dashboard.fixerPrix", href: "/inventaire?statuts=ok", badge: "produits_a_tarifer" },
+        { libelle: "dashboard.gererCaisse", href: "/caisse" },
+        { libelle: "dashboard.administration", href: "/administration" },
       ],
     },
     {
       id: "rapports-a-valider",
       type: "tableau",
-      titre: "Rapports à valider",
+      titre: "dashboard.rapportsAValider",
       taille: "moyen",
       source: "rapports_a_valider",
     },
     {
       id: "produits-a-tarifer",
       type: "tableau",
-      titre: "Produits à tarifer",
+      titre: "dashboard.produitsATarifer",
       taille: "moyen",
       source: "produits_a_tarifer",
     },
     {
       id: "benefices",
       type: "graphique_barres",
-      titre: "Bénéfice — 6 derniers mois",
+      titre: "dashboard.benefice6Mois",
       taille: "moyen",
       source: "benefices_6_mois",
     },
     {
       id: "donut",
       type: "donut_statuts",
-      titre: "Stock par statut",
+      titre: "dashboard.stockParStatut",
       taille: "moyen",
     },
-    { id: "alertes", type: "alertes", titre: "Alertes", taille: "moyen" },
+    { id: "alertes", type: "alertes", titre: "dashboard.alertes", taille: "moyen" },
     {
       id: "activites",
       type: "activites",
-      titre: "Dernières activités",
+      titre: "dashboard.activitesRecentes",
       taille: "moyen",
       limite: 10,
     },
@@ -175,7 +175,7 @@ const CONFIG_GERANT: ConfigDashboard = {
 };
 
 const CONFIG_DEV: ConfigDashboard = {
-  titre: "Tableau de bord — Ventes",
+  titre: "dashboard.titreDev",
   modules: ["ventes", "inventaire", "caisse"],
   filtres: [],
   widgets: [
@@ -188,38 +188,38 @@ const CONFIG_DEV: ConfigDashboard = {
     {
       id: "actions-dev",
       type: "actions_rapides",
-      titre: "Actions rapides",
+      titre: "dashboard.actionsRapides",
       taille: "pleine",
       actions: [
-        { libelle: "Enregistrer une vente", href: "/ventes", badge: "en_vente" },
-        { libelle: "Consulter l'inventaire", href: "/inventaire" },
+        { libelle: "dashboard.enregistrerVente", href: "/ventes", badge: "en_vente" },
+        { libelle: "dashboard.consulterInventaire", href: "/inventaire" },
       ],
     },
     {
       id: "en-vente",
       type: "tableau",
-      titre: "Produits en vente",
+      titre: "dashboard.produitsEnVente",
       taille: "moyen",
       source: "produits_en_vente",
     },
     {
       id: "ca",
       type: "graphique_barres",
-      titre: "Chiffre d'affaires — 6 derniers mois",
+      titre: "dashboard.ca6Mois",
       taille: "moyen",
       source: "ca_6_mois",
     },
     {
       id: "dernieres-ventes",
       type: "tableau",
-      titre: "Dernières ventes",
+      titre: "dashboard.dernieresVentes",
       taille: "moyen",
       source: "dernieres_ventes",
     },
     {
       id: "activites",
       type: "activites",
-      titre: "Dernières activités",
+      titre: "dashboard.activitesRecentes",
       taille: "moyen",
       limite: 10,
     },
@@ -227,16 +227,16 @@ const CONFIG_DEV: ConfigDashboard = {
 };
 
 export const CONFIG_FALLBACK: ConfigDashboard = {
-  titre: "Tableau de bord",
+  titre: "dashboard.titre",
   modules: ["inventaire"],
   filtres: [],
   widgets: [
-    { id: "donut", type: "donut_statuts", titre: "Stock par statut", taille: "moyen" },
-    { id: "alertes", type: "alertes", titre: "Alertes", taille: "moyen" },
+    { id: "donut", type: "donut_statuts", titre: "dashboard.stockParStatut", taille: "moyen" },
+    { id: "alertes", type: "alertes", titre: "dashboard.alertes", taille: "moyen" },
     {
       id: "activites",
       type: "activites",
-      titre: "Dernières activités",
+      titre: "dashboard.activitesRecentes",
       taille: "pleine",
       limite: 10,
     },
@@ -246,7 +246,7 @@ export const CONFIG_FALLBACK: ConfigDashboard = {
 // Social Media Manager : uniquement ce qui sert à la mise en avant des
 // produits — pas de chiffres de caisse, d'achats ni d'alertes internes.
 const CONFIG_SOCIAL: ConfigDashboard = {
-  titre: "Tableau de bord — Produits",
+  titre: "dashboard.titreProduits",
   modules: ["inventaire", "ventes", "caisse"],
   filtres: [],
   widgets: [
@@ -259,14 +259,14 @@ const CONFIG_SOCIAL: ConfigDashboard = {
     {
       id: "en-vente",
       type: "tableau",
-      titre: "Produits en vente",
+      titre: "dashboard.produitsEnVente",
       taille: "moyen",
       source: "produits_en_vente",
     },
     {
       id: "dernieres-ventes",
       type: "tableau",
-      titre: "Dernières ventes",
+      titre: "dashboard.dernieresVentes",
       taille: "moyen",
       source: "dernieres_ventes",
     },
