@@ -346,16 +346,17 @@
 
   @keyframes light-sweep {
     0% {
-      transform: translateX(-150%) skewX(-30deg);
+      transform: translateX(-150%) skewX(-45deg);
     }
     30%, 100% {
-      transform: translateX(250%) skewX(-30deg);
+      transform: translateX(350%) skewX(-45deg);
     }
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .effet-lumiere {
       position: relative;
+      overflow: hidden; /* Empêche le débordement du sweep */
     }
     .effet-lumiere::after {
       content: "";
@@ -367,17 +368,25 @@
       background: linear-gradient(
         90deg,
         transparent,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.15),
+        rgba(255, 255, 255, 0.05),
+        transparent
+      );
+      animation: light-sweep 6s infinite ease-in-out;
+      pointer-events: none; /* Indispensable pour ne pas bloquer les clics */
+      z-index: 0; /* Reste en dessous du contenu interactif s'il a z-index > 0 */
+    }
+    .effet-lumiere:hover::after {
+      animation: light-sweep 4s infinite ease-in-out;
+      background: linear-gradient(
+        90deg,
+        transparent,
         rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.4),
+        rgba(255, 255, 255, 0.25),
         rgba(255, 255, 255, 0.1),
         transparent
       );
-      animation: light-sweep 5s infinite;
-      pointer-events: none;
-      z-index: 10;
-    }
-    .effet-lumiere:hover::after {
-      animation: light-sweep 3s infinite;
     }
   }
 }

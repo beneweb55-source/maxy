@@ -29,6 +29,8 @@ import {
   IconeTriHaut,
   IconeVitrine,
 } from "@/components/icons";
+import BoutonImpression from "@/components/BoutonImpression";
+import RechercheRapide from "@/components/RechercheRapide";
 
 interface LigneProduit {
   id: number;
@@ -48,6 +50,7 @@ interface LigneProduit {
   jours_stock: number;
   image_url: string | null;
   nb_images: number;
+  etiquette_imprimee: boolean;
 }
 
 interface ReponseInventaire {
@@ -172,12 +175,12 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formulaire, setFormulaire] = useState<FormulaireProduit>(FORMULAIRE_VIDE);
   const [formPhotos, setFormPhotos] = useState<string[]>([]);
   const [formPhotosModifiees, setFormPhotosModifiees] = useState(false);
-  // « En vitrine » dès la création (formulaire d'ajout).
   const [formVitrine, setFormVitrine] = useState(false);
   const [formMettreEnVente, setFormMettreEnVente] = useState(false);
 
   const [vueGroupee, setVueGroupee] = useState(true);
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
+  const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
 
   // Édition du statut depuis l'inventaire (transitions manuelles + note contextuelle).
   const [cibleStatut, setCibleStatut] = useState<StatutProduit | null>(null);
@@ -209,6 +212,19 @@ export default function Inventaire({ role }: { role: Role }) {
     },
     [router, searchParams]
   );
+
+  const nbFiltresActifs =
+    (q ? 1 : 0) +
+    (searchParams?.get("categorie") ? 1 : 0) +
+    (searchParams?.get("lot") || searchParams?.get("sans_lot") ? 1 : 0) +
+    (searchParams?.get("du") ? 1 : 0) +
+    (searchParams?.get("au") ? 1 : 0) +
+    (searchParams?.get("plus30j") ? 1 : 0) +
+    (searchParams?.get("a_tarifer") ? 1 : 0) +
+    (searchParams?.get("a_jeter") ? 1 : 0) +
+    (searchParams?.get("en_vitrine") ? 1 : 0) +
+    statutsActifs.length +
+    (searchParams?.get("tri") ? 1 : 0);
 
   const charger = useCallback(async () => {
     setErreur(null);
@@ -734,158 +750,163 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       </div>
 
-      <div className="carte space-y-3">
-        <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
-          <form
-            className="relative min-w-56 flex-1"
-            onSubmit={(e) => {
-              e.preventDefault();
-              majUrl({ q: q.trim() || null });
+      <div className="carte space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <RechercheRapide
+            valeur={q}
+            onChange={(valeur) => {
+              setQ(valeur);
+              majUrl({ q: valeur.trim() || null });
             }}
-          >
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-grey">
-              <IconeRecherche taille={15} />
-            </span>
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher (référence, code, notes) puis Entrée"
-              className="champ pl-9"
-            />
-          </form>
-          <select
-            value={searchParams?.get("categorie") ?? ""}
-            onChange={(e) => majUrl({ categorie: e.target.value || null })}
-            className="champ w-full sm:w-auto"
-          >
-            <option value="">Toutes catégories</option>
-            {(donnees?.categories ?? []).map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          {true && (
-          <>
-          <select
-            value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "__sans__") majUrl({ sans_lot: "1", lot: null });
-              else majUrl({ lot: v || null, sans_lot: null });
-            }}
-            className="champ w-full sm:w-auto"
-          >
-            <option value="">Tous les lots</option>
-            <option value="__sans__">Sans arrivage (ajout direct)</option>
-            {(donnees?.lots ?? []).map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.libelle}
-              </option>
-            ))}
-          </select>
-          <label className="flex items-center justify-between sm:justify-start gap-1.5 text-sm text-brand-warm-grey w-full sm:w-auto">
-            <input
-              type="date"
-              value={searchParams?.get("du") ?? ""}
-              onChange={(e) => majUrl({ du: e.target.value || null })}
-              className="champ w-auto"
-            />
-            au
-            <input
-              type="date"
-              value={searchParams?.get("au") ?? ""}
-              onChange={(e) => majUrl({ au: e.target.value || null })}
-              className="champ w-auto"
-            />
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input
-              type="checkbox"
-              checked={searchParams?.get("plus30j") === "1"}
-              onChange={(e) => majUrl({ plus30j: e.target.checked ? "1" : null })}
-              className="accent-brand-orange"
-            />
-            +30 jours en stock
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input
-              type="checkbox"
-              checked={searchParams?.get("a_tarifer") === "1"}
-              onChange={(e) => majUrl({ a_tarifer: e.target.checked ? "1" : null })}
-              className="accent-brand-orange"
-            />
-            À tarifer (sans prix)
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input
-              type="checkbox"
-              checked={searchParams?.get("a_jeter") === "1"}
-              onChange={(e) => majUrl({ a_jeter: e.target.checked ? "1" : null })}
-              className="accent-brand-orange"
-            />
-            À jeter
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input
-              type="checkbox"
-              checked={searchParams?.get("en_vitrine") === "1"}
-              onChange={(e) => majUrl({ en_vitrine: e.target.checked ? "1" : null })}
-              className="accent-brand-orange"
-            />
-            En vitrine
-          </label>
-          <select
-            value={
-              triActuel === "prix_achat" ? (ordreActuel === "desc" ? "prix_desc" : "prix_asc") : ""
-            }
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc" });
-              else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc" });
-              else majUrl({ tri: null, ordre: null });
-            }}
-            className="champ w-full sm:w-auto"
-            aria-label="Trier par prix"
-            title="Trier par prix d'achat"
-          >
-            <option value="">Tri : défaut</option>
-            <option value="prix_asc">Prix ↑ (croissant)</option>
-            <option value="prix_desc">Prix ↓ (décroissant)</option>
-          </select>
-          </>
-          )}
+            placeholder="Rechercher par référence, code ou notes..."
+            debounceMs={300}
+            className="flex-1"
+          />
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={searchParams?.get("categorie") ?? ""}
+              onChange={(e) => majUrl({ categorie: e.target.value || null })}
+              className="champ w-full sm:w-auto"
+            >
+              <option value="">Toutes catégories</option>
+              {(donnees?.categories ?? []).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <select
+              value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "__sans__") majUrl({ sans_lot: "1", lot: null });
+                else majUrl({ lot: v || null, sans_lot: null });
+              }}
+              className="champ w-full sm:w-auto"
+            >
+              <option value="">Tous les arrivages</option>
+              <option value="__sans__">Sans arrivage</option>
+              {(donnees?.lots ?? []).map((l) => (
+                <option key={l.id} value={l.id}>{l.libelle}</option>
+              ))}
+            </select>
+            <select
+              value={
+                (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
+              }
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc" });
+                else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc" });
+                else majUrl({ tri: null, ordre: null });
+              }}
+              className="champ w-full sm:w-auto"
+            >
+              <option value="">Tri par défaut</option>
+              <option value="prix_asc">Prix achat croissant</option>
+              <option value="prix_desc">Prix achat décroissant</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {statutsVisibles.map((s) => (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap gap-1.5 flex-1">
+            <span className="text-sm font-semibold text-brand-warm-grey mr-2 hidden sm:inline-block">Statut :</span>
+            {statutsVisibles.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => basculerStatut(s)}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition hover-lift ${
+                  statutsActifs.includes(s)
+                    ? "border-brand-smooth bg-brand-smooth text-brand-white"
+                    : `border-brand-light-grey text-brand-warm-grey hover:bg-brand-light-grey/30`
+                }`}
+              >
+                {INFOS_STATUT[s].libelle}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              key={s}
               type="button"
-              onClick={() => basculerStatut(s)}
-              className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold transition ${
-                statutsActifs.includes(s)
-                  ? "border-brand-smooth bg-brand-smooth text-brand-white"
-                  : `border-transparent ${INFOS_STATUT[s].badge}`
-              }`}
+              onClick={() => setAfficherPlusFiltres(!afficherPlusFiltres)}
+              className={`text-sm font-medium transition flex items-center gap-1.5 px-2 py-1 rounded-md ${afficherPlusFiltres ? 'text-brand-orange bg-brand-orange/10' : 'text-brand-warm-grey hover:bg-brand-light-grey/50'}`}
             >
-              {INFOS_STATUT[s].libelle}
+              <IconeTriBas taille={14} />
+              Plus de filtres
             </button>
-          ))}
-          {(statutsActifs.length > 0 || searchParams?.toString() || "") && (
-            <button
-              type="button"
-              onClick={() => {
-                setQ("");
-                router.replace("/inventaire");
-              }}
-              className="rounded-full border border-brand-light-grey px-2.5 py-0.5 text-xs text-brand-warm-grey transition hover:bg-brand-light-grey/40"
-            >
-              Réinitialiser
-            </button>
-          )}
+            {nbFiltresActifs > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  router.replace("/inventaire");
+                }}
+                className="text-sm font-medium text-danger hover:bg-danger/10 px-2 py-1 rounded-md transition flex items-center gap-1.5"
+              >
+                Effacer ({nbFiltresActifs})
+              </button>
+            )}
+          </div>
         </div>
+
+        {afficherPlusFiltres && (
+          <div className="pt-3 border-t border-brand-light-grey/50 grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-4 animate-entree">
+            <label className="flex items-center gap-2 text-sm text-brand-warm-grey">
+              Du
+              <input
+                type="date"
+                value={searchParams?.get("du") ?? ""}
+                onChange={(e) => majUrl({ du: e.target.value || null })}
+                className="champ text-xs py-1 px-2 h-auto"
+              />
+              au
+              <input
+                type="date"
+                value={searchParams?.get("au") ?? ""}
+                onChange={(e) => majUrl({ au: e.target.value || null })}
+                className="champ text-xs py-1 px-2 h-auto"
+              />
+            </label>
+            <div className="h-4 w-px bg-brand-light-grey hidden sm:block"></div>
+            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
+              <input
+                type="checkbox"
+                checked={searchParams?.get("plus30j") === "1"}
+                onChange={(e) => majUrl({ plus30j: e.target.checked ? "1" : null })}
+                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+              />
+              +30 jours
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
+              <input
+                type="checkbox"
+                checked={searchParams?.get("a_tarifer") === "1"}
+                onChange={(e) => majUrl({ a_tarifer: e.target.checked ? "1" : null })}
+                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+              />
+              À tarifer
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
+              <input
+                type="checkbox"
+                checked={searchParams?.get("a_jeter") === "1"}
+                onChange={(e) => majUrl({ a_jeter: e.target.checked ? "1" : null })}
+                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+              />
+              À jeter
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
+              <input
+                type="checkbox"
+                checked={searchParams?.get("en_vitrine") === "1"}
+                onChange={(e) => majUrl({ en_vitrine: e.target.checked ? "1" : null })}
+                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+              />
+              En vitrine
+            </label>
+          </div>
+        )}
       </div>
 
       {donnees && (
@@ -910,14 +931,38 @@ export default function Inventaire({ role }: { role: Role }) {
         <p className="text-sm text-brand-warm-grey">Chargement de l'inventaire…</p>
       )}
       {donnees && donnees.produits.length === 0 && (
-        <div className="carte border-dashed p-8 text-center text-sm text-brand-warm-grey">
-          <p>Aucun produit ne correspond à ces filtres.</p>
-          {donnees.total === 0 && peutModifier && (
-            <button type="button" onClick={ouvrirAjout} className="btn btn-primaire mt-4">
-              <IconePlus taille={15} />
-              Ajouter le premier produit
-            </button>
-          )}
+        <div className="carte border-dashed p-10 text-center flex flex-col items-center justify-center space-y-4">
+          <div className="rounded-full bg-brand-light-grey/30 p-4 text-brand-warm-grey">
+            <IconeRecherche taille={32} />
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-brand-smooth">
+              {nbFiltresActifs > 0 ? "Aucun produit ne correspond à votre recherche" : "Votre inventaire est vide"}
+            </p>
+            <p className="text-sm text-brand-warm-grey max-w-sm mx-auto">
+              {nbFiltresActifs > 0 
+                ? "Essayez de modifier vos filtres ou de chercher avec d'autres termes pour trouver ce que vous cherchez." 
+                : "Vous n'avez pas encore ajouté de produits. Commencez par en créer un pour remplir votre stock."}
+            </p>
+          </div>
+          
+          <div className="pt-2 flex gap-3">
+            {nbFiltresActifs > 0 && (
+              <button 
+                type="button" 
+                onClick={() => { setQ(""); router.replace("/inventaire"); }} 
+                className="btn btn-secondaire"
+              >
+                Effacer les filtres
+              </button>
+            )}
+            {peutModifier && (
+              <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
+                <IconePlus taille={15} />
+                Ajouter un produit
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -1048,15 +1093,11 @@ export default function Inventaire({ role }: { role: Role }) {
                         </button>
                       );
                     })()}
-                    <button
-                      type="button"
-                      onClick={() => window.open(`/imprimer-etiquettes?ids=${g.unites.map(u => u.id).join(',')}`, '_blank')}
-                      title="Imprimer les étiquettes pour ce modèle"
-                      aria-label={`Imprimer tout le groupe ${g.reference}`}
-                      className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                    >
-                      <IconeImprimante taille={15} />
-                    </button>
+                    <BoutonImpression 
+                      ids={g.unites.map(u => u.id)} 
+                      dejaImprimee={g.unites.every(u => u.etiquette_imprimee)} 
+                      className="rounded-md p-1.5 hover:bg-brand-light-grey/50 hover:text-brand-black" 
+                    />
                     {peutModifier && (
                       <button
                         type="button"
@@ -1123,13 +1164,12 @@ export default function Inventaire({ role }: { role: Role }) {
                       );
                     })()}
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => window.open(`/imprimer-etiquettes?ids=${g.unites.map(u => u.id).join(',')}`, '_blank')}
-                        className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
-                      >
-                        <IconeImprimante taille={14} /> Imprimer
-                      </button>
+                      <BoutonImpression 
+                        ids={g.unites.map(u => u.id)} 
+                        dejaImprimee={g.unites.every(u => u.etiquette_imprimee)} 
+                        className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey" 
+                        texte="Imprimer"
+                      />
                       <button
                         type="button"
                         onClick={() => ouvrirEdition(g.unites, g.reference)}
@@ -1202,15 +1242,11 @@ export default function Inventaire({ role }: { role: Role }) {
                                 <IconeVitrine taille={14} />
                               </button>
                             )}
-                            <button
-                              type="button"
-                              onClick={() => window.open(`/imprimer-etiquettes?ids=${p.id}`, '_blank')}
-                              title="Imprimer"
-                              aria-label={`Imprimer étiquette ${p.code_interne}`}
-                              className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                            >
-                              <IconeImprimante taille={14} />
-                            </button>
+                            <BoutonImpression 
+                              ids={[p.id]} 
+                              dejaImprimee={p.etiquette_imprimee} 
+                              className="rounded-md p-1.5 hover:bg-brand-light-grey/50 hover:text-brand-black" 
+                            />
                             <button
                               type="button"
                               onClick={() => ouvrirEdition([p], p.code_interne)}
@@ -1322,16 +1358,12 @@ export default function Inventaire({ role }: { role: Role }) {
                         <IconeVitrine taille={14} /> {p.en_vitrine ? "Retirer" : "Vitrine"}
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(`/imprimer-etiquettes?ids=${p.id}`, '_blank');
-                      }}
-                      className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black"
-                    >
-                      <IconeImprimante taille={14} /> Imprimer
-                    </button>
+                    <BoutonImpression 
+                      ids={[p.id]} 
+                      dejaImprimee={p.etiquette_imprimee} 
+                      className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black" 
+                      texte="Imprimer"
+                    />
                     <button
                       type="button"
                       onClick={(e) => {

@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
+import { rechercheTolérante } from "@/lib/recherche";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
+import RechercheRapide from "@/components/RechercheRapide";
 import {
   IconeAlerte,
   IconeBillet,
@@ -379,13 +381,59 @@ export default function CaisseClient({ role }: { role: Role }) {
         if (produit) {
           const groupe = grouperDoublonsVente(cartes).find(g => g.unites.some(u => u.id === produit.id));
           if (groupe) {
-            ouvrirVente(groupe);
-            router.replace("/ventes");
+            ajouterASelection(groupe.cle, produit.id);
           }
         }
       }
     }
-  }, [cartes, searchParams, peutVendre, initTermine, ouvrirVente, router]);
+  }, [cartes, searchParams, peutVendre, initTermine]);
+
+  const [lastScanCodeProcessed, setLastScanCodeProcessed] = useState<string | null>(null);
+
+  const gererScan = useCallback((code: string) => {
+    if (!cartes) return;
+    const produit = cartes.find((c) => c.code_interne === code);
+    if (produit) {
+      const groupe = grouperDoublonsVente(cartes).find((g) => g.unites.some((u) => u.id === produit.id));
+      if (groupe) {
+        setSelection((prev) => {
+          const suivant = new Map(prev);
+          const s = suivant.get(groupe.cle) ? new Set(suivant.get(groupe.cle)) : new Set<number>();
+          if (!s.has(produit.id)) {
+            s.add(produit.id);
+            suivant.set(groupe.cle, s);
+            playBeep(true);
+            afficher(`Produit scanné : ${produit.reference}`);
+          } else {
+            // L'utilisateur a scanné EXACTEMENT le même code-barres physique.
+            // On bloque l'ajout automatique d'un autre exemplaire pour éviter les erreurs.
+            playBeep(false);
+            afficher("Cet exemplaire a déjà été ajouté à la vente.", "erreur");
+          }
+          return suivant;
+        });
+      }
+    } else {
+      playBeep(false);
+      afficher(`Code non reconnu ou produit indisponible : ${code}`, "erreur");
+    }
+  }, [cartes, afficher]);
+
+  useBarcodeScanner((code) => {
+    gererScan(code);
+  });
+
+  useEffect(() => {
+    if (cartes) {
+      const scanCode = searchParams.get("scan_code");
+      const timestamp = searchParams.get("t");
+      const trackingKey = `${scanCode}-${timestamp}`;
+      if (scanCode && trackingKey !== lastScanCodeProcessed) {
+        setLastScanCodeProcessed(trackingKey);
+        gererScan(scanCode);
+      }
+    }
+  }, [cartes, searchParams, gererScan, lastScanCodeProcessed]);
   useEffect(() => {
     void chargerHistorique();
   }, [chargerHistorique]);
@@ -394,14 +442,8 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   const groupesFiltres = (() => {
     let liste = cartes ?? [];
-    const q = rechercheEnVente.trim().toLowerCase();
-    if (q) {
-      liste = liste.filter(
-        (c) =>
-          c.reference.toLowerCase().includes(q) ||
-          c.code_interne.toLowerCase().includes(q) ||
-          c.categorie.toLowerCase().includes(q)
-      );
+    if (rechercheEnVente.trim()) {
+      liste = rechercheTolérante(liste, rechercheEnVente, (c) => [c.reference, c.code_interne, c.categorie]);
     }
     if (filtreCategorie) liste = liste.filter((c) => c.categorie === filtreCategorie);
     
@@ -830,18 +872,12 @@ export default function CaisseClient({ role }: { role: Role }) {
                 }}
               />
             </div>
-            <div className="relative min-w-56 flex-[2]">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-grey">
-                <IconeRecherche taille={15} />
-              </span>
-              <input
-                type="search"
-                value={rechercheEnVente}
-                onChange={(e) => setRechercheEnVente(e.target.value)}
-                placeholder="Rechercher (référence, code, catégorie)"
-                className="champ pl-9"
-              />
-            </div>
+            <RechercheRapide
+              valeur={rechercheEnVente}
+              onChange={setRechercheEnVente}
+              placeholder="Rechercher code, ref ou catégorie..."
+              className="w-full sm:max-w-md"
+            />
             <select
               value={filtreCategorie}
               onChange={(e) => setFiltreCategorie(e.target.value)}

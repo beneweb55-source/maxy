@@ -38,6 +38,14 @@ export default function ImprimerEtiquettes() {
       })
       .then((data: EtiquetteData[]) => {
         setEtiquettes(data);
+        
+        // Marquer les étiquettes comme imprimées
+        fetch("/api/produits/marquer-imprime", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        }).catch(err => console.error("Erreur de marquage", err));
+
         // Lancer l'impression automatiquement une fois chargé
         setTimeout(() => window.print(), 500);
       })

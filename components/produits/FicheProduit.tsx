@@ -29,6 +29,7 @@ import {
   IconeTelechargement,
   IconeVitrine,
 } from "@/components/icons";
+import BoutonImpression from "@/components/BoutonImpression";
 
 interface ProduitDto {
   id: number;
@@ -40,6 +41,7 @@ interface ProduitDto {
   image_url: string | null;
   images: string[];
   en_vitrine: boolean;
+  etiquette_imprimee: boolean;
   decision_rapport: DecisionRapport | null;
   prix_achat: number;
   cout_reparations: number;
@@ -465,7 +467,7 @@ export default function FicheProduit({
               </button>
             )}
             {peutVendre && produit.statut === "en_vente" && (
-              <Link href="/ventes" className="btn btn-crystal">
+              <Link href={`/caisse?produit=${produit.code_interne}`} className="btn btn-crystal">
                 Vendre ce produit
                 <IconeFlecheDroite taille={14} />
               </Link>
@@ -497,6 +499,12 @@ export default function FicheProduit({
                 {produit.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
               </button>
             )}
+            <BoutonImpression 
+              ids={[produit.id]} 
+              dejaImprimee={produit.etiquette_imprimee} 
+              className="btn btn-secondaire" 
+              texte="Imprimer l'étiquette"
+            />
             {!vendu && (
               <>
                 <button

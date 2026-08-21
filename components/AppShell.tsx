@@ -8,6 +8,7 @@ import ClocheNotifications from "./ClocheNotifications";
 import SelecteurLangue from "./SelecteurLangue";
 import ThemeToggle from "./ThemeToggle";
 import { FournisseurToasts } from "./toast";
+import ScannerGlobal from "./ScannerGlobal";
 import { useT } from "@/lib/i18n/contexte";
 import {
   IconeArchive,
@@ -57,7 +58,6 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     sousChemins: [],
     roles: ["gerant", "technicien", "dev"],
   },
-  { href: "/ventes", cle: "nav.ventes", icone: IconePanier, sousChemins: [] },
   { href: "/factures", cle: "nav.factures", icone: IconeBillet, sousChemins: [] },
   {
     href: "/caisse",
@@ -159,6 +159,7 @@ export default function AppShell({
 
   return (
     <FournisseurToasts>
+      <ScannerGlobal />
       <div className="min-h-screen print:bg-white font-inter text-brand-black transition-colors duration-300 ease-in-out">
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden transition-colors duration-300 ease-in-out">
           {contenuSidebar}

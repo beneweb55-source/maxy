@@ -24,6 +24,7 @@ export async function GET() {
         statut: true,
         prix_vente_fixe: true,
         prix_vente_reel: true,
+        etiquette_imprimee: true,
         images: { orderBy: { position: "asc" }, select: { id: true } },
       },
     });
@@ -55,6 +56,7 @@ export async function GET() {
         categorie: true,
         statut: true,
         prix_vente_fixe: true,
+        etiquette_imprimee: true,
       },
     });
     const stockParModele = new Map<string, typeof stock>();
@@ -93,11 +95,11 @@ export async function GET() {
           // Toutes les unités marquées « en vitrine » du modèle : permet de
           // retirer le modèle entier de la vitrine en une seule action.
           ids_en_vitrine: unites.map((u) => u.id),
-          // Vente directe depuis la vitrine.
           vendables: vendables.map((v) => ({
             id: v.id,
             code_interne: v.code_interne,
             prix_vente_fixe: v.prix_vente_fixe,
+            etiquette_imprimee: v.etiquette_imprimee,
           })),
         };
     });

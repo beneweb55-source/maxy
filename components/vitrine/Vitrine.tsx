@@ -17,12 +17,14 @@ import {
   IconeTelechargement,
   IconeVitrine,
 } from "@/components/icons";
+import BoutonImpression from "@/components/BoutonImpression";
 
 
 interface UniteVendable {
   id: number;
   code_interne: string;
   prix_vente_fixe: number | null;
+  etiquette_imprimee: boolean;
 }
 
 interface CarteVitrine {
@@ -488,6 +490,16 @@ export default function Vitrine({ role }: { role: Role }) {
                           </button>
                         </div>
                       )}
+                    </div>
+                  )}
+                  {dispo.length > 0 && (
+                    <div className="flex justify-end pt-2 border-t border-brand-light-grey/50">
+                      <BoutonImpression 
+                        ids={dispo.map(v => v.id)} 
+                        dejaImprimee={dispo.every(v => v.etiquette_imprimee)} 
+                        className="flex items-center gap-1.5 rounded-lg bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
+                        texte="Imprimer"
+                      />
                     </div>
                   )}
                 </div>

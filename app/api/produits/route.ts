@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
             prix_vente_fixe: true,
             prix_vente_reel: true,
             created_at: true,
+            etiquette_imprimee: true,
             lot: { select: { id: true, fournisseur: true, date_entree: true } },
             reparations: { select: { cout: true } },
             _count: { select: { images: true } },
@@ -97,6 +98,7 @@ export async function GET(request: NextRequest) {
         cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
         prix_vente_reel: p.prix_vente_reel,
+        etiquette_imprimee: p.etiquette_imprimee,
         lot_id: p.lot?.id ?? null,
         fournisseur: p.lot?.fournisseur ?? null,
         // Sans lot, la date d'entrée est celle de création du produit.
