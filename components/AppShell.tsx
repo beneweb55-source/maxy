@@ -125,7 +125,9 @@ export default function AppShell({
     if (!isDragging) {
       if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
         setIsDragging(true);
-        (e.target as Element).setPointerCapture(e.pointerId);
+        try {
+          (e.target as Element).setPointerCapture(e.pointerId);
+        } catch (err) {}
       } else if (Math.abs(deltaY) > 10) {
         pointerId.current = null; // C'est un scroll vertical
         return;
@@ -141,11 +143,23 @@ export default function AppShell({
     }
   };
 
-  const onDragEnd = (e: React.PointerEvent) => {
+  const resetDrag = (e: React.PointerEvent) => {
+    if (pointerId.current !== e.pointerId) return;
     pointerId.current = null;
     if (!isDragging) return;
     setIsDragging(false);
-    (e.target as Element).releasePointerCapture(e.pointerId);
+    try {
+      (e.target as Element).releasePointerCapture(e.pointerId);
+    } catch (err) {}
+  };
+
+  const onDragEnd = (e: React.PointerEvent) => {
+    if (pointerId.current !== e.pointerId) return;
+    const wasDragging = isDragging;
+    resetDrag(e);
+    
+    if (!wasDragging) return;
+
     if (menuOuvert) {
       if (dragOffset < -SIDEBAR_WIDTH / 4) setMenuOuvert(false);
     } else {
@@ -155,10 +169,7 @@ export default function AppShell({
   };
 
   const onDragCancel = (e: React.PointerEvent) => {
-    pointerId.current = null;
-    if (!isDragging) return;
-    setIsDragging(false);
-    (e.target as Element).releasePointerCapture(e.pointerId);
+    resetDrag(e);
     setDragOffset(0);
   };
 
@@ -245,12 +256,15 @@ export default function AppShell({
         </aside>
 
         {/* Edge Receiver pour ouvrir le menu par Swipe depuis le bord gauche */}
-        {!menuOuvert && !isDragging && (
-          <div
-            className="fixed inset-y-0 left-0 z-40 w-5 lg:hidden touch-pan-y"
-            onPointerDown={onDragStart}
-          />
-        )}
+        <div
+          className={`fixed inset-y-0 left-0 z-40 w-6 lg:hidden touch-pan-y ${
+            menuOuvert ? "pointer-events-none hidden" : "block"
+          }`}
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerCancel={onDragCancel}
+        />
 
         {/* Overlay & Sidebar Mobile */}
         <div
@@ -265,6 +279,10 @@ export default function AppShell({
             }`}
             style={{ opacity: isDragging ? Math.min((SIDEBAR_WIDTH + dragOffset) / SIDEBAR_WIDTH, 1) : undefined }}
             onClick={() => setMenuOuvert(false)}
+            onPointerDown={menuOuvert ? onDragStart : undefined}
+            onPointerMove={onDragMove}
+            onPointerUp={onDragEnd}
+            onPointerCancel={onDragCancel}
           />
 
           {/* Sidebar */}
