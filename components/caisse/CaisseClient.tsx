@@ -280,24 +280,6 @@ export default function CaisseClient({ role }: { role: Role }) {
     titre: string;
   } | null>(null);
 
-  const handleScan = useCallback((code: string) => {
-    if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
-    const produit = cartes?.find((c) => c.code_interne.toLowerCase() === code.toLowerCase());
-    if (produit) {
-      const groupe = grouperDoublonsVente(cartes!).find(g => g.unites.some(u => u.id === produit.id));
-      if (groupe) {
-        setModeBundle(true);
-        ajouterASelection(groupe.cle, produit.id);
-        playBeep(true);
-        afficher(`Produit ${produit.reference} ajouté au panier.`);
-      }
-    } else {
-      playBeep(false);
-      afficher("Code-barres introuvable dans les produits en vente.", "erreur");
-    }
-  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, cartes, selection, afficher, grouperDoublonsVente, ajouterASelection, playBeep]);
-
-  useBarcodeScanner(handleScan);
 
   const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
   const estGerant = role === "gerant";
@@ -391,6 +373,7 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [lastScanCodeProcessed, setLastScanCodeProcessed] = useState<string | null>(null);
 
   const gererScan = useCallback((code: string) => {
+    if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
     if (!cartes) return;
     const produit = cartes.find((c) => c.code_interne === code);
     if (produit) {
@@ -417,7 +400,7 @@ export default function CaisseClient({ role }: { role: Role }) {
       playBeep(false);
       afficher(`Code non reconnu ou produit indisponible : ${code}`, "erreur");
     }
-  }, [cartes, afficher]);
+  }, [cartes, afficher, modalBundle, modalRetrait, modalVente, modalAnnulation, playBeep]);
 
   useBarcodeScanner((code) => {
     gererScan(code);

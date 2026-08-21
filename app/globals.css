@@ -353,40 +353,38 @@
     }
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    .effet-lumiere {
-      position: relative;
-      overflow: hidden; /* Empêche le débordement du sweep */
-    }
-    .effet-lumiere::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 40%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.05),
-        rgba(255, 255, 255, 0.15),
-        rgba(255, 255, 255, 0.05),
-        transparent
-      );
-      animation: light-sweep 6s infinite ease-in-out;
-      pointer-events: none; /* Indispensable pour ne pas bloquer les clics */
-      z-index: 0; /* Reste en dessous du contenu interactif s'il a z-index > 0 */
-    }
-    .effet-lumiere:hover::after {
-      animation: light-sweep 4s infinite ease-in-out;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.25),
-        rgba(255, 255, 255, 0.1),
-        transparent
-      );
-    }
+  .effet-lumiere {
+    position: relative;
+    overflow: hidden; /* Empêche le débordement du sweep */
+  }
+  .effet-lumiere::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.6),
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    animation: light-sweep 7s infinite ease-in-out;
+    pointer-events: none; /* Indispensable pour ne pas bloquer les clics */
+    z-index: 10; /* Doit être au dessus du fond */
+  }
+  .effet-lumiere:hover::after {
+    animation: light-sweep 4s infinite ease-in-out;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.8),
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
   }
 }
