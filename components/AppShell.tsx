@@ -92,6 +92,8 @@ export default function AppShell({
   const pointerId = useRef<number | null>(null);
   
   const SIDEBAR_WIDTH = 256;
+  
+  const isNavigating = useRef(false);
 
   // Interception de l'historique pour fermer le menu avec le bouton Retour
   useEffect(() => {
@@ -101,9 +103,10 @@ export default function AppShell({
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      if (window.history.state?.menuOpen) {
+      if (!isNavigating.current && window.history.state?.menuOpen) {
         window.history.back();
       }
+      isNavigating.current = false;
     };
   }, [menuOuvert]);
 
@@ -190,7 +193,10 @@ export default function AppShell({
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setMenuOuvert(false)}
+              onClick={() => {
+                isNavigating.current = true;
+                setMenuOuvert(false);
+              }}
               aria-current={actif ? "page" : undefined}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
                 actif
