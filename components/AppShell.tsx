@@ -215,7 +215,7 @@ export default function AppShell({
         />
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 touch-pan-y">
         <p className="libelle px-4 pb-3 text-brand-grey/60">{t("nav.navigation")}</p>
         {navigation.map((item) => {
           const actif =
