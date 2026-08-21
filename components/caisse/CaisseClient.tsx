@@ -850,7 +850,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                     const code = e.currentTarget.value.trim();
                     if (!code) return;
                     e.currentTarget.value = "";
-                    handleScan(code);
+                    gererScan(code);
                   }
                 }}
               />
