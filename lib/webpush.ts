@@ -1,12 +1,25 @@
 import webpush from "web-push";
 import { prisma } from "./db";
 
-// Configure Web Push with VAPID keys
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || "mailto:admin@example.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY as string,
-  process.env.VAPID_PRIVATE_KEY as string
-);
+let isVapidConfigured = false;
+
+function configureVapid() {
+  if (isVapidConfigured) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  
+  if (!publicKey || !privateKey) {
+    console.warn("VAPID keys are missing. Web Push will be disabled.");
+    return;
+  }
+  
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || "mailto:admin@example.com",
+    publicKey,
+    privateKey
+  );
+  isVapidConfigured = true;
+}
 
 export async function sendWebPushNotification(
   userIds: number[],
@@ -14,6 +27,9 @@ export async function sendWebPushNotification(
   message: string,
   url?: string
 ) {
+  configureVapid();
+  if (!isVapidConfigured) return;
+
   try {
     const subscriptions = await prisma.pushSubscription.findMany({
       where: { user_id: { in: userIds } },
@@ -25,7 +41,7 @@ export async function sendWebPushNotification(
       title,
       body: message,
       url: url || "/",
-      icon: "/icon.svg",
+      icon: "/brand/solutionmaxi-icone.svg",
     });
 
     const promises = subscriptions.map(async (sub) => {

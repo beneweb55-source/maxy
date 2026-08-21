@@ -1,10 +1,23 @@
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(clients.claim());
+});
+
+// Écouteur fetch vide requis par Safari iOS pour valider la PWA
+self.addEventListener("fetch", (event) => {
+  // Pass-through
+});
+
 self.addEventListener("push", function (event) {
   if (event.data) {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: data.icon || "/icon.svg",
-      badge: "/icon.svg",
+      icon: data.icon || "/brand/solutionmaxi-icone.svg",
+      badge: "/brand/solutionmaxi-icone.svg",
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),
@@ -23,12 +36,14 @@ self.addEventListener("notificationclick", function (event) {
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (clientList) {
+      // Cherche un client ouvert
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
-        if (client.url.includes(targetUrl) && "focus" in client) {
-          return client.focus();
+        if ("focus" in client && "navigate" in client) {
+          return client.navigate(targetUrl).then(c => c.focus());
         }
       }
+      // Si aucun onglet n'est ouvert, on ouvre une nouvelle fenêtre
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }

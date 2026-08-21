@@ -176,6 +176,22 @@ export default function AppShell({
   const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(user.role));
 
   async function deconnexion() {
+    try {
+      if ("serviceWorker" in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const sub = await registration.pushManager.getSubscription();
+        if (sub) {
+          await fetch("/api/notifications/push/unsubscribe", {
+            method: "POST",
+            body: JSON.stringify(sub),
+            headers: { "Content-Type": "application/json" },
+          });
+          await sub.unsubscribe();
+        }
+      }
+    } catch (e) {
+      console.error("Erreur désabonnement push:", e);
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/connexion");
     router.refresh();

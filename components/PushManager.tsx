@@ -26,22 +26,17 @@ export default function PushManager() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>("default");
 
+  const [isError, setIsError] = useState(false);
+
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
       setPermission(Notification.permission);
-      // Enregistre le service worker
       navigator.serviceWorker
         .register("/sw.js")
-        .then((registration) => {
-          console.log("Service Worker registered");
-          // Vérifie si on a déjà un abonnement
-          return registration.pushManager.getSubscription();
-        })
+        .then((registration) => registration.pushManager.getSubscription())
         .then((sub) => {
-          if (sub) {
-            setSubscription(sub);
-          }
+          if (sub) setSubscription(sub);
         })
         .catch((err) => console.error("Service Worker Error", err));
     }
@@ -49,6 +44,7 @@ export default function PushManager() {
 
   const subscribe = async () => {
     try {
+      setIsError(false);
       const permissionResult = await Notification.requestPermission();
       setPermission(permissionResult);
       if (permissionResult !== "granted") {
@@ -63,7 +59,6 @@ export default function PushManager() {
 
       setSubscription(sub);
 
-      // Envoyer l'abonnement au serveur
       await fetch("/api/notifications/push/subscribe", {
         method: "POST",
         body: JSON.stringify(sub),
@@ -71,11 +66,12 @@ export default function PushManager() {
       });
     } catch (err) {
       console.error("Erreur de souscription:", err);
+      setIsError(true);
     }
   };
 
-  if (!isSupported || permission === "denied" || subscription) {
-    return null; // Rien à afficher si non supporté, refusé, ou déjà abonné
+  if (!isSupported || subscription) {
+    return null; // Non supporté ou déjà abonné
   }
 
   return (
@@ -85,16 +81,28 @@ export default function PushManager() {
           <IconeCloche taille={18} />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-brand-smooth">Activer les notifications système</p>
-          <p className="text-xs text-brand-warm-grey mt-1">
-            Recevez des alertes (ex: stock critique) même quand l'application est fermée ou en arrière-plan.
-          </p>
-          <button
-            onClick={subscribe}
-            className="mt-2 text-xs font-bold text-brand-orange hover:underline"
-          >
-            Autoriser
-          </button>
+          <p className="text-sm font-semibold text-brand-smooth">Notifications système</p>
+          
+          {permission === "denied" ? (
+            <p className="text-xs text-brand-warm-grey mt-1">
+              Vous avez bloqué les notifications. Modifiez les paramètres de votre navigateur pour les autoriser.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-brand-warm-grey mt-1">
+                Recevez des alertes même quand l'application est en arrière-plan.
+              </p>
+              {isError && (
+                <p className="text-xs text-red-500 mt-1">Erreur lors de l'activation.</p>
+              )}
+              <button
+                onClick={subscribe}
+                className="mt-2 text-xs font-bold text-brand-orange hover:underline"
+              >
+                Activer
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
