@@ -26,11 +26,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
+  // Fonction utilitaire pour appliquer le thème avec la transition fluide
+  const applyTheme = (newTheme: "light" | "dark") => {
+    const root = window.document.documentElement;
+    // On ajoute la classe qui active la transition globale
+    root.classList.add("theme-transition-active");
+    
+    root.classList.remove("light", "dark");
+    root.classList.add(newTheme);
+    root.setAttribute("data-theme", newTheme);
+    setResolvedTheme(newTheme);
+
+    // On retire la classe après la durée de la transition (400ms)
+    setTimeout(() => {
+      root.classList.remove("theme-transition-active");
+    }, 400);
+  };
+
   useEffect(() => {
     if (!mounted) return;
-
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
 
     let actualTheme: "light" | "dark";
     if (theme === "system") {
@@ -39,10 +53,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       actualTheme = theme;
     }
 
-    root.classList.add(actualTheme);
-    root.setAttribute("data-theme", actualTheme);
-    setResolvedTheme(actualTheme);
-
+    applyTheme(actualTheme);
     localStorage.setItem("theme-maxy", theme);
   }, [theme, mounted]);
 
@@ -52,11 +63,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const listener = (e: MediaQueryListEvent) => {
       if (theme === "system") {
         const newTheme = e.matches ? "dark" : "light";
-        const root = window.document.documentElement;
-        root.classList.remove("light", "dark");
-        root.classList.add(newTheme);
-        root.setAttribute("data-theme", newTheme);
-        setResolvedTheme(newTheme);
+        applyTheme(newTheme);
       }
     };
     media.addEventListener("change", listener);

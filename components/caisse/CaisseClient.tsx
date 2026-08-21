@@ -779,7 +779,7 @@ export default function CaisseClient({ role }: { role: Role }) {
   }
 
   return (
-    <div className="flex flex-col h-screen max-h-screen bg-brand-light-grey/10">
+    <div className="flex flex-col h-[100dvh] max-h-[100dvh] bg-brand-light-grey/10">
       <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-4">
           <Link href="/caisse" className="btn py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
@@ -1058,7 +1058,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                           <button
                             type="button"
                             onClick={() => ouvrirRetrait(g)}
-                            className="btn btn-secondaire flex-1 justify-center px-1 text-xs"
+                            className="btn btn-secondaire flex-1 justify-center px-1 text-xs min-h-[44px]"
                             title="Retirer de la vente"
                           >
                             Retirer
@@ -1066,7 +1066,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                           <button
                             type="button"
                             onClick={() => ouvrirVente(g)}
-                            className="btn btn-primaire flex-[2] justify-center"
+                            className="btn btn-primaire flex-[2] justify-center min-h-[44px]"
                           >
                             <IconeBillet taille={15} />
                             Vendre
@@ -1140,9 +1140,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
                            <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
-                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10"><IconeMoins taille={18} /></button>
+                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={18} /></button>
                              <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
-                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-10 w-10 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
+                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
                            </div>
                          </div>
                        </div>
@@ -1191,7 +1191,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                       ouvrirBundle();
                     }
                   }}
-                  className="btn btn-primaire mt-5 w-full justify-center py-3.5 text-base shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-primaire mt-5 w-full justify-center py-3.5 text-base shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[56px]"
                 >
                   <IconeBillet taille={18} />
                   Encaisser {cartItems.length > 0 && `(${totalSelectionnees} article${totalSelectionnees > 1 ? 's' : ''})`}
@@ -1527,7 +1527,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                      }
                      setAvertissement(null);
                   }}
-                  className="champ"
+                  className="champ min-h-[44px]"
                 />
               </div>
               <div className="flex-1">
@@ -1545,7 +1545,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                     setAvertissement(null);
                   }}
                   autoFocus
-                  className="champ"
+                  className="champ min-h-[44px] text-lg font-bold"
                 />
                 {!estSocial && Number(prixReel) > 0 && (() => {
                    const coutTotal = modalVente.unites.slice(0, quantiteVente).reduce((s, u) => s + u.prix_achat + u.cout_reparations, 0);
@@ -1716,7 +1716,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   type="button"
                   disabled={envoi || !prixReel.trim()}
                   onClick={() => void enregistrerVente(false)}
-                  className="btn btn-primaire"
+                  className="btn btn-primaire min-h-[44px]"
                 >
                   Enregistrer la vente
                 </button>
@@ -1844,7 +1844,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                     value={especesRecues}
                     onChange={(e) => setEspecesRecues(e.target.value)}
                     placeholder="Montant donné par le client"
-                    className="champ flex-1 font-bold text-lg"
+                    className="champ flex-1 font-bold text-lg min-h-[44px]"
                   />
                   {Number(especesRecues) > 0 && (
                     <div className="flex flex-col whitespace-nowrap min-w-[120px]">
@@ -1856,10 +1856,10 @@ export default function CaisseClient({ role }: { role: Role }) {
                   )}
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">1000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">2000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition">5000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues(prixTotalBundle)} className="flex-1 py-1 bg-brand-orange text-white border border-brand-orange rounded shadow-sm text-sm font-bold hover:bg-brand-orange/90 transition">{t("caisse.exact")}</button>
+                  <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">1000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">2000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">5000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues(prixTotalBundle)} className="flex-1 py-1 min-h-[44px] bg-brand-orange text-white border border-brand-orange rounded shadow-sm text-sm font-bold hover:bg-brand-orange/90 transition active-scale">{t("caisse.exact")}</button>
                 </div>
               </div>
             </div>
@@ -1975,7 +1975,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 type="button"
                 disabled={envoi || !prixTotalBundle.trim()}
                 onClick={() => void enregistrerVenteGroupee(false)}
-                className="btn btn-primaire"
+                className="btn btn-primaire min-h-[44px]"
               >
                 <IconePaquet taille={15} />
                 Enregistrer la vente groupée

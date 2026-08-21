@@ -161,6 +161,7 @@ export const fr = {
     max: "Maximum {max} photos atteint.",
     vide: "Aucune photo pour l'instant.",
     agrandir: "Voir la photo en grand",
+    nouvelleCouverture: "Nouvelle couverture définie",
   },
   visionneuse: {
     apercu: "Aperçu de la photo",

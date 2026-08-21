@@ -44,6 +44,45 @@ export default function Modale({
     return () => document.removeEventListener("keydown", surEchap);
   }, [ouverte, onFermer]);
 
+  // Logique de Drag-to-dismiss (Swipe down) pour le mobile
+  const [offsetY, setOffsetY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startY = useRef(0);
+  const currentY = useRef(0);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Si ce n'est pas un touch ou si on n'est pas sur mobile, on ignore.
+    if (e.pointerType !== "touch" && e.pointerType !== "mouse") return;
+    setIsDragging(true);
+    startY.current = e.clientY;
+    currentY.current = e.clientY;
+    // On capture le pointeur pour continuer à recevoir les events même si on sort de l'élément
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const deltaY = e.clientY - startY.current;
+    // On ne permet de glisser que vers le bas
+    if (deltaY > 0) {
+      setOffsetY(deltaY);
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    (e.target as Element).releasePointerCapture(e.pointerId);
+
+    // Si on a glissé plus de 100px vers le bas, on ferme la modale
+    if (offsetY > 100) {
+      onFermer();
+      setTimeout(() => setOffsetY(0), 300); // Reset après l'animation de fermeture
+    } else {
+      setOffsetY(0); // On rebondit
+    }
+  };
+
   if (!ouverte || !monté) return null;
 
   return createPortal(
@@ -61,23 +100,46 @@ export default function Modale({
       />
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 flex max-h-[95dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
+        className={`relative z-10 flex max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
           large ? "max-w-2xl" : "max-w-md"
-        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 bg-brand-white shadow-2xl animate-entree`}
-        style={{ animationDuration: '0.4s' }}
+        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 bg-brand-white shadow-2xl safe-bottom`}
+        style={{
+          transform: `translateY(${offsetY}px)`,
+          transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          // On garde l'animation d'entrée si pas de drag
+          animation: offsetY === 0 && !isDragging ? 'entree-douce 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
+        }}
       >
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-light-grey/40 bg-brand-paper/50 px-5 py-4 sm:px-6 sm:py-5">
-          <h2 className="text-lg font-bold tracking-tight font-outfit text-brand-smooth">{titre}</h2>
-          <button
-            type="button"
-            onClick={onFermer}
-            aria-label="Fermer"
-            className="rounded-lg p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black"
-          >
-            <IconeFermer taille={18} />
-          </button>
+        {/* En-tête + Handle pour le Drag to dismiss */}
+        <div 
+          className="flex flex-col shrink-0 border-b border-brand-light-grey/40 bg-brand-paper/50 touch-none"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          {/* Handle Mobile Uniquement */}
+          <div className="flex w-full items-center justify-center pt-3 pb-1 sm:hidden">
+            <div className="h-1.5 w-12 rounded-full bg-brand-light-grey/80 dark:bg-brand-grey/50" />
+          </div>
+          
+          <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-1 sm:px-6 sm:py-5">
+            <h2 className="text-lg font-bold tracking-tight font-outfit text-brand-smooth">{titre}</h2>
+            <button
+              type="button"
+              onClick={onFermer}
+              aria-label="Fermer"
+              className="rounded-lg p-3 sm:p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale"
+            >
+              <IconeFermer taille={18} />
+            </button>
+          </div>
         </div>
-        <div className="overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">{children}</div>
+        
+        {/* Contenu */}
+        <div className="overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+          {children}
+        </div>
       </div>
     </div>,
     document.body

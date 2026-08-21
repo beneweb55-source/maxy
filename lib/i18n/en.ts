@@ -160,6 +160,7 @@ export const en = {
     max: "Maximum {max} photos reached.",
     vide: "No photos yet.",
     agrandir: "View large photo",
+    nouvelleCouverture: "New cover set",
   },
   visionneuse: {
     apercu: "Photo preview",

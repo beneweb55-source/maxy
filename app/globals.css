@@ -60,6 +60,19 @@
     
     --ring-opacity: 0.3;
   }
+  
+  /* Transition synchronisée des thèmes (activée dynamiquement par JS) */
+  html.theme-transition-active,
+  html.theme-transition-active *,
+  html.theme-transition-active *::before,
+  html.theme-transition-active *::after {
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                fill 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
 
   /* ========================================= */
   /* SYSTEME DE VARIABLES : THÈME SOMBRE (Dark) */
@@ -413,5 +426,28 @@
       var(--sweep-mid-hover),
       transparent
     );
+  }
+
+  /* Utilitaires Tactiles & Mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* Active state feedback for touch */
+  .active-scale:active {
+    transform: scale(0.97);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Masquer les scrollbars sur les éléments scrollables horizontaux (ex: filtres) */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

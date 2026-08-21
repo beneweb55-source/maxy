@@ -154,6 +154,10 @@ export default function Inventaire({ role }: { role: Role }) {
   const { afficher } = useToast();
 
   const [q, setQ] = useState(searchParams?.get("q") ?? "");
+  
+  useEffect(() => {
+    setQ(searchParams?.get("q") ?? "");
+  }, [searchParams]);
   const [donnees, setDonnees] = useState<ReponseInventaire | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -180,7 +184,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formVitrine, setFormVitrine] = useState(false);
   const [formMettreEnVente, setFormMettreEnVente] = useState(false);
 
-  const [vueGroupee, setVueGroupee] = useState(true);
+  const vueGroupee = searchParams?.get("vue") !== "detail";
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
   const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
 
@@ -729,7 +733,7 @@ export default function Inventaire({ role }: { role: Role }) {
         <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
           <button
             type="button"
-            onClick={() => setVueGroupee((v) => !v)}
+            onClick={() => majUrl({ vue: vueGroupee ? "detail" : null })}
             className="btn btn-secondaire w-full sm:w-auto justify-center"
           >
             {vueGroupee ? "Vue détaillée" : "Vue groupée"}
