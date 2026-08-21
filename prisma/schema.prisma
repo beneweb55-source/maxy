@@ -73,6 +73,7 @@ model User {
   historiques   HistoriqueStatut[]
   mouvements    MouvementCaisse[]
   notifications Notification[]
+  push_subscriptions PushSubscription[]
   ventes        Vente[]            @relation("ventes_effectuees")
   factures      Facture[]
 
@@ -298,4 +299,19 @@ model Notification {
   user User @relation(fields: [user_id], references: [id])
 
   @@map("notifications")
+}
+
+model PushSubscription {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  user_agent String?
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("push_subscriptions")
 }

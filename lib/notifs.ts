@@ -1,5 +1,7 @@
 import type { Prisma, Role } from "@prisma/client";
 
+import { sendWebPushNotification } from "./webpush";
+
 export async function notifier(
   tx: Prisma.TransactionClient,
   userIds: readonly number[],
@@ -10,6 +12,9 @@ export async function notifier(
   await tx.notification.createMany({
     data: userIds.map((user_id) => ({ user_id, message, lien })),
   });
+
+  // Déclenche la notification web push (fire & forget) sans bloquer la transaction
+  void sendWebPushNotification([...userIds], "Nouvelle notification", message, lien);
 }
 
 export async function idsParRole(

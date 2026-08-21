@@ -12,6 +12,8 @@ async function dejaNotifieAujourdhui(lien: string, debutJour: Date): Promise<boo
   return trouvee !== null;
 }
 
+import { sendWebPushNotification } from "./webpush";
+
 async function notifierGerants(message: string, lien: string): Promise<void> {
   const gerants = await prisma.user.findMany({
     where: { role: "gerant" },
@@ -21,6 +23,9 @@ async function notifierGerants(message: string, lien: string): Promise<void> {
   await prisma.notification.createMany({
     data: gerants.map((g) => ({ user_id: g.id, message, lien })),
   });
+
+  const ids = gerants.map((g) => g.id);
+  void sendWebPushNotification(ids, "Alerte de stock", message, lien);
 }
 
 export async function verifierAlertesQuotidiennes(): Promise<void> {

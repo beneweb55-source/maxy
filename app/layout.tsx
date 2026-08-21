@@ -25,6 +25,12 @@ const scriptTheme = `
 export const metadata: Metadata = {
   title: "SolutionMaxi",
   description: "Plateforme de gestion de Stock / Revente Solution Maxi",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SolutionMaxi",
+  },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLangue } from "@/lib/i18n/contexte";
 import { IconeCloche } from "./icons";
+import PushManager from "./PushManager";
 
 interface NotificationDto {
   id: number;
@@ -88,6 +89,9 @@ export default function ClocheNotifications() {
             <button type="button" onClick={() => void toutMarquerLu()} className="lien text-xs">
               {t("notifications.toutMarquerLu")}
             </button>
+          </div>
+          <div className="px-2 pt-2">
+            <PushManager />
           </div>
           <ul className="max-h-96 divide-y divide-brand-light-grey/50 overflow-y-auto">
             {notifications.length === 0 && (
