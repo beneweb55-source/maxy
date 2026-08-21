@@ -37,10 +37,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.setAttribute("data-theme", newTheme);
     setResolvedTheme(newTheme);
 
-    // On retire la classe après la durée de la transition (400ms)
+    // On retire la classe après la durée de la transition (150ms)
     setTimeout(() => {
       root.classList.remove("theme-transition-active");
-    }, 400);
+    }, 150);
   };
 
   useEffect(() => {

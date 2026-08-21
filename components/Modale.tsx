@@ -70,17 +70,20 @@ export default function Modale({
   }, [ouverte]);
 
   // Logique de Drag-to-dismiss (Swipe down) pour le mobile
-  const [offsetY, setOffsetY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
   const currentY = useRef(0);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     // Si ce n'est pas un touch ou si on n'est pas sur mobile, on ignore.
     if (e.pointerType !== "touch" && e.pointerType !== "mouse") return;
     setIsDragging(true);
     startY.current = e.clientY;
-    currentY.current = e.clientY;
+    currentY.current = 0;
+    if (modalRef.current) {
+      modalRef.current.style.transition = "none";
+    }
     // On capture le pointeur pour continuer à recevoir les events même si on sort de l'élément
     (e.target as Element).setPointerCapture(e.pointerId);
   };
@@ -90,7 +93,11 @@ export default function Modale({
     const deltaY = e.clientY - startY.current;
     // On ne permet de glisser que vers le bas
     if (deltaY > 0) {
-      setOffsetY(deltaY);
+      currentY.current = deltaY;
+      if (modalRef.current) {
+        // translate3d force l'accélération matérielle (120 FPS constant)
+        modalRef.current.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+      }
     }
   };
 
@@ -100,11 +107,25 @@ export default function Modale({
     (e.target as Element).releasePointerCapture(e.pointerId);
 
     // Seuil plus réactif : 60px pour fermer
-    if (offsetY > 60) {
+    if (currentY.current > 60) {
+      if (modalRef.current) {
+        modalRef.current.style.transition = "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+        modalRef.current.style.transform = `translate3d(0, 100%, 0)`;
+      }
       onFermer();
-      setTimeout(() => setOffsetY(0), 300); // Reset après l'animation de fermeture
+      setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.style.transform = "";
+          currentY.current = 0;
+        }
+      }, 300);
     } else {
-      setOffsetY(0); // On rebondit
+      // On rebondit
+      if (modalRef.current) {
+        modalRef.current.style.transition = "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+        modalRef.current.style.transform = `translate3d(0, 0, 0)`;
+      }
+      currentY.current = 0;
     }
   };
 
@@ -124,15 +145,14 @@ export default function Modale({
         onClick={onFermer}
       />
       <div
+        ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         className={`relative z-10 flex max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
           large ? "max-w-2xl" : "max-w-md"
         } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 bg-brand-white shadow-2xl safe-bottom`}
         style={{
-          transform: `translateY(${offsetY}px)`,
-          transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           // On garde l'animation d'entrée si pas de drag
-          animation: offsetY === 0 && !isDragging ? 'entree-douce 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
+          animation: !isDragging && currentY.current === 0 ? 'entree-douce 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
         }}
       >
         {/* En-tête + Handle pour le Drag to dismiss */}
