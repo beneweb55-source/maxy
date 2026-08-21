@@ -185,7 +185,9 @@ export default function ChampPhotos({
       const elements = Array.from(containerRef.current.children);
       for (let i = 0; i < elements.length; i++) {
         if (i === draggedIndex) continue;
-        const rect = elements[i].getBoundingClientRect();
+        const element = elements[i];
+        if (!element) continue;
+        const rect = element.getBoundingClientRect();
         if (
           currentX >= rect.left && currentX <= rect.right &&
           currentY >= rect.top && currentY <= rect.bottom
