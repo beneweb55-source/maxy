@@ -220,11 +220,11 @@ function GraphiqueBarres({
               <g key={s.label} className="group cursor-default">
                 <rect x={x} y={y} width={largeurBarre} height={h} rx={6} fill="url(#barGradient)" className="transition-all duration-300 group-hover:opacity-80 group-hover:filter group-hover:brightness-110" />
                 {s.valeur > 0 && largeurBarre > 15 && (
-                  <text x={x + largeurBarre / 2} y={y - 5} textAnchor="middle" fontSize={10} fill="#2E2D2D" className="hidden sm:block">
+                  <text x={x + largeurBarre / 2} y={y - 5} textAnchor="middle" fontSize={10} className="hidden sm:block fill-brand-smooth">
                     {formaterDA(s.valeur)}
                   </text>
                 )}
-                <text x={x + largeurBarre / 2} y={hauteur - 5} textAnchor="middle" fontSize={9} fill="#7C7572" transform={granularite === 'jour' ? `rotate(-45 ${x + largeurBarre / 2} ${hauteur - 5})` : undefined}>
+                <text x={x + largeurBarre / 2} y={hauteur - 5} textAnchor="middle" fontSize={9} className="fill-brand-grey" transform={granularite === 'jour' ? `rotate(-45 ${x + largeurBarre / 2} ${hauteur - 5})` : undefined}>
                   {formatLabel(s.label, granularite)}
                 </text>
               </g>

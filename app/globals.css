@@ -61,25 +61,11 @@
     --ring-opacity: 0.3;
   }
   
-  /* Transition synchronisée des thèmes (activée dynamiquement par JS) */
-  html.theme-transition-active,
-  html.theme-transition-active *,
-  html.theme-transition-active *::before,
-  html.theme-transition-active *::after {
-    transition: background-color 0.15s ease-out, 
-                border-color 0.15s ease-out, 
-                color 0.15s ease-out, 
-                fill 0.15s ease-out, 
-                stroke 0.15s ease-out !important;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    html.theme-transition-active,
-    html.theme-transition-active *,
-    html.theme-transition-active *::before,
-    html.theme-transition-active *::after {
-      transition: none !important;
-    }
+  /* Transition de thème via View Transitions API */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.2s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* ========================================= */

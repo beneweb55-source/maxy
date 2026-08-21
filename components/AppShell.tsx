@@ -337,7 +337,7 @@ export default function AppShell({
           </div>
         </div>
 
-        <div className="lg:pl-64 transition-all duration-300 ease-in-out">
+        <div className="lg:pl-64">
           <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-brand-light-grey/60 bg-brand-white/80 px-4 backdrop-blur-xl lg:px-8 print:hidden">
             <button
               type="button"

@@ -26,21 +26,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Fonction utilitaire pour appliquer le thème avec la transition fluide
+  // Fonction utilitaire pour appliquer le thème avec la transition fluide (View Transitions API)
   const applyTheme = (newTheme: "light" | "dark") => {
     const root = window.document.documentElement;
-    // On ajoute la classe qui active la transition globale
-    root.classList.add("theme-transition-active");
     
-    root.classList.remove("light", "dark");
-    root.classList.add(newTheme);
-    root.setAttribute("data-theme", newTheme);
-    setResolvedTheme(newTheme);
+    const execThemeChange = () => {
+      root.classList.remove("light", "dark");
+      root.classList.add(newTheme);
+      root.setAttribute("data-theme", newTheme);
+      setResolvedTheme(newTheme);
+    };
 
-    // On retire la classe après la durée de la transition (150ms)
-    setTimeout(() => {
-      root.classList.remove("theme-transition-active");
-    }, 150);
+    // Utilisation de l'API View Transitions si disponible (pour un fondu GPU à 120 FPS)
+    if (!("startViewTransition" in document)) {
+      execThemeChange();
+      return;
+    }
+
+    // @ts-ignore : L'API n'est pas forcément typée dans ce TS config
+    document.startViewTransition(() => {
+      execThemeChange();
+    });
   };
 
   useEffect(() => {

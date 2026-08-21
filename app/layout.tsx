@@ -50,7 +50,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: scriptTheme }} />
         <link rel="apple-touch-icon" href="/brand/solutionmaxi-icone.svg" />
       </head>
-      <body className="min-h-screen bg-brand-paper text-brand-black antialiased transition-colors duration-300 ease-in-out">
+      <body className="min-h-screen bg-brand-paper text-brand-black antialiased">
         <LangueProvider langueInitiale={langue}>
           <ThemeProvider>
             {children}
