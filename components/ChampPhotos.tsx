@@ -229,6 +229,16 @@ export default function ChampPhotos({
     }
   };
 
+  const definirCouverture = (index: number) => {
+    const newPhotos = [...photos];
+    const moved = newPhotos.splice(index, 1)[0];
+    if (moved !== undefined) {
+      newPhotos.unshift(moved);
+      onChange(newPhotos);
+      afficher(t("champPhotos.nouvelleCouverture"), "succes");
+    }
+  };
+
   // ------------------------------------
 
   return (
