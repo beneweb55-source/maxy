@@ -74,6 +74,7 @@ model User {
   mouvements    MouvementCaisse[]
   notifications Notification[]
   push_subscriptions PushSubscription[]
+  fcm_tokens    FcmToken[]
   ventes        Vente[]            @relation("ventes_effectuees")
   factures      Facture[]
 
@@ -314,4 +315,17 @@ model PushSubscription {
 
   @@index([user_id])
   @@map("push_subscriptions")
+}
+
+model FcmToken {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  token      String   @unique
+  device     String?
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("fcm_tokens")
 }

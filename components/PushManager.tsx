@@ -45,6 +45,11 @@ export default function PushManager() {
   const subscribe = async () => {
     try {
       setIsError(false);
+      
+      if (!publicVapidKey) {
+        throw new Error("Clé VAPID publique manquante. Redémarrez votre serveur (npm run dev) pour charger le fichier .env.");
+      }
+
       const permissionResult = await Notification.requestPermission();
       setPermission(permissionResult);
       if (permissionResult !== "granted") {

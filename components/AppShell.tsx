@@ -7,6 +7,7 @@ import type { Role } from "@prisma/client";
 import ClocheNotifications from "./ClocheNotifications";
 import SelecteurLangue from "./SelecteurLangue";
 import ThemeToggle from "./ThemeToggle";
+import dynamic from "next/dynamic";
 import { FournisseurToasts } from "./toast";
 import ScannerGlobal from "./ScannerGlobal";
 import { useT } from "@/lib/i18n/contexte";
@@ -25,6 +26,8 @@ import {
   IconeVitrine,
   type ProprietesIcone,
 } from "./icons";
+
+const CapacitorPushManager = dynamic(() => import("./CapacitorPushManager"), { ssr: false });
 
 interface UtilisateurShell {
   id: number;
@@ -192,6 +195,11 @@ export default function AppShell({
     } catch (e) {
       console.error("Erreur désabonnement push:", e);
     }
+    try {
+      await fetch("/api/notifications/fcm/unsubscribe", { method: "POST" });
+    } catch (e) {
+      console.error("Erreur désabonnement fcm:", e);
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/connexion");
     router.refresh();
@@ -352,6 +360,7 @@ export default function AppShell({
           <main className="min-w-0 p-4 lg:p-8 print:p-0">{children}</main>
         </div>
       </div>
+      <CapacitorPushManager />
     </FournisseurToasts>
   );
 }

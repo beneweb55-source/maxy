@@ -1,6 +1,7 @@
 import type { Prisma, Role } from "@prisma/client";
 
 import { sendWebPushNotification } from "./webpush";
+import { sendFcmNotification } from "./fcm";
 
 export async function notifier(
   tx: Prisma.TransactionClient,
@@ -15,6 +16,8 @@ export async function notifier(
 
   // Déclenche la notification web push (fire & forget) sans bloquer la transaction
   void sendWebPushNotification([...userIds], "Nouvelle notification", message, lien);
+  // Déclenche la notification FCM pour Capacitor
+  void sendFcmNotification([...userIds], "Nouvelle notification", message, lien);
 }
 
 export async function idsParRole(
