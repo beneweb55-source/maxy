@@ -88,6 +88,8 @@ export default function AppShell({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const startX = useRef(0);
+  const startY = useRef(0);
+  const pointerId = useRef<number | null>(null);
   
   const SIDEBAR_WIDTH = 256;
 
@@ -107,14 +109,28 @@ export default function AppShell({
 
   const onDragStart = (e: React.PointerEvent) => {
     if (e.pointerType !== "touch" && e.pointerType !== "mouse") return;
-    setIsDragging(true);
     startX.current = e.clientX;
-    (e.target as Element).setPointerCapture(e.pointerId);
+    startY.current = e.clientY;
+    pointerId.current = e.pointerId;
   };
 
   const onDragMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (pointerId.current !== e.pointerId) return;
     const deltaX = e.clientX - startX.current;
+    const deltaY = e.clientY - startY.current;
+
+    if (!isDragging) {
+      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        setIsDragging(true);
+        (e.target as Element).setPointerCapture(e.pointerId);
+      } else if (Math.abs(deltaY) > 10) {
+        pointerId.current = null; // C'est un scroll vertical
+        return;
+      } else {
+        return; // Mouvement pas encore suffisant
+      }
+    }
+
     if (menuOuvert) {
       setDragOffset(Math.min(0, Math.max(-SIDEBAR_WIDTH, deltaX)));
     } else {
@@ -123,6 +139,7 @@ export default function AppShell({
   };
 
   const onDragEnd = (e: React.PointerEvent) => {
+    pointerId.current = null;
     if (!isDragging) return;
     setIsDragging(false);
     (e.target as Element).releasePointerCapture(e.pointerId);
@@ -135,6 +152,7 @@ export default function AppShell({
   };
 
   const onDragCancel = (e: React.PointerEvent) => {
+    pointerId.current = null;
     if (!isDragging) return;
     setIsDragging(false);
     (e.target as Element).releasePointerCapture(e.pointerId);
@@ -245,7 +263,7 @@ export default function AppShell({
 
           {/* Sidebar */}
           <div
-            className="absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl touch-none"
+            className="absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl touch-pan-y"
             style={{
               transform: isDragging
                 ? `translateX(${dragOffset}px)`

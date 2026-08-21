@@ -1188,14 +1188,14 @@ export default function Inventaire({ role }: { role: Role }) {
                         onClick={() => ouvrirEdition(g.unites, g.reference)}
                         className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
                       >
-                        <IconeCrayon taille={14} /> {t("inventaire.editer")}
+                        <IconeCrayon taille={14} /> <span className="hidden sm:inline">{t("inventaire.editer")}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => ouvrirSuppressionModele(g)}
                         className="flex items-center gap-1.5 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
                       >
-                        <IconeCorbeille taille={14} /> {t("inventaire.supprimer")}
+                        <IconeCorbeille taille={14} /> <span className="hidden sm:inline">{t("inventaire.supprimer")}</span>
                       </button>
                     </div>
                   </div>
@@ -1384,7 +1384,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       }}
                       className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black"
                     >
-                      <IconeCrayon taille={14} /> {t("inventaire.editer")}
+                      <IconeCrayon taille={14} /> <span className="hidden sm:inline">{t("inventaire.editer")}</span>
                     </button>
                     <button
                       type="button"
@@ -1394,7 +1394,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       }}
                       className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
                     >
-                      <IconeCorbeille taille={14} /> {t("inventaire.supprimer")}
+                      <IconeCorbeille taille={14} /> <span className="hidden sm:inline">{t("inventaire.supprimer")}</span>
                     </button>
                   </div>
                 )}

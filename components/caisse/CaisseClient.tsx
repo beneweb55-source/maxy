@@ -244,6 +244,7 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   // Vente groupée (bundle) toujours active (Panier POS).
   const [modeBundle, setModeBundle] = useState(true);
+  const [panierMobileOuvert, setPanierMobileOuvert] = useState(false);
   const [selection, setSelection] = useState<Map<string, Set<number>>>(new Map());
   const [paniersEnAttente, setPaniersEnAttente] = useState<{ id: number; selection: Map<string, Set<number>>; remise: string; date: Date }[]>([]);
   const [modalBundle, setModalBundle] = useState(false);
@@ -1086,7 +1087,9 @@ export default function CaisseClient({ role }: { role: Role }) {
           </div>
 
           {modeBundle && (
-            <div className="w-full lg:w-[450px] shrink-0 flex flex-col gap-3 h-full overflow-y-auto pb-24 pr-2">
+            <>
+              {/* Desktop Panier (hidden on mobile) */}
+              <div className="hidden lg:flex w-[450px] shrink-0 flex-col gap-3 h-full overflow-y-auto pb-24 pr-2">
               {paniersEnAttente.length > 0 && (
                 <div className="carte p-3 bg-brand-orange/10 border-brand-orange/30">
                   <h4 className="font-bold text-sm text-brand-orange mb-2">{t("caisse.paniersEnAttente", { n: paniersEnAttente.length })}</h4>
@@ -1202,9 +1205,145 @@ export default function CaisseClient({ role }: { role: Role }) {
                 </button>
               </div>
             </div>
+
+              {/* Mobile Bottom Bar for Panier summary */}
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-light-grey shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 pb-[max(env(safe-area-inset-bottom),12px)] px-4 pt-3 rounded-t-2xl">
+                 <div className="flex items-center justify-between mb-3">
+                   <button onClick={() => setPanierMobileOuvert(true)} className="flex items-center gap-3">
+                     <div className="relative">
+                       <IconePaquet taille={28} className="text-brand-orange" />
+                       <span className="absolute -top-2 -right-2 bg-danger text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">{cartItems.length}</span>
+                     </div>
+                     <span className="font-bold text-sm text-brand-black underline decoration-brand-light-grey underline-offset-4">Voir le panier</span>
+                   </button>
+                   <div className="text-right">
+                     <span className="block text-[10px] font-semibold text-brand-grey uppercase">{t("caisse.totalNet")}</span>
+                     <span className="font-black text-xl text-brand-orange leading-none">{formaterDA(totalApresRemise)}</span>
+                   </div>
+                 </div>
+                 <button
+                   type="button"
+                   disabled={cartItems.length === 0}
+                   onClick={() => {
+                     if (panierMobileOuvert) setPanierMobileOuvert(false);
+                     if (cartItems.length === 1 && cartItems[0]) {
+                       setModalVente(cartItems[0].groupe);
+                       setQuantiteVente(cartItems[0].qty);
+                     } else {
+                       ouvrirBundle();
+                     }
+                   }}
+                   className="btn btn-primaire w-full justify-center py-3.5 text-base shadow-md disabled:opacity-50 min-h-[56px] rounded-xl"
+                 >
+                   <IconeBillet taille={20} /> Encaisser {cartItems.length > 0 && `(${totalSelectionnees})`}
+                 </button>
+              </div>
+            </>
           )}
         </div>
       )}
+      <Modale
+        titre="Panier de Vente"
+        ouverte={panierMobileOuvert}
+        onFermer={() => setPanierMobileOuvert(false)}
+      >
+        <div className="flex flex-col gap-3 h-[75vh] overflow-y-auto pb-4">
+          {paniersEnAttente.length > 0 && (
+            <div className="carte p-3 bg-brand-orange/10 border-brand-orange/30 shrink-0">
+              <h4 className="font-bold text-sm text-brand-orange mb-2">{t("caisse.paniersEnAttente", { n: paniersEnAttente.length })}</h4>
+              <div className="space-y-2">
+                {paniersEnAttente.map((p) => {
+                  const nbArticles = Array.from(p.selection.values()).reduce((a,b)=>a+b.size,0);
+                  const heure = p.date.toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <div key={p.id} className="flex items-center justify-between bg-brand-white p-2 rounded border border-brand-orange/20 text-sm">
+                      <div>
+                        <span className="font-semibold text-brand-black">{t("caisse.panierDe", { heure })}</span>
+                        <div className="text-xs text-brand-warm-grey">{nbArticles} article(s)</div>
+                      </div>
+                      <button onClick={() => restaurerPanier(p.id)} className="btn btn-primaire py-1 px-3 text-xs">
+                        Reprendre
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between border-b border-brand-light-grey pb-3 mb-3 shrink-0">
+            <h3 className="font-bold text-lg flex items-center gap-2 text-brand-black">
+              <IconePaquet taille={20} className="text-brand-orange" />
+              {t("factures.ticketCaisse")}
+            </h3>
+            <div className="flex items-center gap-3">
+              <button onClick={mettreEnAttente} disabled={cartItems.length === 0} title="Mettre en attente" className="flex items-center gap-1.5 text-sm font-semibold text-brand-orange hover:text-brand-orange/70 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                <IconePause taille={14} /> {t("caisse.attente")}
+              </button>
+              <button onClick={quitterModeBundle} className="flex items-center gap-1.5 text-sm font-semibold text-brand-warm-grey hover:text-brand-black transition">
+                <IconeCorbeille taille={14} /> {t("caisse.vider")}
+              </button>
+            </div>
+          </div>
+          
+          {cartItems.length === 0 ? (
+             <div className="flex flex-col items-center justify-center gap-2 py-8 border-dashed border-2 rounded-lg border-brand-light-grey/50 shrink-0">
+               <IconeRecherche taille={32} className="text-brand-light-grey" />
+               <p className="text-sm text-brand-grey text-center">
+                 {t("caisse.panierVideDesc")}
+               </p>
+             </div>
+          ) : (
+             <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 min-h-[150px]">
+               {cartItems.map(item => (
+                 <div key={item.groupe.cle} className="flex justify-between items-start gap-3 border-b border-brand-light-grey/30 pb-3 last:border-0">
+                   <div className="flex flex-col min-w-0 flex-1">
+                     <span className="font-semibold text-sm line-clamp-2 leading-snug" title={item.groupe.reference}>{item.groupe.reference}</span>
+                     <span className="text-xs text-brand-warm-grey mt-0.5">{item.qty} x {formaterDA(item.prix)}</span>
+                   </div>
+                   <div className="text-right flex flex-col items-end shrink-0">
+                     <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
+                     <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
+                       <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={18} /></button>
+                       <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
+                       <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+             </div>
+          )}
+          
+          <div className="mt-4 pt-4 border-t-2 border-dashed border-brand-light-grey space-y-3 shrink-0">
+            <div className="flex justify-between items-center text-sm text-brand-warm-grey">
+              <span>{t("caisse.sousTotal")}</span>
+              <span className="font-medium text-brand-black">{formaterDA(cartTotal)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-brand-black font-semibold">{t("caisse.remise")}</span>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={remiseBundle} 
+                  onChange={(e) => setRemiseBundle(e.target.value)} 
+                  placeholder="0" 
+                  className="champ w-28 py-1.5 pl-2 pr-7 text-right font-bold text-brand-black focus:ring-brand-orange focus:border-brand-orange" 
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-grey pointer-events-none">DA</span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-1 mt-1">
+              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.05).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-5%</button>
+              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.10).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-10%</button>
+              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.15).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-15%</button>
+              <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 bg-brand-light-grey/30 rounded flex items-center justify-center hover:bg-danger/20 text-brand-black" title="Retirer la remise"><IconeFermer taille={12} /></button>
+            </div>
+            <div className="flex justify-between items-center pt-2 mt-2 border-t border-brand-light-grey/30">
+              <span className="font-black text-lg text-brand-black uppercase">{t("caisse.totalNet")}</span>
+              <span className="font-black text-2xl tracking-tight text-brand-orange">{formaterDA(totalApresRemise)}</span>
+            </div>
+          </div>
+        </div>
+      </Modale>
 
       {onglet === "historique" && (
         <div className="space-y-3">
