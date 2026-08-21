@@ -274,8 +274,8 @@ export default function AppShell({
   return (
     <FournisseurToasts>
       <ScannerGlobal />
-      <div className="min-h-screen print:bg-white font-inter text-brand-black transition-colors duration-300 ease-in-out">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden transition-colors duration-300 ease-in-out">
+      <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden">
           {contenuSidebar}
         </aside>
 

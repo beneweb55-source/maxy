@@ -45,7 +45,7 @@ export default function FormulaireConnexion() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-brand-paper p-4 transition-colors">
+    <main className="flex min-h-screen items-center justify-center bg-brand-paper p-4">
       <div className="w-full max-w-sm">
         <div className="mb-7 flex flex-col items-center gap-4">
           <img

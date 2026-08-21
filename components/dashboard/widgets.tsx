@@ -297,10 +297,10 @@ function DonutStatuts({
             <title>{`${INFOS_STATUT[s.statut].libelle} : ${s.nombre}`}</title>
           </path>
         ))}
-        <text x={100} y={95} textAnchor="middle" fontSize={26} fontWeight={700} className="fill-brand-black dark:fill-brand-white">
+        <text x={100} y={95} textAnchor="middle" fontSize={26} fontWeight={700} className="fill-brand-black">
           {total}
         </text>
-        <text x={100} y={115} textAnchor="middle" fontSize={11} className="fill-brand-grey dark:fill-brand-warm-grey">
+        <text x={100} y={115} textAnchor="middle" fontSize={11} className="fill-brand-grey">
           produits
         </text>
       </svg>

@@ -119,7 +119,7 @@ export default function Modale({
     >
       {/* Fond sombre semi-transparent pour isoler la modale du contenu. */}
       <div
-        className="absolute inset-0 bg-brand-smooth/40 dark:bg-black/70 backdrop-blur-sm animate-entree transition-colors"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-entree"
         style={{ animationDuration: '0.3s' }}
         onClick={onFermer}
       />
@@ -145,7 +145,7 @@ export default function Modale({
         >
           {/* Handle Mobile Uniquement */}
           <div className="flex w-full items-center justify-center pt-3 pb-1 sm:hidden">
-            <div className="h-1.5 w-12 rounded-full bg-brand-light-grey/80 dark:bg-brand-grey/50" />
+            <div className="h-1.5 w-12 rounded-full bg-brand-grey/30" />
           </div>
           
           <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-1 sm:px-6 sm:py-5">
