@@ -1421,7 +1421,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   <tr
                     key={p.id}
                     onClick={() => router.push(`/produits/${p.id}`)}
-                    className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer"
+                    className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer transition-colors hover:bg-brand-light-grey/10"
                   >
                     <td className="px-3 py-2 font-mono text-xs text-brand-warm-grey">
                       {p.code_interne}

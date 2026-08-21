@@ -25,10 +25,22 @@
   /* SYSTEME DE VARIABLES : THÈME CLAIR (Light) */
   /* ========================================= */
   :root, :root[data-theme="light"], .force-light-mode {
-    --color-sidebar-bg: #1E293B; /* Sidebar sombre en light mode */
+    --color-sidebar-bg: #0F172A; /* Sidebar sombre en light mode (Slate 900) */
+    
+    /* Variables structurelles de base */
+    --color-brand-paper: #F8FAFC; /* Slate 50 : Fond global */
+    --color-brand-white: #FFFFFF; /* Fond cartes pur */
+    --color-brand-black: #0F172A; /* Slate 900 : Texte fort */
+    --color-brand-smooth: #1E293B; /* Slate 800 : Titres */
+    --color-brand-light-grey: #E2E8F0; /* Slate 200 : Bordures */
+    --color-brand-grey: #94A3B8; /* Slate 400 : Texte secondaire (clair) */
+    --color-brand-warm-grey: #64748B; /* Slate 500 : Labels */
+    --color-brand-glow: #FFEDD5; /* Orange 100 */
+
     --shadow-carte: 0 4px 6px -1px rgba(15, 23, 42, 0.02), 0 2px 4px -2px rgba(15, 23, 42, 0.02), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-    --shadow-carte-hover: 0 10px 15px -3px rgba(15, 23, 42, 0.03), 0 4px 6px -4px rgba(15, 23, 42, 0.03), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-    --bg-carte: rgba(255, 255, 255, 0.75);
+    --shadow-carte-hover: 0 10px 15px -3px rgba(15, 23, 42, 0.04), 0 4px 6px -4px rgba(15, 23, 42, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+    --bg-carte: rgba(255, 255, 255, 0.8);
+
     --bg-alerte-erreur: rgba(239, 68, 68, 0.1);
     --border-alerte-erreur: rgba(239, 68, 68, 0.2);
     --text-alerte-erreur: #DC2626;
@@ -41,25 +53,30 @@
     --bg-encart-marque: rgba(249, 115, 22, 0.1);
     --border-encart-marque: rgba(249, 115, 22, 0.2);
     --text-encart-marque: #EA580C;
+    
+    --ring-opacity: 0.3;
   }
 
   /* ========================================= */
   /* SYSTEME DE VARIABLES : THÈME SOMBRE (Dark) */
   /* ========================================= */
   :root[data-theme="dark"] {
-    --color-brand-paper: #09090b; /* Zinc 950 */
-    --color-brand-white: #18181b; /* Zinc 900 */
-    --color-brand-black: #fafafa; /* Zinc 50 */
-    --color-brand-smooth: #e4e4e7; /* Zinc 200 */
-    --color-brand-light-grey: #27272a; /* Zinc 800 */
-    --color-brand-grey: #d4d4d8; /* Zinc 300 : Texte secondaire (Très lisible) */
-    --color-brand-warm-grey: #a1a1aa; /* Zinc 400 : Labels (Lisible) */
+    --color-sidebar-bg: #09090b; /* Zinc 950 */
+    
+    /* Variables structurelles de base */
+    --color-brand-paper: #09090b; /* Zinc 950 : Fond global abyssal */
+    --color-brand-white: #18181b; /* Zinc 900 : Fond cartes/inputs */
+    --color-brand-black: #fafafa; /* Zinc 50 : Texte fort */
+    --color-brand-smooth: #f4f4f5; /* Zinc 100 : Titres */
+    --color-brand-light-grey: rgba(255, 255, 255, 0.08); /* Bordures subtiles */
+    --color-brand-grey: #a1a1aa; /* Zinc 400 : Texte secondaire */
+    --color-brand-warm-grey: #d4d4d8; /* Zinc 300 : Labels très lisibles */
     --color-brand-glow: #09090b;
-    --color-sidebar-bg: #09090b; /* Bordure transparente ou fine pour séparer */
     
     --shadow-carte: 0 4px 6px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    --shadow-carte-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    --bg-carte: rgba(24, 24, 27, 0.75); /* Zinc 900 avec opacité */
+    --shadow-carte-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --bg-carte: rgba(24, 24, 27, 0.6); /* Zinc 900 (plus transparent) */
+    --bg-carte-hover: rgba(24, 24, 27, 0.8); /* Zinc 900 (plus opaque au survol) */
 
     --bg-alerte-erreur: rgba(239, 68, 68, 0.15);
     --border-alerte-erreur: rgba(239, 68, 68, 0.3);
@@ -73,6 +90,8 @@
     --bg-encart-marque: rgba(249, 115, 22, 0.15);
     --border-encart-marque: rgba(249, 115, 22, 0.3);
     --text-encart-marque: #FDBA74;
+    
+    --ring-opacity: 0.2;
   }
 
   body {
@@ -132,7 +151,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .carte:hover {
-    background-color: var(--bg-carte);
+    background-color: var(--bg-carte-hover, var(--bg-carte));
     box-shadow: var(--shadow-carte-hover);
     transform: translateY(-2px);
   }
@@ -214,17 +233,17 @@
     width: 100%;
     border-radius: 0.75rem;
     border: 1px solid var(--color-brand-light-grey);
-    background-color: var(--color-brand-white);
+    background-color: var(--color-brand-paper);
     padding: 0.625rem 0.875rem;
     font-size: 15px;
     outline: none;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.02) inset;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
     color: var(--color-brand-black);
   }
   .champ:focus {
     border-color: var(--color-brand-orange);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, var(--ring-opacity));
     background-color: var(--color-brand-white);
   }
   .champ::placeholder {

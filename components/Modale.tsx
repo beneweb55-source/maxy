@@ -55,7 +55,7 @@ export default function Modale({
     >
       {/* Fond sombre semi-transparent pour isoler la modale du contenu. */}
       <div
-        className="absolute inset-0 bg-brand-smooth/40 backdrop-blur-sm animate-entree"
+        className="absolute inset-0 bg-brand-smooth/40 dark:bg-black/70 backdrop-blur-sm animate-entree transition-colors"
         style={{ animationDuration: '0.3s' }}
         onClick={onFermer}
       />
@@ -63,7 +63,7 @@ export default function Modale({
         onClick={(e) => e.stopPropagation()}
         className={`relative z-10 flex max-h-[95dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
           large ? "max-w-2xl" : "max-w-md"
-        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 bg-brand-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] animate-entree`}
+        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 bg-brand-white shadow-2xl animate-entree`}
         style={{ animationDuration: '0.4s' }}
       >
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-light-grey/40 bg-brand-paper/50 px-5 py-4 sm:px-6 sm:py-5">

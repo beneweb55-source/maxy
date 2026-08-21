@@ -45,13 +45,18 @@ export default function FormulaireConnexion() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-brand-smooth p-4">
+    <main className="flex min-h-screen items-center justify-center bg-brand-paper p-4 transition-colors">
       <div className="w-full max-w-sm">
         <div className="mb-7 flex flex-col items-center gap-4">
           <img
             src="/brand/solutionmaxi-logo-fonce.svg"
             alt="SolutionMaxi"
-            className="h-9 w-auto"
+            className="h-9 w-auto dark:hidden"
+          />
+          <img
+            src="/brand/solutionmaxi-logo-clair.svg"
+            alt="SolutionMaxi"
+            className="h-9 w-auto hidden dark:block"
           />
           <p className="text-sm text-brand-grey">{t("connexion.sousTitre")}</p>
         </div>

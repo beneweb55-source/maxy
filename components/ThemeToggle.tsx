@@ -21,8 +21,8 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(estSombre ? "light" : "dark")}
-      className={`relative inline-flex h-9 w-16 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-opacity-75 ${
-        estSombre ? "bg-[#1E293B]" : "bg-brand-light-grey"
+      className={`relative inline-flex h-9 w-16 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-opacity-[var(--ring-opacity)] ${
+        estSombre ? "bg-brand-smooth" : "bg-brand-light-grey"
       }`}
       aria-label={estSombre ? "Activer le mode clair" : "Activer le mode sombre"}
       title="Basculer le thème"
@@ -34,13 +34,13 @@ export default function ThemeToggle() {
       >
         <IconeSoleil
           taille={15}
-          className={`absolute text-[#F97316] transition-all duration-300 ease-in-out ${
+          className={`absolute text-brand-orange transition-all duration-300 ease-in-out ${
             estSombre ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
           }`}
         />
         <IconeLune
           taille={14}
-          className={`absolute text-[#3B82F6] transition-all duration-300 ease-in-out ${
+          className={`absolute text-brand-crystal transition-all duration-300 ease-in-out ${
             estSombre ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
           }`}
         />
