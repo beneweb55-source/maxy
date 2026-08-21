@@ -217,7 +217,7 @@ export default function ChampPhotos({
         }
         // Si l'index 0 a changé, on pourrait notifier "Nouvelle couverture"
         if (hoveredIndex === 0 || draggedIndex === 0) {
-          afficher(t("champPhotos.nouvelleCouverture", "Nouvelle couverture définie"), "succes");
+          afficher(t("champPhotos.nouvelleCouverture"), "succes");
         }
         
         onChange(newPhotos);
