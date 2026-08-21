@@ -209,17 +209,19 @@ export default function CaisseDashboard({ role }: { role: Role }) {
     <div className="space-y-6 animate-entree">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("caisseDashboard.titreCaisse")}</h1>
-        <div className="flex gap-2">
-          <Link href="/pos" className="btn btn-primaire bg-brand-orange border-brand-orange hover:bg-brand-orange/90 text-white font-black shadow-md flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto mt-2 lg:mt-0">
+          <Link href="/pos" className="btn btn-primaire bg-brand-orange border-brand-orange hover:bg-brand-orange/90 text-white font-black shadow-md flex items-center justify-center gap-2 w-full sm:w-auto">
             <IconeStore taille={20} /> Ouvrir la Caisse Enregistreuse
           </Link>
-          <Link href="/caisse/rapport" className="btn btn-secondaire">
-            Créer un rapport
-          </Link>
-          <a href="/api/caisse/export" className="btn btn-secondaire">
-            <IconeTelechargement taille={15} />
-            Export CSV
-          </a>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Link href="/caisse/rapport" className="btn btn-secondaire flex-1 flex items-center justify-center">
+              Créer un rapport
+            </Link>
+            <a href="/api/caisse/export" className="btn btn-secondaire flex-1 flex items-center justify-center">
+              <IconeTelechargement taille={15} />
+              Export CSV
+            </a>
+          </div>
         </div>
       </div>
 
