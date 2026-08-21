@@ -35,27 +35,39 @@ export default function Modale({
     };
   }, [ouverte]);
 
+  const onFermerRef = useRef(onFermer);
   useEffect(() => {
-    if (!ouverte) return;
-    function surEchap(e: KeyboardEvent) {
-      if (e.key === "Escape") onFermer();
-    }
-    document.addEventListener("keydown", surEchap);
-    
-    // Interception du bouton Retour (mobile & desktop)
-    window.history.pushState({ modalOpen: true }, "");
-    const handlePopState = () => onFermer();
-    window.addEventListener("popstate", handlePopState);
+    onFermerRef.current = onFermer;
+  }, [onFermer]);
 
-    return () => {
-      document.removeEventListener("keydown", surEchap);
-      window.removeEventListener("popstate", handlePopState);
-      // Si la modale est fermée via un bouton (l'état history est resté), on recule manuellement
+  const etaitOuverte = useRef(false);
+
+  useEffect(() => {
+    if (ouverte) {
+      function surEchap(e: KeyboardEvent) {
+        if (e.key === "Escape") onFermerRef.current();
+      }
+      document.addEventListener("keydown", surEchap);
+      
+      const handlePopState = () => onFermerRef.current();
+      window.addEventListener("popstate", handlePopState);
+
+      if (!etaitOuverte.current && !window.history.state?.modalOpen) {
+        window.history.pushState({ modalOpen: true }, "");
+      }
+      etaitOuverte.current = true;
+
+      return () => {
+        document.removeEventListener("keydown", surEchap);
+        window.removeEventListener("popstate", handlePopState);
+      };
+    } else if (etaitOuverte.current) {
+      etaitOuverte.current = false;
       if (window.history.state?.modalOpen) {
         window.history.back();
       }
-    };
-  }, [ouverte, onFermer]);
+    }
+  }, [ouverte]);
 
   // Logique de Drag-to-dismiss (Swipe down) pour le mobile
   const [offsetY, setOffsetY] = useState(0);
