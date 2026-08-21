@@ -567,6 +567,7 @@ export default function CaisseClient({ role }: { role: Role }) {
   }
 
   async function enregistrerVenteGroupee(confirmer: boolean) {
+    if (envoi) return;
     if (modePaiementBundle === "credit" && !clientNomBundle.trim()) {
       afficher("Veuillez saisir le nom du client pour une vente à crédit.", "erreur");
       return;
@@ -635,6 +636,7 @@ export default function CaisseClient({ role }: { role: Role }) {
 
 
   async function enregistrerVente(confirmer: boolean) {
+    if (envoi) return;
     if (!modalVente) return;
     setEnvoi(true);
     try {
@@ -717,6 +719,7 @@ export default function CaisseClient({ role }: { role: Role }) {
   }, []);
 
   async function enregistrerRetrait() {
+    if (envoi) return;
     if (!modalRetrait) return;
     setEnvoi(true);
     try {
@@ -754,6 +757,7 @@ export default function CaisseClient({ role }: { role: Role }) {
   }, [initTermine, chargerCartes, chargerHistorique, chargerStatsJour]);
 
   async function annulerVente() {
+    if (envoi) return;
     if (!modalAnnulation) return;
     setEnvoi(true);
     try {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
@@ -85,6 +85,61 @@ export default function AppShell({
   const router = useRouter();
   const t = useT();
   const [menuOuvert, setMenuOuvert] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const startX = useRef(0);
+  
+  const SIDEBAR_WIDTH = 256;
+
+  // Interception de l'historique pour fermer le menu avec le bouton Retour
+  useEffect(() => {
+    if (!menuOuvert) return;
+    window.history.pushState({ menuOpen: true }, "");
+    const handlePopState = () => setMenuOuvert(false);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (window.history.state?.menuOpen) {
+        window.history.back();
+      }
+    };
+  }, [menuOuvert]);
+
+  const onDragStart = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch" && e.pointerType !== "mouse") return;
+    setIsDragging(true);
+    startX.current = e.clientX;
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+
+  const onDragMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - startX.current;
+    if (menuOuvert) {
+      setDragOffset(Math.min(0, Math.max(-SIDEBAR_WIDTH, deltaX)));
+    } else {
+      setDragOffset(Math.min(0, Math.max(-SIDEBAR_WIDTH, -SIDEBAR_WIDTH + deltaX)));
+    }
+  };
+
+  const onDragEnd = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    if (menuOuvert) {
+      if (dragOffset < -SIDEBAR_WIDTH / 4) setMenuOuvert(false);
+    } else {
+      if (dragOffset > -SIDEBAR_WIDTH * 0.75) setMenuOuvert(true);
+    }
+    setDragOffset(0);
+  };
+
+  const onDragCancel = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    setDragOffset(0);
+  };
 
   const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(user.role));
 
@@ -165,22 +220,56 @@ export default function AppShell({
           {contenuSidebar}
         </aside>
 
-        {menuOuvert && (
-          <div className="fixed inset-0 z-50 lg:hidden print:hidden">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setMenuOuvert(false)} />
-            <div className="absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl transition-colors duration-300 ease-in-out">
-              <button
-                type="button"
-                onClick={() => setMenuOuvert(false)}
-                aria-label={t("entete.fermerMenu")}
-                className="absolute right-3 top-5 rounded-lg p-2 text-brand-grey hover:text-white"
-              >
-                <IconeFermer taille={18} />
-              </button>
-              {contenuSidebar}
-            </div>
-          </div>
+        {/* Edge Receiver pour ouvrir le menu par Swipe depuis le bord gauche */}
+        {!menuOuvert && !isDragging && (
+          <div
+            className="fixed inset-y-0 left-0 z-40 w-5 lg:hidden touch-pan-y"
+            onPointerDown={onDragStart}
+          />
         )}
+
+        {/* Overlay & Sidebar Mobile */}
+        <div
+          className={`fixed inset-0 z-50 lg:hidden print:hidden ${
+            menuOuvert || isDragging ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+        >
+          {/* Overlay */}
+          <div
+            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+              menuOuvert && !isDragging ? "opacity-100" : isDragging ? "opacity-50" : "opacity-0"
+            }`}
+            style={{ opacity: isDragging ? Math.min((SIDEBAR_WIDTH + dragOffset) / SIDEBAR_WIDTH, 1) : undefined }}
+            onClick={() => setMenuOuvert(false)}
+          />
+
+          {/* Sidebar */}
+          <div
+            className="absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl touch-none"
+            style={{
+              transform: isDragging
+                ? `translateX(${dragOffset}px)`
+                : menuOuvert
+                ? "translateX(0)"
+                : "translateX(-100%)",
+              transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+            onPointerDown={menuOuvert ? onDragStart : undefined}
+            onPointerMove={onDragMove}
+            onPointerUp={onDragEnd}
+            onPointerCancel={onDragCancel}
+          >
+            <button
+              type="button"
+              onClick={() => setMenuOuvert(false)}
+              aria-label={t("entete.fermerMenu")}
+              className="absolute right-3 top-5 rounded-lg p-2 text-brand-grey hover:text-white z-50"
+            >
+              <IconeFermer taille={18} />
+            </button>
+            {contenuSidebar}
+          </div>
+        </div>
 
         <div className="lg:pl-64 transition-all duration-300 ease-in-out">
           <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-brand-light-grey/60 bg-brand-white/80 px-4 backdrop-blur-xl lg:px-8 print:hidden">

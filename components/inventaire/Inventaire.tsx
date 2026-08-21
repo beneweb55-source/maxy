@@ -214,7 +214,7 @@ export default function Inventaire({ role }: { role: Role }) {
         else params.set(cle, valeur);
       }
       if (!("page" in modifs)) params.delete("page");
-      router.replace(`/inventaire?${params.toString()}`);
+      router.replace(`/inventaire?${params.toString()}`, { scroll: false });
     },
     [router, searchParams]
   );
@@ -306,6 +306,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
   // Action rapide (hors modale) : met/retire des produits de la vitrine.
   async function basculerVitrineIds(ids: number[], enVitrine: boolean, libelle: string) {
+    if (envoi) return;
     if (ids.length === 0) return;
     setEnvoi(true);
     try {
@@ -329,6 +330,7 @@ export default function Inventaire({ role }: { role: Role }) {
   }
 
   async function basculerVitrine() {
+    if (envoi) return;
     if (!modalEdition) return;
     const cible = !modalEdition.unites[0]!.en_vitrine;
     setEnvoi(true);
@@ -361,6 +363,7 @@ export default function Inventaire({ role }: { role: Role }) {
   }
 
   async function changerStatut(cible: StatutProduit) {
+    if (envoi) return;
     if (!modalEdition) return;
     if (STATUTS_NOTE_OBLIGATOIRE.includes(cible) && cibleStatut !== cible) {
       // Demande une note contextuelle avant d'appliquer.
@@ -398,6 +401,7 @@ export default function Inventaire({ role }: { role: Role }) {
   }
 
   async function basculerAJeter(valeur: boolean) {
+    if (envoi) return;
     if (!modalEdition) return;
     setEnvoi(true);
     try {
@@ -437,6 +441,7 @@ export default function Inventaire({ role }: { role: Role }) {
   }
 
   async function ajouterProduit() {
+    if (envoi) return;
     setEnvoi(true);
     try {
       const res = await fetch("/api/produits", {
@@ -471,6 +476,7 @@ export default function Inventaire({ role }: { role: Role }) {
   }
 
   async function modifierProduit() {
+    if (envoi) return;
     if (!modalEdition) return;
     setEnvoi(true);
     try {
@@ -539,6 +545,7 @@ export default function Inventaire({ role }: { role: Role }) {
     // Le bouton n'apparaît que s'il reste des unités non vendues à supprimer
     // (`unites` = non-vendu de la page). En mode « modèle », la suppression
     // s'étend serveur-side à toutes les pages de la même référence.
+    if (envoi) return;
     if (!modalSuppression || modalSuppression.unites.length === 0) return;
     setEnvoi(true);
     try {

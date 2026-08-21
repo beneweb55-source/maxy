@@ -229,6 +229,19 @@ export default function ChampPhotos({
     }
   };
 
+  const handlePointerCancel = (e: React.PointerEvent) => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (draggedIndex !== null) {
+      (e.target as Element).releasePointerCapture(e.pointerId);
+      setDraggedIndex(null);
+      setHoveredIndex(null);
+      setDragOffset({ x: 0, y: 0 });
+    }
+  };
+
   const definirCouverture = (index: number) => {
     const newPhotos = [...photos];
     const moved = newPhotos.splice(index, 1)[0];
@@ -264,9 +277,10 @@ export default function ChampPhotos({
         <div 
           ref={containerRef}
           className="grid grid-cols-3 gap-2 sm:grid-cols-4 touch-pan-y relative"
+          style={{ touchAction: draggedIndex !== null ? 'none' : 'auto' }}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
           onPointerLeave={handlePointerUp}
         >
           {photos.map((src, index) => {

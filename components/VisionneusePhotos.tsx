@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "@/lib/i18n/contexte";
 import {
@@ -46,6 +46,51 @@ export default function VisionneusePhotos({
   const n = photos.length;
   const i = Math.min(Math.max(index, 0), n - 1);
 
+  // --- Gestion du swipe ---
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const startX = useRef(0);
+
+  const onDragStart = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch" && e.pointerType !== "mouse") return;
+    setIsDragging(true);
+    startX.current = e.clientX;
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+
+  const onDragMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - startX.current;
+    let appliedOffset = deltaX;
+    // Résistance aux bords du carrousel
+    if ((i === 0 && deltaX > 0) || (i === n - 1 && deltaX < 0)) {
+      appliedOffset = deltaX * 0.3;
+    }
+    setDragOffset(appliedOffset);
+  };
+
+  const onDragEnd = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    
+    if (Math.abs(dragOffset) > 60 && n > 1) {
+      if (dragOffset > 0 && i > 0) {
+        onNaviguer(i - 1);
+      } else if (dragOffset < 0 && i < n - 1) {
+        onNaviguer(i + 1);
+      }
+    }
+    setDragOffset(0);
+  };
+
+  const onDragCancel = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    setDragOffset(0);
+  };
+
   // Capture au niveau document AVANT les écouteurs de Modale : Échap ne doit
   // fermer que l'aperçu, pas la modale d'ajout/édition en dessous.
   useEffect(() => {
@@ -59,9 +104,23 @@ export default function VisionneusePhotos({
         onNaviguer((i + 1) % n);
       }
     }
+    
+    // Interception du bouton Retour (mobile & desktop)
+    window.history.pushState({ visionneuseOpen: true }, "");
+    const handlePopState = () => onFermer();
+    
+    window.addEventListener("popstate", handlePopState);
     document.addEventListener("keydown", surTouche, true);
-    return () => document.removeEventListener("keydown", surTouche, true);
-  }, [i, n, onFermer, onNaviguer]);
+    
+    return () => {
+      document.removeEventListener("keydown", surTouche, true);
+      window.removeEventListener("popstate", handlePopState);
+      // Si la modale est fermée via un bouton (l'état history est resté), on recule manuellement
+      if (window.history.state?.visionneuseOpen) {
+        window.history.back();
+      }
+    };
+  }, [onFermer, onNaviguer, n, i]);
 
   // Verrouille le défilement du fond (restaure l'état précédent en sortie).
   useEffect(() => {
@@ -118,11 +177,22 @@ export default function VisionneusePhotos({
       </div>
 
       {/* Photo centrale */}
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4">
+      <div 
+        className="relative flex min-h-0 flex-1 items-center justify-center px-4 touch-none"
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
+        onPointerCancel={onDragCancel}
+      >
         <img
           src={src}
           alt={t("visionneuse.compteur", { n: i + 1, total: n })}
-          className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+          className="max-h-full max-w-full rounded-lg object-contain shadow-2xl select-none"
+          draggable={false}
+          style={{
+            transform: `translateX(${dragOffset}px)`,
+            transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
           onClick={(e) => e.stopPropagation()}
         />
         {n > 1 && (

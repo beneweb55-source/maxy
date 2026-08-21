@@ -41,7 +41,20 @@ export default function Modale({
       if (e.key === "Escape") onFermer();
     }
     document.addEventListener("keydown", surEchap);
-    return () => document.removeEventListener("keydown", surEchap);
+    
+    // Interception du bouton Retour (mobile & desktop)
+    window.history.pushState({ modalOpen: true }, "");
+    const handlePopState = () => onFermer();
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      document.removeEventListener("keydown", surEchap);
+      window.removeEventListener("popstate", handlePopState);
+      // Si la modale est fermée via un bouton (l'état history est resté), on recule manuellement
+      if (window.history.state?.modalOpen) {
+        window.history.back();
+      }
+    };
   }, [ouverte, onFermer]);
 
   // Logique de Drag-to-dismiss (Swipe down) pour le mobile
@@ -74,8 +87,8 @@ export default function Modale({
     setIsDragging(false);
     (e.target as Element).releasePointerCapture(e.pointerId);
 
-    // Si on a glissé plus de 100px vers le bas, on ferme la modale
-    if (offsetY > 100) {
+    // Seuil plus réactif : 60px pour fermer
+    if (offsetY > 60) {
       onFermer();
       setTimeout(() => setOffsetY(0), 300); // Reset après l'animation de fermeture
     } else {
