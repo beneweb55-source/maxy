@@ -12,6 +12,7 @@ import { FournisseurToasts } from "./toast";
 import ScannerGlobal from "./ScannerGlobal";
 import { useT } from "@/lib/i18n/contexte";
 import { useSwipeMenu } from "@/hooks/useSwipeMenu";
+import { AssistantProvider, useAssistant } from "./ai/AssistantContext";
 import {
   IconeArchive,
   IconeBillet,
@@ -25,6 +26,7 @@ import {
   IconeReglages,
   IconeTableauDeBord,
   IconeVitrine,
+  IconeAssistant,
   type ProprietesIcone,
 } from "./icons";
 
@@ -77,6 +79,22 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     roles: ["gerant"],
   },
 ];
+
+function BoutonAssistant() {
+  const { openAssistant } = useAssistant();
+  const t = useT();
+  return (
+    <button
+      type="button"
+      onClick={() => openAssistant()}
+      title="Assistant IA"
+      aria-label="Assistant IA"
+      className="relative flex items-center justify-center rounded-xl p-2 text-brand-grey transition-all hover:bg-[#8A2BE2]/10 hover:text-[#8A2BE2] active:scale-95"
+    >
+      <IconeAssistant taille={20} />
+    </button>
+  );
+}
 
 export default function AppShell({
   user,
@@ -218,8 +236,9 @@ export default function AppShell({
 
   return (
     <FournisseurToasts>
-      <ScannerGlobal />
-      <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
+      <AssistantProvider>
+        <ScannerGlobal />
+        <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden">
           {contenuSidebar}
         </aside>
@@ -275,6 +294,8 @@ export default function AppShell({
               <ThemeToggle />
               <SelecteurLangue />
               <ClocheNotifications />
+              <div className="h-6 w-px bg-brand-light-grey hidden sm:block" />
+              <BoutonAssistant />
             </div>
           </header>
 
@@ -282,6 +303,7 @@ export default function AppShell({
         </div>
       </div>
       <CapacitorPushManager />
+      </AssistantProvider>
     </FournisseurToasts>
   );
 }

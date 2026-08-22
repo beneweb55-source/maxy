@@ -4,13 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CLASSE_TAILLE } from "@/lib/dashboard/config";
 import type { ReponseDashboard } from "@/lib/dashboard/types";
 import { RenduWidget, widgetSansCarte } from "./dashboard/widgets";
-import { IconeActualiser } from "./icons";
+import { IconeActualiser, IconeAssistant } from "./icons";
 import { useT } from "@/lib/i18n/contexte";
+import { useAssistant } from "@/components/ai/AssistantContext";
 
 const INTERVALLE_RAFRAICHISSEMENT_MS = 5_000;
 
 export default function Dashboard() {
   const t = useT();
+  const { openAssistant } = useAssistant();
   const [reponse, setReponse] = useState<ReponseDashboard | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [actualiseA, setActualiseA] = useState<Date | null>(null);
@@ -83,6 +85,14 @@ export default function Dashboard() {
           >
             <IconeActualiser taille={14} />
             {t("dashboard.actualiser")}
+          </button>
+          <button
+            type="button"
+            onClick={() => openAssistant({ page: "dashboard" }, "Analyse les ventes récentes et suggère-moi des améliorations")}
+            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#8A2BE2] to-[#4169E1] transition shadow-sm hover:opacity-90"
+          >
+            <IconeAssistant taille={14} />
+            Analyser avec l'IA
           </button>
         </p>
       </div>
