@@ -684,29 +684,27 @@ export default function Inventaire({ role }: { role: Role }) {
           className="champ text-right"
         />
       </div>
-      {modalEdition !== null && (
-        <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
-          <label
-            className="libelle mb-1.5 text-brand-orange"
-            htmlFor="prix-vente-produit"
-          >
-            Prix vente (DA)
-          </label>
-          <input
-            id="prix-vente-produit"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            value={formulaire.prix_vente_fixe}
-            onChange={(e) =>
-              setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
-            }
-            className="champ text-right font-semibold"
-            placeholder="—"
-          />
-        </div>
-      )}
+      <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
+        <label
+          className="libelle mb-1.5 text-brand-orange"
+          htmlFor="prix-vente-produit"
+        >
+          Prix vente (DA)
+        </label>
+        <input
+          id="prix-vente-produit"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          value={formulaire.prix_vente_fixe}
+          onChange={(e) =>
+            setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
+          }
+          className="champ text-right font-semibold"
+          placeholder="—"
+        />
+      </div>
       <div className="sm:col-span-2 mt-2">
         <label className="libelle mb-1.5">{t("inventaire.photos")}</label>
         <ChampPhotos
