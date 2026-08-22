@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
@@ -13,6 +13,7 @@ import ScannerGlobal from "./ScannerGlobal";
 import { useT } from "@/lib/i18n/contexte";
 import { useSwipeMenu } from "@/hooks/useSwipeMenu";
 import { useCapacitorHardwareBack } from "@/hooks/useCapacitorHardwareBack";
+import { useLayer } from "@/hooks/useLayerStack";
 import {
   IconeArchive,
   IconeBillet,
@@ -96,8 +97,6 @@ export default function AppShell({
   const overlayRef = useRef<HTMLDivElement>(null);
   
   const SIDEBAR_WIDTH = 256;
-  
-  const isNavigating = useRef(false);
 
   // Écouteur global Capacitor pour le bouton Retour physique Android
   useCapacitorHardwareBack();
@@ -111,32 +110,9 @@ export default function AppShell({
     sidebarWidth: SIDEBAR_WIDTH
   });
 
-  const menuIdRef = useRef(`menu-${Math.random().toString(36).substring(2, 9)}`);
-
-  // Interception de l'historique pour fermer le menu avec le bouton Retour
-  useEffect(() => {
-    if (!menuOuvert) return;
-    
-    // On conserve l'état de Next.js pour ne pas casser son routeur
-    window.history.pushState({ ...window.history.state, menuId: menuIdRef.current }, "");
-    
-    const handlePopState = (e: PopStateEvent) => {
-      if (e.state?.menuId !== menuIdRef.current) {
-        setMenuOuvert(false);
-      }
-    };
-    
-    window.addEventListener("popstate", handlePopState);
-    
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      // On s'assure de ne faire back() que si le menu est fermé par l'UI, pas par un démontage
-      if (!isNavigating.current && window.history.state?.menuId === menuIdRef.current) {
-        window.history.back();
-      }
-      isNavigating.current = false;
-    };
-  }, [menuOuvert]);
+  // Enregistrement du menu dans la pile de couches pour le bouton Retour Android.
+  // Remplace l'ancienne logique pushState/back qui entrait en conflit avec Next.js 15.
+  useLayer("app-menu", menuOuvert, () => setMenuOuvert(false));
 
   const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(user.role));
 
@@ -191,7 +167,6 @@ export default function AppShell({
               key={item.href}
               href={item.href}
               onClick={() => {
-                isNavigating.current = true;
                 setMenuOuvert(false);
               }}
               aria-current={actif ? "page" : undefined}

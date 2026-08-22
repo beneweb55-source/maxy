@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "@/lib/i18n/contexte";
+import { useLayer } from "@/hooks/useLayerStack";
 import {
   IconeChevronGauche,
   IconeChevronDroite,
@@ -112,21 +113,10 @@ export default function VisionneusePhotos({
     };
   }, [onFermer, onNaviguer, n, i]);
 
-  // Interception du bouton retour Android pour fermer la visionneuse
-  useEffect(() => {
-    // On conserve l'état Next.js pour ne pas désynchroniser le routeur
-    window.history.pushState({ ...window.history.state, visionneuseOpen: true }, "");
-
-    const handlePopState = () => onFermer();
-    
-    window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      if (window.history.state?.visionneuseOpen) {
-        window.history.back();
-      }
-    };
-  }, [onFermer]);
+  // Enregistrement dans la pile de couches pour le bouton Retour Android.
+  // Remplace l'ancienne logique pushState/back qui entrait en conflit avec Next.js 15.
+  const layerIdRef = useRef(`visionneuse-${Math.random().toString(36).substring(2, 9)}`);
+  useLayer(layerIdRef.current, true, onFermer);
 
   // Verrouille le défilement du fond (restaure l'état précédent en sortie).
   useEffect(() => {
