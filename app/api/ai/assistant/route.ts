@@ -4,13 +4,24 @@ import { aiClient, MODEL_NAME } from "@/lib/ai/config";
 import { aiTools, executeTool } from "@/lib/ai/tools";
 import { Type, FunctionCallingConfigMode } from "@google/genai";
 
-async function sendMessageWithRetry(chat: any, message: any, maxRetries = 2) {
+async function sendMessageWithRetry(chat: any, message: any, maxRetries = 1) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await chat.sendMessage({ message });
+      // Setup timeout for network requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      
+      const res = await chat.sendMessage({ message }, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      return res;
     } catch (e: any) {
+      if (e.name === 'AbortError' || e.message?.includes('timeout')) {
+        console.error(`[GEMINI DEBUG] Timeout reçu (tentative ${attempt + 1}/${maxRetries})`);
+        if (attempt >= maxRetries) throw new Error("TIMEOUT");
+        continue;
+      }
       if (e?.status === 429 && attempt < maxRetries) {
-        const delay = 1500 * (attempt + 1);
+        const delay = 3000 * (attempt + 1);
         console.log(`[GEMINI DEBUG] 429 reçu, retry dans ${delay}ms (tentative ${attempt + 1}/${maxRetries})`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
@@ -21,53 +32,39 @@ async function sendMessageWithRetry(chat: any, message: any, maxRetries = 2) {
 }
 
 export async function POST(request: NextRequest) {
-  // 1. Authentification
-  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  // 1. Authentification stricte
+  const acces = await exigerUtilisateur(["gerant", "dev", "technicien", "social_media"]);
   if (acces.reponse) return acces.reponse;
+  const user = acces.user!;
 
   try {
-    console.log("[GEMINI DEBUG] 1. Début de la requête AI");
-    const { prompt, context } = await request.json();
+    console.log("[GEMINI DEBUG] 1. Début de la requête AI pour utilisateur:", user.username);
+    const body = await request.json();
+    const { prompt, context, locale = "fr" } = body;
 
     if (!prompt) {
       return erreur(400, "Le prompt est requis.");
     }
     
-    console.log("[GEMINI DEBUG] 2. Payload lu:", { prompt: prompt.substring(0, 50), context });
-
     if (!process.env.GEMINI_API_KEY) {
       console.log("[GEMINI DEBUG] ERREUR: Clé manquante");
-      return erreur(503, "L'assistant IA est temporairement indisponible (Clé manquante).");
+      return erreur(503, "L'assistant IA est temporairement indisponible (Clé manquante côté serveur).");
     }
-    console.log("[GEMINI DEBUG] 3. Clé API présente (longueur:", process.env.GEMINI_API_KEY.length, ")");
 
     // Préparation des instructions système
-    let systemInstruction = `Tu es l'assistant IA intégré à "Gestion-Maxy-v2", un logiciel de gestion de magasin (informatique/matériel).
+    let systemInstruction = `Tu es le Copilote IA intégré à "Gestion-Maxy-v2", un logiciel de gestion de magasin (informatique/matériel).
 Règles absolues :
-- Ne devine JAMAIS l'emplacement physique d'un produit (Skikda/Alger/Non attribué). Ces données n'existent pas encore.
-- N'invente pas de données. Si tu n'as pas l'information, dis-le.
-- Si on te demande de modifier quelque chose (ex: prix, vitrine), tu dois proposer l'action sous forme de suggestion JSON formattée.
-- Sois concis, professionnel et va droit au but.
-
-Options de suggestion JSON (à utiliser SEULEMENT si tu recommandes une modification):
-Si tu recommandes un changement de prix, ajoute à la fin de ton texte un bloc JSON strict de ce type :
-\`\`\`json
-{ "action": "update_price", "produit_id": 123, "new_price": 25000 }
-\`\`\`
-Si tu recommandes de modifier la vitrine :
-\`\`\`json
-{ "action": "toggle_vitrine", "produit_id": 123, "en_vitrine": true }
-\`\`\`
+1. Ne devine JAMAIS l'emplacement physique d'un produit (Skikda/Alger/Non attribué).
+2. N'invente pas de données ni de sources. Si un tool échoue ou renvoie une erreur, informe l'utilisateur que cette partie de l'analyse n'a pas pu être effectuée, mais continue avec les autres informations disponibles.
+3. Si l'utilisateur te demande de modifier un prix, de mettre en vitrine, utilise STRICTEMENT le tool 'propose_action'. Le système s'occupera d'afficher le bouton d'application à l'utilisateur. Ne génère pas de blocs de code JSON manuels dans le texte pour les actions.
+4. Pour estimer un prix, vérifie que les caractéristiques critiques sont présentes, classe tes comparables (exact, proche), donne tes sources et ton niveau de confiance.
+5. Langue exigée : ${locale === "fr" ? "Français" : "English"}.
 `;
 
     if (context) {
-      systemInstruction += `\nContexte actuel de l'utilisateur : ${JSON.stringify(context)}`;
+      systemInstruction += `\nContexte actuel de l'interface : ${JSON.stringify(context)}`;
     }
 
-    console.log("[GEMINI DEBUG] 4. Création du chat avec le modèle:", MODEL_NAME);
-    
-    // N'activer Google Search que si le prompt le demande explicitement
-    // pour éviter de consommer le quota (429) sur de simples questions.
     const needsSearch = prompt.toLowerCase().includes("marché") || 
                         prompt.toLowerCase().includes("algérie") || 
                         prompt.toLowerCase().includes("prix actuel") ||
@@ -75,11 +72,10 @@ Si tu recommandes de modifier la vitrine :
     
     const activeTools = [...aiTools];
     if (needsSearch) {
-        console.log("[GEMINI DEBUG] 4b. Activation du Grounding Google Search");
+        console.log("[GEMINI DEBUG] Activation du Grounding Google Search");
         activeTools.push({ googleSearch: {} } as any);
     }
 
-    // Configuration de Gemini
     const chat = aiClient.chats.create({
       model: MODEL_NAME,
       config: {
@@ -89,63 +85,71 @@ Si tu recommandes de modifier la vitrine :
             toolConfig: {
               includeServerSideToolInvocations: true,
               functionCallingConfig: {
-                mode: FunctionCallingConfigMode.VALIDATED,
+                mode: FunctionCallingConfigMode.AUTO,
               },
             }
         })
       },
     });
 
-    console.log("[GEMINI DEBUG] 5. Envoi du message initial...");
-    // Envoyer le message initial avec backoff
     let response = await sendMessageWithRetry(chat, prompt);
-    console.log("[GEMINI DEBUG] 6. Réponse initiale reçue. Function calls présents ?", !!(response.functionCalls && response.functionCalls.length > 0));
+    let actionsProposees: any[] = [];
 
     // Boucle d'exécution des outils (Function Calling)
-    while (response.functionCalls && response.functionCalls.length > 0) {
+    let safetyLoopCounter = 0;
+    while (response.functionCalls && response.functionCalls.length > 0 && safetyLoopCounter < 5) {
+      safetyLoopCounter++;
       const calls = response.functionCalls;
-      console.log(`[GEMINI DEBUG] 7. Exécution de ${calls.length} tool(s):`, calls.map((c: any) => c.name));
+      console.log(`[GEMINI DEBUG] Exécution de ${calls.length} tool(s)`);
 
       const functionResponseParts = [];
       for (const call of calls) {
         if (!call.name) continue;
         let toolResult;
         try {
-          toolResult = await executeTool({ name: call.name, args: call.args });
-          console.log(`[GEMINI DEBUG] 8. Tool ${call.name} exécuté avec succès.`);
+          // Injection sécurisée de l'utilisateur dans les outils
+          toolResult = await executeTool({ name: call.name, args: call.args }, user);
+          
+          // Interception de propose_action pour le frontend
+          if (call.name === "propose_action") {
+            actionsProposees.push(call.args);
+          }
         } catch (e: any) {
           console.error(`[GEMINI DEBUG] ERREUR dans le tool ${call.name}:`, e);
-          toolResult = { error: e.message };
+          toolResult = { error: `Échec du tool: ${e.message}` };
         }
         functionResponseParts.push({
           functionResponse: { name: call.name, response: toolResult },
         });
       }
 
-      console.log(`[GEMINI DEBUG] 9. Renvoi de ${functionResponseParts.length} résultat(s) au modèle...`);
       response = await sendMessageWithRetry(chat, functionResponseParts);
-      console.log(`[GEMINI DEBUG] 10. Nouvelle réponse du modèle reçue.`);
     }
 
-    console.log("[GEMINI DEBUG] 11. Parsing de la réponse finale.");
-    // Récupérer le texte final
     const finalContent = response.text;
 
     return NextResponse.json({
       reply: finalContent,
+      actions: actionsProposees,
     });
 
   } catch (e: any) {
     console.error("[GEMINI DEBUG] ERREUR FATALE GLOBALE:", e);
     
+    if (e.message === "TIMEOUT") {
+      return erreur(504, "Le service met trop de temps à répondre. Veuillez réessayer.");
+    }
     if (e?.status === 429) {
-      return erreur(429, "Trop de demandes en ce moment, réessaie dans quelques secondes.");
+      return erreur(429, "Trop de demandes en ce moment. Veuillez patienter avant de réessayer.");
+    }
+    if (e?.status === 400 || e?.status === 403) {
+       return erreur(400, "Le modèle IA a refusé ou n'a pas pu traiter la demande. Vérifiez votre requête.");
     }
     
-    // En développement, on renvoie l'erreur détaillée pour aider au diagnostic
     if (process.env.NODE_ENV === "development") {
-        return erreur(500, `Erreur serveur: ${e.message}`);
+        return erreur(500, `Erreur serveur IA: ${e.message}`);
     }
-    return erreur(500, "Une erreur s'est produite lors de la communication avec l'assistant IA.");
+    return erreur(500, "Désolé, l'assistant IA est temporairement indisponible suite à une erreur technique.");
   }
 }
+
