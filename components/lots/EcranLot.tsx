@@ -120,6 +120,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [nouvRef, setNouvRef] = useState("");
   const [nouvCat, setNouvCat] = useState("");
   const [nouvPrix, setNouvPrix] = useState("");
+  const [nouvPrixVente, setNouvPrixVente] = useState("");
   const [nouvQuantite, setNouvQuantite] = useState("1");
   const [nouvPhotos, setNouvPhotos] = useState<string[]>([]);
 
@@ -365,6 +366,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           reference: nouvRef.trim(),
           categorie: nouvCat.trim(),
           prix_achat: Number(nouvPrix),
+          prix_vente_fixe: nouvPrixVente.trim() ? Number(nouvPrixVente) : null,
           images: nouvPhotos,
         },
       ],
@@ -374,6 +376,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       afficher("Produit ajouté au lot.");
       setNouvRef("");
       setNouvPrix("");
+      setNouvPrixVente("");
       setNouvQuantite("1");
       setNouvPhotos([]);
       setAjoutOuvert(false);
@@ -678,6 +681,10 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 <div>
                   <label className="libelle mb-1.5">{t("ecranLot.prixAchat")}</label>
                   <input type="number" inputMode="numeric" min="0" step="1" className="champ" value={nouvPrix} onChange={e => setNouvPrix(e.target.value.replace(/[^\d]/g, ""))} />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5">Prix de vente</label>
+                  <input type="number" inputMode="numeric" min="0" step="1" className="champ" value={nouvPrixVente} onChange={e => setNouvPrixVente(e.target.value.replace(/[^\d]/g, ""))} placeholder="—" />
                 </div>
                 <div>
                   <label className="libelle mb-1.5">{t("ecranLot.quantite")}</label>

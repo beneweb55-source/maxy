@@ -107,15 +107,21 @@ export default function AppShell({
     sidebarWidth: SIDEBAR_WIDTH
   });
 
+  const menuIdRef = useRef(`menu-${Math.random().toString(36).substring(2, 9)}`);
+
   // Interception de l'historique pour fermer le menu avec le bouton Retour
   useEffect(() => {
     if (!menuOuvert) return;
-    window.history.pushState({ menuOpen: true }, "");
-    const handlePopState = () => setMenuOuvert(false);
+    window.history.pushState({ menuId: menuIdRef.current }, "");
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.menuId !== menuIdRef.current) {
+        setMenuOuvert(false);
+      }
+    };
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      if (!isNavigating.current && window.history.state?.menuOpen) {
+      if (!isNavigating.current && window.history.state?.menuId === menuIdRef.current) {
         window.history.back();
       }
       isNavigating.current = false;

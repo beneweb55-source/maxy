@@ -39,6 +39,7 @@ export async function creerProduitsGroupes(
         reference: ligne.reference,
         categorie: ligne.categorie,
         prix_achat: ligne.prix_achat,
+        prix_vente_fixe: ligne.prix_vente_fixe ?? null,
         image_url: ligne.images[0] ?? null,
         statut,
         en_vitrine: enVitrine,

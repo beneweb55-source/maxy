@@ -9,12 +9,14 @@ export default function Modale({
   ouverte,
   onFermer,
   large = false,
+  modificationsNonEnregistrees = false,
   children,
 }: {
   titre: string;
   ouverte: boolean;
   onFermer: () => void;
   large?: boolean;
+  modificationsNonEnregistrees?: boolean;
   children: React.ReactNode;
 }) {
   // On utilise un portail React pour rendre la modale directement dans
@@ -36,34 +38,61 @@ export default function Modale({
   }, [ouverte]);
 
   const onFermerRef = useRef(onFermer);
+  const isDirtyRef = useRef(modificationsNonEnregistrees);
   useEffect(() => {
     onFermerRef.current = onFermer;
   }, [onFermer]);
+  useEffect(() => {
+    isDirtyRef.current = modificationsNonEnregistrees;
+  }, [modificationsNonEnregistrees]);
 
+  const tenterFermeture = () => {
+    if (isDirtyRef.current) {
+      if (window.confirm("Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?")) {
+        onFermerRef.current();
+      } else {
+        // L'utilisateur a annulé la fermeture. On s'assure de repousser l'état history si c'était un popstate
+        if (etaitOuverte.current && window.history.state?.modalId !== idRef.current) {
+          window.history.pushState({ modalId: idRef.current }, "");
+        }
+      }
+    } else {
+      onFermerRef.current();
+    }
+  };
+
+  const idRef = useRef(`modal-${Math.random().toString(36).substring(2, 9)}`);
   const etaitOuverte = useRef(false);
 
   useEffect(() => {
     if (ouverte) {
       function surEchap(e: KeyboardEvent) {
-        if (e.key === "Escape") onFermerRef.current();
+        if (e.key === "Escape") tenterFermeture();
       }
       document.addEventListener("keydown", surEchap);
       
-      const handlePopState = () => onFermerRef.current();
+      const handlePopState = (e: PopStateEvent) => {
+        if (e.state?.modalId !== idRef.current) {
+          tenterFermeture();
+        }
+      };
       window.addEventListener("popstate", handlePopState);
 
-      if (!etaitOuverte.current && !window.history.state?.modalOpen) {
-        window.history.pushState({ modalOpen: true }, "");
+      if (!etaitOuverte.current && window.history.state?.modalId !== idRef.current) {
+        window.history.pushState({ modalId: idRef.current }, "");
       }
       etaitOuverte.current = true;
 
       return () => {
         document.removeEventListener("keydown", surEchap);
         window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modalId === idRef.current) {
+          window.history.back();
+        }
       };
     } else if (etaitOuverte.current) {
       etaitOuverte.current = false;
-      if (window.history.state?.modalOpen) {
+      if (window.history.state?.modalId === idRef.current) {
         window.history.back();
       }
     }
@@ -112,7 +141,7 @@ export default function Modale({
         modalRef.current.style.transition = "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
         modalRef.current.style.transform = `translate3d(0, 100%, 0)`;
       }
-      onFermer();
+      tenterFermeture();
       setTimeout(() => {
         if (modalRef.current) {
           modalRef.current.style.transform = "";
@@ -142,7 +171,7 @@ export default function Modale({
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-entree"
         style={{ animationDuration: '0.3s' }}
-        onClick={onFermer}
+        onClick={tenterFermeture}
       />
       <div
         ref={modalRef}
@@ -172,7 +201,7 @@ export default function Modale({
             <h2 className="text-lg font-bold tracking-tight font-outfit text-brand-smooth">{titre}</h2>
             <button
               type="button"
-              onClick={onFermer}
+              onClick={tenterFermeture}
               aria-label="Fermer"
               className="rounded-lg p-3 sm:p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale"
             >

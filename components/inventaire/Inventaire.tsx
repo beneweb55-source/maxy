@@ -32,6 +32,7 @@ import {
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
 import { useT } from "@/lib/i18n/contexte";
+import { useBrouillon } from "@/hooks/useBrouillon";
 
 interface LigneProduit {
   id: number;
@@ -178,7 +179,35 @@ export default function Inventaire({ role }: { role: Role }) {
     unites: LigneProduit[];
     vendusExclus: number;
   } | null>(null);
-  const [formulaire, setFormulaire] = useState<FormulaireProduit>(FORMULAIRE_VIDE);
+
+  const brouillonCle = modalEdition 
+    ? `produit-edit-${role}-${modalEdition.unites[0]!.id}`
+    : modalAjout 
+      ? `produit-ajout-${role}`
+      : "";
+
+  const {
+    valeur: formulaire,
+    setValeur: setFormulaire,
+    setValeurForcee: setFormulaireForcee,
+    isDirty: formulaireModifie,
+    brouillonDisponible,
+    restaurerBrouillon,
+    supprimerBrouillon,
+    validerEtVider: validerBrouillon
+  } = useBrouillon<FormulaireProduit>(
+    brouillonCle,
+    modalEdition ? {
+      reference: modalEdition.unites[0]!.reference,
+      categorie: modalEdition.unites[0]!.categorie,
+      prix_achat: String(modalEdition.unites[0]!.prix_achat),
+      lot_id: modalEdition.unites[0]!.lot_id ? String(modalEdition.unites[0]!.lot_id) : "",
+      prix_vente_fixe: modalEdition.unites[0]!.prix_vente_fixe !== null ? String(modalEdition.unites[0]!.prix_vente_fixe) : "",
+      quantite: String(modalEdition.unites.length),
+    } : FORMULAIRE_VIDE,
+    modalAjout || modalEdition !== null
+  );
+
   const [formPhotos, setFormPhotos] = useState<string[]>([]);
   const [formPhotosModifiees, setFormPhotosModifiees] = useState(false);
   const [formVitrine, setFormVitrine] = useState(false);
@@ -269,9 +298,6 @@ export default function Inventaire({ role }: { role: Role }) {
   }
 
   function ouvrirAjout() {
-    // Aucun lot pré-sélectionné : par défaut, le produit reste dans l'inventaire
-    // sans être rattaché à un arrivage.
-    setFormulaire({ ...FORMULAIRE_VIDE, lot_id: "" });
     setFormPhotos([]);
     setFormPhotosModifiees(false);
     setFormVitrine(false);
@@ -280,14 +306,6 @@ export default function Inventaire({ role }: { role: Role }) {
 
   function ouvrirEdition(unites: LigneProduit[], titre: string) {
     const premier = unites[0]!;
-    setFormulaire({
-      reference: premier.reference,
-      categorie: premier.categorie,
-      prix_achat: String(premier.prix_achat),
-      lot_id: premier.lot_id ? String(premier.lot_id) : "",
-      prix_vente_fixe: premier.prix_vente_fixe !== null ? String(premier.prix_vente_fixe) : "",
-      quantite: String(unites.length),
-    });
     setFormPhotos(premier.image_url ? [premier.image_url] : []);
     setFormPhotosModifiees(false);
     setCibleStatut(null);
@@ -389,7 +407,12 @@ export default function Inventaire({ role }: { role: Role }) {
         return;
       }
       afficher(`${ids.length} produit(s) → ${INFOS_STATUT[cible].libelle}`);
-      setModalEdition(null);
+      // On met à jour l'état local de la modale pour refléter le nouveau statut
+      // SANS la fermer, afin de ne pas perdre le reste de la saisie.
+      setModalEdition({
+        ...modalEdition,
+        unites: modalEdition.unites.map(u => ({ ...u, statut: cible }))
+      });
       setCibleStatut(null);
       setNoteStatut("");
       await charger();
@@ -452,6 +475,7 @@ export default function Inventaire({ role }: { role: Role }) {
           reference: formulaire.reference.trim(),
           categorie: formulaire.categorie.trim(),
           prix_achat: Number(formulaire.prix_achat),
+          prix_vente_fixe: formulaire.prix_vente_fixe.trim() ? Number(formulaire.prix_vente_fixe) : null,
           images: formPhotos,
           quantite: Number(formulaire.quantite) || 1,
           en_vitrine: formVitrine,
@@ -465,6 +489,7 @@ export default function Inventaire({ role }: { role: Role }) {
         return;
       }
       afficher(`Produit ${corps?.code_interne} ajouté à l'inventaire.`);
+      validerBrouillon();
       setModalAjout(false);
       majUrl({ ajouter: null });
       await charger();
@@ -501,6 +526,7 @@ export default function Inventaire({ role }: { role: Role }) {
         return;
       }
       afficher(`Produit(s) ${modalEdition.titre} modifié(s).`);
+      validerBrouillon();
       setModalEdition(null);
       await charger();
     } catch {
@@ -1632,11 +1658,24 @@ export default function Inventaire({ role }: { role: Role }) {
       <Modale
         titre={t("inventaire.ajouterProduitTitre")}
         ouverte={modalAjout}
+        modificationsNonEnregistrees={formulaireModifie || formPhotosModifiees}
         onFermer={() => {
           setModalAjout(false);
           majUrl({ ajouter: null });
         }}
       >
+        {brouillonDisponible && (
+          <div className="mb-4 rounded-lg bg-brand-orange/10 p-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-brand-orange/20 animate-entree">
+            <div className="text-sm">
+              <p className="font-semibold text-brand-orange">Un brouillon non enregistré est disponible.</p>
+              <p className="text-xs text-brand-orange/80">Sauvegardé {new Date(brouillonDisponible.timestamp).toLocaleTimeString()}</p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button type="button" onClick={supprimerBrouillon} className="btn btn-secondaire flex-1 sm:flex-none">Supprimer</button>
+              <button type="button" onClick={restaurerBrouillon} className="btn bg-brand-orange text-white hover:bg-brand-orange/90 flex-1 sm:flex-none">Reprendre</button>
+            </div>
+          </div>
+        )}
         <form
           className="space-y-3"
           onSubmit={(e) => {
@@ -1683,8 +1722,21 @@ export default function Inventaire({ role }: { role: Role }) {
             ? t("inventaire.editerProduitTitre", { code: modalEdition.unites[0]!.code_interne })
             : t("inventaire.editionMasseTitre", { n: modalEdition.unites.length })) : ""}
         ouverte={modalEdition !== null}
+        modificationsNonEnregistrees={formulaireModifie || formPhotosModifiees}
         onFermer={() => setModalEdition(null)}
       >
+        {brouillonDisponible && (
+          <div className="mb-4 rounded-lg bg-brand-orange/10 p-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-brand-orange/20 animate-entree">
+            <div className="text-sm">
+              <p className="font-semibold text-brand-orange">Un brouillon non enregistré est disponible.</p>
+              <p className="text-xs text-brand-orange/80">Sauvegardé {new Date(brouillonDisponible.timestamp).toLocaleTimeString()}</p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button type="button" onClick={supprimerBrouillon} className="btn btn-secondaire flex-1 sm:flex-none">Supprimer</button>
+              <button type="button" onClick={restaurerBrouillon} className="btn bg-brand-orange text-white hover:bg-brand-orange/90 flex-1 sm:flex-none">Reprendre</button>
+            </div>
+          </div>
+        )}
         <form
           className="space-y-3"
           onSubmit={(e) => {

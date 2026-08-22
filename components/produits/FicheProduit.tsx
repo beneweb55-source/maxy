@@ -31,6 +31,7 @@ import {
   IconeVitrine,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
+import { useBrouillon } from "@/hooks/useBrouillon";
 
 interface ProduitDto {
   id: number;
@@ -98,7 +99,26 @@ export default function FicheProduit({
   const [coutReparation, setCoutReparation] = useState("");
   const [descReparation, setDescReparation] = useState("");
   const [modalEdition, setModalEdition] = useState(false);
-  const [edition, setEdition] = useState({ reference: "", categorie: "", prix_achat: "", quantite: "1" });
+  
+  const {
+    valeur: edition,
+    setValeur: setEdition,
+    isDirty: editionModifiee,
+    brouillonDisponible,
+    restaurerBrouillon,
+    supprimerBrouillon,
+    validerEtVider: validerEdition
+  } = useBrouillon(
+    produit ? `produit-edit-fiche-${produit.id}` : "",
+    produit ? {
+      reference: produit.reference,
+      categorie: produit.categorie,
+      prix_achat: String(produit.prix_achat),
+      quantite: String(produit.quantite),
+    } : { reference: "", categorie: "", prix_achat: "", quantite: "1" },
+    modalEdition
+  );
+
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
   const [editPhotosModifiees, setEditPhotosModifiees] = useState(false);
   const [modalSuppression, setModalSuppression] = useState(false);
@@ -195,12 +215,6 @@ export default function FicheProduit({
 
   function ouvrirEdition() {
     if (!produit) return;
-    setEdition({
-      reference: produit.reference,
-      categorie: produit.categorie,
-      prix_achat: String(produit.prix_achat),
-      quantite: String(produit.quantite),
-    });
     setEditPhotos(produit.images);
     setEditPhotosModifiees(false);
     setModalEdition(true);
@@ -779,11 +793,24 @@ export default function FicheProduit({
       </Modale>
 
       <Modale
-        titre={`Modifier — ${produit.code_interne}`}
+        titre="Modifier le produit"
         ouverte={modalEdition}
+        modificationsNonEnregistrees={editionModifiee || editPhotosModifiees}
         onFermer={() => setModalEdition(false)}
       >
-        <div className="space-y-3">
+        {brouillonDisponible && (
+          <div className="mb-4 rounded-lg bg-brand-orange/10 p-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-brand-orange/20 animate-entree">
+            <div className="text-sm">
+              <p className="font-semibold text-brand-orange">Un brouillon non enregistré est disponible.</p>
+              <p className="text-xs text-brand-orange/80">Sauvegardé {new Date(brouillonDisponible.timestamp).toLocaleTimeString()}</p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button type="button" onClick={supprimerBrouillon} className="btn btn-secondaire flex-1 sm:flex-none">Supprimer</button>
+              <button type="button" onClick={restaurerBrouillon} className="btn bg-brand-orange text-white hover:bg-brand-orange/90 flex-1 sm:flex-none">Reprendre</button>
+            </div>
+          </div>
+        )}
+        <div className="space-y-4">
           <div>
             <label className="libelle mb-1.5" htmlFor="edit-ref">
               Référence *
@@ -873,6 +900,7 @@ export default function FicheProduit({
                 }).then((ok) => {
                   if (ok) {
                     afficher("Produit modifié.");
+                    validerEdition();
                     setModalEdition(false);
                     void rafraichir();
                   }

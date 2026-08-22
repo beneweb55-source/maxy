@@ -57,9 +57,17 @@ export default function PushManager() {
       }
 
       const registration = await navigator.serviceWorker.ready;
+      
+      // Essayer de récupérer un abonnement existant (qui pourrait être obsolète)
+      let existingSub = await registration.pushManager.getSubscription();
+      if (existingSub) {
+        console.log("Désinscription de l'ancien abonnement...");
+        await existingSub.unsubscribe();
+      }
+
       const sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+        applicationServerKey: urlBase64ToUint8Array(publicVapidKey.trim()),
       });
 
       setSubscription(sub);
@@ -69,8 +77,11 @@ export default function PushManager() {
         body: JSON.stringify(sub),
         headers: { "Content-Type": "application/json" },
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erreur de souscription:", err);
+      if (err.name === 'AbortError') {
+         console.error("Cette erreur se produit souvent si le navigateur bloque les services push (ex: Brave sans les services Google) ou si la clé VAPID est invalide.");
+      }
       setIsError(true);
     }
   };
