@@ -127,6 +127,14 @@ export default function AppShell({
 
     if (!isDragging) {
       if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (!menuOuvert && deltaX < 0) {
+          pointerId.current = null;
+          return;
+        }
+        if (menuOuvert && deltaX > 0) {
+          pointerId.current = null;
+          return;
+        }
         setIsDragging(true);
         try {
           (e.target as Element).setPointerCapture(e.pointerId);
@@ -274,21 +282,16 @@ export default function AppShell({
   return (
     <FournisseurToasts>
       <ScannerGlobal />
-      <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
+      <div 
+        className="min-h-screen bg-brand-paper font-inter text-brand-black"
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
+        onPointerCancel={onDragCancel}
+      >
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden">
           {contenuSidebar}
         </aside>
-
-        {/* Edge Receiver pour ouvrir le menu par Swipe depuis le bord gauche */}
-        <div
-          className={`fixed inset-y-0 left-0 z-40 w-6 lg:hidden touch-pan-y ${
-            menuOuvert ? "pointer-events-none hidden" : "block"
-          }`}
-          onPointerDown={onDragStart}
-          onPointerMove={onDragMove}
-          onPointerUp={onDragEnd}
-          onPointerCancel={onDragCancel}
-        />
 
         {/* Overlay & Sidebar Mobile */}
         <div

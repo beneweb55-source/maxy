@@ -1088,7 +1088,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           }
                           title={
                             enVitrine
-                              ? t("inventaire.retirerVitrine")
+                              ? t("inventaire.retirerDeVitrine")
                               : t("inventaire.mettreVitrine")
                           }
                           aria-label={
@@ -1244,7 +1244,7 @@ export default function Inventaire({ role }: { role: Role }) {
                                 onClick={() =>
                                   void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)
                                 }
-                                title={p.en_vitrine ? t("inventaire.retirerVitrine") : t("inventaire.mettreVitrine")}
+                                title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
                                 aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
                                 className={`rounded-md p-1.5 transition disabled:opacity-40 ${
                                   p.en_vitrine
@@ -1499,7 +1499,7 @@ export default function Inventaire({ role }: { role: Role }) {
                                 e.stopPropagation();
                                 void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
                               }}
-                              title={p.en_vitrine ? t("inventaire.retirerVitrine") : t("inventaire.mettreVitrine")}
+                              title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
                               aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
                               className={`rounded-md p-1.5 transition disabled:opacity-40 ${
                                 p.en_vitrine
@@ -1796,7 +1796,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     : "btn btn-secondaire"
                 }
               >
-                {modalEdition.unites[0]!.en_vitrine ? t("inventaire.retirerVitrine") : t("inventaire.mettreVitrine")}
+                {modalEdition.unites[0]!.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
               </button>
             </div>
           )}
