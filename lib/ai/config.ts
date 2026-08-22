@@ -17,4 +17,4 @@ export const aiClient = new GoogleGenAI({
   apiKey: apiKey || "",
 });
 
-export const MODEL_NAME = "gemini-2.5-pro"; // Powerful model for reasoning
+export const MODEL_NAME = "gemini-3.6-flash"; // Powerful model for reasoning
