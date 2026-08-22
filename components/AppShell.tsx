@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { FournisseurToasts } from "./toast";
 import ScannerGlobal from "./ScannerGlobal";
 import { useT } from "@/lib/i18n/contexte";
+import { useSwipeMenu } from "@/hooks/useSwipeMenu";
 import {
   IconeArchive,
   IconeBillet,
@@ -88,15 +89,22 @@ export default function AppShell({
   const router = useRouter();
   const t = useT();
   const [menuOuvert, setMenuOuvert] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const pointerId = useRef<number | null>(null);
+  
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   
   const SIDEBAR_WIDTH = 256;
   
   const isNavigating = useRef(false);
+
+  // Hook global pour le swipe natif (60/120fps)
+  useSwipeMenu({
+    menuOuvert,
+    setMenuOuvert,
+    sidebarRef,
+    overlayRef,
+    sidebarWidth: SIDEBAR_WIDTH
+  });
 
   // Interception de l'historique pour fermer le menu avec le bouton Retour
   useEffect(() => {
@@ -112,77 +120,6 @@ export default function AppShell({
       isNavigating.current = false;
     };
   }, [menuOuvert]);
-
-  const onDragStart = (e: React.PointerEvent) => {
-    if (e.pointerType !== "touch" && e.pointerType !== "mouse") return;
-    startX.current = e.clientX;
-    startY.current = e.clientY;
-    pointerId.current = e.pointerId;
-  };
-
-  const onDragMove = (e: React.PointerEvent) => {
-    if (pointerId.current !== e.pointerId) return;
-    const deltaX = e.clientX - startX.current;
-    const deltaY = e.clientY - startY.current;
-
-    if (!isDragging) {
-      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
-        if (!menuOuvert && deltaX < 0) {
-          pointerId.current = null;
-          return;
-        }
-        if (menuOuvert && deltaX > 0) {
-          pointerId.current = null;
-          return;
-        }
-        setIsDragging(true);
-        try {
-          (e.target as Element).setPointerCapture(e.pointerId);
-        } catch (err) {}
-      } else if (Math.abs(deltaY) > 10) {
-        pointerId.current = null; // C'est un scroll vertical
-        return;
-      } else {
-        return; // Mouvement pas encore suffisant
-      }
-    }
-
-    if (menuOuvert) {
-      setDragOffset(Math.min(0, Math.max(-SIDEBAR_WIDTH, deltaX)));
-    } else {
-      setDragOffset(Math.min(0, Math.max(-SIDEBAR_WIDTH, -SIDEBAR_WIDTH + deltaX)));
-    }
-  };
-
-  const resetDrag = (e: React.PointerEvent) => {
-    if (pointerId.current !== e.pointerId) return;
-    pointerId.current = null;
-    if (!isDragging) return;
-    setIsDragging(false);
-    try {
-      (e.target as Element).releasePointerCapture(e.pointerId);
-    } catch (err) {}
-  };
-
-  const onDragEnd = (e: React.PointerEvent) => {
-    if (pointerId.current !== e.pointerId) return;
-    const wasDragging = isDragging;
-    resetDrag(e);
-    
-    if (!wasDragging) return;
-
-    if (menuOuvert) {
-      if (dragOffset < -SIDEBAR_WIDTH / 4) setMenuOuvert(false);
-    } else {
-      if (dragOffset > -SIDEBAR_WIDTH * 0.75) setMenuOuvert(true);
-    }
-    setDragOffset(0);
-  };
-
-  const onDragCancel = (e: React.PointerEvent) => {
-    resetDrag(e);
-    setDragOffset(0);
-  };
 
   const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(user.role));
 
@@ -282,13 +219,7 @@ export default function AppShell({
   return (
     <FournisseurToasts>
       <ScannerGlobal />
-      <div 
-        className="min-h-screen bg-brand-paper font-inter text-brand-black"
-        onPointerDown={onDragStart}
-        onPointerMove={onDragMove}
-        onPointerUp={onDragEnd}
-        onPointerCancel={onDragCancel}
-      >
+      <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden">
           {contenuSidebar}
         </aside>
@@ -296,37 +227,24 @@ export default function AppShell({
         {/* Overlay & Sidebar Mobile */}
         <div
           className={`fixed inset-0 z-50 lg:hidden print:hidden ${
-            menuOuvert || isDragging ? "pointer-events-auto" : "pointer-events-none"
+            menuOuvert ? "pointer-events-auto" : "pointer-events-none"
           }`}
         >
           {/* Overlay */}
           <div
+            ref={overlayRef}
             className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
-              menuOuvert && !isDragging ? "opacity-100" : isDragging ? "opacity-50" : "opacity-0"
+              menuOuvert ? "opacity-100" : "opacity-0"
             }`}
-            style={{ opacity: isDragging ? Math.min((SIDEBAR_WIDTH + dragOffset) / SIDEBAR_WIDTH, 1) : undefined }}
             onClick={() => setMenuOuvert(false)}
-            onPointerDown={menuOuvert ? onDragStart : undefined}
-            onPointerMove={onDragMove}
-            onPointerUp={onDragEnd}
-            onPointerCancel={onDragCancel}
           />
 
           {/* Sidebar */}
           <div
-            className="absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl touch-pan-y"
-            style={{
-              transform: isDragging
-                ? `translateX(${dragOffset}px)`
-                : menuOuvert
-                ? "translateX(0)"
-                : "translateX(-100%)",
-              transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            }}
-            onPointerDown={menuOuvert ? onDragStart : undefined}
-            onPointerMove={onDragMove}
-            onPointerUp={onDragEnd}
-            onPointerCancel={onDragCancel}
+            ref={sidebarRef}
+            className={`absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl transition-transform duration-300 cubic-bezier-out ${
+              menuOuvert ? "translate-x-0" : "-translate-x-full"
+            }`}
           >
             <button
               type="button"
