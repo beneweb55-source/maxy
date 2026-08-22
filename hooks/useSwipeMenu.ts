@@ -72,7 +72,7 @@ export function useSwipeMenu({
     };
 
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length > 1) return; // Only 1 finger
+      if (e.touches.length !== 1 || !e.touches[0]) return; // Only 1 finger
       
       const target = e.target as HTMLElement;
       if (isSwipePrevented(target)) return;
@@ -88,7 +88,7 @@ export function useSwipeMenu({
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 1) return; // Interrupt if multi-touch
+      if (e.touches.length !== 1 || !e.touches[0]) return; // Interrupt if multi-touch
       
       const touchX = e.touches[0].clientX;
       const touchY = e.touches[0].clientY;
