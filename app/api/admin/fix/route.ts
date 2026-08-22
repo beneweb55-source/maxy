@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 
 export async function GET() {
+  const acces = await exigerUtilisateur(["gerant"]);
+  if (acces.reponse) return acces.reponse;
+
   try {
     const imed = await prisma.user.findFirst({
       where: { username: { equals: "imed", mode: "insensitive" } },

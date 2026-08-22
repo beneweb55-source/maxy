@@ -30,10 +30,10 @@ describe("useLayerStack", () => {
   it("respecte la hiérarchie de priorité (Scanner > Visionneuse > Modale > Menu)", () => {
     const actions: string[] = [];
 
-    pushLayer("menu", () => actions.push("menu"), LAYER_PRIORITY.MENU);
-    pushLayer("modal", () => actions.push("modal"), LAYER_PRIORITY.MODALE);
-    pushLayer("scanner", () => actions.push("scanner"), LAYER_PRIORITY.SCANNER);
-    pushLayer("visionneuse", () => actions.push("visionneuse"), LAYER_PRIORITY.VISIONNEUSE);
+    pushLayer("menu", () => { actions.push("menu"); }, LAYER_PRIORITY.MENU);
+    pushLayer("modal", () => { actions.push("modal"); }, LAYER_PRIORITY.MODALE);
+    pushLayer("scanner", () => { actions.push("scanner"); }, LAYER_PRIORITY.SCANNER);
+    pushLayer("visionneuse", () => { actions.push("visionneuse"); }, LAYER_PRIORITY.VISIONNEUSE);
 
     expect(closeTopLayer()).toBe(true);
     expect(actions).toEqual(["scanner"]);

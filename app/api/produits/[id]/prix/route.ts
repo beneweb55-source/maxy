@@ -38,7 +38,6 @@ export async function POST(
     }
 
     await prisma.$transaction(async (tx) => {
-      let idsAUpdate = [produit.id];
       let produitsToUpdate = [produit];
 
       if (produit.lot_id !== null) {
@@ -51,25 +50,30 @@ export async function POST(
         });
         // We only update price for products that are not sold.
         produitsToUpdate = identiques.filter(p => p.statut !== "vendu");
-        idsAUpdate = produitsToUpdate.map(p => p.id);
       }
 
+      // Update prix_vente_fixe for all non-sold identical products
+      const idsTous = produitsToUpdate.map(p => p.id);
       await tx.produit.updateMany({
-        where: { id: { in: idsAUpdate } },
-        data: { prix_vente_fixe: prix, statut: "en_vente" },
+        where: { id: { in: idsTous } },
+        data: { prix_vente_fixe: prix },
       });
 
-      const historiques = produitsToUpdate
-        .filter(p => p.statut === "ok")
-        .map(p => ({
+      // Only products currently in 'ok' status transition to 'en_vente'
+      const produitsOk = produitsToUpdate.filter(p => p.statut === "ok");
+      if (produitsOk.length > 0) {
+        await tx.produit.updateMany({
+          where: { id: { in: produitsOk.map(p => p.id) } },
+          data: { statut: "en_vente" },
+        });
+
+        const historiques = produitsOk.map(p => ({
           produit_id: p.id,
           user_id: user.id,
           statut_avant: "ok" as const,
           statut_apres: "en_vente" as const,
           note: p.id === produit.id ? `Prix fixé : ${formaterDA(prix)}` : `Prix fixé en cascade : ${formaterDA(prix)}`,
         }));
-      
-      if (historiques.length > 0) {
         await tx.historiqueStatut.createMany({ data: historiques });
       }
     });
