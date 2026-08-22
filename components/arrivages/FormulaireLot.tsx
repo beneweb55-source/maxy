@@ -7,6 +7,8 @@ import type { Role } from "@prisma/client";
 import { useToast } from "@/components/toast";
 import { useT } from "@/lib/i18n/contexte";
 import { IconeFlecheGauche } from "@/components/icons";
+import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
+import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 
 type ModeCout = "manuel" | "auto";
 
@@ -26,6 +28,16 @@ export default function FormulaireLot({ role }: { role: Role }) {
 
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
+
+  const isDirty = Boolean(fournisseur.trim() || description.trim() || coutDeclare.trim() || quantiteAttendue.trim());
+
+  useLayer("formulaire-lot-dirty", isDirty, () => {
+    if (window.confirm("Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?")) {
+      router.push("/arrivages");
+      return true;
+    }
+    return false;
+  }, LAYER_PRIORITY.DEFAUT);
 
   useEffect(() => {
     void fetch("/api/lots")
@@ -91,10 +103,25 @@ export default function FormulaireLot({ role }: { role: Role }) {
     <div className="mx-auto max-w-xl space-y-6 animate-entree">
       <div className="flex items-center justify-between pb-2 border-b border-brand-light-grey/50">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("formulaireLot.titre")}</h1>
-        <Link href="/arrivages" className="lien inline-flex items-center gap-1.5 text-sm">
+        <a
+          href="/arrivages"
+          onClick={(e) => {
+            e.preventDefault();
+            if (isDirty) {
+              if (!window.confirm("Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?")) {
+                return;
+              }
+            }
+            const navigue = naviguerRetourInterne(router, "/arrivages/nouveau");
+            if (!navigue) {
+              router.push("/arrivages");
+            }
+          }}
+          className="lien inline-flex items-center gap-1.5 text-sm"
+        >
           <IconeFlecheGauche taille={14} />
           {t("formulaireLot.retour")}
-        </Link>
+        </a>
       </div>
 
       {erreur && (

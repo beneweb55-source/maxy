@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { IconeFermer } from "./icons";
-import { useLayer } from "@/hooks/useLayerStack";
+import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
 
 export default function Modale({
   titre,
@@ -47,21 +47,23 @@ export default function Modale({
     isDirtyRef.current = modificationsNonEnregistrees;
   }, [modificationsNonEnregistrees]);
 
-  const tenterFermeture = () => {
+  const tenterFermeture = (): boolean => {
     if (isDirtyRef.current) {
       if (window.confirm("Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?")) {
         onFermerRef.current();
+        return true;
       }
+      return false;
     } else {
       onFermerRef.current();
+      return true;
     }
   };
 
   const idRef = useRef(`modal-${Math.random().toString(36).substring(2, 9)}`);
 
-  // Enregistrement dans la pile de couches pour le bouton Retour Android.
-  // Remplace l'ancienne logique pushState/back qui entrait en conflit avec Next.js 15.
-  useLayer(idRef.current, ouverte, tenterFermeture);
+  // Enregistrement dans la pile de couches avec priorité Modale pour le bouton Retour Android.
+  useLayer(idRef.current, ouverte, tenterFermeture, LAYER_PRIORITY.MODALE);
 
   // Touche Échap pour fermer la modale
   useEffect(() => {

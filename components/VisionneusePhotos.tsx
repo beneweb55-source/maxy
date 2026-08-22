@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "@/lib/i18n/contexte";
-import { useLayer } from "@/hooks/useLayerStack";
+import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
 import {
   IconeChevronGauche,
   IconeChevronDroite,
@@ -116,7 +116,7 @@ export default function VisionneusePhotos({
   // Enregistrement dans la pile de couches pour le bouton Retour Android.
   // Remplace l'ancienne logique pushState/back qui entrait en conflit avec Next.js 15.
   const layerIdRef = useRef(`visionneuse-${Math.random().toString(36).substring(2, 9)}`);
-  useLayer(layerIdRef.current, true, onFermer);
+  useLayer(layerIdRef.current, true, onFermer, LAYER_PRIORITY.VISIONNEUSE);
 
   // Verrouille le défilement du fond (restaure l'état précédent en sortie).
   useEffect(() => {

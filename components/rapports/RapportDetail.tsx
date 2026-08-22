@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 import type { DecisionRapport, Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import { useToast } from "@/components/toast";
@@ -97,6 +99,7 @@ const LIBELLES_DECISION: Record<DecisionRapport, string> = {
 };
 
 export default function RapportDetail({ lotId, role }: { lotId: number; role: Role }) {
+  const router = useRouter();
   const { afficher } = useToast();
   const [rapport, setRapport] = useState<RapportDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -206,10 +209,20 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50 print:hidden">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Rapport du lot n°{rapport.lot.id}</h1>
         <div className="flex items-center gap-2">
-          <Link href="/rapports" className="lien inline-flex items-center gap-1.5 text-sm">
+          <a
+            href="/rapports"
+            onClick={(e) => {
+              e.preventDefault();
+              const navigue = naviguerRetourInterne(router, `/rapports/${lotId}`);
+              if (!navigue) {
+                router.push("/rapports");
+              }
+            }}
+            className="lien inline-flex items-center gap-1.5 text-sm"
+          >
             <IconeFlecheGauche taille={14} />
             Rapports
-          </Link>
+          </a>
           <button type="button" onClick={() => window.print()} className="btn btn-secondaire">
             <IconeImprimante taille={15} />
             Imprimer (A4)

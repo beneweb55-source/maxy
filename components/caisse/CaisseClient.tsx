@@ -10,6 +10,7 @@ import type { Role } from "@prisma/client";
 import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
+import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
 import { formaterDA } from "@/lib/caisse";
 import RechercheRapide from "@/components/RechercheRapide";
 import {
@@ -268,6 +269,21 @@ export default function CaisseClient({ role }: { role: Role }) {
     const saved = localStorage.getItem("impressionAuto");
     if (saved) setImpressionAuto(saved === "true");
   }, []);
+
+  const nbArticlesSelectionnes = Array.from(selection.values()).reduce((acc, set) => acc + set.size, 0);
+
+  // Protection contre la sortie accidentelle si un panier est en cours hors modale
+  useLayer(
+    "caisse-panier-actif",
+    nbArticlesSelectionnes > 0 && !modalBundle && !modalVente && !panierMobileOuvert,
+    () => {
+      if (window.confirm("Vous avez un panier en cours dans la caisse. Voulez-vous vraiment quitter ?")) {
+        return true;
+      }
+      return false;
+    },
+    LAYER_PRIORITY.DEFAUT
+  );
   
   const [historique, setHistorique] = useState<ReponseHistorique | null>(null);
   const [erreurHistorique, setErreurHistorique] = useState<string | null>(null);

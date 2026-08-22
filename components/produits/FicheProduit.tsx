@@ -32,6 +32,7 @@ import {
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import { useBrouillon } from "@/hooks/useBrouillon";
+import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 
 interface ProduitDto {
   id: number;
@@ -238,10 +239,20 @@ export default function FicheProduit({
           <span className="font-mono text-xl text-brand-warm-grey">{produit.code_interne}</span>{" "}
           {produit.reference}
         </h1>
-        <Link href="/inventaire" className="lien inline-flex items-center gap-1.5 text-sm">
+        <a
+          href="/inventaire"
+          onClick={(e) => {
+            e.preventDefault();
+            const navigue = naviguerRetourInterne(router, `/produits/${produitId}`);
+            if (!navigue) {
+              router.push("/inventaire");
+            }
+          }}
+          className="lien inline-flex items-center gap-1.5 text-sm"
+        >
           <IconeFlecheGauche taille={14} />
-          Inventaire
-        </Link>
+          {t("commun.retour")}
+        </a>
       </div>
 
       {vendu && (

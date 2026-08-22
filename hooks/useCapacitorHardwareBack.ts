@@ -1,48 +1,72 @@
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+"use client";
+
+import { useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { closeTopLayer, hasOpenLayers } from "./useLayerStack";
+import { naviguerRetourInterne } from "./useHistoriqueNavigation";
 
 /**
- * Hook global pour intercepter le bouton Retour physique sur Android (Capacitor).
- * Il doit être monté une seule fois, de préférence au niveau de l'AppShell.
+ * Hook centralisé pour intercepter et orchestrer le geste / bouton Retour natif (Capacitor Android).
  *
- * Logique :
- * 1. S'il y a une couche UI ouverte (modale, menu, visionneuse), on la ferme.
- * 2. Sinon, on utilise router.back() de Next.js pour une navigation propre.
- * 3. Si on est sur la page racine (pas d'historique), on ferme l'application.
- *
- * On ne touche JAMAIS directement à window.history.back() pour éviter les
- * conflits avec le patch pushState/replaceState de Next.js 15 App Router.
+ * Hiérarchie d'exécution :
+ * 1. Couche UI ouverte (modale, visionneuse, menu latéral, scanner) ➔ fermer / protéger
+ * 2. Historique interne Gestion-Maxy ➔ naviguer vers l'écran précédent réel
+ * 3. Page racine ("/") ➔ sécurité anti-fermeture accidentelle (double retour pour quitter)
  */
-export function useCapacitorHardwareBack() {
+export function useCapacitorHardwareBack(afficherToast?: (msg: string) => void) {
   const router = useRouter();
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  const dernierAppuiRef = useRef<number>(0);
+  const afficherToastRef = useRef(afficherToast);
 
   useEffect(() => {
-    // Ne s'exécute que sur Capacitor (sur le web classique 'window.Capacitor' n'est pas défini)
-    if (typeof window === "undefined" || !(window as any).Capacitor || !(window as any).Capacitor.isNativePlatform()) {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  useEffect(() => {
+    afficherToastRef.current = afficherToast;
+  }, [afficherToast]);
+
+  useEffect(() => {
+    // Vérification Capacitor Native Platform
+    if (typeof window === "undefined" || !Capacitor.isNativePlatform()) {
       return;
     }
 
-    const listener = CapacitorApp.addListener("backButton", ({ canGoBack }) => {
-      // 1. Si une couche UI est ouverte (modale, menu, visionneuse), on la ferme.
+    const listenerPromise = CapacitorApp.addListener("backButton", () => {
+      // 1. Couche UI ouverte ? (Modale, Visionneuse, BottomSheet, Menu latéral, Scanner)
       if (hasOpenLayers()) {
-        closeTopLayer();
+        const ferme = closeTopLayer();
+        if (ferme) {
+          return;
+        }
+      }
+
+      // 2. Navigation dans l'historique interne Gestion-Maxy
+      const navigue = naviguerRetourInterne(router, pathnameRef.current || "/");
+      if (navigue) {
         return;
       }
 
-      // 2. S'il y a de l'historique de navigation, on revient en arrière via Next.js.
-      if (canGoBack) {
-        router.back();
-        return;
+      // 3. Sur l'écran racine ("/") sans historique : gestion de la sortie sécurisée
+      const maintenant = Date.now();
+      if (maintenant - dernierAppuiRef.current < 2000) {
+        // Second appui dans les 2 secondes ➔ Quitter l'application
+        void CapacitorApp.exitApp();
+      } else {
+        // Premier appui ➔ Avertissement informatif
+        dernierAppuiRef.current = maintenant;
+        if (afficherToastRef.current) {
+          afficherToastRef.current("Appuyez à nouveau pour quitter l'application");
+        }
       }
-
-      // 3. Aucune couche ouverte et pas d'historique → fermer l'app.
-      void CapacitorApp.exitApp();
     });
 
     return () => {
-      void listener.then((l) => l.remove());
+      void listenerPromise.then((handle) => handle.remove());
     };
   }, [router]);
 }

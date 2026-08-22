@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/contexte";
+import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 import type { Role, StatutLot, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
@@ -98,6 +100,7 @@ function BoutonTransition({ avant, cible }: { avant: StatutProduit; cible: Statu
 }
 
 export default function EcranLot({ lotId, role }: { lotId: number; role: Role }) {
+  const router = useRouter();
   const { afficher } = useToast();
   const t = useT();
   const [lot, setLot] = useState<LotDto | null>(null);
@@ -407,10 +410,20 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 animate-entree pb-24">
-      <Link href="/arrivages" className="lien inline-flex items-center gap-1.5 text-sm">
+      <a
+        href="/arrivages"
+        onClick={(e) => {
+          e.preventDefault();
+          const navigue = naviguerRetourInterne(router, `/lots/${lot.id}`);
+          if (!navigue) {
+            router.push("/arrivages");
+          }
+        }}
+        className="lien inline-flex items-center gap-1.5 text-sm"
+      >
         <IconeFlecheGauche taille={14} />
         {t("ecranLot.retourArrivages")}
-      </Link>
+      </a>
 
       <div className="carte">
         <div className="flex flex-wrap items-center justify-between gap-2">

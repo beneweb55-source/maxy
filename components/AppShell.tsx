@@ -8,12 +8,13 @@ import ClocheNotifications from "./ClocheNotifications";
 import SelecteurLangue from "./SelecteurLangue";
 import ThemeToggle from "./ThemeToggle";
 import dynamic from "next/dynamic";
-import { FournisseurToasts } from "./toast";
+import { FournisseurToasts, useToast } from "./toast";
 import ScannerGlobal from "./ScannerGlobal";
 import { useT } from "@/lib/i18n/contexte";
 import { useSwipeMenu } from "@/hooks/useSwipeMenu";
 import { useCapacitorHardwareBack } from "@/hooks/useCapacitorHardwareBack";
-import { useLayer } from "@/hooks/useLayerStack";
+import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
+import { useSuiviNavigation } from "@/hooks/useHistoriqueNavigation";
 import {
   IconeArchive,
   IconeBillet,
@@ -80,6 +81,16 @@ const NAVIGATION: readonly EntreeNavigation[] = [
   },
 ];
 
+/**
+ * Sous-composant sous le FournisseurToasts pour orchestrer
+ * le suivi de navigation et le bouton retour matériel Capacitor.
+ */
+function GestionnaireRetourShell() {
+  const { afficher } = useToast();
+  useSuiviNavigation();
+  useCapacitorHardwareBack((msg) => afficher(msg, "succes"));
+  return null;
+}
 
 export default function AppShell({
   user,
@@ -98,9 +109,6 @@ export default function AppShell({
   
   const SIDEBAR_WIDTH = 256;
 
-  // Écouteur global Capacitor pour le bouton Retour physique Android
-  useCapacitorHardwareBack();
-
   // Hook global pour le swipe natif (60/120fps)
   useSwipeMenu({
     menuOuvert,
@@ -110,9 +118,8 @@ export default function AppShell({
     sidebarWidth: SIDEBAR_WIDTH
   });
 
-  // Enregistrement du menu dans la pile de couches pour le bouton Retour Android.
-  // Remplace l'ancienne logique pushState/back qui entrait en conflit avec Next.js 15.
-  useLayer("app-menu", menuOuvert, () => setMenuOuvert(false));
+  // Enregistrement du menu dans la pile de couches avec priorité MENU
+  useLayer("app-menu", menuOuvert, () => setMenuOuvert(false), LAYER_PRIORITY.MENU);
 
   const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(user.role));
 
@@ -210,6 +217,7 @@ export default function AppShell({
 
   return (
     <FournisseurToasts>
+        <GestionnaireRetourShell />
         <ScannerGlobal />
         <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden">

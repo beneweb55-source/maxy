@@ -16,6 +16,8 @@ import {
 } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
 import GarantieCertificat from "@/components/factures/GarantieCertificat";
+import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
+import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
 
 interface LigneFactureDto {
   id: number;
@@ -96,6 +98,8 @@ export default function FactureDetail({
   const [nis, setNis] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [vueGarantie, setVueGarantie] = useState(false);
+
+  useLayer("facture-garantie", vueGarantie, () => setVueGarantie(false), LAYER_PRIORITY.BOTTOM_SHEET);
 
   const peutModifier = role === "gerant" || role === "dev" || role === "social_media";
 
@@ -212,10 +216,20 @@ export default function FactureDetail({
     <div className="mx-auto max-w-3xl space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-screen p-4 sm:p-6 rounded-2xl">
       {/* Barre d'actions — masquée à l'impression */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50 print:hidden">
-        <Link href="/factures" className="lien inline-flex items-center gap-1.5 text-sm">
+        <a
+          href="/factures"
+          onClick={(e) => {
+            e.preventDefault();
+            const navigue = naviguerRetourInterne(router, `/factures/${factureId}`);
+            if (!navigue) {
+              router.push("/factures");
+            }
+          }}
+          className="lien inline-flex items-center gap-1.5 text-sm"
+        >
           <IconeFlecheGauche taille={14} />
           Factures
-        </Link>
+        </a>
         <div className="flex items-center gap-2">
           {peutModifier && (
             <button
