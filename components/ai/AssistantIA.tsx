@@ -114,15 +114,19 @@ export default function AssistantIA({
       });
 
       if (!res.ok) {
-        throw new Error();
+        if (res.status === 429) {
+          throw new Error("Trop de demandes en ce moment, réessaie dans quelques secondes.");
+        }
+        throw new Error("Désolé, l'assistant IA est temporairement indisponible.");
       }
 
       const data = await res.json();
       const { texteEpuré, actions } = extraireActions(data.reply);
       
       setMessages(prev => [...prev, { role: "ai", text: texteEpuré, actions }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { role: "ai", text: "Désolé, l'assistant IA est temporairement indisponible." }]);
+    } catch (e: any) {
+      const errorMessage = e.message || "Désolé, l'assistant IA est temporairement indisponible.";
+      setMessages(prev => [...prev, { role: "ai", text: errorMessage }]);
     } finally {
       setIsLoading(false);
     }

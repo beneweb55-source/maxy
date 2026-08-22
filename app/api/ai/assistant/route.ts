@@ -2,21 +2,38 @@ import { NextResponse, type NextRequest } from "next/server";
 import { exigerUtilisateur, erreur } from "@/lib/api";
 import { aiClient, MODEL_NAME } from "@/lib/ai/config";
 import { aiTools, executeTool } from "@/lib/ai/tools";
-import { Type } from "@google/genai";
+import { Type, FunctionCallingConfigMode } from "@google/genai";
+
+async function sendMessageWithRetry(chat: any, message: any, maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await chat.sendMessage({ message });
+    } catch (e: any) {
+      if (e?.status === 429 && attempt < maxRetries) {
+        const delay = 1500 * (attempt + 1);
+        console.log(`[GEMINI DEBUG] 429 reçu, retry dans ${delay}ms (tentative ${attempt + 1}/${maxRetries})`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
 
 export async function POST(request: NextRequest) {
   // 1. Authentification
-  // const acces = await exigerUtilisateur(["gerant", "dev"]);
-  // if (acces.reponse) return acces.reponse;
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
 
   try {
     console.log("[GEMINI DEBUG] 1. Début de la requête AI");
     const { prompt, context } = await request.json();
-    console.log("[GEMINI DEBUG] 2. Payload lu:", { prompt: prompt.substring(0, 50), context });
 
     if (!prompt) {
       return erreur(400, "Le prompt est requis.");
     }
+    
+    console.log("[GEMINI DEBUG] 2. Payload lu:", { prompt: prompt.substring(0, 50), context });
 
     if (!process.env.GEMINI_API_KEY) {
       console.log("[GEMINI DEBUG] ERREUR: Clé manquante");
@@ -48,53 +65,65 @@ Si tu recommandes de modifier la vitrine :
     }
 
     console.log("[GEMINI DEBUG] 4. Création du chat avec le modèle:", MODEL_NAME);
+    
+    // N'activer Google Search que si le prompt le demande explicitement
+    // pour éviter de consommer le quota (429) sur de simples questions.
+    const needsSearch = prompt.toLowerCase().includes("marché") || 
+                        prompt.toLowerCase().includes("algérie") || 
+                        prompt.toLowerCase().includes("prix actuel") ||
+                        prompt.toLowerCase().includes("recherche");
+    
+    const activeTools = [...aiTools];
+    if (needsSearch) {
+        console.log("[GEMINI DEBUG] 4b. Activation du Grounding Google Search");
+        activeTools.push({ googleSearch: {} } as any);
+    }
+
     // Configuration de Gemini
     const chat = aiClient.chats.create({
       model: MODEL_NAME,
       config: {
         systemInstruction: systemInstruction,
-        temperature: 0.2,
-        tools: [
-          ...aiTools, 
-          { googleSearch: {} } // Activation de la recherche Google pour les prix du marché algérien
-        ],
+        tools: activeTools.length > 0 ? activeTools : undefined,
+        ...(activeTools.length > 0 && {
+            toolConfig: {
+              includeServerSideToolInvocations: true,
+              functionCallingConfig: {
+                mode: FunctionCallingConfigMode.VALIDATED,
+              },
+            }
+        })
       },
     });
 
     console.log("[GEMINI DEBUG] 5. Envoi du message initial...");
-    // Envoyer le message initial
-    let response = await chat.sendMessage({ message: prompt });
+    // Envoyer le message initial avec backoff
+    let response = await sendMessageWithRetry(chat, prompt);
     console.log("[GEMINI DEBUG] 6. Réponse initiale reçue. Function calls présents ?", !!(response.functionCalls && response.functionCalls.length > 0));
 
     // Boucle d'exécution des outils (Function Calling)
-    while (
-      response.functionCalls &&
-      response.functionCalls.length > 0
-    ) {
-      const call = response.functionCalls[0];
-      if (!call || !call.name) break;
-      
-      console.log(`[GEMINI DEBUG] 7. Exécution du tool: ${call.name} avec args:`, call.args);
+    while (response.functionCalls && response.functionCalls.length > 0) {
+      const calls = response.functionCalls;
+      console.log(`[GEMINI DEBUG] 7. Exécution de ${calls.length} tool(s):`, calls.map(c => c.name));
 
-      let toolResult;
-      try {
-        toolResult = await executeTool({ name: call.name, args: call.args });
-        console.log(`[GEMINI DEBUG] 8. Tool ${call.name} exécuté avec succès.`);
-      } catch (e: any) {
-        console.error(`[GEMINI DEBUG] ERREUR dans le tool ${call.name}:`, e);
-        toolResult = { error: e.message };
+      const functionResponseParts = [];
+      for (const call of calls) {
+        if (!call.name) continue;
+        let toolResult;
+        try {
+          toolResult = await executeTool({ name: call.name, args: call.args });
+          console.log(`[GEMINI DEBUG] 8. Tool ${call.name} exécuté avec succès.`);
+        } catch (e: any) {
+          console.error(`[GEMINI DEBUG] ERREUR dans le tool ${call.name}:`, e);
+          toolResult = { error: e.message };
+        }
+        functionResponseParts.push({
+          functionResponse: { name: call.name, response: toolResult },
+        });
       }
 
-      console.log(`[GEMINI DEBUG] 9. Renvoi du résultat au modèle...`);
-      // Renvoyer le résultat de l'outil au modèle
-      response = await chat.sendMessage({
-        message: [{
-          functionResponse: {
-            name: call.name,
-            response: toolResult,
-          }
-        }] as any
-      });
+      console.log(`[GEMINI DEBUG] 9. Renvoi de ${functionResponseParts.length} résultat(s) au modèle...`);
+      response = await sendMessageWithRetry(chat, functionResponseParts);
       console.log(`[GEMINI DEBUG] 10. Nouvelle réponse du modèle reçue.`);
     }
 
@@ -108,6 +137,11 @@ Si tu recommandes de modifier la vitrine :
 
   } catch (e: any) {
     console.error("[GEMINI DEBUG] ERREUR FATALE GLOBALE:", e);
+    
+    if (e?.status === 429) {
+      return erreur(429, "Trop de demandes en ce moment, réessaie dans quelques secondes.");
+    }
+    
     // En développement, on renvoie l'erreur détaillée pour aider au diagnostic
     if (process.env.NODE_ENV === "development") {
         return erreur(500, `Erreur serveur: ${e.message}`);
