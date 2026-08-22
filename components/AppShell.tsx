@@ -12,6 +12,7 @@ import { FournisseurToasts } from "./toast";
 import ScannerGlobal from "./ScannerGlobal";
 import { useT } from "@/lib/i18n/contexte";
 import { useSwipeMenu } from "@/hooks/useSwipeMenu";
+import { useCapacitorHardwareBack } from "@/hooks/useCapacitorHardwareBack";
 import {
   IconeArchive,
   IconeBillet,
@@ -97,6 +98,9 @@ export default function AppShell({
   const SIDEBAR_WIDTH = 256;
   
   const isNavigating = useRef(false);
+
+  // Écouteur global Capacitor pour le bouton Retour physique Android
+  useCapacitorHardwareBack();
 
   // Hook global pour le swipe natif (60/120fps)
   useSwipeMenu({

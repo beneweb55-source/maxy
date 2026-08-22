@@ -8,6 +8,7 @@ import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
+import GalerieCarte from "./GalerieCarte";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import {
@@ -356,13 +357,10 @@ export default function Vitrine({ role }: { role: Role }) {
                     p.images.length > 0 ? "cursor-zoom-in" : "cursor-default"
                   }`}
                 >
-                  {p.image_url ? (
-                    <img
-                      src={p.image_url}
-                      alt={`Photo de ${p.reference}`}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                    />
+                  {p.images && p.images.length > 0 ? (
+                    <GalerieCarte images={p.images} reference={p.reference} />
+                  ) : p.image_url ? (
+                    <GalerieCarte images={[p.image_url]} reference={p.reference} />
                   ) : (
                     <span className="flex h-full w-full items-center justify-center text-brand-grey">
                       <IconeImage taille={28} />
