@@ -491,7 +491,6 @@ export default function Inventaire({ role }: { role: Role }) {
       afficher(`Produit ${corps?.code_interne} ajouté à l'inventaire.`);
       validerBrouillon();
       setModalAjout(false);
-      majUrl({ ajouter: null });
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -1659,7 +1658,6 @@ export default function Inventaire({ role }: { role: Role }) {
         modificationsNonEnregistrees={formulaireModifie || formPhotosModifiees}
         onFermer={() => {
           setModalAjout(false);
-          majUrl({ ajouter: null });
         }}
       >
         {brouillonDisponible && (
