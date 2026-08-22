@@ -32,8 +32,6 @@ import {
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
 import { useT } from "@/lib/i18n/contexte";
-import { useAssistant } from "@/components/ai/AssistantContext";
-import { IconeAssistant } from "@/components/icons";
 
 interface LigneProduit {
   id: number;
@@ -154,7 +152,6 @@ export default function Inventaire({ role }: { role: Role }) {
   const searchParams = useSearchParams();
   const t = useT();
   const { afficher } = useToast();
-  const { openAssistant } = useAssistant();
 
   const [q, setQ] = useState(searchParams?.get("q") ?? "");
   
@@ -757,14 +754,6 @@ export default function Inventaire({ role }: { role: Role }) {
               Export CSV
             </a>
           )}
-          <button
-            type="button"
-            onClick={() => openAssistant({ page: "inventaire" }, "Analyser l'inventaire actuel")}
-            className="btn w-full sm:w-auto justify-center bg-gradient-to-r from-[#8A2BE2] to-[#4169E1] text-white hover:opacity-90 transition shadow-sm border border-transparent"
-          >
-            <IconeAssistant taille={15} />
-            Analyser l'inventaire
-          </button>
           {peutModifier && (
             <button type="button" onClick={ouvrirAjout} className="btn btn-primaire w-full sm:w-auto justify-center">
               <IconePlus taille={15} />

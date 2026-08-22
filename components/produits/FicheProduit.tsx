@@ -31,8 +31,6 @@ import {
   IconeVitrine,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
-import { useAssistant } from "@/components/ai/AssistantContext";
-import { IconeAssistant } from "@/components/icons";
 
 interface ProduitDto {
   id: number;
@@ -87,7 +85,6 @@ export default function FicheProduit({
   const router = useRouter();
   const { afficher } = useToast();
   const t = useT();
-  const { openAssistant } = useAssistant();
   const [produit, setProduit] = useState<ProduitDto | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -471,15 +468,6 @@ export default function FicheProduit({
                 Fixer le prix — mettre en vente
               </button>
             )}
-            <button
-              type="button"
-              disabled={envoi}
-              onClick={() => openAssistant({ produit_id: produit.id, reference: produit.reference }, "Analyse ce produit et suggère-moi un prix adapté")}
-              className="btn bg-gradient-to-r from-[#8A2BE2] to-[#4169E1] text-white hover:opacity-90 transition shadow-sm border border-transparent"
-            >
-              <IconeAssistant taille={14} />
-              Demander conseil à l'IA
-            </button>
             {peutVendre && produit.statut === "en_vente" && (
               <Link href={`/caisse?produit=${produit.code_interne}`} className="btn btn-crystal">
                 Vendre ce produit
