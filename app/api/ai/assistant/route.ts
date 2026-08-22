@@ -104,7 +104,7 @@ Si tu recommandes de modifier la vitrine :
     // Boucle d'exécution des outils (Function Calling)
     while (response.functionCalls && response.functionCalls.length > 0) {
       const calls = response.functionCalls;
-      console.log(`[GEMINI DEBUG] 7. Exécution de ${calls.length} tool(s):`, calls.map(c => c.name));
+      console.log(`[GEMINI DEBUG] 7. Exécution de ${calls.length} tool(s):`, calls.map((c: any) => c.name));
 
       const functionResponseParts = [];
       for (const call of calls) {
