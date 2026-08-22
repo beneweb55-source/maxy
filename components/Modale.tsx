@@ -64,39 +64,44 @@ export default function Modale({
   const idRef = useRef(`modal-${Math.random().toString(36).substring(2, 9)}`);
   const etaitOuverte = useRef(false);
 
+  // Gestion de l'historique pour le bouton "Retour" (Android ou navigateur)
   useEffect(() => {
     if (ouverte) {
       function surEchap(e: KeyboardEvent) {
         if (e.key === "Escape") tenterFermeture();
       }
       document.addEventListener("keydown", surEchap);
-      
+
       const handlePopState = (e: PopStateEvent) => {
+        // L'utilisateur a utilisé le bouton "Retour", l'état modalId a disparu
         if (e.state?.modalId !== idRef.current) {
           tenterFermeture();
         }
       };
       window.addEventListener("popstate", handlePopState);
 
+      // On pousse un état dans l'historique SEULEMENT si on vient de s'ouvrir
       if (!etaitOuverte.current && window.history.state?.modalId !== idRef.current) {
-        window.history.pushState({ modalId: idRef.current }, "");
+        // On conserve l'état de Next.js pour ne pas casser son routeur
+        window.history.pushState({ ...window.history.state, modalId: idRef.current }, "");
       }
       etaitOuverte.current = true;
 
       return () => {
         document.removeEventListener("keydown", surEchap);
         window.removeEventListener("popstate", handlePopState);
-        if (window.history.state?.modalId === idRef.current) {
-          window.history.back();
-        }
+        // On ne fait PAS history.back() ici car cela cause des race conditions
+        // si React unmount et remount rapidement. On gérera le back dans le useEffect
+        // lors de la transition ouverte -> fermée.
       };
     } else if (etaitOuverte.current) {
+      // Transition Ouverte -> Fermée
       etaitOuverte.current = false;
       if (window.history.state?.modalId === idRef.current) {
         window.history.back();
       }
     }
-  }, [ouverte]);
+  }, [ouverte, tenterFermeture]);
 
   // Logique de Drag-to-dismiss (Swipe down) pour le mobile
   const [isDragging, setIsDragging] = useState(false);

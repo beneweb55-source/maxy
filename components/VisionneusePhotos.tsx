@@ -105,22 +105,28 @@ export default function VisionneusePhotos({
       }
     }
     
-    // Interception du bouton Retour (mobile & desktop)
-    window.history.pushState({ visionneuseOpen: true }, "");
-    const handlePopState = () => onFermer();
-    
-    window.addEventListener("popstate", handlePopState);
     document.addEventListener("keydown", surTouche, true);
     
     return () => {
       document.removeEventListener("keydown", surTouche, true);
+    };
+  }, [onFermer, onNaviguer, n, i]);
+
+  // Interception du bouton retour Android pour fermer la visionneuse
+  useEffect(() => {
+    // On conserve l'état Next.js pour ne pas désynchroniser le routeur
+    window.history.pushState({ ...window.history.state, visionneuseOpen: true }, "");
+
+    const handlePopState = () => onFermer();
+    
+    window.addEventListener("popstate", handlePopState);
+    return () => {
       window.removeEventListener("popstate", handlePopState);
-      // Si la modale est fermée via un bouton (l'état history est resté), on recule manuellement
       if (window.history.state?.visionneuseOpen) {
         window.history.back();
       }
     };
-  }, [onFermer, onNaviguer, n, i]);
+  }, [onFermer]);
 
   // Verrouille le défilement du fond (restaure l'état précédent en sortie).
   useEffect(() => {

@@ -116,15 +116,21 @@ export default function AppShell({
   // Interception de l'historique pour fermer le menu avec le bouton Retour
   useEffect(() => {
     if (!menuOuvert) return;
-    window.history.pushState({ menuId: menuIdRef.current }, "");
+    
+    // On conserve l'état de Next.js pour ne pas casser son routeur
+    window.history.pushState({ ...window.history.state, menuId: menuIdRef.current }, "");
+    
     const handlePopState = (e: PopStateEvent) => {
       if (e.state?.menuId !== menuIdRef.current) {
         setMenuOuvert(false);
       }
     };
+    
     window.addEventListener("popstate", handlePopState);
+    
     return () => {
       window.removeEventListener("popstate", handlePopState);
+      // On s'assure de ne faire back() que si le menu est fermé par l'UI, pas par un démontage
       if (!isNavigating.current && window.history.state?.menuId === menuIdRef.current) {
         window.history.back();
       }
