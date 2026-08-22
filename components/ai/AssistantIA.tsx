@@ -95,7 +95,7 @@ export default function AssistantIA({
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.message || "Désolé, l'assistant IA est temporairement indisponible.");
+        throw new Error(data.error || "Désolé, l'assistant IA est temporairement indisponible.");
       }
 
       setMessages(prev => [...prev, { role: "ai", text: data.reply || "", actions: data.actions || [] }]);

@@ -22,7 +22,8 @@ async function sendMessageWithRetry(chat: any, message: any, maxRetries = 1) {
       }
       if (e?.status === 429 && attempt < maxRetries) {
         const delay = 3000 * (attempt + 1);
-        console.log(`[GEMINI DEBUG] 429 reçu, retry dans ${delay}ms (tentative ${attempt + 1}/${maxRetries})`);
+        console.error(`[GEMINI DEBUG] 429 reçu. Détails complets:`, e.message || e);
+        console.log(`[GEMINI DEBUG] Retry dans ${delay}ms (tentative ${attempt + 1}/${maxRetries})`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }
@@ -140,7 +141,8 @@ Règles absolues :
       return erreur(504, "Le service met trop de temps à répondre. Veuillez réessayer.");
     }
     if (e?.status === 429) {
-      return erreur(429, "Trop de demandes en ce moment. Veuillez patienter avant de réessayer.");
+      const details = e.message || "Quota dépassé (RESOURCE_EXHAUSTED)";
+      return erreur(429, `Erreur 429: ${details}`);
     }
     if (e?.status === 400 || e?.status === 403) {
        return erreur(400, "Le modèle IA a refusé ou n'a pas pu traiter la demande. Vérifiez votre requête.");
