@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { IconeImprimante, IconeCocheCercle } from "@/components/icons";
+import { IconeImprimante } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
 
 interface BoutonImpressionProps {
@@ -18,16 +17,13 @@ export default function BoutonImpression({
   texte,
 }: BoutonImpressionProps) {
   const { t } = useLangue();
-  const [imprimee, setImprimee] = useState(dejaImprimee);
 
   const imprimer = () => {
     if (ids.length === 0) return;
     
     // Ouvre la page d'impression dans une nouvelle fenêtre/onglet
+    // Le marquage se fera uniquement via le bouton "Confirmer" sur cette page
     window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank", "width=400,height=600");
-    
-    // Met à jour l'état local pour un feedback immédiat
-    setImprimee(true);
   };
 
   return (
@@ -37,15 +33,11 @@ export default function BoutonImpression({
         imprimer();
       }}
       className={`inline-flex items-center gap-1.5 transition-colors ${
-        imprimee ? "text-success hover:text-success/80" : "text-brand-warm-grey hover:text-brand-dark-grey"
+        dejaImprimee ? "text-succes hover:text-succes/80" : "text-brand-warm-grey hover:text-brand-dark-grey"
       } ${className}`}
-      title={imprimee ? t("inventaire.etiquetteImprimee") : t("inventaire.imprimerEtiquetteGenerique")}
+      title={dejaImprimee ? t("inventaire.etiquetteImprimee") : t("inventaire.imprimerEtiquetteGenerique")}
     >
-      {imprimee ? (
-        <IconeCocheCercle taille={16} />
-      ) : (
-        <IconeImprimante taille={16} />
-      )}
+      <IconeImprimante taille={16} />
       {texte && <span className="text-sm font-medium">{texte}</span>}
     </button>
   );

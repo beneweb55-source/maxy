@@ -77,6 +77,7 @@ model User {
   fcm_tokens    FcmToken[]
   ventes        Vente[]            @relation("ventes_effectuees")
   factures      Facture[]
+  journal       JournalActivite[]
 
   @@map("users")
 }
@@ -293,13 +294,35 @@ model Notification {
   id         Int      @id @default(autoincrement())
   user_id    Int
   message    String
+  type       String?
   lu         Boolean  @default(false)
   lien       String?
+  groupe     String?
   created_at DateTime @default(now())
 
   user User @relation(fields: [user_id], references: [id])
 
+  @@index([user_id, groupe, lu])
   @@map("notifications")
+}
+
+model JournalActivite {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  action      String
+  entite_type String?
+  entite_id   Int?
+  details     String?
+  ip          String?
+  created_at  DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([action])
+  @@index([created_at])
+  @@index([entite_type, entite_id])
+  @@map("journal_activite")
 }
 
 model PushSubscription {

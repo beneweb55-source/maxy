@@ -80,6 +80,21 @@ export interface TableauxDashboard {
   dernieres_ventes?: LigneVente[];
 }
 
+export interface StatCategorie {
+  categorie: string;
+  nb_vendus: number;
+  marge_totale: number;
+  marge_moyenne: number;
+}
+
+export interface StatFournisseur {
+  fournisseur: string;
+  nb_lots: number;
+  nb_produits: number;
+  taux_defaut: number;
+  marge_moyenne: number;
+}
+
 export interface DonneesDashboard {
   kpis: Partial<Record<CleKpi, Kpi>>;
   graphiques: Partial<Record<SourceGraphique, DonneesGraphique>>;
@@ -88,6 +103,8 @@ export interface DonneesDashboard {
   activites?: Activite[];
   tableaux: TableauxDashboard;
   compteurs: Record<string, number>;
+  top_categories?: StatCategorie[];
+  stats_fournisseurs?: StatFournisseur[];
 }
 
 export interface ReponseDashboard {

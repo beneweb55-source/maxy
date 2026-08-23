@@ -12,8 +12,16 @@ interface NotificationDto {
   message: string;
   lu: boolean;
   lien: string | null;
+  type: string | null;
   created_at: string;
 }
+
+const ICONES_TYPE: Record<string, string> = {
+  alerte_stock: "⚠️",
+  succes: "✅",
+  info: "ℹ️",
+  erreur: "❌",
+};
 
 export default function ClocheNotifications() {
   const router = useRouter();
@@ -110,8 +118,9 @@ export default function ClocheNotifications() {
                     {!n.lu && (
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-orange" />
                     )}
+                    <span className="shrink-0 text-base">{ICONES_TYPE[n.type ?? "info"] || "🔔"}</span>
                     <span className="min-w-0">
-                      <span className="block truncate">{n.message}</span>
+                      <span className="block">{n.message}</span>
                       <span className="text-xs font-normal text-brand-grey">
                         {new Date(n.created_at).toLocaleString(langue === "en" ? "en-GB" : "fr-FR", {
                           day: "numeric",

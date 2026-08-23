@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Role } from "@prisma/client";
+import Link from "next/link";
 import Modale from "@/components/Modale";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
@@ -284,11 +285,21 @@ export default function AdminClient() {
 
   return (
     <div className="space-y-6 animate-entree">
-      <div className="pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Administration</h1>
-        <p className="mt-1 text-sm text-brand-warm-grey">
-          Pilotage des chiffres clés, des paramètres métier, des comptes et des données.
-        </p>
+      <div className="pb-2 border-b border-brand-light-grey/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Administration</h1>
+          <p className="mt-1 text-sm text-brand-warm-grey">
+            Pilotage des chiffres clés, des paramètres métier, des comptes et des données.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/administration/journal" className="btn btn-secondaire text-sm">
+            Journal d'activité
+          </Link>
+          <Link href="/administration/backup" className="btn btn-secondaire text-sm">
+            Sauvegardes
+          </Link>
+        </div>
       </div>
 
       <section className="space-y-3">

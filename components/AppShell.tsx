@@ -7,6 +7,7 @@ import type { Role } from "@prisma/client";
 import ClocheNotifications from "./ClocheNotifications";
 import SelecteurLangue from "./SelecteurLangue";
 import ThemeToggle from "./ThemeToggle";
+import IndicateurConnexion from "./IndicateurConnexion";
 import dynamic from "next/dynamic";
 import { FournisseurToasts, useToast } from "./toast";
 import ScannerGlobal from "./ScannerGlobal";
@@ -15,6 +16,9 @@ import { useSwipeMenu } from "@/hooks/useSwipeMenu";
 import { useCapacitorHardwareBack } from "@/hooks/useCapacitorHardwareBack";
 import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
 import { useSuiviNavigation } from "@/hooks/useHistoriqueNavigation";
+import { useRaccourcis } from "@/hooks/useRaccourcis";
+import RechercheGlobale from "./RechercheGlobale";
+import Modale from "./Modale";
 import {
   IconeArchive,
   IconeBillet,
@@ -28,6 +32,7 @@ import {
   IconeReglages,
   IconeTableauDeBord,
   IconeVitrine,
+  IconeRecherche,
   type ProprietesIcone,
 } from "./icons";
 
@@ -103,6 +108,8 @@ export default function AppShell({
   const router = useRouter();
   const t = useT();
   const [menuOuvert, setMenuOuvert] = useState(false);
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
+  const [guideOuvert, setGuideOuvert] = useState(false);
   
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -120,6 +127,12 @@ export default function AppShell({
 
   // Enregistrement du menu dans la pile de couches avec priorité MENU
   useLayer("app-menu", menuOuvert, () => setMenuOuvert(false), LAYER_PRIORITY.MENU);
+
+  useRaccourcis({
+    role: user.role,
+    onOuvrirRecherche: () => setRechercheOuverte(true),
+    onOuvrirGuide: () => setGuideOuvert(true),
+  });
 
   const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(user.role));
 
@@ -271,7 +284,26 @@ export default function AppShell({
             <span className="hidden text-sm font-semibold text-brand-smooth lg:block font-outfit tracking-wide">
               {t("entete.titrePlateforme")}
             </span>
-            <div className="ml-auto flex items-center gap-3">
+            <div className="ml-auto flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setRechercheOuverte(true)}
+                className="hidden lg:flex items-center gap-2 rounded-lg border border-brand-light-grey px-3 py-1.5 text-sm text-brand-warm-grey transition hover:bg-brand-light-grey/40"
+                aria-label={t("rechercheGlobale.placeholder") || "Rechercher..."}
+              >
+                <IconeRecherche taille={16} />
+                <span className="hidden xl:inline-block">Rechercher...</span>
+                <kbd className="ml-2 rounded border border-brand-light-grey bg-brand-paper px-1.5 py-0.5 font-mono text-[10px]">Ctrl K</kbd>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRechercheOuverte(true)}
+                className="lg:hidden rounded-lg border border-brand-light-grey p-2 text-brand-smooth transition hover:bg-brand-light-grey/40"
+                aria-label={t("rechercheGlobale.placeholder") || "Rechercher..."}
+              >
+                <IconeRecherche taille={18} />
+              </button>
+              <IndicateurConnexion />
               <ThemeToggle />
               <SelecteurLangue />
               <ClocheNotifications />
@@ -281,6 +313,39 @@ export default function AppShell({
           <main className="min-w-0 p-4 lg:p-8 print:p-0">{children}</main>
         </div>
       </div>
+      <RechercheGlobale
+        role={user.role}
+        ouverte={rechercheOuverte}
+        onFermer={() => setRechercheOuverte(false)}
+      />
+      <Modale
+        titre="Guide des raccourcis clavier"
+        ouverte={guideOuvert}
+        onFermer={() => setGuideOuvert(false)}
+      >
+        <div className="space-y-4 text-sm text-brand-smooth mt-2">
+          <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
+            <span>Recherche globale</span>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + K</kbd>
+          </div>
+          <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
+            <span>Aller à l'inventaire</span>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + I</kbd>
+          </div>
+          <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
+            <span>Nouveau lot (Gérant)</span>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + N</kbd>
+          </div>
+          <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
+            <span>Fermer / Retour en arrière</span>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Échap</kbd>
+          </div>
+          <div className="flex justify-between items-center pb-2">
+            <span>Afficher ce guide</span>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + H</kbd>
+          </div>
+        </div>
+      </Modale>
       <CapacitorPushManager />
     </FournisseurToasts>
   );

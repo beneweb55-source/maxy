@@ -856,7 +856,7 @@ export default function CaisseClient({ role }: { role: Role }) {
         {onglet === "en_vente" && (
         <div className="flex flex-col lg:flex-row gap-4 items-start h-full overflow-hidden">
           <div className="flex-1 flex flex-col space-y-3 w-full min-w-0 h-full overflow-y-auto pr-2 pb-24">
-          <div className="carte flex flex-wrap items-center gap-3">
+          <div className="carte flex flex-wrap items-center gap-3 bg-brand-white/95 backdrop-blur-md shadow-sm border-brand-light-grey/60 sticky top-0 z-20">
             <div className="relative min-w-56 flex-1 border-r border-brand-light-grey pr-3 mr-3">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-orange">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="2" height="8" x="7" y="8"/><rect width="2" height="8" x="11" y="8"/><rect width="2" height="8" x="15" y="8"/></svg>
@@ -1129,7 +1129,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 </div>
               )}
 
-              <div className="carte flex flex-col p-4 shadow-lg border-brand-orange/20 ring-1 ring-brand-orange/10 bg-brand-white">
+              <div className="carte flex flex-col p-4 shadow-2xl border-t-[4px] border-t-brand-orange border-brand-orange/20 bg-brand-white relative">
                 <div className="flex items-center justify-between border-b border-brand-light-grey pb-3 mb-3">
                   <h3 className="font-bold text-lg flex items-center gap-2 text-brand-black">
                     <IconePaquet taille={20} className="text-brand-orange" />

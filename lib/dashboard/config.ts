@@ -20,6 +20,9 @@ export const CATALOGUE_KPI = {
     comparaison: true,
   },
   ca_mois: { libelle: "dashboard.kpi.ca_mois", format: "da", comparaison: true },
+  nb_ventes_mois: { libelle: "dashboard.kpi.nb_ventes_mois", format: "nombre", comparaison: true },
+  marge_moyenne: { libelle: "dashboard.kpi.marge_moyenne", format: "da", comparaison: true },
+  taux_conversion: { libelle: "dashboard.kpi.taux_conversion", format: "nombre", comparaison: true },
   nb_en_vente: { libelle: "dashboard.kpi.nb_en_vente", format: "nombre", comparaison: false },
   nb_en_stock: { libelle: "dashboard.kpi.nb_en_stock", format: "nombre", comparaison: false },
   valeur_en_vente: { libelle: "dashboard.kpi.valeur_en_vente", format: "da", comparaison: false },
@@ -44,7 +47,9 @@ export type TypeWidget =
   | "alertes"
   | "activites"
   | "tableau"
-  | "actions_rapides";
+  | "actions_rapides"
+  | "top_categories"
+  | "stats_fournisseurs";
 
 export type TailleWidget = "petit" | "moyen" | "grand" | "pleine";
 
@@ -94,6 +99,12 @@ export interface WidgetActions extends WidgetBase {
   type: "actions_rapides";
   actions: ActionRapide[];
 }
+export interface WidgetTopCategories extends WidgetBase {
+  type: "top_categories";
+}
+export interface WidgetStatsFournisseurs extends WidgetBase {
+  type: "stats_fournisseurs";
+}
 
 export type Widget =
   | WidgetKpis
@@ -102,7 +113,9 @@ export type Widget =
   | WidgetAlertes
   | WidgetActivites
   | WidgetTableau
-  | WidgetActions;
+  | WidgetActions
+  | WidgetTopCategories
+  | WidgetStatsFournisseurs;
 
 export interface ConfigDashboard {
   titre: string;
@@ -135,6 +148,18 @@ const CONFIG_GERANT: ConfigDashboard = {
         { libelle: "dashboard.gererCaisse", href: "/caisse" },
         { libelle: "dashboard.administration", href: "/administration" },
       ],
+    },
+    {
+      id: "stats-fournisseurs",
+      type: "stats_fournisseurs",
+      titre: "dashboard.statsFournisseurs",
+      taille: "moyen",
+    },
+    {
+      id: "top-categories",
+      type: "top_categories",
+      titre: "dashboard.topCategories",
+      taille: "moyen",
     },
     {
       id: "rapports-a-valider",

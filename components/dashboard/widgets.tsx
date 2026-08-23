@@ -54,7 +54,69 @@ export function RenduWidget({
       return <Activites activites={donnees.activites ?? []} />;
     case "tableau":
       return <Tableau source={widget.source} donnees={donnees} role={role} />;
+    case "top_categories":
+      return <TopCategories categories={donnees.top_categories ?? []} />;
+    case "stats_fournisseurs":
+      return <StatsFournisseurs fournisseurs={donnees.stats_fournisseurs ?? []} />;
   }
+}
+
+function TopCategories({ categories }: { categories: DonneesDashboard["top_categories"] }) {
+  if (!categories || categories.length === 0) return <p className="mt-3 text-sm text-brand-warm-grey">Aucune donnée.</p>;
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-brand-light-grey/50 bg-white shadow-sm">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="bg-brand-paper/50">
+            <th className="px-4 py-2 font-medium text-brand-grey">Catégorie</th>
+            <th className="px-4 py-2 text-right font-medium text-brand-grey">Vendus</th>
+            <th className="px-4 py-2 text-right font-medium text-brand-grey">Marge/Unité</th>
+            <th className="px-4 py-2 text-right font-medium text-brand-grey">Marge Totale</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-brand-light-grey/30">
+          {categories.map((c) => (
+            <tr key={c.categorie} className="transition-colors hover:bg-brand-glow/10">
+              <td className="px-4 py-2.5 font-medium text-brand-black">{c.categorie}</td>
+              <td className="px-4 py-2.5 text-right font-semibold">{c.nb_vendus}</td>
+              <td className="px-4 py-2.5 text-right">{formaterDA(c.marge_moyenne)}</td>
+              <td className="px-4 py-2.5 text-right font-semibold text-brand-orange">{formaterDA(c.marge_totale)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function StatsFournisseurs({ fournisseurs }: { fournisseurs: DonneesDashboard["stats_fournisseurs"] }) {
+  if (!fournisseurs || fournisseurs.length === 0) return <p className="mt-3 text-sm text-brand-warm-grey">Aucune donnée.</p>;
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-brand-light-grey/50 bg-white shadow-sm">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="bg-brand-paper/50">
+            <th className="px-4 py-2 font-medium text-brand-grey">Fournisseur</th>
+            <th className="px-4 py-2 text-right font-medium text-brand-grey">Lots</th>
+            <th className="px-4 py-2 text-right font-medium text-brand-grey">Taux Défaut</th>
+            <th className="px-4 py-2 text-right font-medium text-brand-grey">Marge/Unité</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-brand-light-grey/30">
+          {fournisseurs.map((f) => (
+            <tr key={f.fournisseur} className="transition-colors hover:bg-brand-glow/10">
+              <td className="px-4 py-2.5 font-medium text-brand-black">{f.fournisseur}</td>
+              <td className="px-4 py-2.5 text-right font-semibold">{f.nb_lots}</td>
+              <td className={`px-4 py-2.5 text-right ${f.taux_defaut > 10 ? 'text-danger font-semibold' : ''}`}>
+                {f.taux_defaut.toFixed(1)}%
+              </td>
+              <td className="px-4 py-2.5 text-right text-succes font-semibold">{formaterDA(f.marge_moyenne)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export function widgetSansCarte(widget: Widget): boolean {

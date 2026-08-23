@@ -43,6 +43,8 @@ export async function chargerDonneesDashboard(
   let besoinAlertes = false;
   let besoinActivites = false;
   let limiteActivites = 10;
+  let besoinTopCategories = false;
+  let besoinStatsFournisseurs = false;
 
   for (const widget of config.widgets) {
     switch (widget.type) {
@@ -69,6 +71,12 @@ export async function chargerDonneesDashboard(
         widget.actions.forEach((a) => {
           if (a.badge) clesCompteurs.add(a.badge);
         });
+        break;
+      case "top_categories":
+        besoinTopCategories = true;
+        break;
+      case "stats_fournisseurs":
+        besoinStatsFournisseurs = true;
         break;
     }
   }
@@ -203,6 +211,36 @@ export async function chargerDonneesDashboard(
   }
   if (clesKpi.has("ca_mois") && caParMois) {
     kpis.ca_mois = kpiMensuel(caParMois);
+  }
+  
+  if (clesKpi.has("nb_ventes_mois")) {
+    const nbParMois = serieMensuelle(() => 1);
+    kpis.nb_ventes_mois = kpiMensuel(nbParMois);
+  }
+  
+  if (clesKpi.has("marge_moyenne")) {
+    const courant = ventesValides.filter(v => cleMois(v.date_vente) === cleCourante);
+    const precedent = ventesValides.filter(v => cleMois(v.date_vente) === clePrecedente);
+    
+    const margeMoy = (vs: typeof ventesValides) => vs.length === 0 ? 0 : vs.reduce((s, v) => s + margeDe(v), 0) / vs.length;
+    
+    const valCourant = margeMoy(courant);
+    const valPrecedent = margeMoy(precedent);
+    
+    kpis.marge_moyenne = {
+      valeur: valCourant,
+      variation_pct: variation(valCourant, valPrecedent)
+    };
+  }
+
+  if (clesKpi.has("taux_conversion")) {
+    // Taux de conversion : nb produits vendus / nb total produits * 100
+    // Pour simplifier on calcule sur tout l'historique
+    const totalRecus = produits.length;
+    const totalVendus = ventesValides.length; // Approximatif
+    const taux = totalRecus === 0 ? 0 : Math.round((totalVendus / totalRecus) * 1000) / 10;
+    
+    kpis.taux_conversion = { valeur: taux, variation_pct: null };
   }
   if (clesKpi.has("cash_disponible")) {
     const [statGlobal, statAvant] = await Promise.all([
@@ -553,6 +591,70 @@ export async function chargerDonneesDashboard(
       .slice(0, limiteActivites);
   }
 
+  let top_categories: DonneesDashboard["top_categories"];
+  if (besoinTopCategories && ventesValides.length > 0) {
+    const parCat = new Map<string, { n: number; m: number }>();
+    for (const v of ventesValides) {
+      const p = produits.find((prod) => prod.reference === v.produit.reference);
+      if (p) {
+        const prev = parCat.get(p.categorie) ?? { n: 0, m: 0 };
+        parCat.set(p.categorie, { n: prev.n + 1, m: prev.m + margeDe(v) });
+      }
+    }
+    top_categories = Array.from(parCat.entries())
+      .map(([categorie, stat]) => ({
+        categorie,
+        nb_vendus: stat.n,
+        marge_totale: stat.m,
+        marge_moyenne: stat.m / stat.n,
+      }))
+      .sort((a, b) => b.marge_totale - a.marge_totale)
+      .slice(0, 5);
+  }
+
+  let stats_fournisseurs: DonneesDashboard["stats_fournisseurs"];
+  if (besoinStatsFournisseurs && lotsTestePromise) {
+    // Si la requête a été faite pour `rapports_a_valider`, on réutilise
+    // Sinon on devrait la faire, mais on a déjà des données de lots via produits
+    const lots = lotsTestePromise ? await lotsTestePromise : [];
+    if (lots.length === 0) {
+       // Fallback on charge tous les lots
+       const allLots = await prisma.lot.findMany({
+         include: { produits: { select: { statut: true, prix_achat: true, reparations: { select: { cout: true } }, ventes: { select: { prix_vente_reel: true, annulee: true } } } } }
+       });
+       const parFournisseur = new Map<string, { nLots: number; nProd: number; nHs: number; marge: number; nVendu: number }>();
+       
+       for (const l of allLots) {
+         const f = l.fournisseur || "Inconnu";
+         const prev = parFournisseur.get(f) ?? { nLots: 0, nProd: 0, nHs: 0, marge: 0, nVendu: 0 };
+         prev.nLots++;
+         prev.nProd += l.produits.length;
+         prev.nHs += l.produits.filter(p => p.statut === "hs").length;
+         
+         for (const p of l.produits) {
+            const vente = p.ventes.find(v => !v.annulee);
+            if (vente) {
+              prev.nVendu++;
+              const coutRep = p.reparations.reduce((s, r) => s + r.cout, 0);
+              prev.marge += vente.prix_vente_reel - p.prix_achat - coutRep;
+            }
+         }
+         parFournisseur.set(f, prev);
+       }
+       
+       stats_fournisseurs = Array.from(parFournisseur.entries())
+         .map(([fournisseur, stat]) => ({
+           fournisseur,
+           nb_lots: stat.nLots,
+           nb_produits: stat.nProd,
+           taux_defaut: stat.nProd > 0 ? (stat.nHs / stat.nProd) * 100 : 0,
+           marge_moyenne: stat.nVendu > 0 ? stat.marge / stat.nVendu : 0,
+         }))
+         .sort((a, b) => b.marge_moyenne - a.marge_moyenne)
+         .slice(0, 5);
+    }
+  }
+
   return {
     kpis,
     graphiques,
@@ -561,5 +663,7 @@ export async function chargerDonneesDashboard(
     activites,
     tableaux,
     compteurs,
+    top_categories,
+    stats_fournisseurs,
   };
 }

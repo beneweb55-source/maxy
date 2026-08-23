@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         message: n.message,
         lu: n.lu,
         lien: n.lien,
+        type: n.type,
         created_at: n.created_at.toISOString(),
       })),
     });

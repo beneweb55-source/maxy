@@ -17,6 +17,8 @@ export default function ImprimerEtiquettes() {
   const searchParams = useSearchParams();
   const [etiquettes, setEtiquettes] = useState<EtiquetteData[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [aImprime, setAImprime] = useState(false);
+  const [marquee, setMarquee] = useState(false);
 
   useEffect(() => {
     const idsParams = searchParams?.get("ids");
@@ -32,7 +34,7 @@ export default function ImprimerEtiquettes() {
       return;
     }
 
-    // Charger les détails des produits
+    // Charger les détails des produits — SANS marquer comme imprimées
     fetch(`/api/produits/masse/details?ids=${ids.join(",")}`)
       .then(res => {
         if (!res.ok) throw new Error("Erreur de chargement");
@@ -40,19 +42,33 @@ export default function ImprimerEtiquettes() {
       })
       .then((data: EtiquetteData[]) => {
         setEtiquettes(data);
-        
-        // Marquer les étiquettes comme imprimées
-        fetch("/api/produits/marquer-imprime", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids }),
-        }).catch(err => console.error("Erreur de marquage", err));
-
-        // Lancer l'impression automatiquement une fois chargé
-        setTimeout(() => window.print(), 500);
       })
       .catch(() => setErreur("Erreur lors du chargement des données d'impression."));
   }, [searchParams]);
+
+  function lancerImpression() {
+    window.print();
+    setAImprime(true);
+  }
+
+  async function confirmerImpression() {
+    const idsParams = searchParams?.get("ids");
+    if (!idsParams) return;
+    const ids = idsParams.split(",").map(Number).filter(id => !isNaN(id));
+    
+    try {
+      const res = await fetch("/api/produits/marquer-imprime", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (res.ok) {
+        setMarquee(true);
+      }
+    } catch (err) {
+      console.error("Erreur de marquage", err);
+    }
+  }
 
   if (erreur) return <div className="p-8 text-danger">{erreur}</div>;
   if (etiquettes.length === 0) return <div className="p-8">{t("inventaire.chargementEtiquettes")}</div>;
@@ -72,10 +88,30 @@ export default function ImprimerEtiquettes() {
         }
       `}} />
 
-      <div className="no-print mb-4 flex w-full max-w-sm justify-between">
+      <div className="no-print mb-4 flex w-full max-w-sm justify-between gap-2">
         <button onClick={() => window.close()} className="btn btn-secondaire">Fermer</button>
-        <button onClick={() => window.print()} className="btn btn-primaire">Imprimer</button>
+        <div className="flex gap-2">
+          <button onClick={lancerImpression} className="btn btn-primaire">
+            🖨️ Imprimer
+          </button>
+          {aImprime && !marquee && (
+            <button onClick={() => void confirmerImpression()} className="btn bg-succes text-white hover:bg-succes/90">
+              ✅ Confirmer
+            </button>
+          )}
+          {marquee && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-succes/10 px-3 py-2 text-sm font-semibold text-succes">
+              ✅ Marquée imprimée
+            </span>
+          )}
+        </div>
       </div>
+
+      {!aImprime && (
+        <p className="no-print text-sm text-brand-warm-grey max-w-sm text-center">
+          Cliquez sur « Imprimer » pour ouvrir l'aperçu. Après avoir confirmé l'impression physique, cliquez « Confirmer » pour marquer les étiquettes.
+        </p>
+      )}
 
       {etiquettes.map((etiquette, index) => (
         <div 
