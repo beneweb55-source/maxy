@@ -106,7 +106,9 @@ export const fr = {
       valeur_en_vente: "Valeur en vente",
       mon_ca_mois: "Mes ventes du mois",
       mes_ventes_mois: "Mes ventes (nombre)",
-    }
+    },
+    statsFournisseurs: "Statistiques des Fournisseurs",
+    topCategories: "Top Catégories",
   },
   entete: {
     titrePlateforme: "Plateforme de gestion de Stock / Revente Solution Maxi",
@@ -700,5 +702,22 @@ export const fr = {
     signatureClient: "Signature du client",
     luApprouve: "Lu et approuvé",
     cachetSignature: "Cachet et Signature",
-  }
+  },
+  rechercheGlobale: {
+    placeholder: "Rechercher partout...",
+    nouveauLot: "Nouveau lot",
+    inventaire: "Inventaire",
+    arrivages: "Arrivages",
+    caisse: "Caisse",
+    dashboard: "Tableau de bord",
+    factures: "Factures",
+    chargement: "Recherche en cours...",
+    aucunResultat: "Aucun résultat trouvé.",
+    produits: "Produits",
+    lots: "Lots",
+    actionsRapides: "Actions rapides",
+    naviguer: "Naviguer",
+    ouvrir: "Ouvrir",
+    fermerLabel: "Fermer",
+  },
 } satisfies Dictionnaire;

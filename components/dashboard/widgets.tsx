@@ -61,61 +61,72 @@ export function RenduWidget({
   }
 }
 
-function TopCategories({ categories }: { categories: DonneesDashboard["top_categories"] }) {
-  if (!categories || categories.length === 0) return <p className="mt-3 text-sm text-brand-warm-grey">Aucune donnée.</p>;
+function CadreTableau({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-brand-light-grey/50 bg-white shadow-sm">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="bg-brand-paper/50">
-            <th className="px-4 py-2 font-medium text-brand-grey">Catégorie</th>
-            <th className="px-4 py-2 text-right font-medium text-brand-grey">Vendus</th>
-            <th className="px-4 py-2 text-right font-medium text-brand-grey">Marge/Unité</th>
-            <th className="px-4 py-2 text-right font-medium text-brand-grey">Marge Totale</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-brand-light-grey/30">
-          {categories.map((c) => (
-            <tr key={c.categorie} className="transition-colors hover:bg-brand-glow/10">
-              <td className="px-4 py-2.5 font-medium text-brand-black">{c.categorie}</td>
-              <td className="px-4 py-2.5 text-right font-semibold">{c.nb_vendus}</td>
-              <td className="px-4 py-2.5 text-right">{formaterDA(c.marge_moyenne)}</td>
-              <td className="px-4 py-2.5 text-right font-semibold text-brand-orange">{formaterDA(c.marge_totale)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full min-w-[480px] text-sm">{children}</table>
     </div>
   );
 }
 
-function StatsFournisseurs({ fournisseurs }: { fournisseurs: DonneesDashboard["stats_fournisseurs"] }) {
-  if (!fournisseurs || fournisseurs.length === 0) return <p className="mt-3 text-sm text-brand-warm-grey">Aucune donnée.</p>;
+const CLASSE_ENTETE = "entete-table px-2 py-1.5";
+const CLASSE_CELLULE = "px-2 py-1.5";
+
+function Vide({ message }: { message: string }) {
+  return <p className="mt-3 text-sm text-brand-warm-grey">{message}</p>;
+}
+
+function TopCategories({ categories }: { categories: DonneesDashboard["top_categories"] }) {
+  if (!categories || categories.length === 0) return <Vide message="Aucune donnée." />;
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-brand-light-grey/50 bg-white shadow-sm">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="bg-brand-paper/50">
-            <th className="px-4 py-2 font-medium text-brand-grey">Fournisseur</th>
-            <th className="px-4 py-2 text-right font-medium text-brand-grey">Lots</th>
-            <th className="px-4 py-2 text-right font-medium text-brand-grey">Taux Défaut</th>
-            <th className="px-4 py-2 text-right font-medium text-brand-grey">Marge/Unité</th>
+    <CadreTableau>
+      <thead>
+        <tr className="border-b border-brand-light-grey">
+          <th className={CLASSE_ENTETE}>Catégorie</th>
+          <th className={`${CLASSE_ENTETE} text-right`}>Vendus</th>
+          <th className={`${CLASSE_ENTETE} text-right`}>Marge/Unité</th>
+          <th className={`${CLASSE_ENTETE} text-right`}>Marge Totale</th>
+        </tr>
+      </thead>
+      <tbody className="">
+        {categories.map((c) => (
+          <tr key={c.categorie} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
+            <td className={CLASSE_CELLULE}>{c.categorie}</td>
+            <td className={`${CLASSE_CELLULE} text-right font-semibold`}>{c.nb_vendus}</td>
+            <td className={`${CLASSE_CELLULE} text-right`}>{formaterDA(c.marge_moyenne)}</td>
+            <td className={`${CLASSE_CELLULE} text-right font-semibold text-brand-orange`}>{formaterDA(c.marge_totale)}</td>
           </tr>
-        </thead>
-        <tbody className="divide-y divide-brand-light-grey/30">
-          {fournisseurs.map((f) => (
-            <tr key={f.fournisseur} className="transition-colors hover:bg-brand-glow/10">
-              <td className="px-4 py-2.5 font-medium text-brand-black">{f.fournisseur}</td>
-              <td className="px-4 py-2.5 text-right font-semibold">{f.nb_lots}</td>
-              <td className={`px-4 py-2.5 text-right ${f.taux_defaut > 10 ? 'text-danger font-semibold' : ''}`}>
-                {f.taux_defaut.toFixed(1)}%
-              </td>
-              <td className="px-4 py-2.5 text-right text-succes font-semibold">{formaterDA(f.marge_moyenne)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </CadreTableau>
+  );
+}
+
+function StatsFournisseurs({ fournisseurs }: { fournisseurs: DonneesDashboard["stats_fournisseurs"] }) {
+  if (!fournisseurs || fournisseurs.length === 0) return <Vide message="Aucune donnée." />;
+  return (
+    <CadreTableau>
+      <thead>
+        <tr className="border-b border-brand-light-grey">
+          <th className={CLASSE_ENTETE}>Fournisseur</th>
+          <th className={`${CLASSE_ENTETE} text-right`}>Lots</th>
+          <th className={`${CLASSE_ENTETE} text-right`}>Taux Défaut</th>
+          <th className={`${CLASSE_ENTETE} text-right`}>Marge/Unité</th>
+        </tr>
+      </thead>
+      <tbody className="">
+        {fournisseurs.map((f) => (
+          <tr key={f.fournisseur} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
+            <td className={CLASSE_CELLULE}>{f.fournisseur}</td>
+            <td className={`${CLASSE_CELLULE} text-right font-semibold`}>{f.nb_lots}</td>
+            <td className={`${CLASSE_CELLULE} text-right ${f.taux_defaut > 10 ? 'text-danger font-semibold' : ''}`}>
+              {f.taux_defaut.toFixed(1)}%
+            </td>
+            <td className={`${CLASSE_CELLULE} text-right text-succes font-semibold`}>{formaterDA(f.marge_moyenne)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </CadreTableau>
   );
 }
 
@@ -497,20 +508,7 @@ function Tableau({ source, donnees, role }: { source: SourceTableau; donnees: Do
   }
 }
 
-function CadreTableau({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-3 overflow-x-auto">
-      <table className="w-full min-w-[480px] text-sm">{children}</table>
-    </div>
-  );
-}
 
-const CLASSE_ENTETE = "entete-table px-2 py-1.5";
-const CLASSE_CELLULE = "px-2 py-1.5";
-
-function Vide({ message }: { message: string }) {
-  return <p className="mt-3 text-sm text-brand-warm-grey">{message}</p>;
-}
 
 function TableauEnVente({ lignes, role }: { lignes: LigneEnVente[]; role?: string }) {
   const estSocial = role === "social_media";

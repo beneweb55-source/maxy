@@ -29,34 +29,38 @@ export function useRaccourcis({ role, onOuvrirRecherche, onOuvrirGuide }: Raccou
         return;
       }
       
-      // Ignore si le focus est dans un input (pour les autres raccourcis)
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
-        return;
-      }
-
       // Ctrl+K ou Cmd+K
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         onOuvrirRecherche();
+        return;
       }
 
       // Ctrl+N ou Cmd+N (Nouveau lot - gérant uniquement)
       if ((e.ctrlKey || e.metaKey) && e.key === "n" && role === "gerant") {
         e.preventDefault();
         router.push("/arrivages/nouveau");
+        return;
       }
 
       // Ctrl+I ou Cmd+I (Inventaire)
       if ((e.ctrlKey || e.metaKey) && e.key === "i") {
         e.preventDefault();
         router.push("/inventaire");
+        return;
       }
 
       // Ctrl+H ou Cmd+H (Guide des raccourcis)
       if ((e.ctrlKey || e.metaKey) && e.key === "h") {
         e.preventDefault();
         onOuvrirGuide();
+        return;
+      }
+
+      // Ignore si le focus est dans un input (pour les autres raccourcis éventuels)
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return;
       }
     };
 

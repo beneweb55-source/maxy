@@ -856,9 +856,9 @@ export default function CaisseClient({ role }: { role: Role }) {
         {onglet === "en_vente" && (
         <div className="flex flex-col lg:flex-row gap-4 items-start h-full overflow-hidden">
           <div className="flex-1 flex flex-col space-y-3 w-full min-w-0 h-full overflow-y-auto pr-2 pb-24">
-          <div className="carte flex flex-wrap items-center gap-3 bg-brand-white/95 backdrop-blur-md shadow-sm border-brand-light-grey/60 sticky top-0 z-20">
-            <div className="relative min-w-56 flex-1 border-r border-brand-light-grey pr-3 mr-3">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-orange">
+          <div className="carte flex flex-wrap items-center gap-3 bg-brand-white/95 backdrop-blur-xl shadow-lg border-brand-light-grey/30 sticky top-0 z-20 rounded-2xl p-3 mb-4">
+            <div className="relative min-w-64 flex-1">
+              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-orange">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="2" height="8" x="7" y="8"/><rect width="2" height="8" x="11" y="8"/><rect width="2" height="8" x="15" y="8"/></svg>
               </span>
               <input
@@ -866,7 +866,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 type="text"
                 autoFocus
                 placeholder="Scanner code-barres..."
-                className="champ pl-9 border-brand-orange ring-1 ring-brand-orange focus:ring-2 focus:border-brand-orange font-mono"
+                className="champ pl-10 h-11 rounded-xl border-brand-orange ring-1 ring-brand-orange focus:ring-4 focus:ring-brand-orange/20 focus:border-brand-orange font-mono transition-all duration-300 hover:shadow-md bg-brand-orange/5"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -882,12 +882,13 @@ export default function CaisseClient({ role }: { role: Role }) {
               valeur={rechercheEnVente}
               onChange={setRechercheEnVente}
               placeholder="Rechercher code, ref ou catégorie..."
-              className="w-full sm:max-w-md"
+              className="w-full sm:max-w-md h-11"
             />
+            <div className="h-8 w-px bg-brand-light-grey/50 mx-1 hidden sm:block"></div>
             <select
               value={filtreCategorie}
               onChange={(e) => setFiltreCategorie(e.target.value)}
-              className="champ w-auto"
+              className="champ w-auto h-11 rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
             >
               <option value="">{t("caisse.toutesCategories")}</option>
               {categoriesEnVente.map((c) => (
@@ -899,7 +900,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             <select
               value={triCartes}
               onChange={(e) => setTriCartes(e.target.value)}
-              className="champ w-auto"
+              className="champ w-auto h-11 rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
               aria-label="Trier les produits en vente"
             >
               <option value="">{t("caisse.triDefaut")}</option>
@@ -909,8 +910,8 @@ export default function CaisseClient({ role }: { role: Role }) {
               <option value="anciennete">{t("caisse.anciennete")}</option>
             </select>
             {peutVendre && (
-              <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire">
-                <IconeCorbeille taille={14} /> {t("caisse.viderPanier")}
+              <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire h-11 px-4 rounded-xl hover:bg-brand-light-grey/50 hover:text-brand-black border-transparent shadow-sm">
+                <IconeCorbeille taille={16} /> <span className="hidden sm:inline">{t("caisse.viderPanier")}</span>
               </button>
             )}
           </div>

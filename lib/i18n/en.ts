@@ -105,7 +105,9 @@ export const en = {
       valeur_en_vente: "Sale value",
       mon_ca_mois: "My monthly revenue",
       mes_ventes_mois: "My sales (count)",
-    }
+    },
+    statsFournisseurs: "Suppliers Statistics",
+    topCategories: "Top Categories",
   },
   entete: {
     titrePlateforme: "Solution Maxi — Stock / Resale Management Platform",
@@ -699,5 +701,22 @@ export const en = {
     signatureClient: "Customer's signature",
     luApprouve: "Read and approved",
     cachetSignature: "Stamp and Signature",
-  }
+  },
+  rechercheGlobale: {
+    placeholder: "Search everywhere...",
+    nouveauLot: "New lot",
+    inventaire: "Inventory",
+    arrivages: "Arrivals",
+    caisse: "Cash register",
+    dashboard: "Dashboard",
+    factures: "Invoices",
+    chargement: "Searching...",
+    aucunResultat: "No results found.",
+    produits: "Products",
+    lots: "Lots",
+    actionsRapides: "Quick actions",
+    naviguer: "Navigate",
+    ouvrir: "Open",
+    fermerLabel: "Close",
+  },
 } satisfies Dictionnaire;
