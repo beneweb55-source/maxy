@@ -12,12 +12,12 @@ export default function ScannerGlobal() {
   const t = useT();
 
   useBarcodeScanner((code) => {
-    if (pathname !== "/caisse") {
+    if (pathname !== "/pos") {
       afficher(t("scannerGlobal.redirection", { code }));
       const searchParams = new URLSearchParams();
       searchParams.set("scan_code", code);
       searchParams.set("t", Date.now().toString());
-      router.push(`/caisse?${searchParams.toString()}`);
+      router.push(`/pos?${searchParams.toString()}`);
     }
     // Si on est déjà dans la caisse, CaisseClient a son propre useBarcodeScanner qui l'intercepte.
   });
