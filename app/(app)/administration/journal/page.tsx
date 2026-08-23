@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { exigerSession } from "@/lib/auth/session";
+import { utilisateurCourant } from "@/lib/session";
 
 export default async function JournalActivitePage() {
-  const session = await exigerSession();
-  if (session.role !== "gerant" && session.role !== "dev") {
+  const session = await utilisateurCourant();
+  if (!session || (session.role !== "gerant" && session.role !== "dev")) {
     redirect("/");
   }
 

@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { exigerSession } from "@/lib/auth/session";
-import { IconeBaseDeDonnees, IconeTelecharger } from "@/components/icons";
+import { utilisateurCourant } from "@/lib/session";
+import { IconeBaseDeDonnees, IconeTelechargement } from "@/components/icons";
 
 export default async function BackupPage() {
-  const session = await exigerSession();
-  if (session.role !== "gerant" && session.role !== "dev") {
+  const session = await utilisateurCourant();
+  if (!session || (session.role !== "gerant" && session.role !== "dev")) {
     redirect("/");
   }
 
@@ -42,7 +42,7 @@ export default async function BackupPage() {
             className="btn btn-primaire w-full justify-center"
             disabled // Placeholder for now, could be implemented via a real API endpoint
           >
-            <IconeTelecharger taille={16} />
+            <IconeTelechargement taille={16} />
             Générer et télécharger l'export (Bientôt)
           </button>
         </div>

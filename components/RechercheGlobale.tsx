@@ -77,7 +77,7 @@ export default function RechercheGlobale({
   const [indexActif, setIndexActif] = useState(-1);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useLayer("recherche-globale", ouverte, onFermer, LAYER_PRIORITY.MODAL);
+  useLayer("recherche-globale", ouverte, onFermer, LAYER_PRIORITY.MODALE);
 
   const actionsRapides: ActionRapide[] = [
     { label: t("rechercheGlobale.nouveauLot"), href: "/arrivages/nouveau", icone: <IconePlus taille={16} />, roles: ["gerant"] },
