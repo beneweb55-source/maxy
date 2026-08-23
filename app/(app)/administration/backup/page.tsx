@@ -37,18 +37,19 @@ export default async function BackupPage() {
             </ul>
           </div>
           
-          <button 
-            type="button" 
+          <a 
+            href="/api/admin/backup" 
             className="btn btn-primaire w-full justify-center"
-            disabled // Placeholder for now, could be implemented via a real API endpoint
+            download
           >
             <IconeTelechargement taille={16} />
-            Générer et télécharger l'export (Bientôt)
-          </button>
+            Générer et télécharger l'export
+          </a>
         </div>
         
-        <div className="carte p-6 flex flex-col gap-4 items-start bg-gradient-to-br from-white to-brand-light-grey/10 border-brand-light-grey/60 shadow-sm">
-          <div className="flex items-center gap-3 w-full">
+        <div className="carte p-6 flex flex-col gap-4 items-start bg-brand-glow/5 border-brand-light-grey/60 shadow-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-white/50 to-transparent pointer-events-none" />
+          <div className="relative flex items-center gap-3 w-full">
             <div className="h-10 w-10 bg-succes/20 text-succes flex items-center justify-center rounded-full">
               <span className="text-xl">🛡️</span>
             </div>

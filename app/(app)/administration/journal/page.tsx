@@ -62,7 +62,7 @@ export default async function JournalActivitePage() {
                       })}
                     </td>
                     <td className="px-4 py-2.5 font-medium text-brand-black">
-                      {log.user.username} <span className="text-brand-grey font-normal">({log.user.role})</span>
+                      {log.user?.username || "Utilisateur supprimé"} <span className="text-brand-grey font-normal">({log.user?.role || "Inconnu"})</span>
                     </td>
                     <td className="px-4 py-2.5">
                       <span className="inline-flex items-center rounded-md bg-brand-light-grey/30 px-2 py-1 text-xs font-medium text-brand-smooth">
