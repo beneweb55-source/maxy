@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLangue } from "@/lib/i18n/contexte";
-import { IconeCloche } from "./icons";
+import { IconeCloche, IconeAlerte, IconeCocheCercle, IconeInfo, IconeCroixCercle } from "./icons";
 import PushManager from "./PushManager";
 
 interface NotificationDto {
@@ -16,11 +16,11 @@ interface NotificationDto {
   created_at: string;
 }
 
-const ICONES_TYPE: Record<string, string> = {
-  alerte_stock: "⚠️",
-  succes: "✅",
-  info: "ℹ️",
-  erreur: "❌",
+const ICONES_TYPE: Record<string, React.ReactNode> = {
+  alerte_stock: <IconeAlerte taille={16} className="text-brand-orange" />,
+  succes: <IconeCocheCercle taille={16} className="text-succes" />,
+  info: <IconeInfo taille={16} className="text-brand-grey" />,
+  erreur: <IconeCroixCercle taille={16} className="text-danger" />,
 };
 
 export default function ClocheNotifications() {
@@ -118,7 +118,9 @@ export default function ClocheNotifications() {
                     {!n.lu && (
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-orange" />
                     )}
-                    <span className="shrink-0 text-base">{ICONES_TYPE[n.type ?? "info"] || "🔔"}</span>
+                    <span className="shrink-0 mt-0.5">
+                      {ICONES_TYPE[n.type ?? "info"] || <IconeCloche taille={16} className="text-brand-grey" />}
+                    </span>
                     <span className="min-w-0">
                       <span className="block">{n.message}</span>
                       <span className="text-xs font-normal text-brand-grey">

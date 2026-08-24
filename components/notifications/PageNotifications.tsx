@@ -4,15 +4,23 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
 import { useLangue } from "@/lib/i18n/contexte";
-import { IconeCoche } from "@/components/icons";
+import { IconeCoche, IconeCloche, IconeAlerte, IconeCocheCercle, IconeInfo, IconeCroixCercle } from "@/components/icons";
 
 interface NotificationDto {
   id: number;
   message: string;
   lu: boolean;
   lien: string | null;
+  type: string | null;
   created_at: string;
 }
+
+const ICONES_TYPE: Record<string, React.ReactNode> = {
+  alerte_stock: <IconeAlerte taille={18} className="text-brand-orange" />,
+  succes: <IconeCocheCercle taille={18} className="text-succes" />,
+  info: <IconeInfo taille={18} className="text-brand-grey" />,
+  erreur: <IconeCroixCercle taille={18} className="text-danger" />,
+};
 
 export default function PageNotifications() {
   const router = useRouter();
@@ -100,11 +108,14 @@ export default function PageNotifications() {
               <button
                 type="button"
                 onClick={() => void ouvrir(n)}
-                className={`flex w-full items-start gap-2 px-4 py-3 text-left text-sm ${
-                  n.lu ? "text-brand-warm-grey" : "font-medium text-brand-black"
+                className={`flex w-full items-start gap-3 px-4 py-4 text-left text-sm transition hover:bg-brand-glow/20 ${
+                  n.lu ? "text-brand-warm-grey" : "font-medium text-brand-black bg-brand-light-grey/10"
                 }`}
               >
-                {!n.lu && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-orange" />}
+                {!n.lu && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand-orange" />}
+                <span className="shrink-0 mt-0.5">
+                  {ICONES_TYPE[n.type ?? "info"] || <IconeCloche taille={18} className="text-brand-grey" />}
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block">{n.message}</span>
                   <span className="text-xs font-normal text-brand-grey">
