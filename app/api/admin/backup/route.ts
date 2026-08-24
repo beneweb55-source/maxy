@@ -18,8 +18,13 @@ export async function GET() {
       reparations,
       mouvements,
       factures,
+      factureLignes,
       journal,
-      notifications
+      notifications,
+      produitImages,
+      historiqueStatuts,
+      pushSubscriptions,
+      fcmTokens
     ] = await Promise.all([
       prisma.user.findMany(),
       prisma.parametres.findFirst(),
@@ -28,14 +33,19 @@ export async function GET() {
       prisma.vente.findMany(),
       prisma.reparation.findMany(),
       prisma.mouvementCaisse.findMany(),
-      prisma.facture.findMany({ include: { lignes: true } }),
+      prisma.facture.findMany(),
+      prisma.factureLigne.findMany(),
       prisma.journalActivite.findMany(),
-      prisma.notification.findMany()
+      prisma.notification.findMany(),
+      prisma.produitImage.findMany(),
+      prisma.historiqueStatut.findMany(),
+      prisma.pushSubscription.findMany(),
+      prisma.fcmToken.findMany()
     ]);
 
     const backupData = {
       timestamp: new Date().toISOString(),
-      version: "1.0",
+      version: "1.1",
       data: {
         users,
         parametres,
@@ -45,8 +55,13 @@ export async function GET() {
         reparations,
         mouvements,
         factures,
+        factureLignes,
         journal,
-        notifications
+        notifications,
+        produitImages,
+        historiqueStatuts,
+        pushSubscriptions,
+        fcmTokens
       }
     };
 

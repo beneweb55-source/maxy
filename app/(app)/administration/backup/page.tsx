@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { utilisateurCourant } from "@/lib/session";
 import { IconeBaseDeDonnees, IconeTelechargement } from "@/components/icons";
+import BackupRestoreClient from "@/components/admin/BackupRestoreClient";
 
 export default async function BackupPage() {
   const session = await utilisateurCourant();
@@ -68,6 +69,10 @@ export default async function BackupPage() {
             <span className="font-semibold text-succes">Système opérationnel</span>
           </div>
         </div>
+      </div>
+      
+      <div className="mt-8">
+        <BackupRestoreClient />
       </div>
     </div>
   );
