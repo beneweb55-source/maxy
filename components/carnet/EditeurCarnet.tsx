@@ -45,6 +45,11 @@ export function EditeurCarnet({ id, contenuInitial, lectureSeule }: EditeurCarne
 
   const editor = useEditor({
     extensions,
+    editorProps: {
+      attributes: {
+        class: 'focus:outline-none focus-visible:outline-none',
+      },
+    },
     content: contenuInitial,
     editable: !lectureSeule,
     onUpdate: ({ editor }) => {
