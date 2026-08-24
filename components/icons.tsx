@@ -557,6 +557,8 @@ export const IconeUpload = creerIcone(
 );
 
 
+
+
 export const ICONES_ACTIVITE = {
   arrivage: IconePaquet,
   statut: IconeActualiser,

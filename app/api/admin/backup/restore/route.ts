@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { utilisateurCourant } from "@/lib/session";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 function parseDates(obj: any): any {
   if (obj === null || obj === undefined) return obj;
@@ -87,8 +88,11 @@ export async function POST(req: Request) {
       for (const table of tables) {
         await tx.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), coalesce(max(id), 0) + 1, false) FROM "${table}";`);
       }
+      
+      // Log la restauration d'urgence (ça va s'insérer juste après le setval, ce qui est parfait)
+      await enregistrerActivite(tx, session.id, ACTIONS_JOURNAL.BACKUP_RESTAURER, "systeme", undefined, { timestamp: backupData.timestamp });
     }, {
-      maxWait: 10000, 
+      maxWait: 10000,  
       timeout: 300000, // 5 minutes max
     });
 

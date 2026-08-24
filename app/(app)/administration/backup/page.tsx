@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { utilisateurCourant } from "@/lib/session";
-import { IconeBaseDeDonnees, IconeTelechargement } from "@/components/icons";
+import { IconeBaseDeDonnees, IconeTelechargement, IconeBouclier } from "@/components/icons";
 import BackupRestoreClient from "@/components/admin/BackupRestoreClient";
 
 export default async function BackupPage() {
@@ -52,7 +52,7 @@ export default async function BackupPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-brand-white/50 to-transparent pointer-events-none" />
           <div className="relative flex items-center gap-3 w-full">
             <div className="h-10 w-10 bg-succes/20 text-succes flex items-center justify-center rounded-full">
-              <span className="text-xl">🛡️</span>
+              <IconeBouclier taille={20} />
             </div>
             <div>
               <h3 className="font-bold text-brand-black">Sauvegardes automatiques (Cloud)</h3>

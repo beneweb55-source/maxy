@@ -85,14 +85,14 @@ export default function BackupRestoreClient() {
             <IconeAlerte taille={20} />
           </div>
           <div>
-            <h3 className="font-bold text-brand-black">Restauration d'urgence</h3>
+            <h3 className="font-bold text-brand-black dark:text-white">Restauration d'urgence</h3>
             <p className="text-xs text-brand-warm-grey">Écrase les données actuelles depuis un fichier .json</p>
           </div>
         </div>
 
-        <div className="w-full bg-white/50 rounded p-3 text-sm border border-danger/20">
+        <div className="w-full bg-white/80 dark:bg-black/30 rounded p-3 text-sm border border-danger/20">
           <p className="text-xs text-danger font-semibold mb-2">Attention : Cette action est irréversible.</p>
-          <ul className="list-disc list-inside space-y-1 text-xs text-brand-black">
+          <ul className="list-disc list-inside space-y-1 text-xs text-brand-black dark:text-brand-light-grey">
             <li>Toutes les données actuelles seront supprimées.</li>
             <li>La plateforme sera restaurée dans l'état exact du fichier fourni.</li>
             <li>Vous serez potentiellement déconnecté si votre utilisateur est différent dans la sauvegarde.</li>
@@ -110,7 +110,7 @@ export default function BackupRestoreClient() {
         <div className="flex gap-3 w-full mt-2 flex-col sm:flex-row">
           <button 
             type="button" 
-            className="btn btn-secondaire flex-1 justify-center bg-white"
+            className="btn btn-secondaire flex-1 justify-center"
             onClick={declencherUpload}
           >
             <IconeUpload taille={16} />
@@ -135,15 +135,15 @@ export default function BackupRestoreClient() {
         titre="DANGER : Confirmer la Restauration"
       >
         <div className="space-y-4">
-          <p className="text-sm font-medium text-brand-black">
+          <p className="text-sm font-medium text-brand-black dark:text-white">
             Vous êtes sur le point d'effacer <strong className="text-danger">TOUTES LES DONNÉES</strong> actuelles pour y substituer le contenu du fichier <strong className="font-mono">{fichier?.name}</strong>.
           </p>
           
-          <div className="bg-brand-light-grey/20 p-3 rounded text-sm text-brand-grey space-y-2">
+          <div className="bg-brand-light-grey/20 dark:bg-brand-black/50 p-3 rounded text-sm text-brand-grey dark:text-brand-light-grey space-y-2">
             <p>Veuillez taper le mot <strong>RESTAURER</strong> en majuscules pour confirmer votre intention :</p>
             <input 
               type="text" 
-              className="champ w-full border-danger focus:ring-danger text-brand-black font-bold text-center" 
+              className="champ w-full border-danger focus:ring-danger text-brand-black dark:text-white dark:bg-brand-dark font-bold text-center" 
               placeholder="RESTAURER"
               value={confirmationTexte}
               onChange={(e) => setConfirmationTexte(e.target.value)}

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import { creerJeton, DUREE_SESSION_S, SESSION_COOKIE } from "@/lib/session";
 import { erreur } from "@/lib/api";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 const MAX_TENTATIVES = 5;
 const DUREE_BLOCAGE_MS = 5 * 60 * 1000;
@@ -58,6 +59,10 @@ export async function POST(request: NextRequest) {
         data: { login_attempts: tentatives },
       });
     }
+    
+    // Log l'échec de connexion
+    await enregistrerActivite(prisma, user.id, ACTIONS_JOURNAL.AUTH_ECHEC, "user", user.id, { tentatives });
+    
     return erreur(401, MESSAGE_ECHEC);
   }
 
@@ -65,6 +70,9 @@ export async function POST(request: NextRequest) {
     where: { id: user.id },
     data: { login_attempts: 0, locked_until: null },
   });
+
+  // Log la connexion réussie
+  await enregistrerActivite(prisma, user.id, ACTIONS_JOURNAL.AUTH_CONNEXION, "user", user.id, { ip: request.headers.get("x-forwarded-for") || "inconnue" });
 
   const reponse = NextResponse.json({
     user: { id: user.id, username: user.username, role: user.role, langue: user.langue },

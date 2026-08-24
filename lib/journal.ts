@@ -13,7 +13,7 @@ import type { Prisma } from "@prisma/client";
  * @param details     Objet libre de détails (ancien/nouveau statut, montant, etc.)
  */
 export async function enregistrerActivite(
-  tx: Prisma.TransactionClient,
+  tx: any,
   userId: number,
   action: string,
   entiteType?: string,
@@ -65,6 +65,7 @@ export const ACTIONS_JOURNAL = {
   // Admin
   PARAMETRES_MODIFIER: "parametres.modifier",
   BACKUP_EXPORTER: "backup.exporter",
+  BACKUP_RESTAURER: "backup.restaurer",
 } as const;
 
 export type ActionJournal = (typeof ACTIONS_JOURNAL)[keyof typeof ACTIONS_JOURNAL];

@@ -29,11 +29,11 @@ export default async function JournalActivitePage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-brand-light-grey/50 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-brand-light-grey/50 bg-white dark:bg-brand-dark/50 shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
-              <tr className="bg-brand-paper/50">
+              <tr className="bg-brand-paper/50 dark:bg-brand-dark">
                 <th className="px-4 py-2 font-medium text-brand-grey">Date</th>
                 <th className="px-4 py-2 font-medium text-brand-grey">Utilisateur</th>
                 <th className="px-4 py-2 font-medium text-brand-grey">Action</th>
@@ -41,7 +41,7 @@ export default async function JournalActivitePage() {
                 <th className="px-4 py-2 font-medium text-brand-grey">Détails</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-light-grey/30">
+            <tbody className="divide-y divide-brand-light-grey/30 dark:divide-brand-light-grey/10">
               {logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-brand-warm-grey">
@@ -61,17 +61,17 @@ export default async function JournalActivitePage() {
                         second: "2-digit",
                       })}
                     </td>
-                    <td className="px-4 py-2.5 font-medium text-brand-black">
+                    <td className="px-4 py-2.5 font-medium text-brand-black dark:text-white">
                       {log.user?.username || "Utilisateur supprimé"} <span className="text-brand-grey font-normal">({log.user?.role || "Inconnu"})</span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center rounded-md bg-brand-light-grey/30 px-2 py-1 text-xs font-medium text-brand-smooth">
+                      <span className="inline-flex items-center rounded-md bg-brand-light-grey/30 px-2 py-1 text-xs font-medium text-brand-smooth dark:text-brand-white">
                         {log.action}
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
                       {log.entite_type ? (
-                        <span className="text-brand-black">
+                        <span className="text-brand-black dark:text-white">
                           {log.entite_type} <span className="text-brand-grey font-mono text-xs">#{log.entite_id}</span>
                         </span>
                       ) : (

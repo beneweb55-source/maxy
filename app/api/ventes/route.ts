@@ -7,6 +7,7 @@ import { margeVente, seuilMargeMinimum } from "@/lib/finances";
 import { urlPhotoProduit } from "@/lib/images";
 import { idsParRole, notifier } from "@/lib/notifs";
 import { creerFacture } from "@/lib/factures";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 import { entierPositif } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
@@ -248,6 +249,10 @@ export async function POST(request: NextRequest) {
         typeFacture: typeof type_facture === "string" ? type_facture : null,
         modePaiement: typeof mode_paiement === "string" ? mode_paiement : null,
       });
+
+      // Audit Log
+      await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.VENTE_ENREGISTRER, "produit", produit.id, { prix: prix, canal: canalTexte, vente_id: vente.id });
+
       return { venteId: vente.id, facture };
     });
 

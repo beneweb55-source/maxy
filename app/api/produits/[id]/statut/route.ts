@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { STATUTS_PRODUIT } from "@/lib/statuts";
 import { STATUTS_NOTE_OBLIGATOIRE } from "@/lib/transitions";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function POST(
   request: NextRequest,
@@ -68,6 +69,13 @@ export async function POST(
           note: noteTexte || null,
         },
       });
+
+      // Audit Log
+      await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.PRODUIT_STATUT, "produit", produit.id, { 
+        statut_avant: produit.statut, 
+        statut_apres: cible 
+      });
+
       return maj;
     });
 

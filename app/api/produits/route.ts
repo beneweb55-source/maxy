@@ -7,6 +7,7 @@ import { couverturesProduits, urlCouverture } from "@/lib/images-flags";
 import { televerserLignes } from "@/lib/stockage-images";
 import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 const PAR_PAGE = 50;
 const JOUR_MS = 24 * 60 * 60 * 1000;
@@ -168,6 +169,13 @@ export async function POST(request: NextRequest) {
         }),
       { timeout: 120000 }
     );
+
+    // Audit Log
+    await enregistrerActivite(prisma, user.id, ACTIONS_JOURNAL.PRODUIT_AJOUTER, "lot", lotId ?? undefined, {
+      quantite: qty,
+      categorie: ligne.categorie,
+      codes: codes,
+    });
 
     return NextResponse.json(
       { ok: true, ajoutes: qty, code_interne: codes[0] },

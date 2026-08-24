@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { utilisateurCourant } from "@/lib/session";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function GET() {
   try {
@@ -64,6 +65,9 @@ export async function GET() {
         fcmTokens
       }
     };
+
+    // Enregistrer l'action
+    await enregistrerActivite(prisma, session.id, ACTIONS_JOURNAL.BACKUP_EXPORTER);
 
     return new NextResponse(JSON.stringify(backupData, null, 2), {
       status: 200,
