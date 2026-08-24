@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { IconeChevronBas, IconeCoche } from "@/components/icons";
 
 const CATEGORIES = [
   "developpement", "inventaire", "caisse", "tests", 
@@ -12,7 +13,20 @@ const CATEGORIES = [
 export default function NouveauCarnetPage() {
   const router = useRouter();
   const [titre, setTitre] = useState("");
-  const [categories, setCategories] = useState<string[]>(["developpement"]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const [dateTravail, setDateTravail] = useState(new Date().toISOString().split("T")[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [erreur, setErreur] = useState("");
@@ -76,31 +90,45 @@ export default function NouveauCarnetPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="libelle">Catégories</label>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {CATEGORIES.map(c => {
-                const isSelected = categories.includes(c);
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => {
-                      if (isSelected && categories.length > 1) {
-                        setCategories(categories.filter(cat => cat !== c));
-                      } else if (!isSelected) {
-                        setCategories([...categories, c]);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors border ${
-                      isSelected 
-                        ? "bg-brand-orange text-brand-white border-brand-orange shadow-sm" 
-                        : "bg-brand-white text-brand-grey border-brand-light-grey/50 hover:border-brand-orange/50 hover:text-brand-orange"
-                    }`}
-                  >
-                    {c.replace(/_/g, " ")}
-                  </button>
-                );
-              })}
+            <div className="relative mt-1" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                disabled={isLoading}
+                className="champ w-full flex items-center justify-between capitalize text-left min-h-[42px]"
+              >
+                <span className={categories.length === 0 ? "text-brand-grey" : "text-brand-black"}>
+                  {categories.length === 0 
+                    ? "Sélectionner des catégories..." 
+                    : categories.map(c => c.replace(/_/g, " ")).join(", ")}
+                </span>
+                <IconeChevronBas className={`w-4 h-4 text-brand-grey transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute z-10 top-full left-0 mt-1 w-full bg-brand-white border border-brand-light-grey/50 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {CATEGORIES.map(c => {
+                    const isSelected = categories.includes(c);
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setCategories(categories.filter(cat => cat !== c));
+                          } else {
+                            setCategories([...categories, c]);
+                          }
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm capitalize transition-colors flex items-center justify-between hover:bg-brand-light-grey/20 ${isSelected ? "bg-brand-orange/5 text-brand-orange font-medium" : "text-brand-black"}`}
+                      >
+                        {c.replace(/_/g, " ")}
+                        {isSelected && <IconeCoche className="w-4 h-4 text-brand-orange" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
