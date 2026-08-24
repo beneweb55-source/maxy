@@ -3,6 +3,7 @@ import { utilisateurCourant } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { EditeurCarnet } from "@/components/carnet/EditeurCarnet";
 import { PiecesJointes } from "@/components/carnet/PiecesJointes";
+import { BoutonSupprimerCarnet } from "@/components/carnet/BoutonSupprimerCarnet";
 import Link from "next/link";
 import { IconeFlecheGauche, IconeOeil } from "@/components/icons";
 
@@ -60,7 +61,11 @@ export default async function CarnetDetailPage(
           </div>
         </div>
 
-        {!estAuteur && (
+        {estAuteur ? (
+          <div className="self-start">
+            <BoutonSupprimerCarnet id={entree.id} />
+          </div>
+        ) : (
           <div className="bg-brand-light-grey/20 px-3 py-1.5 rounded-lg text-sm text-brand-grey flex items-center gap-2 self-start">
             <IconeOeil className="w-4 h-4" /> Lecture seule
           </div>

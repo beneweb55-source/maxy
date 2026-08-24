@@ -69,7 +69,7 @@ export async function POST(
     return NextResponse.json(pj, { status: 201 });
   } catch (e) {
     console.error("POST /api/carnet/[id]/fichiers", e);
-    return erreur(500, "Erreur lors du téléversement de la pièce jointe.");
+    return erreur(500, `Erreur lors du téléversement : ${e instanceof Error ? e.message : "Inconnue"}`);
   }
 }
 

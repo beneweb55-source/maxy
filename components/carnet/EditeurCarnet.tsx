@@ -6,13 +6,17 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
-import { useState, useEffect, useCallback, useRef } from "react";
+import Color from "@tiptap/extension-color";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Highlight from "@tiptap/extension-highlight";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { 
   IconeMenu, IconeCoche, IconeActualiser, IconeAlerte,
   IconeGras, IconeItalique, IconeSouligne, IconeBarre,
   IconeAlignementGauche, IconeAlignementCentre, IconeAlignementDroite, IconeAlignementJustifie,
   IconeListePuces, IconeListeNumerotee, IconeAnnuler, IconeRetablir, IconeLien, IconeImage,
-  IconeParagraphe, IconeH1, IconeH2, IconeH3
+  IconeParagraphe, IconeH1, IconeH2, IconeH3,
+  IconeCouleurTexte, IconeSurligner
 } from "@/components/icons";
 
 interface EditeurCarnetProps {
@@ -26,19 +30,26 @@ export function EditeurCarnet({ id, contenuInitial, lectureSeule }: EditeurCarne
   const [derniereSauvegarde, setDerniereSauvegarde] = useState<Date>(new Date());
   
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const contenuActuelRef = useRef(contenuInitial);
+
+  const extensions = React.useMemo(() => [
+    StarterKit,
+    Underline,
+    TextAlign.configure({ types: ["heading", "paragraph"] }),
+    Link.configure({ openOnClick: false }),
+    Image,
+    TextStyle,
+    Color,
+    Highlight.configure({ multicolor: true }),
+  ], []);
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Link.configure({ openOnClick: false }),
-      Image,
-    ],
+    extensions,
     content: contenuInitial,
     editable: !lectureSeule,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
+      contenuActuelRef.current = html;
       
       try {
         localStorage.setItem(`carnet_brouillon_${id}`, html);
@@ -75,6 +86,20 @@ export function EditeurCarnet({ id, contenuInitial, lectureSeule }: EditeurCarne
     }
   }, [id]);
 
+  // Sauvegarde garantie lors de la fermeture ou du changement de page (keepalive)
+  useEffect(() => {
+    return () => {
+      if (contenuActuelRef.current !== contenuInitial) {
+        fetch(`/api/carnet/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contenu: contenuActuelRef.current }),
+          keepalive: true, // Crucial pour que la requête passe même si on change de page
+        }).catch(console.error);
+      }
+    };
+  }, [id, contenuInitial]);
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (statutSauvegarde !== "enregistre") {
@@ -103,10 +128,10 @@ export function EditeurCarnet({ id, contenuInitial, lectureSeule }: EditeurCarne
     const url = window.prompt("URL du lien :");
     if (url === null) return;
     if (url === "") {
-      editor?.chain().focus().extendMarkRange("link").unsetLink().run();
+      editor?.chain().focus().unsetLink().run();
       return;
     }
-    editor?.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    editor?.chain().focus().setLink({ href: url }).run();
   }, [editor]);
 
   const addImage = useCallback(() => {
@@ -138,6 +163,35 @@ export function EditeurCarnet({ id, contenuInitial, lectureSeule }: EditeurCarne
             <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Barré">
               <IconeBarre className="w-4 h-4" />
             </ToolbarButton>
+
+            {/* Sélecteurs de couleur discrets */}
+            <div className="relative group/color ml-1">
+              <label 
+                className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer text-brand-grey hover:bg-brand-light-grey/20 hover:text-brand-black transition-colors overflow-hidden"
+                title="Couleur du texte"
+              >
+                <IconeCouleurTexte className="w-4 h-4" />
+                <input 
+                  type="color" 
+                  className="absolute opacity-0 w-full h-full cursor-pointer inset-0"
+                  onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()}
+                />
+              </label>
+            </div>
+            
+            <div className="relative group/highlight ml-0.5">
+              <label 
+                className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer text-brand-grey hover:bg-brand-light-grey/20 hover:text-brand-black transition-colors overflow-hidden"
+                title="Surligner"
+              >
+                <IconeSurligner className="w-4 h-4" />
+                <input 
+                  type="color" 
+                  className="absolute opacity-0 w-full h-full cursor-pointer inset-0"
+                  onInput={(e) => editor.chain().focus().toggleHighlight({ color: (e.target as HTMLInputElement).value }).run()}
+                />
+              </label>
+            </div>
           </div>
 
           <ToolbarSeparator />
@@ -284,6 +338,7 @@ function ToolbarButton({
     <button
       type="button"
       title={label}
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       disabled={disabled}
       className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${

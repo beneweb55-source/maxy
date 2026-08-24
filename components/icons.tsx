@@ -582,3 +582,5 @@ export const IconeParagraphe = creerIcone("Paragraphe", <><path d="M21 4H9.5A5.5
 export const IconeH1 = creerIcone("H1", <><path d="M4 12h8" /><path d="M4 18V6" /><path d="M12 18V6" /><path d="M17 12l3-2v8" /></>);
 export const IconeH2 = creerIcone("H2", <><path d="M4 12h8" /><path d="M4 18V6" /><path d="M12 18V6" /><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1" /></>);
 export const IconeH3 = creerIcone("H3", <><path d="M4 12h8" /><path d="M4 18V6" /><path d="M12 18V6" /><path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2" /><path d="M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2" /></>);
+export const IconeCouleurTexte = creerIcone("CouleurTexte", <><path d="M4 20h16" /><path d="m6 16 6-12 6 12" /><path d="M8 12h8" /></>);
+export const IconeSurligner = creerIcone("Surligner", <><path d="m9 11-6 6v3h9l3-3" /><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" /></>);
