@@ -64,6 +64,7 @@ export const fr = {
     factures: "Factures",
     caisse: "Caisse",
     administration: "Administration",
+    carnet: "Carnet de travail",
   },
   dashboard: {
     erreurChargement: "Erreur lors du chargement du tableau de bord.",

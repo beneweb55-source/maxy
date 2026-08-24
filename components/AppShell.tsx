@@ -78,6 +78,12 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     sousChemins: [],
   },
   {
+    href: "/carnet",
+    cle: "nav.carnet",
+    icone: IconeArchive, // fallback icon since it looks a bit like a book/notebook
+    sousChemins: [],
+  },
+  {
     href: "/administration",
     cle: "nav.administration",
     icone: IconeReglages,

@@ -60,6 +60,21 @@ enum DecisionRapport {
   pieces_detachees
 }
 
+enum CarnetCategorie {
+  developpement
+  inventaire
+  caisse
+  tests
+  maintenance
+  ui_ux
+  reseau
+  materiel
+  administration
+  recherche
+  correction
+  autre
+}
+
 model User {
   id             Int       @id @default(autoincrement())
   username       String    @unique
@@ -78,6 +93,7 @@ model User {
   ventes        Vente[]            @relation("ventes_effectuees")
   factures      Facture[]
   journal       JournalActivite[]
+  carnets       CarnetEntree[]
 
   @@map("users")
 }
@@ -351,4 +367,34 @@ model FcmToken {
 
   @@index([user_id])
   @@map("fcm_tokens")
+}
+
+model CarnetEntree {
+  id           Int              @id @default(autoincrement())
+  user_id      Int
+  titre        String
+  categorie    CarnetCategorie
+  contenu      String
+  date_travail DateTime
+  created_at   DateTime         @default(now())
+  updated_at   DateTime         @updatedAt
+
+  user           User                 @relation(fields: [user_id], references: [id])
+  pieces_jointes CarnetPieceJointe[]
+
+  @@map("carnet_entrees")
+}
+
+model CarnetPieceJointe {
+  id           Int      @id @default(autoincrement())
+  entree_id    Int
+  nom          String
+  url          String
+  taille       Int
+  type         String
+  created_at   DateTime @default(now())
+
+  entree       CarnetEntree @relation(fields: [entree_id], references: [id], onDelete: Cascade)
+
+  @@map("carnet_pieces_jointes")
 }
