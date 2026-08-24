@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (categorie) {
-    conditions.categorie = categorie as any;
+    conditions.categories = { has: categorie as any };
   }
 
   if (periode) {
@@ -73,10 +73,10 @@ export async function POST(request: NextRequest) {
     return erreur(400, "Requête invalide.");
   }
 
-  const { titre, categorie, date_travail, contenu } = corps;
+  const { titre, categories, date_travail, contenu } = corps;
 
-  if (!titre || !categorie || !date_travail) {
-    return erreur(400, "Titre, catégorie et date sont obligatoires.");
+  if (!titre || !categories || !Array.isArray(categories) || categories.length === 0 || !date_travail) {
+    return erreur(400, "Titre, catégories (array) et date sont obligatoires.");
   }
 
   try {
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       data: {
         user_id: user.id,
         titre: titre.trim(),
-        categorie,
+        categories: categories as any,
         date_travail: new Date(date_travail),
         contenu: contenu || "",
       },

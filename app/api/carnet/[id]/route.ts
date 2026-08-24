@@ -61,7 +61,7 @@ export async function PUT(
 
     const data: any = {};
     if (corps.titre !== undefined) data.titre = String(corps.titre).trim();
-    if (corps.categorie !== undefined) data.categorie = corps.categorie;
+    if (corps.categories !== undefined) data.categories = corps.categories;
     if (corps.date_travail !== undefined) data.date_travail = new Date(corps.date_travail);
     if (corps.contenu !== undefined) data.contenu = String(corps.contenu);
 

@@ -27,7 +27,7 @@ export default async function CarnetPage(
     conditions.user_id = Number(auteur);
   }
   if (categorie) {
-    conditions.categorie = categorie as any;
+    conditions.categories = { has: categorie as any };
   }
   if (periode) {
     const now = new Date();
@@ -112,9 +112,13 @@ export default async function CarnetPage(
                     className="flex flex-col p-4 bg-brand-white border border-brand-light-grey/50 rounded-xl shadow-sm hover:border-brand-orange hover:shadow-md transition-all group"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full capitalize">
-                        {e.categorie.replace(/_/g, " ")}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {e.categories.map(c => (
+                          <span key={c} className="text-[10px] font-semibold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full capitalize">
+                            {c.replace(/_/g, " ")}
+                          </span>
+                        ))}
+                      </div>
                       <span className="text-[10px] text-brand-grey font-medium bg-brand-light-grey/20 px-1.5 py-0.5 rounded">
                         {e.date_travail.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                       </span>

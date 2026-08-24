@@ -373,7 +373,7 @@ model CarnetEntree {
   id           Int              @id @default(autoincrement())
   user_id      Int
   titre        String
-  categorie    CarnetCategorie
+  categories   CarnetCategorie[]
   contenu      String
   date_travail DateTime
   created_at   DateTime         @default(now())

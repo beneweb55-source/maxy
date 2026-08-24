@@ -49,9 +49,13 @@ export default async function CarnetDetailPage(
               </div>
               {entree.user.username}
             </span>
-            <span className="capitalize text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
-              {entree.categorie.replace(/_/g, " ")}
-            </span>
+            <div className="flex gap-1 flex-wrap">
+              {entree.categories.map(c => (
+                <span key={c} className="capitalize text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
+                  {c.replace(/_/g, " ")}
+                </span>
+              ))}
+            </div>
             <span>{entree.date_travail.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
         </div>

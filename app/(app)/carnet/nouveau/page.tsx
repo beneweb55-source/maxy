@@ -12,7 +12,7 @@ const CATEGORIES = [
 export default function NouveauCarnetPage() {
   const router = useRouter();
   const [titre, setTitre] = useState("");
-  const [categorie, setCategorie] = useState("developpement");
+  const [categories, setCategories] = useState<string[]>(["developpement"]);
   const [dateTravail, setDateTravail] = useState(new Date().toISOString().split("T")[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [erreur, setErreur] = useState("");
@@ -30,7 +30,7 @@ export default function NouveauCarnetPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           titre: titre.trim(),
-          categorie,
+          categories,
           date_travail: dateTravail
         })
       });
@@ -75,17 +75,33 @@ export default function NouveauCarnetPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="libelle">Catégorie principale</label>
-            <select 
-              className="champ w-full capitalize"
-              value={categorie}
-              onChange={(e) => setCategorie(e.target.value)}
-              disabled={isLoading}
-            >
-              {CATEGORIES.map(c => (
-                <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
-              ))}
-            </select>
+            <label className="libelle">Catégories</label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {CATEGORIES.map(c => {
+                const isSelected = categories.includes(c);
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected && categories.length > 1) {
+                        setCategories(categories.filter(cat => cat !== c));
+                      } else if (!isSelected) {
+                        setCategories([...categories, c]);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors border ${
+                      isSelected 
+                        ? "bg-brand-orange text-brand-white border-brand-orange shadow-sm" 
+                        : "bg-brand-white text-brand-grey border-brand-light-grey/50 hover:border-brand-orange/50 hover:text-brand-orange"
+                    }`}
+                  >
+                    {c.replace(/_/g, " ")}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>
