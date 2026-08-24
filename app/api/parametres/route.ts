@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function GET() {
   const acces = await exigerUtilisateur();
@@ -138,6 +139,16 @@ export async function PUT(request: NextRequest) {
         entreprise_cachet: typeof entreprise_cachet === "string" ? entreprise_cachet : undefined,
       },
     });
+
+    await enregistrerActivite(prisma, acces.user.id, ACTIONS_JOURNAL.PARAMETRES_MODIFIER, "parametres", undefined, {
+      marge_minimum_pct: parametres.marge_minimum_pct,
+      objectif_reserve: parametres.objectif_reserve,
+      pct_reinvest: parametres.pct_reinvest,
+      pct_reserve: parametres.pct_reserve,
+      pct_parts: parametres.pct_parts,
+      pct_frais: parametres.pct_frais
+    });
+
     return NextResponse.json({
       ok: true,
       marge_minimum_pct: parametres.marge_minimum_pct,

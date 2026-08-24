@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { ajouterMouvement } from "@/lib/caisse-db";
 import { idsParRole, notifier } from "@/lib/notifs";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function GET() {
   const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
@@ -132,6 +133,12 @@ export async function POST(request: NextRequest) {
         `Nouveau lot n°${lot.id} — ${lot.fournisseur}, ${quantite_attendue} produits attendus`,
         `/lots/${lot.id}`
       );
+
+      await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.LOT_CREER, "lot", lot.id, {
+        fournisseur: lot.fournisseur,
+        quantite_attendue: lot.quantite_attendue,
+        cout_global_declare: lot.cout_global_declare,
+      });
 
       return lot;
     });

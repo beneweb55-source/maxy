@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { ajouterMouvement } from "@/lib/caisse-db";
 import { formaterDA } from "@/lib/caisse";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 /**
  * Valide manuellement le coût d'un lot et déclenche le retrait correspondant en
@@ -61,6 +62,11 @@ export async function POST(
           // En mode auto, on fige le coût déclaré sur le montant validé pour l'affichage.
           cout_global_declare: lot.mode_cout === "auto" ? montant : lot.cout_global_declare,
         },
+      });
+
+      await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.LOT_VALIDER_COUT, "lot", lot.id, {
+        montant,
+        mode_cout: lot.mode_cout
       });
     });
 

@@ -7,6 +7,7 @@ import {
   validerPhoto,
 } from "@/lib/images";
 import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 import {
   couvertureProduit,
   galerieProduit,
@@ -390,6 +391,8 @@ export async function PUT(
       return m!;
     });
 
+    await enregistrerActivite(prisma, user.id, ACTIONS_JOURNAL.PRODUIT_MODIFIER, "produit", produitId);
+
     return NextResponse.json({
       ok: true,
       id: maj.id,
@@ -430,6 +433,11 @@ export async function DELETE(
       prisma.mouvementCaisse.deleteMany({ where: { produit_id: produitId } }),
       prisma.produit.delete({ where: { id: produitId } }),
     ]);
+
+    await enregistrerActivite(prisma, acces.user.id, ACTIONS_JOURNAL.PRODUIT_SUPPRIMER, "produit", produitId, {
+      reference: produit.reference,
+      code_interne: produit.code_interne
+    });
 
     return NextResponse.json({ ok: true, supprime: produit.code_interne });
   } catch (e) {

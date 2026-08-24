@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { ajouterMouvement } from "@/lib/caisse-db";
 import { notifier } from "@/lib/notifs";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function POST(
   request: NextRequest,
@@ -100,6 +101,11 @@ export async function POST(
           await tx.facture.update({ where: { id: factureId }, data: { annulee: true } });
         }
       }
+
+      await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.VENTE_ANNULER, "produit", vente.produit.id, {
+        motif: motif.trim(),
+        vente_id: vente.id
+      });
     });
 
     return NextResponse.json({ ok: true });

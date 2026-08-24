@@ -5,6 +5,7 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 import { formaterDA, sensMouvement, TYPES_MANUELS } from "@/lib/caisse";
 import { ajouterMouvement, soldesCaisse } from "@/lib/caisse-db";
 import { entierPositif } from "@/lib/validation";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function POST(request: NextRequest) {
   const acces = await exigerUtilisateur(["gerant"]);
@@ -51,15 +52,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const mouvement = await prisma.$transaction((tx) =>
-      ajouterMouvement(tx, {
+    const mouvement = await prisma.$transaction(async (tx) => {
+      const m = await ajouterMouvement(tx, {
         montant: montantDA,
         type: typeMouvement,
         user_id: user.id,
         description:
           typeof description === "string" && description.trim() ? description.trim() : undefined,
-      })
-    );
+      });
+
+      await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.CAISSE_MOUVEMENT, "caisse", m.id, {
+        type: typeMouvement,
+        montant: montantDA
+      });
+
+      return m;
+    });
 
     return NextResponse.json(
       { ok: true, mouvement_id: mouvement.id, solde_apres: mouvement.solde_apres },

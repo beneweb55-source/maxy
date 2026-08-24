@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { idsParRole, notifier } from "@/lib/notifs";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function POST(
   _request: Request,
@@ -40,6 +41,7 @@ export async function POST(
         `Rapport du lot n°${lot.id} prêt à valider`,
         `/rapports/${lot.id}`
       );
+      await enregistrerActivite(tx, acces.user.id, ACTIONS_JOURNAL.LOT_CLOTURER, "lot", lot.id);
     });
 
     return NextResponse.json({ ok: true });

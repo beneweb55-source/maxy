@@ -1,14 +1,30 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { utilisateurCourant } from "@/lib/session";
+import { JournalFiltres } from "@/components/admin/JournalFiltres";
+import { ACTIONS_JOURNAL } from "@/lib/journal";
+import type { Prisma } from "@prisma/client";
 
-export default async function JournalActivitePage() {
+export default async function JournalActivitePage(
+  props: { searchParams: Promise<{ user?: string; action?: string }> }
+) {
   const session = await utilisateurCourant();
   if (!session || (session.role !== "gerant" && session.role !== "dev")) {
     redirect("/");
   }
 
+  const { user, action } = await props.searchParams;
+
+  const conditions: Prisma.JournalActiviteWhereInput = {};
+  if (user && !isNaN(Number(user))) {
+    conditions.user_id = Number(user);
+  }
+  if (action) {
+    conditions.action = action;
+  }
+
   const logs = await prisma.journalActivite.findMany({
+    where: conditions,
     orderBy: { created_at: "desc" },
     take: 100,
     include: {
@@ -18,18 +34,43 @@ export default async function JournalActivitePage() {
     },
   });
 
-  const formaterAction = (action: string) => {
-    const labels: Record<string, string> = {
-      "auth.connexion": "Connexion",
-      "auth.echec": "Échec de connexion",
-      "produit.ajouter": "Nouveau(x) produit(s)",
-      "produit.statut": "Statut modifié",
-      "vente.enregistrer": "Vente enregistrée",
-      "backup.exporter": "Sauvegarde générée",
-      "backup.restaurer": "Restauration",
-    };
-    return labels[action] || action;
+  const actionLabels: Record<string, string> = {
+    "auth.connexion": "Connexion",
+    "auth.echec": "Échec de connexion",
+    "lot.creer": "Création lot",
+    "lot.cloturer": "Clôture lot",
+    "lot.valider_cout": "Validation coûts lot",
+    "produit.ajouter": "Nouveau(x) produit(s)",
+    "produit.statut": "Statut modifié",
+    "produit.modifier": "Produit modifié",
+    "produit.supprimer": "Produit supprimé",
+    "produit.prix": "Prix modifié",
+    "produit.reparation": "Frais de réparation",
+    "vente.enregistrer": "Vente enregistrée",
+    "vente.annuler": "Vente annulée",
+    "caisse.mouvement": "Mouvement de caisse",
+    "caisse.repartition": "Répartition caisse",
+    "rapport.decision": "Décision SAV",
+    "rapport.valider": "Rapport validé",
+    "parametres.modifier": "Paramètres modifiés",
+    "backup.exporter": "Sauvegarde générée",
+    "backup.restaurer": "Restauration d'urgence",
   };
+
+  const formaterAction = (action: string) => {
+    return actionLabels[action] || action;
+  };
+
+  // Préparer les données pour les filtres
+  const allUsers = await prisma.user.findMany({
+    select: { id: true, username: true, role: true },
+    orderBy: { username: "asc" }
+  });
+
+  const availableActions = Object.values(ACTIONS_JOURNAL).map(act => ({
+    id: act,
+    label: actionLabels[act] || act
+  }));
 
   const renderDetails = (details: string | null) => {
     if (!details) return <span className="text-brand-grey/50">—</span>;
@@ -57,10 +98,12 @@ export default async function JournalActivitePage() {
         <div>
           <h1 className="text-2xl font-bold font-outfit text-brand-black tracking-tight">Journal d'activité</h1>
           <p className="text-sm text-brand-warm-grey">
-            Audit log global des 100 dernières actions effectuées sur la plateforme.
+            Audit log global des actions effectuées sur la plateforme.
           </p>
         </div>
       </div>
+
+      <JournalFiltres utilisateurs={allUsers} actions={availableActions} />
 
       <div className="overflow-hidden rounded-xl border border-brand-light-grey/50 bg-brand-white shadow-sm">
         <div className="overflow-x-auto">

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { formaterDA } from "@/lib/caisse";
 import { ajouterMouvement, beneficeDuMois, soldesCaisse } from "@/lib/caisse-db";
+import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function POST(request: NextRequest) {
   const acces = await exigerUtilisateur(["gerant"]);
@@ -103,6 +104,16 @@ export async function POST(request: NextRequest) {
         type: "frais",
         user_id: user.id,
         description: `Répartition ${cleMois} — frais divers ${customPct.frais} %`,
+      });
+
+      await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.CAISSE_REPARTITION, "caisse", undefined, {
+        cleMois,
+        benefice,
+        reinvest: partReinvest,
+        reserve: partReserve,
+        associes: partAssocies,
+        frais: partFrais,
+        parts_vers_reserve: reserveSousObjectif
       });
     });
 
