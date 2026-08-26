@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { IconePlus, IconeRecherche } from "@/components/icons";
+import { IconePlus, IconeRecherche, IconeArchive, IconeCocheCercle, IconePanier, IconeImage, IconeAlerte, IconeEtiquette, IconeCle, IconeMinuteur } from "@/components/icons";
 import { useT } from "@/lib/i18n/contexte";
 
 interface StatsData {
@@ -21,151 +21,230 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
   }, []);
 
   if (loading) {
-    return <div className="p-4 text-sm text-brand-warm-grey">Chargement du cockpit…</div>;
+    return (
+      <div className="space-y-8 animate-pulse p-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="h-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+        </div>
+        <div className="h-6 w-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-md mt-10 mb-4"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!stats) return null;
 
   return (
-    <div className="space-y-6 animate-entree">
+    <div className="space-y-10 animate-entree pb-8">
       {/* Résumé */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div 
-          className="carte cursor-pointer hover:bg-[var(--bg-surface-hover)] border-l-4 border-l-brand-black dark:border-l-white"
-          onClick={() => majUrl({ vue: "tableau", statuts: null })}
-        >
-          <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">Produits au total</div>
-          <div className="text-3xl font-extrabold text-brand-black">{stats.summary.total}</div>
-        </div>
-        <div 
-          className="carte cursor-pointer hover:bg-[var(--bg-surface-hover)] border-l-4 border-l-succes"
-          onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu" })}
-        >
-          <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">Disponibles</div>
-          <div className="text-3xl font-extrabold text-brand-black">{stats.summary.disponibles}</div>
-        </div>
-        <div 
-          className="carte cursor-pointer hover:bg-[var(--bg-surface-hover)] border-l-4 border-l-info"
-          onClick={() => majUrl({ vue: "tableau", statuts: "en_vente" })}
-        >
-          <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">En vente</div>
-          <div className="text-3xl font-extrabold text-brand-black">{stats.summary.en_vente}</div>
+      <div>
+        <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey mb-4 font-outfit">Aperçu du stock</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div 
+            className="carte relative overflow-hidden group cursor-pointer bg-gradient-to-br from-brand-black to-brand-smooth border-0 !p-6"
+            onClick={() => majUrl({ vue: "tableau", statuts: null })}
+          >
+            <div className="absolute -right-6 -top-6 text-white/5 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+              <IconeArchive taille={120} />
+            </div>
+            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+              <div className="flex items-center gap-3 text-brand-grey">
+                <IconeArchive taille={20} className="text-white/70" />
+                <span className="text-sm font-semibold tracking-wide uppercase">Produits au total</span>
+              </div>
+              <div className="text-5xl font-extrabold text-white font-outfit">{stats.summary.total}</div>
+            </div>
+          </div>
+
+          <div 
+            className="carte relative overflow-hidden group cursor-pointer border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-brand-paper dark:border-emerald-900/50 !p-6"
+            onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu" })}
+          >
+            <div className="absolute -right-6 -top-6 text-emerald-500/5 dark:text-emerald-500/10 transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">
+              <IconeCocheCercle taille={120} />
+            </div>
+            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+              <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-500">
+                <IconeCocheCercle taille={20} />
+                <span className="text-sm font-semibold tracking-wide uppercase">Disponibles</span>
+              </div>
+              <div className="text-5xl font-extrabold text-emerald-900 dark:text-emerald-400 font-outfit">{stats.summary.disponibles}</div>
+            </div>
+          </div>
+
+          <div 
+            className="carte relative overflow-hidden group cursor-pointer border border-brand-light-orange bg-gradient-to-br from-brand-glow to-white dark:from-brand-orange/20 dark:to-brand-paper dark:border-brand-orange/30 !p-6"
+            onClick={() => majUrl({ vue: "tableau", statuts: "en_vente" })}
+          >
+            <div className="absolute -right-6 -top-6 text-brand-orange/5 dark:text-brand-orange/10 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+              <IconePanier taille={120} />
+            </div>
+            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+              <div className="flex items-center gap-3 text-brand-orange">
+                <IconePanier taille={20} />
+                <span className="text-sm font-semibold tracking-wide uppercase">En vente</span>
+              </div>
+              <div className="text-5xl font-extrabold text-brand-orange dark:text-brand-light-orange font-outfit">{stats.summary.en_vente}</div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Actions à traiter */}
       <div>
-        <h2 className="text-sm font-bold text-brand-black tracking-wide uppercase mb-4 opacity-80">À traiter</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey font-outfit">À traiter</h2>
+          {Object.values(stats.actions).some(v => v > 0) && (
+            <span className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded-full">
+              Priorité
+            </span>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {stats.actions.sans_prix > 0 && (
-            <div className="carte flex flex-col justify-between p-4 gap-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-danger" />
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">Sans prix</div>
-                <div className="text-2xl font-bold text-brand-black">{stats.actions.sans_prix}</div>
+            <div className="carte group border border-red-200 dark:border-red-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
+                  <IconeAlerte taille={18} />
+                  <span className="font-bold">Sans prix</span>
+                </div>
+                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.sans_prix}</div>
+                <div className="text-sm text-brand-warm-grey">Produits à tarifer</div>
               </div>
               <button 
                 onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn btn-secondaire text-xs py-1.5"
+                className="w-full btn bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-800/50 shadow-none"
               >
                 Traiter
               </button>
             </div>
           )}
+          
           {stats.actions.a_tester > 0 && (
-            <div className="carte flex flex-col justify-between p-4 gap-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-attention" />
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">À tester</div>
-                <div className="text-2xl font-bold text-brand-black">{stats.actions.a_tester}</div>
+            <div className="carte group border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-2">
+                  <IconeMinuteur taille={18} />
+                  <span className="font-bold">À tester</span>
+                </div>
+                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.a_tester}</div>
+                <div className="text-sm text-brand-warm-grey">En attente de test</div>
               </div>
               <button 
                 onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn btn-secondaire text-xs py-1.5"
+                className="w-full btn bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 shadow-none"
               >
                 Traiter
               </button>
             </div>
           )}
+          
           {stats.actions.a_reparer > 0 && (
-            <div className="carte flex flex-col justify-between p-4 gap-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-brand-orange" />
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">À réparer</div>
-                <div className="text-2xl font-bold text-brand-black">{stats.actions.a_reparer}</div>
+            <div className="carte group border border-orange-200 dark:border-orange-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 mb-2">
+                  <IconeCle taille={18} />
+                  <span className="font-bold">À réparer</span>
+                </div>
+                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.a_reparer}</div>
+                <div className="text-sm text-brand-warm-grey">Produits en panne</div>
               </div>
               <button 
                 onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn btn-secondaire text-xs py-1.5"
+                className="w-full btn bg-orange-50 hover:bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 dark:text-orange-300 border border-orange-200 dark:border-orange-800/50 shadow-none"
               >
                 Traiter
               </button>
             </div>
           )}
+          
           {stats.actions.sans_photo > 0 && (
-            <div className="carte flex flex-col justify-between p-4 gap-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-info" />
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">Sans photo</div>
-                <div className="text-2xl font-bold text-brand-black">{stats.actions.sans_photo}</div>
+            <div className="carte group border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
+                  <IconeImage taille={18} />
+                  <span className="font-bold">Sans photo</span>
+                </div>
+                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.sans_photo}</div>
+                <div className="text-sm text-brand-warm-grey">Pour la vitrine</div>
               </div>
               <button 
                 onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn btn-secondaire text-xs py-1.5"
+                className="w-full btn bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 shadow-none"
               >
                 Traiter
               </button>
             </div>
           )}
+          
           {stats.actions.sans_etiquette > 0 && (
-            <div className="carte flex flex-col justify-between p-4 gap-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-brand-smooth" />
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-brand-warm-grey mb-1">Sans étiquette</div>
-                <div className="text-2xl font-bold text-brand-black">{stats.actions.sans_etiquette}</div>
+            <div className="carte group border border-purple-200 dark:border-purple-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
+                  <IconeEtiquette taille={18} />
+                  <span className="font-bold">À étiqueter</span>
+                </div>
+                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.sans_etiquette}</div>
+                <div className="text-sm text-brand-warm-grey">Non confirmés</div>
               </div>
               <button 
                 onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
-                className="w-full btn btn-secondaire text-xs py-1.5"
+                className="w-full btn bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 shadow-none"
               >
                 Traiter
               </button>
             </div>
           )}
         </div>
+        
         {Object.values(stats.actions).every(v => v === 0) && (
-          <div className="flex flex-col items-center justify-center p-8 text-emerald-600 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/10 dark:border-emerald-800/30 rounded-xl font-medium">
-            <svg className="w-12 h-12 mb-3 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="text-lg">Parfait !</div>
-            <div className="text-sm opacity-80">Aucun produit ne nécessite d'action urgente.</div>
+          <div className="flex flex-col items-center justify-center p-12 text-emerald-600 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/10 dark:border-emerald-800/30 rounded-2xl font-medium shadow-sm">
+            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mb-4">
+              <IconeCocheCercle taille={32} />
+            </div>
+            <div className="text-xl font-bold font-outfit mb-1 text-brand-black dark:text-white">Tout est à jour !</div>
+            <div className="text-sm text-emerald-700 dark:text-emerald-500">Aucun produit ne nécessite d'action urgente.</div>
           </div>
         )}
       </div>
 
       {/* Explorer */}
       <div>
-        <h2 className="text-sm font-bold text-brand-black tracking-wide uppercase mb-4 opacity-80">Explorer le stock</h2>
+        <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey mb-4 font-outfit">Explorer par catégorie</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {stats.categories.map(cat => (
             <button
               key={cat.name}
               onClick={() => majUrl({ vue: "categorie", categorie: cat.name })}
-              className="carte p-0 group overflow-hidden transition-all text-left flex flex-col hover:-translate-y-1"
+              className="carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth hover:shadow-lg transition-all text-left flex flex-col"
             >
-              <div className="h-28 w-full relative bg-[var(--bg-surface-secondary)] border-b border-[var(--border-color)] flex items-center justify-center">
+              <div className="h-32 w-full bg-brand-light-grey/20 dark:bg-white/5 relative overflow-hidden">
                 {cat.image ? (
-                  <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-opacity" />
+                  <img src={cat.image} alt={cat.name} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
                 ) : (
-                  <svg className="w-8 h-8 text-[var(--border-color)] group-hover:text-brand-grey transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <div className="w-full h-full flex items-center justify-center text-brand-warm-grey">
+                    <IconeArchive taille={32} className="opacity-30" />
+                  </div>
                 )}
-              </div>
-              <div className="p-3">
-                <div className="font-semibold text-sm text-brand-black truncate">{cat.name}</div>
-                <div className="text-xs text-brand-warm-grey mt-0.5">{cat.disponibles} disponibles / {cat.total}</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-black/90 via-brand-black/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-3 left-4 right-4 text-white">
+                  <div className="font-bold text-lg font-outfit truncate">{cat.name}</div>
+                  <div className="text-xs text-brand-light-grey font-medium flex justify-between items-center mt-1">
+                    <span>{cat.disponibles} dispos</span>
+                    <span className="opacity-50 text-[10px] uppercase">/ {cat.total}</span>
+                  </div>
+                </div>
               </div>
             </button>
           ))}

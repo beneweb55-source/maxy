@@ -782,222 +782,259 @@ export default function Inventaire({ role }: { role: Role }) {
       )}
 
       {(vue === "tableau" || vue === "detail" || vue === "atraiter") && (
-        <div className="space-y-6 animate-entree">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
-            <div className="flex items-center gap-3">
-              <button onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} className="btn btn-secondaire p-2 shadow-none border-transparent hover:border-[var(--border-color)]" title="Retour au Cockpit">
-                <IconeChevronGauche taille={18} />
-              </button>
-              <h1 className="text-2xl font-bold tracking-tight text-brand-black">{t("inventaire.titre")}</h1>
-            </div>
-        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-          <button
-            type="button"
-            onClick={() => majUrl({ vue: vueGroupee ? "detail" : null })}
-            className="btn btn-secondaire w-full sm:w-auto justify-center"
-          >
-            {vueGroupee ? "Vue détaillée" : "Vue groupée"}
-          </button>
-          {estGerant && (
-            <a
-              href={`/api/produits/export?${searchParams?.toString() || ""}`}
-              className="btn btn-secondaire w-full sm:w-auto justify-center"
-            >
-              <IconeTelechargement taille={15} />
-              Export CSV
-            </a>
-          )}
-          {peutModifier && (
-            <button type="button" onClick={ouvrirAjout} className="btn btn-primaire w-full sm:w-auto justify-center">
-              <IconePlus taille={15} />
-              Ajouter un produit
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="carte space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <div className="flex-1 flex w-full relative group">
-            <RechercheRapide
-              valeur={q}
-              onChange={(valeur) => {
-                setQ(valeur);
-                majUrl({ q: valeur.trim() || null });
-              }}
-              placeholder={t("inventaire.recherche")}
-              debounceMs={300}
-              className="w-full pl-10 pr-4 py-2 bg-[var(--bg-surface-secondary)] border border-[var(--border-color)] rounded-l-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all text-[var(--text-primary)]"
-            />
-            <div className="relative flex items-center border border-l-0 border-[var(--border-color)] rounded-r-lg bg-[var(--bg-surface-secondary)] px-2 min-w-[140px] sm:min-w-[180px] transition-colors focus-within:border-brand-orange">
-              <span className="text-xs text-brand-warm-grey hidden sm:inline-block mr-1">Dans :</span>
-              <select
-                value={searchParams?.get("categorie") ?? ""}
-                onChange={(e) => majUrl({ categorie: e.target.value || null })}
-                className="bg-transparent text-sm text-[var(--text-primary)] font-medium focus:outline-none w-full py-2 cursor-pointer"
+        <div className="space-y-4 animate-entree">
+          {/* Header & Actions principales */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
+            <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium">
+              <button 
+                onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} 
+                className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
               >
-                <option value="">Tout l'inventaire</option>
-                {(donnees?.categories ?? []).map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                <IconeChevronGauche taille={14} /> Cockpit
+              </button>
+              <span>/</span>
+              <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
+                {vue === "atraiter" ? "À traiter" : "Inventaire complet"}
+              </span>
+              {donnees && (
+                <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold ml-2">
+                  {donnees.total}
+                </span>
+              )}
+            </div>
+            
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+              <button
+                type="button"
+                onClick={() => majUrl({ vue: vueGroupee ? "detail" : null })}
+                className="btn btn-secondaire w-full sm:w-auto justify-center bg-white dark:bg-brand-paper shadow-sm"
+              >
+                {vueGroupee ? "Vue détaillée" : "Vue groupée"}
+              </button>
+              {estGerant && (
+                <a
+                  href={`/api/produits/export?${searchParams?.toString() || ""}`}
+                  className="btn btn-secondaire w-full sm:w-auto justify-center bg-white dark:bg-brand-paper shadow-sm"
+                >
+                  <IconeTelechargement taille={15} />
+                  Export CSV
+                </a>
+              )}
+              {peutModifier && (
+                <button type="button" onClick={ouvrirAjout} className="btn btn-primaire w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20">
+                  <IconePlus taille={15} />
+                  Ajouter
+                </button>
+              )}
             </div>
           </div>
-          
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <select
-              value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "__sans__") majUrl({ sans_lot: "1", lot: null });
-                else majUrl({ lot: v || null, sans_lot: null });
-              }}
-              className="champ w-full sm:w-auto"
-            >
-              <option value="">{t("inventaire.tousArrivages")}</option>
-              <option value="__sans__">{t("inventaire.sansArrivage")}</option>
-              {(donnees?.lots ?? []).map((l) => (
-                <option key={l.id} value={l.id}>{l.libelle}</option>
-              ))}
-            </select>
-            <select
-              value={
-                (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
-              }
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc" });
-                else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc" });
-                else majUrl({ tri: null, ordre: null });
-              }}
-              className="champ w-full sm:w-auto"
-            >
-              <option value="">{t("inventaire.triDefaut")}</option>
-              <option value="prix_asc">{t("inventaire.prixAsc")}</option>
-              <option value="prix_desc">{t("inventaire.prixDesc")}</option>
-            </select>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-wrap gap-1.5 flex-1">
-            <span className="text-sm font-semibold text-brand-warm-grey mr-2 hidden sm:inline-block">{t("inventaire.statut")}</span>
-            {statutsVisibles.map((s) => (
+          {/* Barre d'outils unifiée (Toolbar) */}
+          <div className="carte !p-2 sm:!p-3 flex flex-col lg:flex-row gap-3 items-center shadow-sm">
+            <div className="flex-1 w-full relative">
+              <RechercheRapide
+                valeur={q}
+                onChange={(valeur) => {
+                  setQ(valeur);
+                  majUrl({ q: valeur.trim() || null, page: "1" });
+                }}
+                placeholder={t("inventaire.recherche")}
+                debounceMs={300}
+                className="w-full pl-10 pr-4 py-2.5 bg-brand-paper dark:bg-black/20 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-brand-orange transition-all font-medium text-sm"
+              />
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-brand-light-grey/20 dark:bg-white/5 px-3 py-2 h-[42px] min-w-[140px]">
+                <select
+                  value={searchParams?.get("categorie") ?? ""}
+                  onChange={(e) => majUrl({ categorie: e.target.value || null, page: "1" })}
+                  className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                >
+                  <option value="">Toutes les catégories</option>
+                  {(donnees?.categories ?? []).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+              </div>
+
+              <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
+                <select
+                  value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "__sans__") majUrl({ sans_lot: "1", lot: null, page: "1" });
+                    else majUrl({ lot: v || null, sans_lot: null, page: "1" });
+                  }}
+                  className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                >
+                  <option value="">Tous les arrivages</option>
+                  <option value="__sans__">Sans arrivage</option>
+                  {(donnees?.lots ?? []).map((l) => (
+                    <option key={l.id} value={l.id}>{l.libelle}</option>
+                  ))}
+                </select>
+                <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+              </div>
+              
+              <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
+                <select
+                  value={
+                    (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc", page: "1" });
+                    else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc", page: "1" });
+                    else majUrl({ tri: null, ordre: null, page: "1" });
+                  }}
+                  className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                >
+                  <option value="">Trier par défaut</option>
+                  <option value="prix_asc">Prix croissant</option>
+                  <option value="prix_desc">Prix décroissant</option>
+                </select>
+                <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+              </div>
+
               <button
-                key={s}
                 type="button"
-                onClick={() => basculerStatut(s)}
-                className={`rounded-full border px-3 py-1 text-xs font-semibold transition hover-lift ${
-                  statutsActifs.includes(s)
-                    ? "border-brand-smooth bg-brand-smooth text-brand-white"
-                    : `border-brand-light-grey text-brand-warm-grey hover:bg-brand-light-grey/30`
+                onClick={() => setAfficherPlusFiltres(!afficherPlusFiltres)}
+                className={`flex-none flex items-center gap-2 border rounded-lg px-3 py-2 h-[42px] transition-colors text-sm font-bold ${
+                  afficherPlusFiltres || nbFiltresActifs > 0 
+                  ? 'border-brand-orange bg-brand-orange/10 text-brand-orange shadow-inner' 
+                  : 'border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper text-brand-warm-grey hover:bg-brand-light-grey/30'
                 }`}
               >
-                {INFOS_STATUT[s].libelle}
+                <IconeTriBas taille={16} className={afficherPlusFiltres ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                <span className="hidden sm:inline">Filtres</span>
+                {nbFiltresActifs > 0 && (
+                  <span className="bg-brand-orange text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full ml-1">
+                    {nbFiltresActifs}
+                  </span>
+                )}
               </button>
-            ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setAfficherPlusFiltres(!afficherPlusFiltres)}
-              className={`text-sm font-medium transition flex items-center gap-1.5 px-2 py-1 rounded-md ${afficherPlusFiltres ? 'text-brand-orange bg-brand-orange/10' : 'text-brand-warm-grey hover:bg-brand-light-grey/50'}`}
-            >
-              <IconeTriBas taille={14} />
-              {t("inventaire.plusFiltres")}
-            </button>
-            {nbFiltresActifs > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setQ("");
-                  router.replace("/inventaire");
-                }}
-                className="text-sm font-medium text-danger hover:bg-danger/10 px-2 py-1 rounded-md transition flex items-center gap-1.5"
-              >
-                Effacer ({nbFiltresActifs})
-              </button>
-            )}
-          </div>
+          {/* Tiroir de filtres avancés */}
+          {afficherPlusFiltres && (
+            <div className="carte !p-4 bg-white/50 dark:bg-black/10 animate-entree">
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-brand-warm-grey w-full sm:w-auto sm:mr-2">Statut</span>
+                  {statutsVisibles.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => basculerStatut(s)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all hover-lift ${
+                        statutsActifs.includes(s)
+                          ? "border-brand-smooth bg-brand-black text-white dark:bg-white dark:text-brand-black shadow-md"
+                          : "border-brand-light-grey dark:border-white/10 text-brand-warm-grey dark:text-brand-grey hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      {INFOS_STATUT[s].libelle}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4 border-t sm:border-t-0 sm:border-l border-brand-light-grey/50 dark:border-white/10 pt-4 sm:pt-0 sm:pl-4">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-warm-grey">Période</label>
+                    <input
+                      type="date"
+                      value={searchParams?.get("du") ?? ""}
+                      onChange={(e) => majUrl({ du: e.target.value || null, page: "1" })}
+                      className="champ text-xs py-1 px-2 h-[32px] w-[110px]"
+                    />
+                    <span className="text-brand-warm-grey">-</span>
+                    <input
+                      type="date"
+                      value={searchParams?.get("au") ?? ""}
+                      onChange={(e) => majUrl({ au: e.target.value || null, page: "1" })}
+                      className="champ text-xs py-1 px-2 h-[32px] w-[110px]"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-brand-light-grey/50 dark:border-white/10">
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-warm-grey w-full sm:w-auto sm:mr-2">Rapides</span>
+                
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("plus30j") === "1"}
+                    onChange={(e) => majUrl({ plus30j: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                  +30 jours
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("a_tarifer") === "1"}
+                    onChange={(e) => majUrl({ a_tarifer: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-red-300 text-red-500 focus:ring-red-500"
+                  />
+                  À tarifer
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("sans_photo") === "1"}
+                    onChange={(e) => majUrl({ sans_photo: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                  Sans photo
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("sans_etiquette") === "1"}
+                    onChange={(e) => majUrl({ sans_etiquette: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                  Sans étiquette
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("a_jeter") === "1"}
+                    onChange={(e) => majUrl({ a_jeter: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                  À jeter
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("en_vitrine") === "1"}
+                    onChange={(e) => majUrl({ en_vitrine: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                  En vitrine
+                </label>
+
+                {nbFiltresActifs > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQ("");
+                      router.replace("/inventaire");
+                    }}
+                    className="ml-auto text-sm font-bold text-danger hover:bg-danger/10 px-3 py-1.5 rounded-md transition flex items-center gap-1.5 border border-transparent hover:border-danger/20"
+                  >
+                    Effacer tous les filtres
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {afficherPlusFiltres && (
-          <div className="pt-3 border-t border-brand-light-grey/50 grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-4 animate-entree">
-            <label className="flex items-center gap-2 text-sm text-brand-warm-grey">
-              Du
-              <input
-                type="date"
-                value={searchParams?.get("du") ?? ""}
-                onChange={(e) => majUrl({ du: e.target.value || null })}
-                className="champ text-xs py-1 px-2 h-auto"
-              />
-              au
-              <input
-                type="date"
-                value={searchParams?.get("au") ?? ""}
-                onChange={(e) => majUrl({ au: e.target.value || null })}
-                className="champ text-xs py-1 px-2 h-auto"
-              />
-            </label>
-            <div className="h-4 w-px bg-brand-light-grey hidden sm:block"></div>
-            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchParams?.get("plus30j") === "1"}
-                onChange={(e) => majUrl({ plus30j: e.target.checked ? "1" : null })}
-                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
-              />
-              +30 jours
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchParams?.get("a_tarifer") === "1"}
-                onChange={(e) => majUrl({ a_tarifer: e.target.checked ? "1" : null })}
-                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
-              />
-              À tarifer
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchParams?.get("sans_photo") === "1"}
-                onChange={(e) => majUrl({ sans_photo: e.target.checked ? "1" : null })}
-                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
-              />
-              Sans photo
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchParams?.get("sans_etiquette") === "1"}
-                onChange={(e) => majUrl({ sans_etiquette: e.target.checked ? "1" : null })}
-                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
-              />
-              Sans étiquette
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchParams?.get("a_jeter") === "1"}
-                onChange={(e) => majUrl({ a_jeter: e.target.checked ? "1" : null })}
-                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
-              />
-              À jeter
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchParams?.get("en_vitrine") === "1"}
-                onChange={(e) => majUrl({ en_vitrine: e.target.checked ? "1" : null })}
-                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
-              />
-              En vitrine
-            </label>
-          </div>
-        )}
-      </div>
+      )}
 
       {donnees && (
         <p className="text-sm text-brand-warm-grey">
@@ -1479,47 +1516,47 @@ export default function Inventaire({ role }: { role: Role }) {
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block max-h-[800px] shadow-sm">
-            <table className="w-full min-w-[820px] text-sm relative">
-              <thead className="bg-brand-light-grey/25 sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90 dark:bg-brand-black/90">
+          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper md:block max-h-[800px] shadow-sm relative scrollbar-fine">
+            <table className="w-full min-w-[820px] text-[13px] relative">
+              <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
                   {COLONNES_TRI.filter(c => c.cle !== 'prix_achat' || !estSocial).map((c) => (
                     <th
                       key={c.cle}
                       onClick={() => trierPar(c.cle)}
-                      className="entete-table cursor-pointer select-none transition hover:text-brand-black whitespace-nowrap py-3 px-4 text-left font-semibold text-brand-warm-grey"
+                      className="cursor-pointer select-none transition-colors hover:text-brand-orange whitespace-nowrap py-3 px-4 text-left font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]"
                     >
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1.5">
                         {t(c.libelle)}
                         {triActuel === c.cle &&
                           (ordreActuel === "asc" ? (
-                            <IconeTriHaut taille={12} />
+                            <IconeTriHaut taille={12} className="text-brand-orange" />
                           ) : (
-                            <IconeTriBas taille={12} />
+                            <IconeTriBas taille={12} className="text-brand-orange" />
                           ))}
                       </span>
                     </th>
                   ))}
-                  <th className="entete-table text-right py-3 px-4 font-semibold text-brand-warm-grey">{t("inventaire.jours")}</th>
-                  <th className="entete-table py-3 px-4" />
+                  <th className="py-3 px-4 text-right font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">{t("inventaire.jours")}</th>
+                  <th className="py-3 px-4" />
                 </tr>
               </thead>
-              <tbody className="">
+              <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
                 {donnees.produits.map((p) => (
                   <tr
                     key={p.id}
                     onClick={() => router.push(`/produits/${p.id}`)}
-                    className="ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer transition-colors hover:bg-brand-light-grey/10"
+                    className="group cursor-pointer transition-colors hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
                   >
-                    <td className="px-3 py-2 font-mono text-xs text-brand-warm-grey">
+                    <td className="px-4 py-2.5 font-mono text-xs text-brand-warm-grey dark:text-brand-grey font-semibold">
                       {p.code_interne}
                     </td>
-                    <td className="max-w-64 truncate px-3 py-2 font-medium" title={p.reference}>
+                    <td className="max-w-64 truncate px-4 py-2.5 font-semibold text-brand-black dark:text-white" title={p.reference}>
                       {p.reference}
                     </td>
-                    <td className="px-3 py-2">{p.categorie}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-flex items-center gap-1.5">
+                    <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-light-grey">{p.categorie}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="inline-flex items-center gap-2">
                         <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
                         {p.en_vitrine && (
                           <IconeVitrine
@@ -1530,44 +1567,44 @@ export default function Inventaire({ role }: { role: Role }) {
                         )}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-xs">
-                      {new Date(p.date_entree).toLocaleDateString("fr-FR")}
-                      <span className="block text-brand-grey">
+                    <td className="px-4 py-2.5 text-xs text-brand-black dark:text-brand-light-grey">
+                      <div className="font-medium">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</div>
+                      <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
                         {p.lot_id
                           ? t("inventaire.lotLong", { n: p.lot_id, f: p.fournisseur || "" })
                           : t("inventaire.sansArrivage")}
-                      </span>
+                      </div>
                     </td>
                     {!estSocial && (
-                      <td className="px-3 py-2 text-right">
-                        <span className="block text-[10px] font-semibold uppercase text-brand-grey mb-0.5">{t("inventaire.achat")}</span>
-                        <span className="font-semibold text-brand-black">{formaterDA(p.prix_achat)}</span>
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mb-0.5">{t("inventaire.achat")}</span>
+                        <span className="font-bold text-brand-black dark:text-white">{formaterDA(p.prix_achat)}</span>
                         {p.cout_reparations > 0 && (
-                          <span className="block text-xs text-brand-grey">
+                          <span className="block text-[10px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
                             +{formaterDA(p.cout_reparations)} {t("inventaire.reparationsAbr")}
                           </span>
                         )}
                       </td>
                     )}
-                    <td className="px-3 py-2 text-right">
-                      <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">{t("inventaire.vente")}</span>
+                    <td className="px-4 py-2.5 text-right">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-orange/80 mb-0.5">{t("inventaire.vente")}</span>
                       {prixVenteAffiche(p) !== null ? (
-                        <span className="font-bold text-brand-orange">
+                        <span className="font-extrabold text-brand-orange text-sm">
                           {formaterDA(prixVenteAffiche(p)!)}
                           {p.statut === "vendu" && (
-                            <span className="block text-[10px] font-semibold uppercase text-brand-grey">
+                            <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mt-0.5">
                               {t("inventaire.statutVendu")}
                             </span>
                           )}
                         </span>
                       ) : (
-                        <span className="text-brand-grey">—</span>
+                        <span className="text-brand-warm-grey dark:text-brand-grey font-medium">—</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right">{p.jours_stock}</td>
-                    <td className="px-2 py-2">
+                    <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-light-grey font-medium">{p.jours_stock}</td>
+                    <td className="px-3 py-2.5">
                       {peutModifier && (
-                        <span className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {p.statut !== "vendu" && (
                             <button
                               type="button"
@@ -1578,27 +1615,20 @@ export default function Inventaire({ role }: { role: Role }) {
                               }}
                               title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
                               aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
-                              className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+                              className={`rounded-lg p-2 transition-colors disabled:opacity-40 ${
                                 p.en_vitrine
-                                  ? "text-brand-orange hover:bg-brand-orange/10"
-                                  : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
+                                  ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
+                                  : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
                               }`}
                             >
-                              <IconeVitrine taille={14} />
+                              <IconeVitrine taille={15} />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`/imprimer-etiquettes?ids=${p.id}`, '_blank');
-                            }}
-                            title={t("inventaire.imprimer")}
-                            aria-label={t("inventaire.imprimerEtiquette", { code: p.code_interne })}
-                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                          >
-                            <IconeImprimante taille={14} />
-                          </button>
+                          <BoutonImpression 
+                            ids={[p.id]} 
+                            dejaImprimee={p.etiquette_imprimee} 
+                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white" 
+                          />
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1607,9 +1637,9 @@ export default function Inventaire({ role }: { role: Role }) {
                             }}
                             title={t("inventaire.editer")}
                             aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
-                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
                           >
-                            <IconeCrayon taille={14} />
+                            <IconeCrayon taille={15} />
                           </button>
                           <button
                             type="button"
@@ -1619,11 +1649,11 @@ export default function Inventaire({ role }: { role: Role }) {
                             }}
                             title={t("inventaire.supprimer")}
                             aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
-                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-danger/10 hover:text-danger"
                           >
-                            <IconeCorbeille taille={14} />
+                            <IconeCorbeille taille={15} />
                           </button>
-                        </span>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -1704,8 +1734,6 @@ export default function Inventaire({ role }: { role: Role }) {
             <IconeChevronDroite taille={15} />
           </button>
         </div>
-      )}
-      </div>
       )}
 
       <Modale

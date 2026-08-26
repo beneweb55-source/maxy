@@ -191,14 +191,13 @@ export default function AppShell({
                 setMenuOuvert(false);
               }}
               aria-current={actif ? "page" : undefined}
-              className={`group relative flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 overflow-hidden ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
                 actif
-                  ? "bg-brand-orange/10 text-brand-orange"
-                  : "text-brand-grey hover:bg-black/5 dark:hover:bg-white/5 hover:text-brand-black dark:hover:text-white"
+                  ? "bg-gradient-to-r from-brand-orange to-[#EA580C] text-white shadow-md shadow-brand-orange/20 translate-x-1"
+                  : "text-brand-grey hover:bg-white/5 hover:text-white hover:translate-x-1"
               }`}
             >
-              {actif && <div className="absolute left-0 top-1 bottom-1 w-1 bg-brand-orange rounded-r-full" />}
-              <Icone taille={18} className={actif ? "text-brand-orange" : "opacity-70 group-hover:opacity-100"} />
+              <Icone taille={18} className={actif ? "opacity-100" : "opacity-70"} />
               {t(item.cle)}
             </Link>
           );
@@ -206,12 +205,12 @@ export default function AppShell({
       </nav>
 
       <div className="p-4">
-        <div className="flex items-center gap-3 rounded-xl bg-black/5 dark:bg-white/5 p-3 border border-black/5 dark:border-white/5 transition-colors hover:bg-black/10 dark:hover:bg-white/10">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-orange text-xs font-bold uppercase text-white">
+        <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3 backdrop-blur-sm border border-white/5 transition-colors hover:bg-white/10">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-orange to-[#EA580C] shadow-sm text-sm font-bold uppercase text-white">
             {user.username.slice(0, 2)}
           </span>
           <span className="min-w-0 flex-1 leading-tight">
-            <span className="block truncate text-sm font-semibold text-brand-black dark:text-white">
+            <span className="block truncate text-sm font-semibold text-white">
               {user.username}
             </span>
             <span className="block text-xs text-brand-grey">{t(`roles.${user.role}`)}</span>
@@ -221,7 +220,7 @@ export default function AppShell({
             onClick={() => void deconnexion()}
             title={t("entete.deconnexion")}
             aria-label={t("entete.deconnexion")}
-            className="rounded-lg p-2 text-brand-grey transition hover:bg-black/10 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
+            className="rounded-lg p-2 text-brand-grey transition hover:bg-white/10 hover:text-white"
           >
             <IconeDeconnexion taille={17} />
           </button>
@@ -234,8 +233,8 @@ export default function AppShell({
     <FournisseurToasts>
         <GestionnaireRetourShell />
         <ScannerGlobal />
-        <div className="min-h-screen font-inter text-brand-black">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] border-r border-brand-light-grey lg:block print:hidden">
+        <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden">
           {contenuSidebar}
         </aside>
 
@@ -274,28 +273,28 @@ export default function AppShell({
         </div>
 
         <div className="lg:pl-64">
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-brand-light-grey bg-[var(--bg-main)]/80 px-4 backdrop-blur-xl lg:px-8 print:hidden">
+          <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-brand-light-grey/60 bg-brand-white/80 px-4 backdrop-blur-xl lg:px-8 print:hidden">
             <button
               type="button"
               onClick={() => setMenuOuvert(true)}
-              className="rounded-lg border border-brand-light-grey p-1.5 text-brand-smooth lg:hidden"
+              className="rounded-lg border border-brand-light-grey p-2 text-brand-smooth lg:hidden"
               aria-label={t("entete.ouvrirMenu")}
             >
               <IconeMenu taille={18} />
             </button>
-            <span className="hidden text-sm font-semibold text-brand-smooth lg:block tracking-wide">
+            <span className="hidden text-sm font-semibold text-brand-smooth lg:block font-outfit tracking-wide">
               {t("entete.titrePlateforme")}
             </span>
-            <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
+            <div className="ml-auto flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setRechercheOuverte(true)}
-                className="hidden lg:flex items-center gap-2 rounded-md border border-brand-light-grey bg-[var(--bg-surface-secondary)] px-3 py-1.5 text-sm text-brand-warm-grey transition hover:border-brand-grey"
+                className="hidden lg:flex items-center gap-2 rounded-lg border border-brand-light-grey px-3 py-1.5 text-sm text-brand-warm-grey transition hover:bg-brand-light-grey/40"
                 aria-label={t("rechercheGlobale.placeholder") || "Rechercher..."}
               >
-                <IconeRecherche taille={15} />
-                <span className="hidden xl:inline-block font-medium">Rechercher...</span>
-                <kbd className="ml-2 rounded border border-brand-light-grey bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-[10px] text-brand-grey shadow-sm">Ctrl K</kbd>
+                <IconeRecherche taille={16} />
+                <span className="hidden xl:inline-block">Rechercher...</span>
+                <kbd className="ml-2 rounded border border-brand-light-grey bg-brand-paper px-1.5 py-0.5 font-mono text-[10px]">Ctrl K</kbd>
               </button>
               <button
                 type="button"
