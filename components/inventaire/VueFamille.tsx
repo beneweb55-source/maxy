@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCorbeille } from "@/components/icons";
+import Link from "next/link";
+import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCorbeille, IconeOeil } from "@/components/icons";
 import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
 import type { StatutProduit } from "@prisma/client";
@@ -183,7 +184,14 @@ export default function VueFamille({
               </div>
             </div>
 
-            <div className="flex gap-1 mt-auto pt-2 border-t border-brand-light-grey/30">
+            <div className="flex gap-1 mt-auto pt-2 border-t border-brand-light-grey/30 items-center">
+              <Link
+                href={`/produits/${p.id}`}
+                className="p-1.5 rounded-md text-brand-black bg-brand-light-grey/50 hover:bg-brand-light-grey transition flex items-center gap-1 text-xs font-semibold mr-auto"
+                title="Voir la fiche détaillée"
+              >
+                <IconeOeil taille={14} /> Voir le produit
+              </Link>
               <button
                 onClick={() => ouvrirEdition([p], p.code_interne)}
                 className="p-1.5 rounded-md hover:bg-brand-light-grey/50 text-brand-warm-grey transition"

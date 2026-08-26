@@ -397,6 +397,18 @@ export default function FicheProduit({
                 </dd>
               </div>
             )}
+            <div className="flex justify-between gap-2 border-t border-brand-light-grey/70 pt-1.5">
+              <dt className="text-brand-warm-grey">Étiquette</dt>
+              <dd className="font-semibold">
+                {produit.etiquette_imprimee ? (
+                  <span className="text-succes">
+                    Imprimée {produit.etiquette_imprimee_le ? `le ${new Date(produit.etiquette_imprimee_le).toLocaleDateString("fr-FR")}` : ""}
+                  </span>
+                ) : (
+                  <span className="text-brand-grey">Non imprimée</span>
+                )}
+              </dd>
+            </div>
           </dl>
         </section>
 

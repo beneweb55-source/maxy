@@ -59,7 +59,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
         <div className="flex flex-wrap gap-3">
           {stats.actions.sans_prix > 0 && (
             <button 
-              onClick={() => majUrl({ vue: "atraiter", filtre: "sans_prix" })}
+              onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-800 hover:bg-red-100 transition"
             >
               <div className="text-xl font-bold">{stats.actions.sans_prix}</div>
@@ -68,7 +68,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           {stats.actions.a_tester > 0 && (
             <button 
-              onClick={() => majUrl({ vue: "atraiter", filtre: "a_tester" })}
+              onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition"
             >
               <div className="text-xl font-bold">{stats.actions.a_tester}</div>
@@ -77,7 +77,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           {stats.actions.a_reparer > 0 && (
             <button 
-              onClick={() => majUrl({ vue: "atraiter", filtre: "a_reparer" })}
+              onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100 transition"
             >
               <div className="text-xl font-bold">{stats.actions.a_reparer}</div>
@@ -86,7 +86,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           {stats.actions.sans_photo > 0 && (
             <button 
-              onClick={() => majUrl({ vue: "atraiter", filtre: "sans_photo" })}
+              onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 transition"
             >
               <div className="text-xl font-bold">{stats.actions.sans_photo}</div>
@@ -95,7 +95,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           {stats.actions.sans_etiquette > 0 && (
             <button 
-              onClick={() => majUrl({ vue: "atraiter", filtre: "sans_etiquette" })}
+              onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100 transition"
             >
               <div className="text-xl font-bold">{stats.actions.sans_etiquette}</div>

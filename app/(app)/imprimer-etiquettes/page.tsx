@@ -88,30 +88,49 @@ export default function ImprimerEtiquettes() {
         }
       `}} />
 
-      <div className="no-print mb-4 flex w-full max-w-sm justify-between gap-2">
-        <button onClick={() => window.close()} className="btn btn-secondaire">Fermer</button>
-        <div className="flex gap-2">
-          <button onClick={lancerImpression} className="btn btn-primaire">
-            🖨️ Imprimer
-          </button>
-          {aImprime && !marquee && (
-            <button onClick={() => void confirmerImpression()} className="btn bg-succes text-white hover:bg-succes/90">
-              ✅ Confirmer
-            </button>
-          )}
-          {marquee && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl bg-succes/10 px-3 py-2 text-sm font-semibold text-succes">
-              ✅ Marquée imprimée
+      <div className="no-print mb-4 flex w-full max-w-md flex-col gap-4 rounded-lg bg-white p-4 shadow-sm border border-brand-light-grey">
+        {!aImprime ? (
+          <div className="text-center space-y-4">
+            <p className="text-sm text-brand-dark-grey font-medium">
+              Aperçu des étiquettes prêt.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button onClick={() => window.close()} className="btn btn-secondaire">Fermer</button>
+              <button onClick={lancerImpression} className="btn btn-primaire">
+                🖨️ Imprimer
+              </button>
+            </div>
+          </div>
+        ) : !marquee ? (
+          <div className="text-center space-y-4 animate-entree">
+            <p className="text-base font-bold text-brand-black">
+              Les étiquettes ont-elles bien été imprimées ?
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button 
+                onClick={() => { setAImprime(false); window.close(); }} 
+                className="btn btn-secondaire"
+              >
+                Non / Annuler
+              </button>
+              <button 
+                onClick={() => void confirmerImpression()} 
+                className="btn bg-succes text-white hover:bg-succes/90 font-bold"
+              >
+                ✅ Oui, étiquettes imprimées
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center space-y-3 animate-entree">
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-succes/10 px-4 py-3 text-base font-bold text-succes">
+              ✅ Marquées comme imprimées
             </span>
-          )}
-        </div>
+            <p className="text-sm text-brand-warm-grey">Vous pouvez maintenant fermer cette fenêtre.</p>
+            <button onClick={() => window.close()} className="btn btn-secondaire mx-auto mt-2">Fermer la fenêtre</button>
+          </div>
+        )}
       </div>
-
-      {!aImprime && (
-        <p className="no-print text-sm text-brand-warm-grey max-w-sm text-center">
-          Cliquez sur « Imprimer » pour ouvrir l'aperçu. Après avoir confirmé l'impression physique, cliquez « Confirmer » pour marquer les étiquettes.
-        </p>
-      )}
 
       {etiquettes.map((etiquette, index) => (
         <div 
