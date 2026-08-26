@@ -2,20 +2,40 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-orange: #F97316; /* Orange moderne et vibrant (Orange 500) */
-  --color-brand-black: #0F172A; /* Slate 900 : Noir profond mais plus doux */
-  --color-brand-white: #FFFFFF;
-  --color-brand-crystal: #3B82F6; /* Blue 500 : Bleu clair premium */
-  --color-brand-smooth: #1E293B; /* Slate 800 : Gris très foncé pour le texte fort */
-  --color-brand-light-orange: #FDBA74; /* Orange 300 */
-  --color-brand-glow: #FFEDD5; /* Orange 100 : Halo très doux */
-  --color-brand-light-grey: #E2E8F0; /* Slate 200 : Bordures subtiles */
-  --color-brand-grey: #94A3B8; /* Slate 400 : Texte secondaire */
-  --color-brand-warm-grey: #64748B; /* Slate 500 : Texte tertiaire et labels */
-  --color-brand-paper: #F8FAFC; /* Slate 50 : Fond global très clair et frais */
-  --color-succes: #10B981; /* Emerald 500 */
-  --color-danger: #EF4444; /* Red 500 */
-  --color-attention: #F59E0B; /* Amber 500 */
+  /* Marque */
+  --color-brand-orange: #F97316;
+  
+  /* Semantic Tokens (mapped to CSS variables) */
+  --color-background: var(--bg-main);
+  --color-surface: var(--bg-surface);
+  --color-surface-secondary: var(--bg-surface-secondary);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-border: var(--border-color);
+  
+  --color-text-main: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  /* Status Colors */
+  --color-success: var(--color-status-success);
+  --color-warning: var(--color-status-warning);
+  --color-danger: var(--color-status-danger);
+  --color-info: var(--color-status-info);
+  
+  /* Legacy tokens (kept for backward compatibility during transition) */
+  --color-brand-black: var(--text-primary);
+  --color-brand-white: var(--bg-surface);
+  --color-brand-crystal: var(--color-status-info);
+  --color-brand-smooth: var(--text-secondary);
+  --color-brand-light-orange: #FDBA74;
+  --color-brand-glow: var(--bg-surface-hover);
+  --color-brand-light-grey: var(--border-color);
+  --color-brand-grey: var(--text-muted);
+  --color-brand-warm-grey: var(--text-muted);
+  --color-brand-paper: var(--bg-main);
+  --color-succes: var(--color-status-success);
+  --color-attention: var(--color-status-warning);
+
   --font-inter: 'Inter', sans-serif;
   --font-outfit: 'Outfit', sans-serif;
 }
@@ -25,40 +45,39 @@
   /* SYSTEME DE VARIABLES : THÈME CLAIR (Light) */
   /* ========================================= */
   :root, :root[data-theme="light"], .force-light-mode {
-    --color-sidebar-bg: #0F172A; /* Sidebar sombre en light mode (Slate 900) */
+    --color-sidebar-bg: #FFFFFF; /* Sidebar claire */
     
-    /* Variables structurelles de base */
-    --color-brand-paper: #F8FAFC; /* Slate 50 : Fond global */
-    --color-brand-white: #FFFFFF; /* Fond cartes pur */
-    --color-brand-black: #0F172A; /* Slate 900 : Texte fort */
-    --color-brand-smooth: #1E293B; /* Slate 800 : Titres */
-    --color-brand-light-grey: #E2E8F0; /* Slate 200 : Bordures */
-    --color-brand-grey: #94A3B8; /* Slate 400 : Texte secondaire (clair) */
-    --color-brand-warm-grey: #64748B; /* Slate 500 : Labels */
-    --color-brand-glow: #FFEDD5; /* Orange 100 */
-    --sweep-mid: rgba(249, 115, 22, 0.05);
-    --sweep-core: rgba(249, 115, 22, 0.15);
-    --sweep-mid-hover: rgba(249, 115, 22, 0.1);
-    --sweep-core-hover: rgba(249, 115, 22, 0.25);
-
-    --shadow-carte: 0 4px 6px -1px rgba(15, 23, 42, 0.02), 0 2px 4px -2px rgba(15, 23, 42, 0.02), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-    --shadow-carte-hover: 0 10px 15px -3px rgba(15, 23, 42, 0.04), 0 4px 6px -4px rgba(15, 23, 42, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.8);
-    --bg-carte: rgba(255, 255, 255, 0.8);
-
-    --bg-alerte-erreur: rgba(239, 68, 68, 0.1);
-    --border-alerte-erreur: rgba(239, 68, 68, 0.2);
-    --text-alerte-erreur: #DC2626;
-    --bg-alerte-info: rgba(59, 130, 246, 0.1);
-    --border-alerte-info: rgba(59, 130, 246, 0.2);
-    --text-alerte-info: #2563EB;
-    --bg-alerte-succes: rgba(16, 185, 129, 0.1);
-    --border-alerte-succes: rgba(16, 185, 129, 0.2);
-    --text-alerte-succes: #059669;
-    --bg-encart-marque: rgba(249, 115, 22, 0.1);
-    --border-encart-marque: rgba(249, 115, 22, 0.2);
-    --text-encart-marque: #EA580C;
+    /* Semantic Surfaces */
+    --bg-main: #F4F5F7; /* Fond global (très légèrement gris chaud) */
+    --bg-surface: #FFFFFF; /* Surfaces principales (cartes) */
+    --bg-surface-secondary: #F9FAFB; /* Surfaces secondaires (headers de table, zones alternatives) */
+    --bg-surface-hover: #F3F4F6; /* Hover doux */
     
-    --ring-opacity: 0.3;
+    /* Semantic Borders */
+    --border-color: #E5E7EB; /* Gris très discret pour séparer sans alourdir */
+    
+    /* Semantic Text */
+    --text-primary: #111827; /* Gris presque noir */
+    --text-secondary: #374151; /* Texte standard / titres secondaires */
+    --text-muted: #6B7280; /* Texte secondaire, labels, placeholders */
+    
+    /* Status Colors */
+    --color-status-success: #059669;
+    --color-status-warning: #D97706;
+    --color-status-danger: #DC2626;
+    --color-status-info: #2563EB;
+
+    --shadow-carte: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow-carte-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    
+    --bg-alerte-erreur: rgba(220, 38, 38, 0.05);
+    --border-alerte-erreur: rgba(220, 38, 38, 0.15);
+    --bg-alerte-info: rgba(37, 99, 235, 0.05);
+    --border-alerte-info: rgba(37, 99, 235, 0.15);
+    --bg-alerte-succes: rgba(5, 150, 105, 0.05);
+    --border-alerte-succes: rgba(5, 150, 105, 0.15);
+    
+    --ring-opacity: 0.2;
   }
   
   /* Transition de thème via View Transitions API */
@@ -72,52 +91,45 @@
   /* SYSTEME DE VARIABLES : THÈME SOMBRE (Dark) */
   /* ========================================= */
   :root[data-theme="dark"] {
-    --color-sidebar-bg: #09090b; /* Zinc 950 */
+    --color-sidebar-bg: #0B0D10;
     
-    /* Variables structurelles de base */
-    --color-brand-paper: #09090b; /* Zinc 950 : Fond global abyssal */
-    --color-brand-white: #18181b; /* Zinc 900 : Fond cartes/inputs */
-    --color-brand-black: #fafafa; /* Zinc 50 : Texte fort */
-    --color-brand-smooth: #f4f4f5; /* Zinc 100 : Titres */
-    --color-brand-light-grey: rgba(255, 255, 255, 0.08); /* Bordures subtiles */
-    --color-brand-grey: #a1a1aa; /* Zinc 400 : Texte secondaire */
-    --color-brand-warm-grey: #d4d4d8; /* Zinc 300 : Labels très lisibles */
-    --color-brand-glow: #09090b;
-    --sweep-mid: rgba(255, 255, 255, 0.1);
-    --sweep-core: rgba(255, 255, 255, 0.3);
-    --sweep-mid-hover: rgba(255, 255, 255, 0.15);
-    --sweep-core-hover: rgba(255, 255, 255, 0.5);
+    /* Semantic Surfaces - Construction d'une vraie profondeur */
+    --bg-main: #0B0D10; /* Fond global (noir très profond) */
+    --bg-surface: #13161C; /* Surfaces principales (cartes) - se détache du fond */
+    --bg-surface-secondary: #1A1F26; /* Surfaces secondaires (headers, inputs) */
+    --bg-surface-hover: #222832; /* Hover nettement visible */
     
-    --shadow-carte: 0 4px 6px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    --shadow-carte-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    --bg-carte: rgba(24, 24, 27, 0.6); /* Zinc 900 (plus transparent) */
-    --bg-carte-hover: rgba(24, 24, 27, 0.8); /* Zinc 900 (plus opaque au survol) */
+    /* Semantic Borders */
+    --border-color: #2A313C; /* Bordure subtile mais structurante */
+    
+    /* Semantic Text */
+    --text-primary: #F9FAFB; /* Blanc cassé pour un contraste optimal mais pas éblouissant */
+    --text-secondary: #D1D5DB; /* Gris clair */
+    --text-muted: #9CA3AF; /* Gris moyen pour placeholders et labels secondaires */
+    
+    /* Status Colors - Légèrement désaturées pour le Dark Mode */
+    --color-status-success: #34D399;
+    --color-status-warning: #FBBF24;
+    --color-status-danger: #F87171;
+    --color-status-info: #60A5FA;
+    
+    --shadow-carte: 0 4px 6px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    --shadow-carte-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-    --bg-alerte-erreur: rgba(239, 68, 68, 0.15);
-    --border-alerte-erreur: rgba(239, 68, 68, 0.3);
-    --text-alerte-erreur: #FCA5A5;
-    --bg-alerte-info: rgba(59, 130, 246, 0.15);
-    --border-alerte-info: rgba(59, 130, 246, 0.3);
-    --text-alerte-info: #93C5FD;
-    --bg-alerte-succes: rgba(16, 185, 129, 0.15);
-    --border-alerte-succes: rgba(16, 185, 129, 0.3);
-    --text-alerte-succes: #6EE7B7;
-    --bg-encart-marque: rgba(249, 115, 22, 0.15);
-    --border-encart-marque: rgba(249, 115, 22, 0.3);
-    --text-encart-marque: #FDBA74;
+    --bg-alerte-erreur: rgba(248, 113, 113, 0.1);
+    --border-alerte-erreur: rgba(248, 113, 113, 0.2);
+    --bg-alerte-info: rgba(96, 165, 250, 0.1);
+    --border-alerte-info: rgba(96, 165, 250, 0.2);
+    --bg-alerte-succes: rgba(52, 211, 153, 0.1);
+    --border-alerte-succes: rgba(52, 211, 153, 0.2);
     
-    --ring-opacity: 0.2;
+    --ring-opacity: 0.15;
   }
 
   body {
     font-family: var(--font-inter);
-    background-color: var(--color-brand-paper);
-    /* Dégradés d'arrière-plan très subtils pour un effet de profondeur moderne */
-    background-image: 
-      radial-gradient(circle at 0% 0%, rgba(249, 115, 22, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
-    background-attachment: fixed;
-    color: var(--color-brand-black);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
     font-size: 15px;
     line-height: 1.6;
     min-height: 100vh;
@@ -129,7 +141,7 @@
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.25;
-    color: var(--color-brand-smooth);
+    color: var(--text-primary);
   }
   h1 {
     font-size: 28px;
@@ -154,24 +166,17 @@
 }
 
 @layer components {
-  /* Cartes avec un véritable effet Glassmorphism Premium (Dynamique) */
+  /* Cartes : Propres, solides, pas de glassmorphism inutile */
   .carte {
-    border-radius: 1rem;
-    border: 1px solid var(--color-brand-light-grey);
-    background-color: var(--bg-carte);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
     box-shadow: var(--shadow-carte);
-    padding: 1.5rem;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1.25rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   }
   .carte:hover {
-    background-color: var(--bg-carte-hover, var(--bg-carte));
     box-shadow: var(--shadow-carte-hover);
-    transform: translateY(-2px);
   }
 
   /* Boutons modernisés avec micro-animations */
@@ -217,16 +222,14 @@
   }
 
   .btn-secondaire {
-    background-color: var(--color-brand-white);
-    color: var(--color-brand-smooth);
-    border-color: var(--color-brand-light-grey);
-    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
   .btn-secondaire:hover:not(:disabled) {
-    background-color: var(--color-brand-paper);
-    border-color: var(--color-brand-grey);
-    color: var(--color-brand-black);
-    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+    background-color: var(--bg-surface-hover);
+    border-color: var(--text-muted);
   }
 
   .btn-danger {
@@ -252,36 +255,30 @@
   /* Champs de formulaire plus doux et focus state élégant */
   .champ {
     width: 100%;
-    border-radius: 0.75rem;
-    border: 1px solid var(--color-brand-light-grey);
-    background-color: var(--color-brand-paper);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-surface-secondary);
     padding: 0.625rem 0.875rem;
-    font-size: 15px;
+    font-size: 14px;
     outline: none;
-    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-                border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-                color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
-    color: var(--color-brand-black);
+    transition: all 0.15s ease;
+    color: var(--text-primary);
   }
   .champ:focus {
     border-color: var(--color-brand-orange);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, var(--ring-opacity));
-    background-color: var(--color-brand-white);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, var(--ring-opacity));
+    background-color: var(--bg-surface);
   }
   .champ::placeholder {
-    color: var(--color-brand-grey);
+    color: var(--text-muted);
   }
 
   /* Typographie utilitaire */
   .libelle {
     display: block;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--color-brand-warm-grey);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
     font-family: var(--font-inter);
   }
 

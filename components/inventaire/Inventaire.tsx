@@ -783,12 +783,12 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {(vue === "tableau" || vue === "detail" || vue === "atraiter") && (
         <div className="space-y-6 animate-entree">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-2 pb-2 border-b border-brand-light-grey/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
             <div className="flex items-center gap-3">
-              <button onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} className="btn btn-secondaire px-2" title="Retour au Cockpit">
-                <IconeChevronGauche taille={16} />
+              <button onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} className="btn btn-secondaire p-2 shadow-none border-transparent hover:border-[var(--border-color)]" title="Retour au Cockpit">
+                <IconeChevronGauche taille={18} />
               </button>
-              <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("inventaire.titre")}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-brand-black">{t("inventaire.titre")}</h1>
             </div>
         <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
           <button
@@ -818,7 +818,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
       <div className="carte space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <div className="flex-1 flex w-full relative">
+          <div className="flex-1 flex w-full relative group">
             <RechercheRapide
               valeur={q}
               onChange={(valeur) => {
@@ -827,14 +827,14 @@ export default function Inventaire({ role }: { role: Role }) {
               }}
               placeholder={t("inventaire.recherche")}
               debounceMs={300}
-              className="w-full pl-10 pr-4 py-2 bg-brand-paper border border-brand-light-grey rounded-l-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-brand-orange transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-[var(--bg-surface-secondary)] border border-[var(--border-color)] rounded-l-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all text-[var(--text-primary)]"
             />
-            <div className="relative flex items-center border border-l-0 border-brand-light-grey rounded-r-lg bg-brand-light-grey/20 px-2 min-w-[140px] sm:min-w-[180px]">
+            <div className="relative flex items-center border border-l-0 border-[var(--border-color)] rounded-r-lg bg-[var(--bg-surface-secondary)] px-2 min-w-[140px] sm:min-w-[180px] transition-colors focus-within:border-brand-orange">
               <span className="text-xs text-brand-warm-grey hidden sm:inline-block mr-1">Dans :</span>
               <select
                 value={searchParams?.get("categorie") ?? ""}
                 onChange={(e) => majUrl({ categorie: e.target.value || null })}
-                className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full py-2 cursor-pointer"
+                className="bg-transparent text-sm text-[var(--text-primary)] font-medium focus:outline-none w-full py-2 cursor-pointer"
               >
                 <option value="">Tout l'inventaire</option>
                 {(donnees?.categories ?? []).map((c) => (
