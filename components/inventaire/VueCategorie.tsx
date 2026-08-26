@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import RechercheRapide from "@/components/RechercheRapide";
-import { IconeChevronGauche } from "@/components/icons";
+import { IconeChevronGauche, IconeCrayon, IconeImage } from "@/components/icons";
 import { formaterDA } from "@/lib/caisse";
+import ModaleEditionCategorie from "./ModaleEditionCategorie";
+
+export interface CategorieInfo {
+  nom: string;
+  image_url: string | null;
+  description: string | null;
+}
 
 interface Famille {
   cle: string;
@@ -24,6 +31,7 @@ interface FamillesData {
   pages: number;
   page: number;
   familles: Famille[];
+  categorieInfo?: CategorieInfo | null;
 }
 
 export default function VueCategorie({
@@ -36,6 +44,7 @@ export default function VueCategorie({
   const searchParams = useSearchParams();
   const [data, setData] = useState<FamillesData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [edition, setEdition] = useState(false);
   const q = searchParams?.get("q") ?? "";
 
   const [erreur, setErreur] = useState<string | null>(null);
@@ -72,25 +81,69 @@ export default function VueCategorie({
 
   return (
     <div className="space-y-6 animate-entree">
-      {/* En-tête Navigation (Breadcrumb) */}
-      <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium pb-2 border-b border-brand-light-grey/50">
-        <button
-          onClick={() => majUrl({ vue: "cockpit", categorie: null, cle: null })}
-          className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
-          title="Retour au Cockpit"
+      {/* En-tête Navigation (Breadcrumb) et Infos Famille */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-brand-light-grey/50">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => majUrl({ vue: "cockpit", categorie: null, cle: null })}
+            className="hover:text-brand-orange transition-colors flex items-center justify-center w-10 h-10 bg-white dark:bg-brand-paper rounded-full border border-brand-light-grey dark:border-white/10 shadow-sm shrink-0"
+            title="Retour au Cockpit"
+          >
+            <IconeChevronGauche taille={16} />
+          </button>
+          
+          <div className="flex items-center gap-4">
+            {data?.categorieInfo?.image_url && (
+              <img 
+                src={data.categorieInfo.image_url} 
+                alt={categorie} 
+                className="w-16 h-16 rounded-xl object-cover border border-brand-light-grey dark:border-white/10 shadow-sm"
+              />
+            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-brand-warm-grey">Famille</span>
+                <span className="text-brand-warm-grey">/</span>
+                {data && (
+                  <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                    {data.total} catégories
+                  </span>
+                )}
+              </div>
+              <h1 className="font-extrabold text-brand-black dark:text-white font-outfit text-3xl mt-1">
+                {categorie}
+              </h1>
+              {data?.categorieInfo?.description && (
+                <p className="text-sm text-brand-warm-grey mt-1 max-w-2xl">
+                  {data.categorieInfo.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button 
+          onClick={() => setEdition(true)}
+          className="btn btn-secondaire flex items-center gap-2 shrink-0 self-start sm:self-center"
         >
-          <IconeChevronGauche taille={14} /> Cockpit
+          <IconeCrayon taille={14} />
+          Modifier Famille
         </button>
-        <span>/</span>
-        <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
-          {categorie}
-        </span>
-        {data && (
-          <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold ml-2">
-            {data.total} familles
-          </span>
-        )}
       </div>
+
+      {edition && (
+        <ModaleEditionCategorie
+          nomCategorie={categorie}
+          categorieInfo={data?.categorieInfo || null}
+          fermer={() => setEdition(false)}
+          onSucces={(nouvelleInfo) => {
+            if (data) {
+              setData({ ...data, categorieInfo: nouvelleInfo });
+            }
+            setEdition(false);
+          }}
+        />
+      )}
 
 
 

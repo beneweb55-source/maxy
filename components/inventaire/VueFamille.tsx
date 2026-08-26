@@ -7,6 +7,8 @@ import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
 import type { StatutProduit } from "@prisma/client";
 import ModaleEditionFamille, { type FamilleInfo } from "./ModaleEditionFamille";
+import BoutonImpression from "@/components/BoutonImpression";
+import { useT } from "@/lib/i18n/contexte";
 
 // LigneProduit from Inventaire.tsx
 interface LigneProduit {
@@ -48,6 +50,7 @@ export default function VueFamille({
   const [familleInfo, setFamilleInfo] = useState<FamilleInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [editionFamille, setEditionFamille] = useState(false);
+  const t = useT();
 
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -148,7 +151,7 @@ export default function VueFamille({
             </svg>
           </div>
           <div className="text-lg font-bold font-outfit text-brand-black dark:text-white mb-1">Aucun produit trouvé</div>
-          <div className="text-sm">Cette famille ne contient aucun produit avec les filtres actuels.</div>
+          <div className="text-sm">Cette catégorie ne contient aucun produit avec les filtres actuels.</div>
         </div>
       </div>
     );
@@ -180,7 +183,7 @@ export default function VueFamille({
         </span>
       </div>
 
-      {/* Bannière de la Famille */}
+      {/* Bannière de la Catégorie */}
       <div className="carte overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 shadow-lg relative">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-black/5 to-transparent dark:from-white/5 z-0 pointer-events-none"></div>
         <div className="p-6 relative z-10">
@@ -263,6 +266,7 @@ export default function VueFamille({
               className="btn btn-secondaire text-sm border-transparent hover:border-danger hover:bg-danger/10 text-danger bg-transparent ml-auto"
             >
               <IconeCorbeille taille={14} /> Supprimer toute la famille
+              <IconeCorbeille taille={14} /> Supprimer toute la catégorie
             </button>
           )}
         </div>
@@ -313,27 +317,37 @@ export default function VueFamille({
                 >
                   <IconeOeil taille={14} className="text-brand-orange" /> Ouvrir
                 </Link>
-                <div className="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center opacity-70 group-hover:opacity-100 transition-opacity gap-1">
+                  {p.statut !== "vendu" && (
+                    <button
+                      onClick={() => basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)}
+                      className={`p-1.5 rounded-md transition-colors ${
+                        p.en_vitrine ? "text-brand-orange bg-brand-orange/10" : "text-brand-warm-grey hover:bg-brand-light-grey/20"
+                      }`}
+                      title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                    >
+                      <IconeVitrine taille={15} />
+                    </button>
+                  )}
+                  
+                  <BoutonImpression 
+                    ids={[p.id]} 
+                    dejaImprimee={p.etiquette_imprimee} 
+                    className="p-1.5 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/20 transition-colors" 
+                  />
+
                   <button
                     onClick={() => ouvrirEdition([p], p.code_interne)}
-                    className="p-2 rounded-md hover:bg-white dark:hover:bg-brand-paper text-brand-warm-grey dark:text-brand-warm-grey transition-colors"
+                    className="p-1.5 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/20 transition-colors"
                     title="Modifier cet exemplaire"
                   >
                     <IconeCrayon taille={15} />
                   </button>
-                  <button
-                    onClick={() => basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)}
-                    className={`p-2 rounded-md transition-colors ${
-                      p.en_vitrine ? "text-brand-orange bg-brand-orange/10" : "text-brand-warm-grey dark:text-brand-warm-grey hover:bg-white dark:hover:bg-brand-paper"
-                    }`}
-                    title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
-                  >
-                    <IconeVitrine taille={15} />
-                  </button>
+
                   {p.statut !== "vendu" && (
                     <button
                       onClick={() => ouvrirSuppressionUnites([p])}
-                      className="p-2 rounded-md hover:bg-danger/10 text-brand-warm-grey dark:text-brand-warm-grey hover:text-danger transition-colors ml-1"
+                      className="p-1.5 rounded-md text-brand-warm-grey hover:bg-danger/10 hover:text-danger transition-colors"
                       title="Supprimer"
                     >
                       <IconeCorbeille taille={15} />

@@ -53,11 +53,20 @@ export async function GET(request: NextRequest) {
     });
 
     if (famillesBases.length === 0) {
+      // 4. Fetch CategorieInfo (Niveau 1 metadata)
+      let categorieInfo = null;
+      if (categorieParam) {
+        categorieInfo = await prisma.categorieInfo.findUnique({
+          where: { nom: categorieParam }
+        });
+      }
+
       return NextResponse.json({
         total: 0,
         pages: 0,
         page,
-        familles: []
+        familles: [],
+        categorieInfo
       });
     }
 
@@ -148,11 +157,20 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // 4. Fetch CategorieInfo (Niveau 1 metadata)
+    let categorieInfo = null;
+    if (categorieParam) {
+      categorieInfo = await prisma.categorieInfo.findUnique({
+        where: { nom: categorieParam }
+      });
+    }
+
     return NextResponse.json({
       total,
       pages: Math.max(1, Math.ceil(total / PAR_PAGE)),
       page,
       familles,
+      categorieInfo
     });
     
   } catch (e) {

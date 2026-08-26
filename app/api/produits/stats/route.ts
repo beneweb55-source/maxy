@@ -114,12 +114,19 @@ export async function GET() {
       fallbackImages[img.categorie] = img.url ?? `/api/produits/${img.id}/image`;
     }
 
-    const categories = categoriesGrouped.map(c => ({
-      name: c.categorie,
-      total: c._count,
-      disponibles: dispMap.get(c.categorie) || 0,
-      image: fallbackImages[c.categorie] || null // image statique à rajouter coté client
-    }));
+    // Récupérer les métadonnées des catégories (Niveau 1)
+    const categorieInfos = await prisma.categorieInfo.findMany();
+    const catInfoMap = new Map(categorieInfos.map(c => [c.nom, c]));
+
+    const categories = categoriesGrouped.map(c => {
+      const info = catInfoMap.get(c.categorie);
+      return {
+        name: c.categorie,
+        total: c._count,
+        disponibles: dispMap.get(c.categorie) || 0,
+        image: info?.image_url || fallbackImages[c.categorie] || null
+      };
+    });
 
     // Trier les catégories par nombre total (décroissant)
     categories.sort((a, b) => b.total - a.total);
