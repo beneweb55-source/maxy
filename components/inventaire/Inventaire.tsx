@@ -811,44 +811,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
   return (
     <>
-      {vue === "cockpit" && (
-        <div className="mb-8">
-          <Cockpit majUrl={majUrl} />
-          
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => setAfficherTableauCockpit(!afficherTableauCockpit)}
-              className="btn btn-secondaire bg-white dark:bg-brand-paper shadow-sm border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth hover:shadow-md rounded-full px-6 py-2.5 flex items-center gap-2 text-sm font-bold text-brand-black dark:text-white transition-all"
-            >
-              {afficherTableauCockpit ? (
-                <>
-                  <IconeOeilBarre taille={16} className="text-brand-warm-grey" /> Masquer l'inventaire détaillé
-                </>
-              ) : (
-                <>
-                  <IconeOeil taille={16} className="text-brand-orange" /> Afficher l'inventaire détaillé
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {vue === "categorie" && searchParams?.get("categorie") && (
-        <VueCategorie categorie={searchParams.get("categorie")!} majUrl={majUrl} />
-      )}
-      
-      {vue === "famille" && searchParams?.get("cle") && (
-        <VueFamille 
-          cleFamille={searchParams.get("cle")!} 
-          majUrl={majUrl} 
-          ouvrirEdition={ouvrirEdition}
-          ouvrirSuppressionUnites={ouvrirSuppressionUnites}
-          basculerVitrineIds={basculerVitrineIds}
-        />
-      )}
-
-      <div className="space-y-4 animate-entree">
+      <div className="space-y-4 animate-entree mb-8">
         {/* Header & Actions principales */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
           <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium">
@@ -1101,13 +1064,30 @@ export default function Inventaire({ role }: { role: Role }) {
               </div>
             </div>
           )}
-        </div>
+      </div>
 
-      {/* Rendu des listes/tableaux conditionné séparément */}
-      {/* Si on est dans le cockpit, on n'affiche les résultats que si on a cliqué sur "Afficher l'inventaire" OU si une recherche est active */}
-      {(vue !== "cockpit" || afficherTableauCockpit || qLoc.trim() !== "" || nbFiltresActifs > 0) && (
-        <>
-          {donneesFiltrees && (
+      {vue === "cockpit" && (
+        <div className="mb-8">
+          <Cockpit majUrl={majUrl} />
+        </div>
+      )}
+      
+      {vue === "categorie" && searchParams?.get("categorie") && (
+        <VueCategorie categorie={searchParams.get("categorie")!} majUrl={majUrl} />
+      )}
+      
+      {vue === "famille" && searchParams?.get("cle") && (
+        <VueFamille 
+          cleFamille={searchParams.get("cle")!} 
+          majUrl={majUrl} 
+          ouvrirEdition={ouvrirEdition}
+          ouvrirSuppressionUnites={ouvrirSuppressionUnites}
+          basculerVitrineIds={basculerVitrineIds}
+        />
+      )}
+
+      <div className="space-y-4 animate-entree">
+        {donneesFiltrees && (
             <p className="text-sm text-brand-warm-grey px-2 sm:px-0 mt-4 sm:mt-0">
               <strong className="text-brand-black dark:text-white">{donneesFiltrees.total}</strong> produit{donneesFiltrees.total > 1 ? "s" : ""}
               {!estSocial && (
@@ -1674,7 +1654,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-warm-grey font-medium">{p.jours_stock}</td>
                     <td className="px-3 py-2.5">
                       {peutModifier && (
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity">
                           {p.statut !== "vendu" && (
                             <button
                               type="button"

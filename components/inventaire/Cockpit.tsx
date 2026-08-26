@@ -46,50 +46,50 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
         <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Aperçu du stock</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div 
-            className="carte relative overflow-hidden group cursor-pointer bg-gradient-to-br from-brand-black to-brand-smooth dark:from-brand-white dark:to-brand-paper border-0 !p-6"
+            className="carte relative overflow-hidden group cursor-pointer bg-gradient-to-br from-brand-black to-brand-smooth dark:from-brand-white dark:to-brand-paper border-0 !p-5"
             onClick={() => majUrl({ vue: "tableau", statuts: null })}
           >
-            <div className="absolute -right-6 -top-6 text-white/5 dark:text-brand-light-grey/20 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-              <IconeArchive taille={120} />
+            <div className="absolute -right-4 -top-4 text-white/5 dark:text-brand-light-grey/20 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+              <IconeArchive taille={100} />
             </div>
-            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+            <div className="relative z-10 flex flex-col h-full justify-between gap-3">
               <div className="flex items-center gap-3 text-brand-grey dark:text-brand-grey">
                 <IconeArchive taille={20} className="text-white/70 dark:text-white/50" />
                 <span className="text-sm font-semibold tracking-wide uppercase text-white/90 dark:text-brand-warm-grey">Produits au total</span>
               </div>
-              <div className="text-5xl font-extrabold text-white dark:text-white font-outfit">{stats.summary.total}</div>
+              <div className="text-4xl font-extrabold text-white dark:text-white font-outfit">{stats.summary.total}</div>
             </div>
           </div>
 
           <div 
-            className="carte relative overflow-hidden group cursor-pointer border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-brand-paper dark:border-emerald-900/50 !p-6"
+            className="carte relative overflow-hidden group cursor-pointer border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-brand-paper dark:border-emerald-900/50 !p-5"
             onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu" })}
           >
-            <div className="absolute -right-6 -top-6 text-emerald-500/5 dark:text-emerald-500/10 transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">
-              <IconeCocheCercle taille={120} />
+            <div className="absolute -right-4 -top-4 text-emerald-500/5 dark:text-emerald-500/10 transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">
+              <IconeCocheCercle taille={100} />
             </div>
-            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+            <div className="relative z-10 flex flex-col h-full justify-between gap-3">
               <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-500">
                 <IconeCocheCercle taille={20} />
                 <span className="text-sm font-semibold tracking-wide uppercase">Disponibles</span>
               </div>
-              <div className="text-5xl font-extrabold text-emerald-900 dark:text-emerald-400 font-outfit">{stats.summary.disponibles}</div>
+              <div className="text-4xl font-extrabold text-emerald-900 dark:text-emerald-400 font-outfit">{stats.summary.disponibles}</div>
             </div>
           </div>
 
           <div 
-            className="carte relative overflow-hidden group cursor-pointer border border-brand-light-orange bg-gradient-to-br from-brand-glow to-white dark:from-brand-orange/20 dark:to-brand-paper dark:border-brand-orange/30 !p-6"
+            className="carte relative overflow-hidden group cursor-pointer border border-brand-light-orange bg-gradient-to-br from-brand-glow to-white dark:from-brand-orange/20 dark:to-brand-paper dark:border-brand-orange/30 !p-5"
             onClick={() => majUrl({ vue: "tableau", statuts: "en_vente" })}
           >
-            <div className="absolute -right-6 -top-6 text-brand-orange/5 dark:text-brand-orange/10 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-              <IconePanier taille={120} />
+            <div className="absolute -right-4 -top-4 text-brand-orange/5 dark:text-brand-orange/10 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+              <IconePanier taille={100} />
             </div>
-            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+            <div className="relative z-10 flex flex-col h-full justify-between gap-3">
               <div className="flex items-center gap-3 text-brand-orange">
                 <IconePanier taille={20} />
                 <span className="text-sm font-semibold tracking-wide uppercase">En vente</span>
               </div>
-              <div className="text-5xl font-extrabold text-brand-orange dark:text-brand-light-orange font-outfit">{stats.summary.en_vente}</div>
+              <div className="text-4xl font-extrabold text-brand-orange dark:text-brand-light-orange font-outfit">{stats.summary.en_vente}</div>
             </div>
           </div>
         </div>
@@ -168,10 +168,10 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           
           {stats.actions.sans_photo > 0 && (
-            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-slate-200 dark:border-slate-800/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-slate-400"></div>
               <div className="mb-6">
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mb-2">
                   <IconeImage taille={18} />
                   <span className="font-bold">Sans photo</span>
                 </div>
@@ -180,7 +180,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
               </div>
               <button 
                 onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 shadow-none"
+                className="w-full btn bg-slate-50 hover:bg-slate-100 text-slate-700 dark:bg-slate-800/30 dark:hover:bg-slate-800/50 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 shadow-none"
               >
                 Traiter
               </button>
@@ -188,10 +188,10 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           
           {stats.actions.sans_etiquette > 0 && (
-            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-purple-200 dark:border-purple-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-zinc-400"></div>
               <div className="mb-6">
-                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
+                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 mb-2">
                   <IconeEtiquette taille={18} />
                   <span className="font-bold">À étiqueter</span>
                 </div>
@@ -200,7 +200,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
               </div>
               <button 
                 onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
-                className="w-full btn bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 shadow-none"
+                className="w-full btn bg-zinc-50 hover:bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30 dark:hover:bg-zinc-800/50 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/50 shadow-none"
               >
                 Traiter
               </button>
@@ -240,7 +240,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
                 onClick={() => majUrl({ vue: "categorie", categorie: cat.name })}
                 className="min-w-[160px] sm:min-w-0 snap-center shrink-0 carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-orange/50 hover:shadow-xl transition-all text-left flex flex-col rounded-2xl"
               >
-                <div className={`h-36 w-full relative overflow-hidden ${cat.image ? 'bg-brand-black' : 'bg-gradient-to-br ' + colorClass}`}>
+                <div className={`h-28 w-full relative overflow-hidden ${cat.image ? 'bg-brand-black' : 'bg-gradient-to-br ' + colorClass}`}>
                   {cat.image && (
                     <img src={cat.image} alt={cat.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out" />
                   )}
