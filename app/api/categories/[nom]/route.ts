@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 
-export async function PATCH(req: Request, { params }: { params: { nom: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ nom: string }> }) {
   const acces = await exigerUtilisateur();
   if (acces.reponse) return acces.reponse;
   
@@ -10,7 +10,8 @@ export async function PATCH(req: Request, { params }: { params: { nom: string } 
     return erreur(403, "Seul un administrateur ou manager peut modifier l'image d'une catégorie.");
   }
 
-  const nom = decodeURIComponent(params.nom);
+  const { nom: rawNom } = await params;
+  const nom = decodeURIComponent(rawNom);
 
   try {
     const data = await req.json();
