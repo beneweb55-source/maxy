@@ -815,22 +815,30 @@ export default function Inventaire({ role }: { role: Role }) {
         {/* Header & Actions principales */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
           <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium">
-            <button 
-              onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} 
-              className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
-            >
-              <IconeChevronGauche taille={14} /> Cockpit
-            </button>
-            <span>/</span>
-            <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
-                {vue === "atraiter" ? "À traiter" : "Inventaire complet"}
-              </span>
-              {donnees && (
-                <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold ml-2">
-                  {donnees.total}
+            {vue !== "cockpit" ? (
+              <>
+                <button 
+                  onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} 
+                  className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
+                >
+                  <IconeChevronGauche taille={14} /> Cockpit
+                </button>
+                <span>/</span>
+                <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
+                  {vue === "atraiter" ? "À traiter" : "Inventaire complet"}
                 </span>
-              )}
-            </div>
+              </>
+            ) : (
+              <span className="font-bold text-brand-black dark:text-white font-outfit text-xl">
+                Cockpit
+              </span>
+            )}
+            {donnees && (
+              <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold ml-2">
+                {donnees.total}
+              </span>
+            )}
+          </div>
             
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
               <button
@@ -874,82 +882,84 @@ export default function Inventaire({ role }: { role: Role }) {
               />
             </div>
             
-            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-              <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-brand-light-grey/20 dark:bg-white/5 px-3 py-2 h-[42px] min-w-[140px]">
-                <select
-                  value={searchParams?.get("categorie") ?? ""}
-                  onChange={(e) => majUrl({ categorie: e.target.value || null, page: "1" })}
-                  className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
-                >
-                  <option value="">Toutes les catégories</option>
-                  {(donnees?.categories ?? []).map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
-              </div>
+            {vue !== "cockpit" && (
+              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-brand-light-grey/20 dark:bg-white/5 px-3 py-2 h-[42px] min-w-[140px]">
+                  <select
+                    value={searchParams?.get("categorie") ?? ""}
+                    onChange={(e) => majUrl({ categorie: e.target.value || null, page: "1" })}
+                    className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                  >
+                    <option value="">Toutes les catégories</option>
+                    {(donnees?.categories ?? []).map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+                </div>
 
-              <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
-                <select
-                  value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "__sans__") majUrl({ sans_lot: "1", lot: null, page: "1" });
-                    else majUrl({ lot: v || null, sans_lot: null, page: "1" });
-                  }}
-                  className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
-                >
-                  <option value="">Tous les arrivages</option>
-                  <option value="__sans__">Sans arrivage</option>
-                  {(donnees?.lots ?? []).map((l) => (
-                    <option key={l.id} value={l.id}>{l.libelle}</option>
-                  ))}
-                </select>
-                <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
-              </div>
-              
-              <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
-                <select
-                  value={
-                    (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
-                  }
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc", page: "1" });
-                    else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc", page: "1" });
-                    else majUrl({ tri: null, ordre: null, page: "1" });
-                  }}
-                  className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
-                >
-                  <option value="">Trier par défaut</option>
-                  <option value="prix_asc">Prix croissant</option>
-                  <option value="prix_desc">Prix décroissant</option>
-                </select>
-                <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
-              </div>
+                <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
+                  <select
+                    value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "__sans__") majUrl({ sans_lot: "1", lot: null, page: "1" });
+                      else majUrl({ lot: v || null, sans_lot: null, page: "1" });
+                    }}
+                    className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                  >
+                    <option value="">Tous les arrivages</option>
+                    <option value="__sans__">Sans arrivage</option>
+                    {(donnees?.lots ?? []).map((l) => (
+                      <option key={l.id} value={l.id}>{l.libelle}</option>
+                    ))}
+                  </select>
+                  <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+                </div>
+                
+                <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
+                  <select
+                    value={
+                      (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
+                    }
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc", page: "1" });
+                      else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc", page: "1" });
+                      else majUrl({ tri: null, ordre: null, page: "1" });
+                    }}
+                    className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                  >
+                    <option value="">Trier par défaut</option>
+                    <option value="prix_asc">Prix croissant</option>
+                    <option value="prix_desc">Prix décroissant</option>
+                  </select>
+                  <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+                </div>
 
-              <button
-                type="button"
-                onClick={() => setAfficherPlusFiltres(!afficherPlusFiltres)}
-                className={`flex-none flex items-center gap-2 border rounded-lg px-3 py-2 h-[42px] transition-colors text-sm font-bold ${
-                  afficherPlusFiltres || nbFiltresActifs > 0 
-                  ? 'border-brand-orange bg-brand-orange/10 text-brand-orange shadow-inner' 
-                  : 'border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper text-brand-warm-grey hover:bg-brand-light-grey/30'
-                }`}
-              >
-                <IconeTriBas taille={16} className={afficherPlusFiltres ? 'rotate-180 transition-transform' : 'transition-transform'} />
-                <span className="hidden sm:inline">Filtres</span>
-                {nbFiltresActifs > 0 && (
-                  <span className="bg-brand-orange text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full ml-1">
-                    {nbFiltresActifs}
-                  </span>
-                )}
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setAfficherPlusFiltres(!afficherPlusFiltres)}
+                  className={`flex-none flex items-center gap-2 border rounded-lg px-3 py-2 h-[42px] transition-colors text-sm font-bold ${
+                    afficherPlusFiltres || nbFiltresActifs > 0 
+                    ? 'border-brand-orange bg-brand-orange/10 text-brand-orange shadow-inner' 
+                    : 'border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper text-brand-warm-grey hover:bg-brand-light-grey/30'
+                  }`}
+                >
+                  <IconeTriBas taille={16} className={afficherPlusFiltres ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                  <span className="hidden sm:inline">Filtres</span>
+                  {nbFiltresActifs > 0 && (
+                    <span className="bg-brand-orange text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full ml-1">
+                      {nbFiltresActifs}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Tiroir de filtres avancés */}
-          {afficherPlusFiltres && (
+          {vue !== "cockpit" && afficherPlusFiltres && (
             <div className="carte !p-4 bg-white/50 dark:bg-black/10 animate-entree">
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-2 flex-1">
