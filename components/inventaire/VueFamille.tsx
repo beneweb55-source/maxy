@@ -49,11 +49,20 @@ export default function VueFamille({
   const [loading, setLoading] = useState(true);
   const [editionFamille, setEditionFamille] = useState(false);
 
-  // La cleFamille est "reference|categorie"
-  const [reference, categorie] = cleFamille.split("|");
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  // Sécurisation: on coupe au dernier "|" au cas où la référence contiendrait un "|"
+  const lastPipeIndex = cleFamille.lastIndexOf("|");
+  const reference = lastPipeIndex !== -1 ? cleFamille.substring(0, lastPipeIndex) : cleFamille;
+  const categorie = lastPipeIndex !== -1 ? cleFamille.substring(lastPipeIndex + 1) : "";
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     setLoading(true);
+    setErreur(null);
+    
     // On hérite des filtres de l'inventaire (comme statuts, sans_photo, etc.)
     // mais on retire la recherche textuelle 'q' et la pagination 'page'
     // qui fausseraient la récupération des produits de cette famille précise.
@@ -63,35 +72,84 @@ export default function VueFamille({
     params.set("categorie", categorie ?? "");
     params.set("reference_exacte", reference ?? "");
     
-    const fetchProduits = fetch(`/api/produits?${params.toString()}`).then(r => r.json());
+    const fetchProduits = fetch(`/api/produits?${params.toString()}`, { signal }).then(async r => {
+      if (!r.ok) throw new Error("Erreur lors du chargement des produits");
+      return r.json();
+    });
     
     // Convert to base64url explicitly like we do in route
     const encodedId = encodeBase64Url(cleFamille);
-    const fetchInfo = fetch(`/api/familles/${encodeURIComponent(encodedId)}`).then(r => r.json());
+    const fetchInfo = fetch(`/api/familles/${encodeURIComponent(encodedId)}`, { signal }).then(async r => {
+      if (!r.ok) throw new Error("Erreur lors du chargement de la famille");
+      return r.json();
+    });
 
     Promise.all([fetchProduits, fetchInfo])
       .then(([dp, info]) => {
-        setProduits(dp.produits);
+        if (signal.aborted) return;
+        setProduits(dp.produits || []);
         setFamilleInfo(info.id ? info : null);
         setLoading(false);
       })
       .catch(e => {
+        if (e.name === "AbortError") return;
         console.error(e);
+        setErreur(e.message || "Erreur de chargement");
         setLoading(false);
       });
+
+    return () => controller.abort();
   }, [searchParams, cleFamille, categorie, reference]);
 
   if (loading) {
-    return <div className="p-4 text-sm text-brand-warm-grey">Chargement de la famille...</div>;
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="carte p-6 flex gap-6 items-center">
+          <div className="h-24 w-24 rounded-2xl bg-brand-light-grey/20 dark:bg-white/5 flex-shrink-0"></div>
+          <div className="flex-1 space-y-3">
+            <div className="h-8 bg-brand-light-grey/30 dark:bg-white/5 rounded-md w-1/3"></div>
+            <div className="h-4 bg-brand-light-grey/20 dark:bg-white/5 rounded-md w-2/3"></div>
+          </div>
+        </div>
+        <div className="h-8 bg-brand-light-grey/20 dark:bg-white/5 rounded-md w-1/4 mb-4"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="carte p-4 h-32 border border-brand-light-grey/50 dark:border-white/5">
+              <div className="h-5 bg-brand-light-grey/30 dark:bg-white/5 rounded-md w-1/2 mb-3"></div>
+              <div className="h-4 bg-brand-light-grey/20 dark:bg-white/5 rounded-md w-1/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (erreur) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => majUrl({ vue: "categorie", cle: null })} className="btn btn-secondaire">
+          <IconeChevronGauche taille={16} /> Retour
+        </button>
+        <div className="alerte-erreur" role="alert">{erreur}</div>
+      </div>
+    );
   }
 
   if (produits.length === 0) {
     return (
       <div className="space-y-4">
-        <button onClick={() => majUrl({ vue: "categorie" })} className="btn btn-secondaire">
+        <button onClick={() => majUrl({ vue: "categorie", cle: null })} className="btn btn-secondaire">
           <IconeChevronGauche taille={16} /> Retour
         </button>
-        <div className="carte text-center p-8 text-brand-warm-grey">Aucun produit trouvé.</div>
+        <div className="carte flex flex-col items-center justify-center p-12 text-brand-warm-grey">
+          <div className="w-16 h-16 bg-brand-light-grey/20 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+          </div>
+          <div className="text-lg font-bold font-outfit text-brand-black dark:text-white mb-1">Aucun produit trouvé</div>
+          <div className="text-sm">Cette famille ne contient aucun produit avec les filtres actuels.</div>
+        </div>
       </div>
     );
   }

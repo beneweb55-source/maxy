@@ -38,15 +38,36 @@ export default function VueCategorie({
   const [loading, setLoading] = useState(true);
   const q = searchParams?.get("q") ?? "";
 
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     setLoading(true);
+    setErreur(null);
     const params = new URLSearchParams(searchParams?.toString() || "");
     // Ensure we are fetching for the right category
     params.set("categorie", categorie); 
-    fetch(`/api/produits/familles?${params.toString()}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { console.error(e); setLoading(false); });
+    
+    fetch(`/api/produits/familles?${params.toString()}`, { signal })
+      .then(async r => {
+        if (!r.ok) throw new Error("Erreur lors du chargement des catégories");
+        return r.json();
+      })
+      .then(d => { 
+        if (signal.aborted) return;
+        setData(d); 
+        setLoading(false); 
+      })
+      .catch(e => { 
+        if (e.name === "AbortError") return;
+        console.error(e); 
+        setErreur(e.message || "Erreur réseau");
+        setLoading(false); 
+      });
+
+    return () => controller.abort();
   }, [searchParams, categorie]);
 
   return (
@@ -54,7 +75,7 @@ export default function VueCategorie({
       {/* En-tête Navigation (Breadcrumb) */}
       <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium pb-2 border-b border-brand-light-grey/50">
         <button
-          onClick={() => majUrl({ vue: "cockpit", categorie: null })}
+          onClick={() => majUrl({ vue: "cockpit", categorie: null, cle: null })}
           className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
           title="Retour au Cockpit"
         >
@@ -92,6 +113,16 @@ export default function VueCategorie({
               </div>
             </div>
           ))}
+        </div>
+      ) : erreur ? (
+        <div className="carte flex flex-col items-center justify-center p-12 text-danger">
+          <div className="w-16 h-16 bg-danger/10 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="text-lg font-bold font-outfit mb-1">Une erreur est survenue</div>
+          <div className="text-sm">{erreur}</div>
         </div>
       ) : data?.familles.length === 0 ? (
         <div className="carte flex flex-col items-center justify-center p-12 text-brand-warm-grey">

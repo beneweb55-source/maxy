@@ -13,11 +13,33 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
-    fetch("/api/produits/stats")
-      .then(r => r.json())
-      .then(d => { setStats(d); setLoading(false); })
-      .catch(e => { console.error(e); setLoading(false); });
+    const controller = new AbortController();
+    const { signal } = controller;
+    
+    setLoading(true);
+    setErreur(null);
+    
+    fetch("/api/produits/stats", { signal })
+      .then(async r => {
+        if (!r.ok) throw new Error("Erreur de chargement des statistiques");
+        return r.json();
+      })
+      .then(d => {
+        if (signal.aborted) return;
+        setStats(d);
+        setLoading(false);
+      })
+      .catch(e => {
+        if (e.name === "AbortError") return;
+        console.error(e);
+        setErreur(e.message || "Erreur réseau");
+        setLoading(false);
+      });
+
+    return () => controller.abort();
   }, []);
 
   if (loading) {
@@ -33,6 +55,18 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
           <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
           <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
         </div>
+      </div>
+    );
+  }
+
+  if (erreur) {
+    return (
+      <div className="carte flex flex-col items-center justify-center p-12 text-danger animate-entree">
+        <div className="w-16 h-16 bg-danger/10 rounded-full flex items-center justify-center mb-4">
+          <IconeAlerte taille={32} className="opacity-80" />
+        </div>
+        <div className="text-lg font-bold font-outfit mb-1">Impossible de charger le cockpit</div>
+        <div className="text-sm">{erreur}</div>
       </div>
     );
   }
