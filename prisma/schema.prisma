@@ -148,14 +148,6 @@ model FamilleInfo {
   @@map("familles_info")
 }
 
-model CategorieInfo {
-  nom         String   @id
-  image_url   String?
-  updated_at  DateTime @updatedAt
-
-  @@map("categories_info")
-}
-
 model Produit {
   id               Int              @id @default(autoincrement())
   lot_id           Int?
