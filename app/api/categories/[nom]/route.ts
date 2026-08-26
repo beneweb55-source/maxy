@@ -9,15 +9,8 @@ export async function PATCH(
   { params }: { params: Promise<{ nom: string }> }
 ) {
   try {
-    const { user } = await exigerUtilisateur(request);
-    
-    // Seul un gérant ou développeur peut modifier les infos de catégorie (Niveau 1)
-    if (user.role !== "gerant" && user.role !== "dev") {
-      return NextResponse.json(
-        { error: "Seul un gérant ou développeur peut modifier l'image d'une catégorie." },
-        { status: 403 }
-      );
-    }
+    const { user, reponse } = await exigerUtilisateur(["gerant", "dev"]);
+    if (reponse) return reponse;
 
     const { nom } = await params;
     
