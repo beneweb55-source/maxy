@@ -100,12 +100,12 @@ export async function GET(request: NextRequest) {
       _count: { id: true }
     });
 
-    const disposMap = new Map(statsDispos.map(s => [\`\${s.reference}|\${s.categorie}\`, s._count.id]));
-    const testerMap = new Map(statsTester.map(s => [\`\${s.reference}|\${s.categorie}\`, s._count.id]));
-    const statsMap = new Map(stats.map(s => [\`\${s.reference}|\${s.categorie}\`, s]));
+    const disposMap = new Map(statsDispos.map(s => [`${s.reference}|${s.categorie}`, s._count.id]));
+    const testerMap = new Map(statsTester.map(s => [`${s.reference}|${s.categorie}`, s._count.id]));
+    const statsMap = new Map(stats.map(s => [`${s.reference}|${s.categorie}`, s]));
 
     const familles = famillesBases.map(fb => {
-      const cle = \`\${fb.reference}|\${fb.categorie}\`;
+      const cle = `${fb.reference}|${fb.categorie}`;
       const st = statsMap.get(cle);
       
       // Construire l'URL de l'image si image_url existe 
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       // Normalement on utilise le flag :
       const image_url = fb.image_url?.startsWith('http') 
         ? fb.image_url 
-        : (fb.image_url ? \`/api/produits/\${fb.id}/image\` : null);
+        : (fb.image_url ? `/api/produits/${fb.id}/image` : null);
 
       return {
         cle,

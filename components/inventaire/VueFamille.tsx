@@ -55,7 +55,7 @@ export default function VueFamille({
     
     // On veut tous les produits de la famille (pas seulement la 1ere page de 50 si possible, 
     // mais on garde la pagination standard par défaut. L'idéal est de passer limit=1000).
-    fetch(\`/api/produits?\${params.toString()}\`)
+    fetch(`/api/produits?${params.toString()}`)
       .then(r => r.json())
       .then(d => { setProduits(d.produits); setLoading(false); })
       .catch(e => { console.error(e); setLoading(false); });
@@ -130,7 +130,7 @@ export default function VueFamille({
                     ? "Non tarifé" 
                     : prixMin === prixMax 
                       ? formaterDA(prixMin) 
-                      : \`\${formaterDA(prixMin)} - \${formaterDA(prixMax!)}\`}
+                      : `${formaterDA(prixMin)} - ${formaterDA(prixMax!)}`}
                 </div>
               </div>
             </div>
@@ -193,9 +193,9 @@ export default function VueFamille({
               </button>
               <button
                 onClick={() => basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)}
-                className={\`p-1.5 rounded-md transition \${
+                className={`p-1.5 rounded-md transition ${
                   p.en_vitrine ? "text-brand-orange bg-brand-orange/10" : "text-brand-warm-grey hover:bg-brand-light-grey/50"
-                }\`}
+                }`}
                 title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
               >
                 <IconeVitrine taille={16} />

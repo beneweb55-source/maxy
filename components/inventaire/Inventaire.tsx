@@ -1679,6 +1679,8 @@ export default function Inventaire({ role }: { role: Role }) {
           </button>
         </div>
       )}
+      </div>
+      )}
 
       <Modale
         titre={t("inventaire.ajouterProduitTitre")}
@@ -1976,6 +1978,6 @@ export default function Inventaire({ role }: { role: Role }) {
           </form>
         )}
       </Modale>
-    </div>
+    </>
   );
 }

@@ -44,7 +44,7 @@ export async function GET() {
           baseWhereNonVendu,
           { prix_vente_fixe: null },
           // Seulement les produits pertinents à tarifer (ex: OK, en_vente, recu)
-          { statut: { notIn: STATUTS_DEFAUT } }
+          { statut: { notIn: [...STATUTS_DEFAUT] } }
         ]
       }
     });
@@ -111,7 +111,7 @@ export async function GET() {
     `;
     
     for (const img of imgQuery) {
-      fallbackImages[img.categorie] = img.url ?? \`/api/produits/\${img.id}/image\`;
+      fallbackImages[img.categorie] = img.url ?? `/api/produits/${img.id}/image`;
     }
 
     const categories = categoriesGrouped.map(c => ({

@@ -42,7 +42,7 @@ export default function VueCategorie({
     const params = new URLSearchParams(searchParams?.toString() || "");
     // Ensure we are fetching for the right category
     params.set("categorie", categorie); 
-    fetch(\`/api/produits/familles?\${params.toString()}\`)
+    fetch(`/api/produits/familles?${params.toString()}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(e => { console.error(e); setLoading(false); });
@@ -74,7 +74,7 @@ export default function VueCategorie({
         <RechercheRapide
           valeur={q}
           onChange={(valeur) => majUrl({ q: valeur.trim() || null, page: "1" })}
-          placeholder={\`Rechercher dans \${categorie}...\`}
+          placeholder={`Rechercher dans ${categorie}...`}
           debounceMs={300}
         />
       </div>
@@ -108,9 +108,9 @@ export default function VueCategorie({
                   </h3>
                   <div className="text-xs font-semibold text-brand-orange">
                     {f.venteMin === f.venteMax && f.venteMin !== null
-                      ? \`\${f.venteMin} DA\`
+                      ? `${f.venteMin} DA`
                       : f.venteMin !== null
-                        ? \`\${f.venteMin} - \${f.venteMax} DA\`
+                        ? `${f.venteMin} - ${f.venteMax} DA`
                         : "Non tarifé"}
                   </div>
                 </div>
