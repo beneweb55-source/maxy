@@ -46,18 +46,18 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
         <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Aperçu du stock</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div 
-            className="carte relative overflow-hidden group cursor-pointer bg-gradient-to-br from-brand-black to-brand-smooth border-0 !p-6"
+            className="carte relative overflow-hidden group cursor-pointer bg-gradient-to-br from-brand-black to-brand-smooth dark:from-brand-white dark:to-brand-paper border-0 !p-6"
             onClick={() => majUrl({ vue: "tableau", statuts: null })}
           >
-            <div className="absolute -right-6 -top-6 text-white/5 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+            <div className="absolute -right-6 -top-6 text-white/5 dark:text-brand-light-grey/20 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
               <IconeArchive taille={120} />
             </div>
             <div className="relative z-10 flex flex-col h-full justify-between gap-4">
-              <div className="flex items-center gap-3 text-brand-grey">
-                <IconeArchive taille={20} className="text-white/70" />
-                <span className="text-sm font-semibold tracking-wide uppercase">Produits au total</span>
+              <div className="flex items-center gap-3 text-brand-grey dark:text-brand-grey">
+                <IconeArchive taille={20} className="text-white/70 dark:text-white/50" />
+                <span className="text-sm font-semibold tracking-wide uppercase text-white/90 dark:text-brand-warm-grey">Produits au total</span>
               </div>
-              <div className="text-5xl font-extrabold text-white font-outfit">{stats.summary.total}</div>
+              <div className="text-5xl font-extrabold text-white dark:text-white font-outfit">{stats.summary.total}</div>
             </div>
           </div>
 
