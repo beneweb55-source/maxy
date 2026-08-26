@@ -17,6 +17,11 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     });
   }
 
+  const referenceExacte = params.get("reference_exacte");
+  if (referenceExacte) {
+    clauses.push({ reference: referenceExacte });
+  }
+
   const statuts = (params.get("statuts") ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -75,6 +80,18 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
 
   if (params.get("en_vitrine") === "1") {
     clauses.push({ en_vitrine: true });
+  }
+
+  if (params.get("sans_photo") === "1") {
+    // image_url is null and no images in relation
+    clauses.push({
+      image_url: null,
+      images: { none: {} }
+    });
+  }
+
+  if (params.get("sans_etiquette") === "1") {
+    clauses.push({ etiquette_imprimee: false });
   }
 
   return clauses.length > 0 ? { AND: clauses } : {};

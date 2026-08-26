@@ -33,6 +33,9 @@ import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
 import { useT } from "@/lib/i18n/contexte";
 import { useBrouillon } from "@/hooks/useBrouillon";
+import Cockpit from "./Cockpit";
+import VueCategorie from "./VueCategorie";
+import VueFamille from "./VueFamille";
 
 interface LigneProduit {
   id: number;
@@ -756,10 +759,35 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const groupes = donnees ? grouperDoublons(donnees.produits) : [];
 
+  const vue = searchParams?.get("vue") || "cockpit";
+
   return (
-    <div className="space-y-6 animate-entree">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-2 pb-2 border-b border-brand-light-grey/50">
-        <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("inventaire.titre")}</h1>
+    <>
+      {vue === "cockpit" && <Cockpit majUrl={majUrl} />}
+      
+      {vue === "categorie" && searchParams?.get("categorie") && (
+        <VueCategorie categorie={searchParams.get("categorie")!} majUrl={majUrl} />
+      )}
+      
+      {vue === "famille" && searchParams?.get("cle") && (
+        <VueFamille 
+          cleFamille={searchParams.get("cle")!} 
+          majUrl={majUrl} 
+          ouvrirEdition={ouvrirEdition}
+          ouvrirSuppressionUnites={ouvrirSuppressionUnites}
+          basculerVitrineIds={basculerVitrineIds}
+        />
+      )}
+
+      {(vue === "tableau" || vue === "detail" || vue === "atraiter") && (
+        <div className="space-y-6 animate-entree">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-2 pb-2 border-b border-brand-light-grey/50">
+            <div className="flex items-center gap-3">
+              <button onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} className="btn btn-secondaire px-2" title="Retour au Cockpit">
+                <IconeChevronGauche taille={16} />
+              </button>
+              <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("inventaire.titre")}</h1>
+            </div>
         <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
           <button
             type="button"
@@ -1649,6 +1677,7 @@ export default function Inventaire({ role }: { role: Role }) {
             {t("inventaire.suivant")}
             <IconeChevronDroite taille={15} />
           </button>
+        </div>
         </div>
       )}
 
