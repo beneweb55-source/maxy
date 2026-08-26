@@ -223,31 +223,53 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
       <div>
         <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey mb-4 font-outfit">Explorer par catégorie</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {stats.categories.map(cat => (
-            <button
-              key={cat.name}
-              onClick={() => majUrl({ vue: "categorie", categorie: cat.name })}
-              className="carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth hover:shadow-lg transition-all text-left flex flex-col"
-            >
-              <div className="h-32 w-full bg-brand-light-grey/20 dark:bg-white/5 relative overflow-hidden">
-                {cat.image ? (
-                  <img src={cat.image} alt={cat.name} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-brand-warm-grey">
-                    <IconeArchive taille={32} className="opacity-30" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-black/90 via-brand-black/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute bottom-3 left-4 right-4 text-white">
-                  <div className="font-bold text-lg font-outfit truncate">{cat.name}</div>
-                  <div className="text-xs text-brand-light-grey font-medium flex justify-between items-center mt-1">
-                    <span>{cat.disponibles} dispos</span>
-                    <span className="opacity-50 text-[10px] uppercase">/ {cat.total}</span>
+          {stats.categories.map((cat, i) => {
+            // Un petit tableau de couleurs pour les fallbacks (sans image)
+            const fallbackColors = [
+              "from-blue-500/80 to-blue-700/90 dark:from-blue-900/60 dark:to-blue-950/80",
+              "from-emerald-500/80 to-emerald-700/90 dark:from-emerald-900/60 dark:to-emerald-950/80",
+              "from-violet-500/80 to-violet-700/90 dark:from-violet-900/60 dark:to-violet-950/80",
+              "from-amber-500/80 to-amber-700/90 dark:from-amber-900/60 dark:to-amber-950/80",
+              "from-rose-500/80 to-rose-700/90 dark:from-rose-900/60 dark:to-rose-950/80"
+            ];
+            const colorClass = fallbackColors[i % fallbackColors.length];
+
+            return (
+              <button
+                key={cat.name}
+                onClick={() => majUrl({ vue: "categorie", categorie: cat.name })}
+                className="carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-orange/50 hover:shadow-xl transition-all text-left flex flex-col rounded-2xl"
+              >
+                <div className={`h-36 w-full relative overflow-hidden ${cat.image ? 'bg-brand-black' : 'bg-gradient-to-br ' + colorClass}`}>
+                  {cat.image && (
+                    <img src={cat.image} alt={cat.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out" />
+                  )}
+                  {/* Dégradé pour lisibilité du texte (toujours présent si image) */}
+                  {cat.image && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
+                  )}
+                  
+                  {/* Contenu textuel */}
+                  <div className="absolute inset-x-0 bottom-0 p-4 text-white flex flex-col justify-end">
+                    <div className="font-extrabold text-base sm:text-lg font-outfit leading-tight mb-2 drop-shadow-md group-hover:text-brand-orange transition-colors line-clamp-2">
+                      {cat.name}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-auto">
+                      <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-white shadow-sm flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                        {cat.disponibles} <span className="opacity-70 font-medium">dispos</span>
+                      </div>
+                      
+                      <div className="bg-black/30 backdrop-blur-md px-2 py-1 rounded-md text-xs font-medium text-white/80 shadow-sm ml-auto">
+                        {cat.total} <span className="opacity-70 text-[10px] uppercase">total</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

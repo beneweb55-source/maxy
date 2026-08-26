@@ -28,6 +28,8 @@ import {
   IconeTriBas,
   IconeTriHaut,
   IconeVitrine,
+  IconeOeil,
+  IconeOeilBarre,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
@@ -219,6 +221,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const vueGroupee = searchParams?.get("vue") !== "detail";
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
   const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
+  const [afficherTableauCockpit, setAfficherTableauCockpit] = useState(false);
 
   // Édition du statut depuis l'inventaire (transitions manuelles + note contextuelle).
   const [cibleStatut, setCibleStatut] = useState<StatutProduit | null>(null);
@@ -765,7 +768,28 @@ export default function Inventaire({ role }: { role: Role }) {
 
   return (
     <>
-      {vue === "cockpit" && <Cockpit majUrl={majUrl} />}
+      {vue === "cockpit" && (
+        <div className="mb-8">
+          <Cockpit majUrl={majUrl} />
+          
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => setAfficherTableauCockpit(!afficherTableauCockpit)}
+              className="btn btn-secondaire bg-white dark:bg-brand-paper shadow-sm border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth hover:shadow-md rounded-full px-6 py-2.5 flex items-center gap-2 text-sm font-bold text-brand-black dark:text-white transition-all"
+            >
+              {afficherTableauCockpit ? (
+                <>
+                  <IconeOeilBarre taille={16} className="text-brand-warm-grey" /> Masquer l'inventaire détaillé
+                </>
+              ) : (
+                <>
+                  <IconeOeil taille={16} className="text-brand-orange" /> Afficher l'inventaire détaillé
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
       
       {vue === "categorie" && searchParams?.get("categorie") && (
         <VueCategorie categorie={searchParams.get("categorie")!} majUrl={majUrl} />
@@ -781,7 +805,7 @@ export default function Inventaire({ role }: { role: Role }) {
         />
       )}
 
-      {(vue === "tableau" || vue === "detail" || vue === "atraiter") && (
+      {(vue === "tableau" || vue === "detail" || vue === "atraiter" || (vue === "cockpit" && afficherTableauCockpit)) && (
         <div className="space-y-4 animate-entree">
           {/* Header & Actions principales */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
