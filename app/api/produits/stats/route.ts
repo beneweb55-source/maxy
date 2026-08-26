@@ -88,7 +88,7 @@ export async function GET() {
       where: {
         AND: [
           baseWhereNonVendu,
-          { statut: { notIn: STATUTS_DEFAUT } }
+          { statut: { notIn: [...STATUTS_DEFAUT] } }
         ]
       },
       _count: true,
