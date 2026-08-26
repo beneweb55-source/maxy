@@ -137,7 +137,7 @@ export default function VueFamille({
 
             <div className="flex flex-wrap gap-2 pt-2 border-t border-brand-light-grey/30">
               <button
-                onClick={() => ouvrirEdition(produits, reference)}
+                onClick={() => ouvrirEdition(produits, reference!)}
                 className="btn btn-secondaire text-xs"
               >
                 <IconeCrayon taille={14} /> Modifier toute la famille
