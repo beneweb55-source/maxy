@@ -54,9 +54,12 @@ export default function VueFamille({
 
   useEffect(() => {
     setLoading(true);
-    // On crée de nouveaux paramètres pour ne pas hériter des filtres globaux de l'inventaire 
-    // (comme q, page, sans_photo, statuts, etc.) qui fausseraient la vue de la famille.
-    const params = new URLSearchParams();
+    // On hérite des filtres de l'inventaire (comme statuts, sans_photo, etc.)
+    // mais on retire la recherche textuelle 'q' et la pagination 'page'
+    // qui fausseraient la récupération des produits de cette famille précise.
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.delete("q");
+    params.delete("page");
     params.set("categorie", categorie ?? "");
     params.set("reference_exacte", reference ?? "");
     
