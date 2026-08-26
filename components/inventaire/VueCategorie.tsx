@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import RechercheRapide from "@/components/RechercheRapide";
-import { IconeChevronGauche } from "@/components/icons";
+import { IconeChevronGauche, IconeImage, IconePanier } from "@/components/icons";
 import { formaterDA } from "@/lib/caisse";
 import ModaleEditionFamille, { FamilleInfo } from "./ModaleEditionFamille";
 
