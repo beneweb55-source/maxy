@@ -1787,7 +1787,7 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
         </>
-      )}
+      </div>
 
       <Modale
         titre={t("inventaire.ajouterProduitTitre")}
