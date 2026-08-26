@@ -43,7 +43,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
     <div className="space-y-10 animate-entree pb-8">
       {/* Résumé */}
       <div>
-        <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey mb-4 font-outfit">Aperçu du stock</h2>
+        <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Aperçu du stock</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div 
             className="carte relative overflow-hidden group cursor-pointer bg-gradient-to-br from-brand-black to-brand-smooth border-0 !p-6"
@@ -98,7 +98,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
       {/* Actions à traiter */}
       <div>
         <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey font-outfit">À traiter</h2>
+          <h2 className="text-xl font-bold text-brand-black dark:text-white font-outfit">À traiter</h2>
           {Object.values(stats.actions).some(v => v > 0) && (
             <span className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded-full">
               Priorité
@@ -221,7 +221,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
 
       {/* Explorer */}
       <div>
-        <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey mb-4 font-outfit">Explorer par catégorie</h2>
+        <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Explorer par catégorie</h2>
         <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
           {stats.categories.map((cat, i) => {
             // Un petit tableau de couleurs pour les fallbacks (sans image)

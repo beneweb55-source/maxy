@@ -67,7 +67,7 @@ export default function ModaleEditionFamille({
         {erreur && <div className="text-sm text-red-600 p-3 bg-red-50 rounded-lg">{erreur}</div>}
         
         <div>
-          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-light-grey">Nom personnalisé</label>
+          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-warm-grey">Nom personnalisé</label>
           <input
             type="text"
             className="champ w-full"
@@ -78,7 +78,7 @@ export default function ModaleEditionFamille({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-light-grey">URL de l'image représentative</label>
+          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-warm-grey">URL de l'image représentative</label>
           <input
             type="url"
             className="champ w-full"
@@ -90,7 +90,7 @@ export default function ModaleEditionFamille({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-light-grey">Description</label>
+          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-warm-grey">Description</label>
           <textarea
             className="champ w-full"
             rows={3}

@@ -134,14 +134,14 @@ export default function VueFamille({
               {familleInfo?.nom ? (
                 <>
                   <h3 className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-2">{familleInfo.nom}</h3>
-                  <div className="inline-block text-sm font-semibold px-3 py-1 bg-brand-light-grey/30 dark:bg-white/10 rounded-full text-brand-warm-grey dark:text-brand-light-grey self-center sm:self-start mb-4">Ref: {reference}</div>
+                  <div className="inline-block text-sm font-semibold px-3 py-1 bg-brand-light-grey/30 dark:bg-white/10 rounded-full text-brand-warm-grey dark:text-brand-warm-grey self-center sm:self-start mb-4">Ref: {reference}</div>
                 </>
               ) : (
                 <h3 className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-4">{reference}</h3>
               )}
               
               {familleInfo?.description && (
-                <p className="text-sm text-brand-warm-grey dark:text-brand-light-grey/80 whitespace-pre-wrap max-w-2xl mb-6 bg-white/50 dark:bg-black/20 p-4 rounded-xl border border-brand-light-grey/50 dark:border-white/5 backdrop-blur-sm">
+                <p className="text-sm text-brand-warm-grey dark:text-brand-warm-grey/80 whitespace-pre-wrap max-w-2xl mb-6 bg-white/50 dark:bg-black/20 p-4 rounded-xl border border-brand-light-grey/50 dark:border-white/5 backdrop-blur-sm">
                   {familleInfo.description}
                 </p>
               )}
@@ -190,7 +190,7 @@ export default function VueFamille({
           
           <button
             onClick={() => ouvrirEdition(produits, reference!)}
-            className="btn btn-secondaire text-sm bg-transparent border-transparent hover:bg-brand-light-grey/30 dark:hover:bg-white/5 text-brand-warm-grey dark:text-brand-light-grey"
+            className="btn btn-secondaire text-sm bg-transparent border-transparent hover:bg-brand-light-grey/30 dark:hover:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey"
           >
             <IconeCrayon taille={14} /> Modifier tous les produits
           </button>
@@ -253,7 +253,7 @@ export default function VueFamille({
                 <div className="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => ouvrirEdition([p], p.code_interne)}
-                    className="p-2 rounded-md hover:bg-white dark:hover:bg-brand-paper text-brand-warm-grey dark:text-brand-light-grey transition-colors"
+                    className="p-2 rounded-md hover:bg-white dark:hover:bg-brand-paper text-brand-warm-grey dark:text-brand-warm-grey transition-colors"
                     title="Modifier cet exemplaire"
                   >
                     <IconeCrayon taille={15} />
@@ -261,7 +261,7 @@ export default function VueFamille({
                   <button
                     onClick={() => basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)}
                     className={`p-2 rounded-md transition-colors ${
-                      p.en_vitrine ? "text-brand-orange bg-brand-orange/10" : "text-brand-warm-grey dark:text-brand-light-grey hover:bg-white dark:hover:bg-brand-paper"
+                      p.en_vitrine ? "text-brand-orange bg-brand-orange/10" : "text-brand-warm-grey dark:text-brand-warm-grey hover:bg-white dark:hover:bg-brand-paper"
                     }`}
                     title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
                   >
@@ -270,7 +270,7 @@ export default function VueFamille({
                   {p.statut !== "vendu" && (
                     <button
                       onClick={() => ouvrirSuppressionUnites([p])}
-                      className="p-2 rounded-md hover:bg-danger/10 text-brand-warm-grey dark:text-brand-light-grey hover:text-danger transition-colors ml-1"
+                      className="p-2 rounded-md hover:bg-danger/10 text-brand-warm-grey dark:text-brand-warm-grey hover:text-danger transition-colors ml-1"
                       title="Supprimer"
                     >
                       <IconeCorbeille taille={15} />

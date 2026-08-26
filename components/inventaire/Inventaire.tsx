@@ -998,7 +998,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       onClick={() => basculerStatut(s)}
                       className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all hover-lift ${
                         statutsActifs.includes(s)
-                          ? "border-brand-smooth bg-brand-black text-white dark:bg-white dark:text-brand-black shadow-md"
+                          ? "border-brand-black bg-brand-black text-brand-white shadow-md"
                           : "border-brand-light-grey dark:border-white/10 text-brand-warm-grey dark:text-brand-grey hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
                       }`}
                     >
@@ -1030,7 +1030,7 @@ export default function Inventaire({ role }: { role: Role }) {
               <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-brand-light-grey/50 dark:border-white/10">
                 <span className="text-xs font-bold uppercase tracking-wider text-brand-warm-grey w-full sm:w-auto sm:mr-2">Rapides</span>
                 
-                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={searchParams?.get("plus30j") === "1"}
@@ -1048,7 +1048,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   />
                   À tarifer
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={searchParams?.get("sans_photo") === "1"}
@@ -1057,7 +1057,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   />
                   Sans photo
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={searchParams?.get("sans_etiquette") === "1"}
@@ -1066,7 +1066,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   />
                   Sans étiquette
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={searchParams?.get("a_jeter") === "1"}
@@ -1075,7 +1075,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   />
                   À jeter
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-light-grey cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={searchParams?.get("en_vitrine") === "1"}
@@ -1624,7 +1624,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     <td className="max-w-64 truncate px-4 py-2.5 font-semibold text-brand-black dark:text-white" title={p.reference}>
                       {p.reference}
                     </td>
-                    <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-light-grey">{p.categorie}</td>
+                    <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-warm-grey">{p.categorie}</td>
                     <td className="px-4 py-2.5">
                       <span className="inline-flex items-center gap-2">
                         <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
@@ -1637,7 +1637,7 @@ export default function Inventaire({ role }: { role: Role }) {
                         )}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-brand-black dark:text-brand-light-grey">
+                    <td className="px-4 py-2.5 text-xs text-brand-black dark:text-brand-warm-grey">
                       <div className="font-medium">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</div>
                       <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
                         {p.lot_id
@@ -1671,7 +1671,7 @@ export default function Inventaire({ role }: { role: Role }) {
                         <span className="text-brand-warm-grey dark:text-brand-grey font-medium">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-light-grey font-medium">{p.jours_stock}</td>
+                    <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-warm-grey font-medium">{p.jours_stock}</td>
                     <td className="px-3 py-2.5">
                       {peutModifier && (
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
