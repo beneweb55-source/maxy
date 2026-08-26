@@ -1786,7 +1786,6 @@ export default function Inventaire({ role }: { role: Role }) {
           </button>
         </div>
       )}
-        </>
       </div>
 
       <Modale
