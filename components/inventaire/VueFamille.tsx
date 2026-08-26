@@ -54,7 +54,9 @@ export default function VueFamille({
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams(searchParams?.toString() || "");
+    // On crée de nouveaux paramètres pour ne pas hériter des filtres globaux de l'inventaire 
+    // (comme q, page, sans_photo, statuts, etc.) qui fausseraient la vue de la famille.
+    const params = new URLSearchParams();
     params.set("categorie", categorie ?? "");
     params.set("reference_exacte", reference ?? "");
     

@@ -1086,7 +1086,8 @@ export default function Inventaire({ role }: { role: Role }) {
         />
       )}
 
-      <div className="space-y-4 animate-entree">
+      {(vue === "cockpit" || vue === "atraiter") && (
+        <div className="space-y-4 animate-entree">
         {donneesFiltrees && (
             <p className="text-sm text-brand-warm-grey px-2 sm:px-0 mt-4 sm:mt-0">
               <strong className="text-brand-black dark:text-white">{donneesFiltrees.total}</strong> produit{donneesFiltrees.total > 1 ? "s" : ""}
@@ -1787,6 +1788,7 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
       </div>
+      )}
 
       <Modale
         titre={t("inventaire.ajouterProduitTitre")}

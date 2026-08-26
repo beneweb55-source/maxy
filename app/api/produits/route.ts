@@ -33,6 +33,13 @@ export async function GET(request: NextRequest) {
     const orderBy = construireTriProduits(params);
     const page = Math.max(1, Number(params.get("page")) || 1);
 
+    if (params.get("reference_exacte")) {
+      console.log("=== DEBUG API PRODUITS ===");
+      console.log("Params:", params.toString());
+      console.log("Where:", JSON.stringify(where, null, 2));
+      console.log("==========================");
+    }
+
     const [total, sommeAchat, sommeReparations, produits, categories, lots] =
       await Promise.all([
         prisma.produit.count({ where }),

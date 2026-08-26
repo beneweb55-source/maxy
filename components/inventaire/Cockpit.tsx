@@ -8,7 +8,7 @@ interface StatsData {
   categories: { name: string; total: number; disponibles: number; image: string | null }[];
 }
 
-export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, string | null>) => void }) {
+export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<string, string | null>) => void, q?: string }) {
   const t = useT();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +38,10 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
   }
 
   if (!stats) return null;
+
+  const categoriesAffichees = q.trim() 
+    ? stats.categories.filter(c => c.name.toLowerCase().includes(q.toLowerCase()))
+    : stats.categories;
 
   return (
     <div className="space-y-10 animate-entree pb-8">
@@ -222,10 +226,16 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
       {/* Explorer */}
       <div>
         <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Explorer par catégorie</h2>
-        <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-          {stats.categories.map((cat, i) => {
-            // Un petit tableau de couleurs pour les fallbacks (sans image)
-            const fallbackColors = [
+        
+        {categoriesAffichees.length === 0 && q ? (
+          <div className="text-sm text-brand-warm-grey p-4 text-center border border-dashed border-brand-light-grey dark:border-white/10 rounded-2xl">
+            Aucune catégorie ne correspond à "{q}"
+          </div>
+        ) : (
+          <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+            {categoriesAffichees.map((cat, i) => {
+              // Un petit tableau de couleurs pour les fallbacks (sans image)
+              const fallbackColors = [
               "from-blue-500/80 to-blue-700/90 dark:from-blue-900/60 dark:to-blue-950/80",
               "from-emerald-500/80 to-emerald-700/90 dark:from-emerald-900/60 dark:to-emerald-950/80",
               "from-violet-500/80 to-violet-700/90 dark:from-violet-900/60 dark:to-violet-950/80",
@@ -270,7 +280,8 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
               </button>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
