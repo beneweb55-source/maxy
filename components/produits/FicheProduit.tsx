@@ -402,7 +402,7 @@ export default function FicheProduit({
               <dd className="font-semibold">
                 {produit.etiquette_imprimee ? (
                   <span className="text-succes">
-                    Imprimée {produit.etiquette_imprimee_le ? `le ${new Date(produit.etiquette_imprimee_le).toLocaleDateString("fr-FR")}` : ""}
+                    Imprimée
                   </span>
                 ) : (
                   <span className="text-brand-grey">Non imprimée</span>

@@ -38,29 +38,29 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           <div className="text-sm font-medium text-brand-light-grey">Produits au total</div>
         </div>
         <div 
-          className="carte hover-lift cursor-pointer bg-emerald-50 border-emerald-200"
+          className="carte hover-lift cursor-pointer bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/50"
           onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu" })}
         >
-          <div className="text-3xl font-extrabold text-emerald-800">{stats.summary.disponibles}</div>
-          <div className="text-sm font-medium text-emerald-700">Disponibles</div>
+          <div className="text-3xl font-extrabold text-emerald-800 dark:text-emerald-400">{stats.summary.disponibles}</div>
+          <div className="text-sm font-medium text-emerald-700 dark:text-emerald-500">Disponibles</div>
         </div>
         <div 
-          className="carte hover-lift cursor-pointer bg-sky-50 border-sky-200"
+          className="carte hover-lift cursor-pointer bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-800/50"
           onClick={() => majUrl({ vue: "tableau", statuts: "en_vente" })}
         >
-          <div className="text-3xl font-extrabold text-sky-800">{stats.summary.en_vente}</div>
-          <div className="text-sm font-medium text-sky-700">En vente</div>
+          <div className="text-3xl font-extrabold text-sky-800 dark:text-sky-400">{stats.summary.en_vente}</div>
+          <div className="text-sm font-medium text-sky-700 dark:text-sky-500">En vente</div>
         </div>
       </div>
 
       {/* Actions à traiter */}
       <div>
-        <h2 className="text-lg font-bold text-brand-black mb-3">À traiter</h2>
+        <h2 className="text-lg font-bold text-brand-black dark:text-brand-light-grey mb-3">À traiter</h2>
         <div className="flex flex-wrap gap-3">
           {stats.actions.sans_prix > 0 && (
             <button 
               onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-800 hover:bg-red-100 transition"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-800 hover:bg-red-100 transition-colors shadow-sm dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400 dark:hover:bg-red-900/40"
             >
               <div className="text-xl font-bold">{stats.actions.sans_prix}</div>
               <div className="text-sm font-semibold">Sans prix</div>
@@ -69,7 +69,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           {stats.actions.a_tester > 0 && (
             <button 
               onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors shadow-sm dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-400 dark:hover:bg-amber-900/40"
             >
               <div className="text-xl font-bold">{stats.actions.a_tester}</div>
               <div className="text-sm font-semibold">À tester</div>
@@ -78,7 +78,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           {stats.actions.a_reparer > 0 && (
             <button 
               onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100 transition"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100 transition-colors shadow-sm dark:bg-orange-900/20 dark:border-orange-800/50 dark:text-orange-400 dark:hover:bg-orange-900/40"
             >
               <div className="text-xl font-bold">{stats.actions.a_reparer}</div>
               <div className="text-sm font-semibold">À réparer</div>
@@ -87,7 +87,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           {stats.actions.sans_photo > 0 && (
             <button 
               onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 transition"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 transition-colors shadow-sm dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400 dark:hover:bg-blue-900/40"
             >
               <div className="text-xl font-bold">{stats.actions.sans_photo}</div>
               <div className="text-sm font-semibold">Sans photo</div>
@@ -96,7 +96,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           {stats.actions.sans_etiquette > 0 && (
             <button 
               onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100 transition"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100 transition-colors shadow-sm dark:bg-purple-900/20 dark:border-purple-800/50 dark:text-purple-400 dark:hover:bg-purple-900/40"
             >
               <div className="text-xl font-bold">{stats.actions.sans_etiquette}</div>
               <div className="text-sm font-semibold">Sans étiquette</div>
@@ -104,7 +104,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
 
           {Object.values(stats.actions).every(v => v === 0) && (
-            <div className="text-sm text-emerald-600 bg-emerald-50 px-4 py-3 rounded-lg border border-emerald-100 w-full font-medium">
+            <div className="text-sm text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800/50 px-4 py-3 rounded-lg border w-full font-medium">
               Aucun produit nécessitant une action urgente.
             </div>
           )}
