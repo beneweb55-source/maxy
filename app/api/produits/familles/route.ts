@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const params = request.nextUrl.searchParams;
+    const categorieParam = params.get("categorie");
     let where = construireFiltresProduits(params);
     
     if (acces.user.role === "social_media") {
