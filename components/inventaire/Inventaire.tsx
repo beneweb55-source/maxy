@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
@@ -160,10 +160,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const { afficher } = useToast();
 
   const [q, setQ] = useState(searchParams?.get("q") ?? "");
-  
-  useEffect(() => {
-    setQ(searchParams?.get("q") ?? "");
-  }, [searchParams]);
+  const [qLoc, setQLoc] = useState(searchParams?.get("q") ?? "");
   const [donnees, setDonnees] = useState<ReponseInventaire | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -279,11 +276,17 @@ export default function Inventaire({ role }: { role: Role }) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(corps?.error ?? "Erreur lors du chargement de l'inventaire.");
       }
-      setDonnees((await res.json()) as ReponseInventaire);
+      const data = await res.json() as ReponseInventaire;
+      setDonnees(data);
+      // Synchroniser qLoc si q a changé dans l'URL mais pas qLoc
+      if (searchParams?.get("q") && searchParams.get("q") !== qLoc) {
+        setQLoc(searchParams.get("q")!);
+        setQ(searchParams.get("q")!);
+      }
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
     }
-  }, [searchParams]);
+  }, [searchParams, qLoc]);
 
   useEffect(() => {
     void charger();
@@ -619,6 +622,29 @@ export default function Inventaire({ role }: { role: Role }) {
     Number.isInteger(Number(formulaire.prix_achat)) &&
     Number(formulaire.prix_achat) >= 0;
 
+  // Client-side instant filtering while waiting for server response
+  const donneesFiltrees = useMemo<ReponseInventaire | null>(() => {
+    if (!donnees) return null;
+    if (!qLoc.trim()) return donnees;
+
+    const searchLower = qLoc.trim().toLowerCase();
+    const produitsFiltres = donnees.produits.filter(p => 
+      p.code_interne.toLowerCase().includes(searchLower) ||
+      p.reference.toLowerCase().includes(searchLower) ||
+      (p.categorie && p.categorie.toLowerCase().includes(searchLower)) ||
+      (p.fournisseur && p.fournisseur.toLowerCase().includes(searchLower)) ||
+      (p.lot_id && String(p.lot_id).includes(searchLower))
+    );
+
+    return {
+      ...donnees,
+      produits: produitsFiltres,
+      total: produitsFiltres.length
+    };
+  }, [donnees, qLoc]);
+
+  const groupes = donneesFiltrees ? grouperDoublons(donneesFiltrees.produits) : [];
+
   const triActuel = searchParams?.get("tri") ?? "code_interne";
   const ordreActuel = searchParams?.get("ordre") ?? "asc";
   const page = donnees?.page ?? 1;
@@ -762,8 +788,6 @@ export default function Inventaire({ role }: { role: Role }) {
     </div>
   );
 
-  const groupes = donnees ? grouperDoublons(donnees.produits) : [];
-
   const vue = searchParams?.get("vue") || "cockpit";
 
   return (
@@ -805,19 +829,18 @@ export default function Inventaire({ role }: { role: Role }) {
         />
       )}
 
-      {(vue === "tableau" || vue === "detail" || vue === "atraiter" || (vue === "cockpit" && afficherTableauCockpit)) && (
-        <div className="space-y-4 animate-entree">
-          {/* Header & Actions principales */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
-            <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium">
-              <button 
-                onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} 
-                className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
-              >
-                <IconeChevronGauche taille={14} /> Cockpit
-              </button>
-              <span>/</span>
-              <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
+      <div className="space-y-4 animate-entree">
+        {/* Header & Actions principales */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
+          <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium">
+            <button 
+              onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} 
+              className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
+            >
+              <IconeChevronGauche taille={14} /> Cockpit
+            </button>
+            <span>/</span>
+            <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
                 {vue === "atraiter" ? "À traiter" : "Inventaire complet"}
               </span>
               {donnees && (
@@ -858,6 +881,7 @@ export default function Inventaire({ role }: { role: Role }) {
             <div className="flex-1 w-full relative">
               <RechercheRapide
                 valeur={q}
+                onInstantChange={(valeur) => setQLoc(valeur)}
                 onChange={(valeur) => {
                   setQ(valeur);
                   majUrl({ q: valeur.trim() || null, page: "1" });
@@ -1047,6 +1071,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     type="button"
                     onClick={() => {
                       setQ("");
+                      setQLoc("");
                       router.replace("/inventaire");
                     }}
                     className="ml-auto text-sm font-bold text-danger hover:bg-danger/10 px-3 py-1.5 rounded-md transition flex items-center gap-1.5 border border-transparent hover:border-danger/20"
@@ -1058,66 +1083,68 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
         </div>
-      )}
 
-      {donnees && (
-        <p className="text-sm text-brand-warm-grey">
-          <strong className="text-brand-black">{donnees.total}</strong> produit
-          {donnees.total > 1 ? "s" : ""}
-          {!estSocial && (
-            <>
-              {" "}· valeur de la sélection (achat + réparations) :{" "}
-              <strong className="text-brand-black">{formaterDA(donnees.valeur)}</strong>
-            </>
+      {/* Rendu des listes/tableaux conditionné séparément */}
+      {/* Si on est dans le cockpit, on n'affiche les résultats que si on a cliqué sur "Afficher l'inventaire" OU si une recherche est active */}
+      {(vue !== "cockpit" || afficherTableauCockpit || qLoc.trim() !== "" || nbFiltresActifs > 0) && (
+        <>
+          {donneesFiltrees && (
+            <p className="text-sm text-brand-warm-grey px-2 sm:px-0 mt-4 sm:mt-0">
+              <strong className="text-brand-black dark:text-white">{donneesFiltrees.total}</strong> produit{donneesFiltrees.total > 1 ? "s" : ""}
+              {!estSocial && (
+                <>
+                  {" "}· valeur de la sélection (achat + réparations) :{" "}
+                  <strong className="text-brand-black dark:text-white">{formaterDA(donneesFiltrees.valeur)}</strong>
+                </>
+              )}
+            </p>
           )}
-        </p>
-      )}
 
-      {erreur && (
-        <div className="alerte-erreur" role="alert">
-          {erreur}
-        </div>
-      )}
-      {!erreur && donnees === null && (
-        <p className="p-4 text-sm text-brand-warm-grey">{t("inventaire.chargement")}</p>
-      )}
-      {donnees && donnees.produits.length === 0 && (
-        <div className="carte border-dashed p-10 text-center flex flex-col items-center justify-center space-y-4">
-          <div className="rounded-full bg-brand-light-grey/30 p-4 text-brand-warm-grey">
-            <IconeRecherche taille={32} />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold text-brand-smooth">
-              {t("inventaire.aucunProduit")}
-            </p>
-            <p className="text-sm text-brand-warm-grey max-w-sm mx-auto">
-              {nbFiltresActifs > 0 
-                ? "Essayez de modifier vos filtres ou de chercher avec d'autres termes pour trouver ce que vous cherchez." 
-                : "Vous n'avez pas encore ajouté de produits. Commencez par en créer un pour remplir votre stock."}
-            </p>
-          </div>
-          
-          <div className="pt-2 flex gap-3">
-            {nbFiltresActifs > 0 && (
-              <button 
-                type="button" 
-                onClick={() => { setQ(""); router.replace("/inventaire"); }} 
-                className="btn btn-secondaire"
-              >
-                Effacer les filtres
-              </button>
-            )}
-            {peutModifier && (
-              <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
-                <IconePlus taille={15} />
-                Ajouter un produit
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+          {erreur && (
+            <div className="alerte-erreur" role="alert">
+              {erreur}
+            </div>
+          )}
+          {!erreur && donneesFiltrees === null && (
+            <p className="p-4 text-sm text-brand-warm-grey">{t("inventaire.chargement")}</p>
+          )}
+          {donneesFiltrees && donneesFiltrees.produits.length === 0 && (
+            <div className="carte border-dashed p-10 text-center flex flex-col items-center justify-center space-y-4">
+              <div className="rounded-full bg-brand-light-grey/30 p-4 text-brand-warm-grey">
+                <IconeRecherche taille={32} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-brand-smooth">
+                  {t("inventaire.aucunProduit")}
+                </p>
+                <p className="text-sm text-brand-warm-grey max-w-sm mx-auto">
+                  {nbFiltresActifs > 0 
+                    ? "Essayez de modifier vos filtres ou de chercher avec d'autres termes pour trouver ce que vous cherchez." 
+                    : "Vous n'avez pas encore ajouté de produits. Commencez par en créer un pour remplir votre stock."}
+                </p>
+              </div>
+              
+              <div className="pt-2 flex gap-3">
+                {nbFiltresActifs > 0 && (
+                  <button 
+                    type="button" 
+                    onClick={() => { setQ(""); setQLoc(""); router.replace("/inventaire"); }} 
+                    className="btn btn-secondaire"
+                  >
+                    Effacer les filtres
+                  </button>
+                )}
+                {peutModifier && (
+                  <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
+                    <IconePlus taille={15} />
+                    Ajouter un produit
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
-      {donnees && donnees.produits.length > 0 && vueGroupee && (
+          {donneesFiltrees && donneesFiltrees.produits.length > 0 && vueGroupee && (
         <div className="space-y-2">
           {groupes.map((g) => {
             const ouvert = groupesOuverts.has(g.cle);
@@ -1428,10 +1455,10 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
 
-      {donnees && donnees.produits.length > 0 && !vueGroupee && (
+      {donneesFiltrees && donneesFiltrees.produits.length > 0 && !vueGroupee && (
         <div className="space-y-4">
           <div className="flex flex-col gap-3 md:hidden">
-            {donnees.produits.map((p) => (
+            {donneesFiltrees.produits.map((p) => (
               <div
                 key={p.id}
                 onClick={() => router.push(`/produits/${p.id}`)}
@@ -1566,7 +1593,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
-                {donnees.produits.map((p) => (
+                {donneesFiltrees.produits.map((p) => (
                   <tr
                     key={p.id}
                     onClick={() => router.push(`/produits/${p.id}`)}
@@ -1688,12 +1715,13 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
 
-      {donnees && donnees.pages > 1 && (
+      {/* Pagination (seulement si non filtré localement pour éviter désynchronisation) */}
+      {donneesFiltrees && donneesFiltrees.pages > 1 && !qLoc.trim() && (
         <div className="flex items-center justify-center gap-2 text-sm">
           <button
             type="button"
             disabled={page <= 1}
-            onClick={() => majUrl({ page: String(page - 1) })}
+            onClick={() => majUrl({ page: (donneesFiltrees?.page ?? 1) - 1 + "" })}
             className="btn btn-secondaire"
           >
             <IconeChevronGauche taille={15} />
@@ -1701,7 +1729,7 @@ export default function Inventaire({ role }: { role: Role }) {
           </button>
           <div className="flex items-center gap-1 px-2">
             {(() => {
-              const totalPages = donnees.pages;
+              const totalPages = donneesFiltrees?.pages ?? 1;
               const currentPage = page;
               
               const renderPageButton = (p: number) => (
@@ -1750,14 +1778,16 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
           <button
             type="button"
-            disabled={page >= donnees.pages}
-            onClick={() => majUrl({ page: String(page + 1) })}
+            disabled={page >= (donneesFiltrees?.pages ?? 1)}
+            onClick={() => majUrl({ page: (donneesFiltrees?.page ?? 1) + 1 + "" })}
             className="btn btn-secondaire"
           >
             {t("inventaire.suivant")}
             <IconeChevronDroite taille={15} />
           </button>
         </div>
+      )}
+        </>
       )}
 
       <Modale

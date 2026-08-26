@@ -6,6 +6,7 @@ import { IconeRecherche, IconeFermer } from "@/components/icons";
 interface RechercheRapideProps {
   valeur: string;
   onChange: (valeur: string) => void;
+  onInstantChange?: (valeur: string) => void;
   placeholder?: string;
   debounceMs?: number;
   className?: string;
@@ -14,6 +15,7 @@ interface RechercheRapideProps {
 export default function RechercheRapide({
   valeur,
   onChange,
+  onInstantChange,
   placeholder = "Rechercher...",
   debounceMs = 150,
   className = "",
@@ -29,6 +31,7 @@ export default function RechercheRapide({
   const gererChangement = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nouv = e.target.value;
     setInterne(nouv);
+    if (onInstantChange) onInstantChange(nouv);
 
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
@@ -38,6 +41,7 @@ export default function RechercheRapide({
 
   const effacer = () => {
     setInterne("");
+    if (onInstantChange) onInstantChange("");
     onChange("");
     if (timer.current) clearTimeout(timer.current);
   };

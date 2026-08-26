@@ -150,7 +150,6 @@ export default function Modale({
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-entree"
         style={{ animationDuration: '0.3s' }}
-        onClick={tenterFermeture}
       />
       <div
         ref={modalRef}

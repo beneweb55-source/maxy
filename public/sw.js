@@ -6,10 +6,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(clients.claim());
 });
 
-// Écouteur fetch vide requis par Safari iOS pour valider la PWA
-self.addEventListener("fetch", (event) => {
-  // Pass-through
-});
+// Le listener 'fetch' vide a été retiré. Il était historiquement utilisé pour forcer l'installation PWA sur iOS/anciens Chrome, mais Chrome moderne signale cela comme un "no-op" qui dégrade les performances réseau (IPC overhead) pour rien.
 
 self.addEventListener("push", function (event) {
   if (event.data) {

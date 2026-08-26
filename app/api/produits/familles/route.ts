@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { encodeBase64Url } from "@/lib/base64url";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { construireFiltresProduits, construireTriProduits } from "@/lib/filtres-produits";
 import { urlCouverture } from "@/lib/images-flags";
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
     const statsMap = new Map(stats.map(s => [`${s.reference}|${s.categorie}`, s]));
 
     // 3. Fetch custom metadata from FamilleInfo
-    const clesIds = famillesBases.map(fb => Buffer.from(`${fb.reference}|${fb.categorie}`).toString('base64url'));
+    const clesIds = famillesBases.map(fb => encodeBase64Url(`${fb.reference}|${fb.categorie}`));
     const famillesInfos = await prisma.familleInfo.findMany({
       where: { id: { in: clesIds } }
     });
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
 
     const familles = famillesBases.map(fb => {
       const cleRaw = `${fb.reference}|${fb.categorie}`;
-      const cle = Buffer.from(cleRaw).toString('base64url');
+      const cle = encodeBase64Url(cleRaw);
       const st = statsMap.get(cleRaw);
       const info = infoMap.get(cle);
       

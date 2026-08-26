@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import Modale from "@/components/Modale";
+import { useT } from "@/lib/i18n/contexte";
+import { encodeBase64Url } from "@/lib/base64url";
 import { IconeEnregistrer } from "@/components/icons";
 
 export interface FamilleInfo {
@@ -34,7 +36,7 @@ export default function ModaleEditionFamille({
     setErreur(null);
     try {
       // Encoding the key properly
-      const id = Buffer.from(cleFamille).toString('base64url');
+      const id = encodeBase64Url(cleFamille);
       const res = await fetch(`/api/familles/${encodeURIComponent(id)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

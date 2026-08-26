@@ -106,9 +106,9 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
           {stats.actions.sans_prix > 0 && (
-            <div className="carte group border border-red-200 dark:border-red-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-red-200 dark:border-red-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
               <div className="mb-6">
                 <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
@@ -128,7 +128,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           
           {stats.actions.a_tester > 0 && (
-            <div className="carte group border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
               <div className="mb-6">
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-2">
@@ -148,7 +148,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           
           {stats.actions.a_reparer > 0 && (
-            <div className="carte group border border-orange-200 dark:border-orange-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-orange-200 dark:border-orange-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
               <div className="mb-6">
                 <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 mb-2">
@@ -168,7 +168,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           
           {stats.actions.sans_photo > 0 && (
-            <div className="carte group border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
               <div className="mb-6">
                 <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
@@ -188,7 +188,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
           )}
           
           {stats.actions.sans_etiquette > 0 && (
-            <div className="carte group border border-purple-200 dark:border-purple-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-purple-200 dark:border-purple-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
               <div className="mb-6">
                 <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
@@ -222,7 +222,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
       {/* Explorer */}
       <div>
         <h2 className="text-xl font-bold text-brand-black dark:text-brand-light-grey mb-4 font-outfit">Explorer par catégorie</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
           {stats.categories.map((cat, i) => {
             // Un petit tableau de couleurs pour les fallbacks (sans image)
             const fallbackColors = [
@@ -238,7 +238,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
               <button
                 key={cat.name}
                 onClick={() => majUrl({ vue: "categorie", categorie: cat.name })}
-                className="carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-orange/50 hover:shadow-xl transition-all text-left flex flex-col rounded-2xl"
+                className="min-w-[160px] sm:min-w-0 snap-center shrink-0 carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-orange/50 hover:shadow-xl transition-all text-left flex flex-col rounded-2xl"
               >
                 <div className={`h-36 w-full relative overflow-hidden ${cat.image ? 'bg-brand-black' : 'bg-gradient-to-br ' + colorClass}`}>
                   {cat.image && (

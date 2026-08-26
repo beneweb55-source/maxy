@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { encodeBase64Url } from "@/lib/base64url";
 import Link from "next/link";
 import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCorbeille, IconeOeil } from "@/components/icons";
 import BadgeStatut from "@/components/BadgeStatut";
@@ -60,7 +61,7 @@ export default function VueFamille({
     const fetchProduits = fetch(`/api/produits?${params.toString()}`).then(r => r.json());
     
     // Convert to base64url explicitly like we do in route
-    const encodedId = Buffer.from(cleFamille).toString('base64url');
+    const encodedId = encodeBase64Url(cleFamille);
     const fetchInfo = fetch(`/api/familles/${encodeURIComponent(encodedId)}`).then(r => r.json());
 
     Promise.all([fetchProduits, fetchInfo])

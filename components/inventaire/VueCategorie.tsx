@@ -71,16 +71,7 @@ export default function VueCategorie({
         )}
       </div>
 
-      {/* Barre de recherche localisée */}
-      <div className="carte !p-2 sm:!p-3 shadow-sm">
-        <RechercheRapide
-          valeur={q}
-          onChange={(valeur) => majUrl({ q: valeur.trim() || null, page: "1" })}
-          placeholder={`Rechercher dans la catégorie ${categorie}...`}
-          debounceMs={300}
-          className="w-full pl-10 pr-4 py-2.5 bg-brand-paper dark:bg-black/20 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-brand-orange transition-all font-medium text-sm"
-        />
-      </div>
+
 
       {/* Liste des familles */}
       {loading ? (
