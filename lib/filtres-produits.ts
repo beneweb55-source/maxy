@@ -1,5 +1,5 @@
 import type { Prisma, StatutProduit } from "@prisma/client";
-import { STATUTS_PRODUIT } from "./statuts";
+import { STATUTS_PRODUIT, STATUTS_DEFAUT } from "./statuts";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -70,7 +70,7 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
   if (params.get("a_tarifer") === "1") {
     clauses.push({
       prix_vente_fixe: null,
-      statut: { not: "vendu" },
+      statut: { notIn: ["vendu", ...STATUTS_DEFAUT] },
     });
   }
 

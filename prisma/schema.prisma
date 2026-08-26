@@ -138,6 +138,16 @@ model Lot {
   @@map("lots")
 }
 
+model FamilleInfo {
+  id          String   @id // Clé encodée stable (ex: base64(reference|categorie))
+  nom         String?
+  image_url   String?
+  description String?
+  updated_at  DateTime @updatedAt
+
+  @@map("familles_info")
+}
+
 model Produit {
   id               Int              @id @default(autoincrement())
   lot_id           Int?

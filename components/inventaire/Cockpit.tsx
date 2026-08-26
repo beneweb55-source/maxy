@@ -56,59 +56,87 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
       {/* Actions à traiter */}
       <div>
         <h2 className="text-lg font-bold text-brand-black dark:text-brand-light-grey mb-3">À traiter</h2>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
           {stats.actions.sans_prix > 0 && (
-            <button 
-              onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-800 hover:bg-red-100 transition-colors shadow-sm dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400 dark:hover:bg-red-900/40"
-            >
-              <div className="text-xl font-bold">{stats.actions.sans_prix}</div>
-              <div className="text-sm font-semibold">Sans prix</div>
-            </button>
+            <div className="carte flex flex-col justify-between p-4 border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800/50">
+              <div>
+                <div className="text-red-800 dark:text-red-400 font-bold text-lg mb-1">Sans prix</div>
+                <div className="text-red-700 dark:text-red-300 text-sm mb-3">{stats.actions.sans_prix} produits à tarifer</div>
+              </div>
+              <button 
+                onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
+                className="w-full btn bg-red-600 hover:bg-red-700 text-white border-0 shadow-sm transition-colors text-sm py-2"
+              >
+                Traiter
+              </button>
+            </div>
           )}
           {stats.actions.a_tester > 0 && (
-            <button 
-              onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors shadow-sm dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-400 dark:hover:bg-amber-900/40"
-            >
-              <div className="text-xl font-bold">{stats.actions.a_tester}</div>
-              <div className="text-sm font-semibold">À tester</div>
-            </button>
+            <div className="carte flex flex-col justify-between p-4 border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800/50">
+              <div>
+                <div className="text-amber-800 dark:text-amber-400 font-bold text-lg mb-1">À tester</div>
+                <div className="text-amber-700 dark:text-amber-300 text-sm mb-3">{stats.actions.a_tester} produits en test</div>
+              </div>
+              <button 
+                onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
+                className="w-full btn bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-sm transition-colors text-sm py-2"
+              >
+                Traiter
+              </button>
+            </div>
           )}
           {stats.actions.a_reparer > 0 && (
-            <button 
-              onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100 transition-colors shadow-sm dark:bg-orange-900/20 dark:border-orange-800/50 dark:text-orange-400 dark:hover:bg-orange-900/40"
-            >
-              <div className="text-xl font-bold">{stats.actions.a_reparer}</div>
-              <div className="text-sm font-semibold">À réparer</div>
-            </button>
+            <div className="carte flex flex-col justify-between p-4 border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800/50">
+              <div>
+                <div className="text-orange-800 dark:text-orange-400 font-bold text-lg mb-1">À réparer</div>
+                <div className="text-orange-700 dark:text-orange-300 text-sm mb-3">{stats.actions.a_reparer} produits en panne</div>
+              </div>
+              <button 
+                onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
+                className="w-full btn bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-sm transition-colors text-sm py-2"
+              >
+                Traiter
+              </button>
+            </div>
           )}
           {stats.actions.sans_photo > 0 && (
-            <button 
-              onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 transition-colors shadow-sm dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400 dark:hover:bg-blue-900/40"
-            >
-              <div className="text-xl font-bold">{stats.actions.sans_photo}</div>
-              <div className="text-sm font-semibold">Sans photo</div>
-            </button>
+            <div className="carte flex flex-col justify-between p-4 border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800/50">
+              <div>
+                <div className="text-blue-800 dark:text-blue-400 font-bold text-lg mb-1">Sans photo</div>
+                <div className="text-blue-700 dark:text-blue-300 text-sm mb-3">{stats.actions.sans_photo} produits sans image</div>
+              </div>
+              <button 
+                onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
+                className="w-full btn bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm transition-colors text-sm py-2"
+              >
+                Traiter
+              </button>
+            </div>
           )}
           {stats.actions.sans_etiquette > 0 && (
-            <button 
-              onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg border border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100 transition-colors shadow-sm dark:bg-purple-900/20 dark:border-purple-800/50 dark:text-purple-400 dark:hover:bg-purple-900/40"
-            >
-              <div className="text-xl font-bold">{stats.actions.sans_etiquette}</div>
-              <div className="text-sm font-semibold">Sans étiquette</div>
-            </button>
-          )}
-
-          {Object.values(stats.actions).every(v => v === 0) && (
-            <div className="text-sm text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800/50 px-4 py-3 rounded-lg border w-full font-medium">
-              Aucun produit nécessitant une action urgente.
+            <div className="carte flex flex-col justify-between p-4 border border-purple-200 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800/50">
+              <div>
+                <div className="text-purple-800 dark:text-purple-400 font-bold text-lg mb-1">Sans étiquette</div>
+                <div className="text-purple-700 dark:text-purple-300 text-sm mb-3">{stats.actions.sans_etiquette} non confirmés</div>
+              </div>
+              <button 
+                onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
+                className="w-full btn bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm transition-colors text-sm py-2"
+              >
+                Traiter
+              </button>
             </div>
           )}
         </div>
+        {Object.values(stats.actions).every(v => v === 0) && (
+          <div className="flex flex-col items-center justify-center p-8 text-emerald-600 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/10 dark:border-emerald-800/30 rounded-xl font-medium">
+            <svg className="w-12 h-12 mb-3 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-lg">Parfait !</div>
+            <div className="text-sm opacity-80">Aucun produit ne nécessite d'action urgente.</div>
+          </div>
+        )}
       </div>
 
       {/* Explorer */}

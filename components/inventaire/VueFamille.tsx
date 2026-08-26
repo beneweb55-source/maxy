@@ -5,6 +5,7 @@ import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCo
 import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
 import type { StatutProduit } from "@prisma/client";
+import ModaleEditionFamille, { type FamilleInfo } from "./ModaleEditionFamille";
 
 // LigneProduit from Inventaire.tsx
 interface LigneProduit {
@@ -43,7 +44,9 @@ export default function VueFamille({
 }) {
   const searchParams = useSearchParams();
   const [produits, setProduits] = useState<LigneProduit[]>([]);
+  const [familleInfo, setFamilleInfo] = useState<FamilleInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editionFamille, setEditionFamille] = useState(false);
 
   // La cleFamille est "reference|categorie"
   const [reference, categorie] = cleFamille.split("|");
@@ -54,12 +57,22 @@ export default function VueFamille({
     params.set("categorie", categorie ?? "");
     params.set("reference_exacte", reference ?? "");
     
-    // On veut tous les produits de la famille (pas seulement la 1ere page de 50 si possible, 
-    // mais on garde la pagination standard par défaut. L'idéal est de passer limit=1000).
-    fetch(`/api/produits?${params.toString()}`)
-      .then(r => r.json())
-      .then(d => { setProduits(d.produits); setLoading(false); })
-      .catch(e => { console.error(e); setLoading(false); });
+    const fetchProduits = fetch(`/api/produits?${params.toString()}`).then(r => r.json());
+    
+    // Convert to base64url explicitly like we do in route
+    const encodedId = Buffer.from(cleFamille).toString('base64url');
+    const fetchInfo = fetch(`/api/familles/${encodeURIComponent(encodedId)}`).then(r => r.json());
+
+    Promise.all([fetchProduits, fetchInfo])
+      .then(([dp, info]) => {
+        setProduits(dp.produits);
+        setFamilleInfo(info.id ? info : null);
+        setLoading(false);
+      })
+      .catch(e => {
+        console.error(e);
+        setLoading(false);
+      });
   }, [searchParams, cleFamille, categorie, reference]);
 
   if (loading) {
@@ -105,12 +118,19 @@ export default function VueFamille({
       {/* Résumé de la Famille */}
       <div className="carte p-4 sm:p-6 bg-brand-light-grey/10">
         <div className="flex flex-col sm:flex-row gap-6">
-          {premier.image_url && (
+          {(familleInfo?.image_url || premier.image_url) && (
             <div className="h-32 w-32 rounded-lg bg-white border border-brand-light-grey/50 flex items-center justify-center overflow-hidden shrink-0">
-              <img src={premier.image_url} alt="" className="w-full h-full object-cover" />
+              <img src={familleInfo?.image_url || premier.image_url!} alt={familleInfo?.nom || reference} className="w-full h-full object-cover" />
             </div>
           )}
           <div className="flex-1 space-y-4">
+            {familleInfo?.nom && (
+              <h3 className="text-xl font-bold text-brand-black">{familleInfo.nom}</h3>
+            )}
+            {familleInfo?.description && (
+              <p className="text-sm text-brand-warm-grey whitespace-pre-wrap">{familleInfo.description}</p>
+            )}
+            
             <div className="flex flex-wrap gap-4">
               <div>
                 <div className="text-sm text-brand-warm-grey uppercase tracking-wide">Exemplaires</div>
@@ -138,10 +158,16 @@ export default function VueFamille({
 
             <div className="flex flex-wrap gap-2 pt-2 border-t border-brand-light-grey/30">
               <button
+                onClick={() => setEditionFamille(true)}
+                className="btn btn-secondaire text-xs"
+              >
+                <IconeCrayon taille={14} /> Personnaliser la famille
+              </button>
+              <button
                 onClick={() => ouvrirEdition(produits, reference!)}
                 className="btn btn-secondaire text-xs"
               >
-                <IconeCrayon taille={14} /> Modifier toute la famille
+                <IconeCrayon taille={14} /> Modifier tous les produits
               </button>
               {produits.some(p => p.statut !== "vendu") && (
                 <button
@@ -221,6 +247,18 @@ export default function VueFamille({
           </div>
         ))}
       </div>
+
+      {editionFamille && (
+        <ModaleEditionFamille
+          cleFamille={cleFamille}
+          familleInfo={familleInfo}
+          fermer={() => setEditionFamille(false)}
+          onSucces={(nouvelleInfo) => {
+            setFamilleInfo(nouvelleInfo);
+            setEditionFamille(false);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -817,28 +817,34 @@ export default function Inventaire({ role }: { role: Role }) {
       </div>
 
       <div className="carte space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <RechercheRapide
-            valeur={q}
-            onChange={(valeur) => {
-              setQ(valeur);
-              majUrl({ q: valeur.trim() || null });
-            }}
-            placeholder={t("inventaire.recherche")}
-            debounceMs={300}
-            className="flex-1"
-          />
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={searchParams?.get("categorie") ?? ""}
-              onChange={(e) => majUrl({ categorie: e.target.value || null })}
-              className="champ w-full sm:w-auto"
-            >
-              <option value="">{t("inventaire.toutesCategories")}</option>
-              {(donnees?.categories ?? []).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="flex-1 flex w-full relative">
+            <RechercheRapide
+              valeur={q}
+              onChange={(valeur) => {
+                setQ(valeur);
+                majUrl({ q: valeur.trim() || null });
+              }}
+              placeholder={t("inventaire.recherche")}
+              debounceMs={300}
+              className="w-full pl-10 pr-4 py-2 bg-brand-paper border border-brand-light-grey rounded-l-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-brand-orange transition-all"
+            />
+            <div className="relative flex items-center border border-l-0 border-brand-light-grey rounded-r-lg bg-brand-light-grey/20 px-2 min-w-[140px] sm:min-w-[180px]">
+              <span className="text-xs text-brand-warm-grey hidden sm:inline-block mr-1">Dans :</span>
+              <select
+                value={searchParams?.get("categorie") ?? ""}
+                onChange={(e) => majUrl({ categorie: e.target.value || null })}
+                className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full py-2 cursor-pointer"
+              >
+                <option value="">Tout l'inventaire</option>
+                {(donnees?.categories ?? []).map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <select
               value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
               onChange={(e) => {
@@ -1473,15 +1479,15 @@ export default function Inventaire({ role }: { role: Role }) {
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
-            <table className="w-full min-w-[820px] text-sm">
-              <thead className="bg-brand-light-grey/25">
+          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block max-h-[800px] shadow-sm">
+            <table className="w-full min-w-[820px] text-sm relative">
+              <thead className="bg-brand-light-grey/25 sticky top-0 z-10 shadow-sm backdrop-blur-md bg-white/90 dark:bg-brand-black/90">
                 <tr>
                   {COLONNES_TRI.filter(c => c.cle !== 'prix_achat' || !estSocial).map((c) => (
                     <th
                       key={c.cle}
                       onClick={() => trierPar(c.cle)}
-                      className="entete-table cursor-pointer select-none transition hover:text-brand-black"
+                      className="entete-table cursor-pointer select-none transition hover:text-brand-black whitespace-nowrap py-3 px-4 text-left font-semibold text-brand-warm-grey"
                     >
                       <span className="inline-flex items-center gap-1">
                         {t(c.libelle)}
@@ -1494,8 +1500,8 @@ export default function Inventaire({ role }: { role: Role }) {
                       </span>
                     </th>
                   ))}
-                  <th className="entete-table text-right">{t("inventaire.jours")}</th>
-                  <th className="entete-table" />
+                  <th className="entete-table text-right py-3 px-4 font-semibold text-brand-warm-grey">{t("inventaire.jours")}</th>
+                  <th className="entete-table py-3 px-4" />
                 </tr>
               </thead>
               <tbody className="">

@@ -104,21 +104,35 @@ export async function GET(request: NextRequest) {
     const testerMap = new Map(statsTester.map(s => [`${s.reference}|${s.categorie}`, s._count.id]));
     const statsMap = new Map(stats.map(s => [`${s.reference}|${s.categorie}`, s]));
 
+    // 3. Fetch custom metadata from FamilleInfo
+    const clesIds = famillesBases.map(fb => Buffer.from(`${fb.reference}|${fb.categorie}`).toString('base64url'));
+    const famillesInfos = await prisma.familleInfo.findMany({
+      where: { id: { in: clesIds } }
+    });
+    const infoMap = new Map(famillesInfos.map(fi => [fi.id, fi]));
+
     const familles = famillesBases.map(fb => {
-      const cle = `${fb.reference}|${fb.categorie}`;
-      const st = statsMap.get(cle);
+      const cleRaw = `${fb.reference}|${fb.categorie}`;
+      const cle = Buffer.from(cleRaw).toString('base64url');
+      const st = statsMap.get(cleRaw);
+      const info = infoMap.get(cle);
       
       // Construire l'URL de l'image si image_url existe 
       // (simplification de couverturesProduits pour éviter de tout importer si non nécessaire)
       // Normalement on utilise le flag :
-      const image_url = fb.image_url?.startsWith('http') 
+      const image_produit = fb.image_url?.startsWith('http') 
         ? fb.image_url 
         : (fb.image_url ? `/api/produits/${fb.id}/image` : null);
+        
+      const image_url = info?.image_url || image_produit;
 
       return {
         cle,
+        cleRaw,
         reference: fb.reference,
         categorie: fb.categorie,
+        nom: info?.nom || null,
+        description: info?.description || null,
         image_url,
         nbImages: fb._count.images + (fb.image_url ? 1 : 0),
         
