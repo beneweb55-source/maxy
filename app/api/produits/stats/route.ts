@@ -114,11 +114,15 @@ export async function GET() {
       fallbackImages[img.categorie] = img.url ?? `/api/produits/${img.id}/image`;
     }
 
+    // Récupérer les images définies par l'utilisateur pour les catégories
+    const categoriesInfos = await prisma.categorieInfo.findMany();
+    const customImages = new Map(categoriesInfos.map(c => [c.nom, c.image_url]));
+
     const categories = categoriesGrouped.map(c => ({
       name: c.categorie,
       total: c._count,
       disponibles: dispMap.get(c.categorie) || 0,
-      image: fallbackImages[c.categorie] || null // image statique à rajouter coté client
+      image: customImages.get(c.categorie) || fallbackImages[c.categorie] || null
     }));
 
     // Trier les catégories par nombre total (décroissant)

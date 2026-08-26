@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { IconePlus, IconeRecherche, IconeArchive, IconeCocheCercle, IconePanier, IconeImage, IconeAlerte, IconeEtiquette, IconeCle, IconeMinuteur } from "@/components/icons";
 import { useT } from "@/lib/i18n/contexte";
+import ModaleEditionCategorie from "./ModaleEditionCategorie";
 
 interface StatsData {
   summary: { total: number; disponibles: number; en_vente: number; };
@@ -12,6 +13,7 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
   const t = useT();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editionCategorie, setEditionCategorie] = useState<{ nom: string, imageActuelle: string | null } | null>(null);
 
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -279,10 +281,10 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
             const colorClass = fallbackColors[i % fallbackColors.length];
 
             return (
-              <button
+              <div
                 key={cat.name}
                 onClick={() => majUrl({ vue: "categorie", categorie: cat.name })}
-                className="min-w-[160px] sm:min-w-0 snap-center shrink-0 carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-orange/50 hover:shadow-xl transition-all text-left flex flex-col rounded-2xl"
+                className="min-w-[160px] sm:min-w-0 snap-center shrink-0 carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-orange/50 hover:shadow-xl transition-all text-left flex flex-col rounded-2xl cursor-pointer"
               >
                 <div className={`h-28 w-full relative overflow-hidden ${cat.image ? 'bg-brand-black' : 'bg-gradient-to-br ' + colorClass}`}>
                   {cat.image && (
@@ -293,9 +295,27 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
                   )}
                   
+                  {/* Actions Rapides au survol */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1.5 z-20">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setEditionCategorie({ nom: cat.name, imageActuelle: cat.image }); }} 
+                      className="p-1.5 bg-black/50 hover:bg-black/80 text-white rounded-md backdrop-blur-sm transition-colors"
+                      title="Modifier l'image de la catégorie"
+                    >
+                      <IconeImage taille={16} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); majUrl({ vue: "tableau", categorie: cat.name }); }} 
+                      className="p-1.5 bg-brand-orange/80 hover:bg-brand-orange text-white rounded-md backdrop-blur-sm transition-colors"
+                      title="Voir tous les produits"
+                    >
+                      <IconePanier taille={16} />
+                    </button>
+                  </div>
+
                   {/* Contenu textuel */}
                   <div className="absolute inset-x-0 bottom-0 p-4 text-white flex flex-col justify-end">
-                    <div className="font-extrabold text-base sm:text-lg font-outfit leading-tight mb-2 drop-shadow-md group-hover:text-brand-orange transition-colors line-clamp-2">
+                    <div className="font-extrabold text-base sm:text-lg font-outfit leading-tight mb-2 drop-shadow-md group-hover:text-brand-orange transition-colors line-clamp-2 pr-6">
                       {cat.name}
                     </div>
                     
@@ -311,12 +331,29 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
           </div>
         )}
       </div>
+
+      {editionCategorie && (
+        <ModaleEditionCategorie
+          categorieNom={editionCategorie.nom}
+          imageActuelle={editionCategorie.imageActuelle}
+          fermer={() => setEditionCategorie(null)}
+          onSucces={(nouvelleInfo) => {
+            setEditionCategorie(null);
+            // Rafraîchir les stats pour afficher la nouvelle image
+            setLoading(true);
+            fetch("/api/produits/stats")
+              .then(r => r.json())
+              .then(d => { setStats(d); setLoading(false); })
+              .catch(e => { console.error(e); setLoading(false); });
+          }}
+        />
+      )}
     </div>
   );
 }

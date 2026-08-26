@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import RechercheRapide from "@/components/RechercheRapide";
 import { IconeChevronGauche } from "@/components/icons";
 import { formaterDA } from "@/lib/caisse";
+import ModaleEditionFamille, { FamilleInfo } from "./ModaleEditionFamille";
 
 interface Famille {
   cle: string;
+  cleRaw: string;
   reference: string;
   categorie: string;
+  nom: string | null;
+  description: string | null;
   image_url: string | null;
   nbImages: number;
   unites: number;
@@ -36,6 +40,7 @@ export default function VueCategorie({
   const searchParams = useSearchParams();
   const [data, setData] = useState<FamillesData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [familleAEditer, setFamilleAEditer] = useState<{ cle: string, info: FamilleInfo | null } | null>(null);
   const q = searchParams?.get("q") ?? "";
 
   const [erreur, setErreur] = useState<string | null>(null);
@@ -137,10 +142,10 @@ export default function VueCategorie({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {data?.familles.map(f => (
-            <button
+            <div
               key={f.cle}
               onClick={() => majUrl({ vue: "famille", cle: f.cle })}
-              className="carte group text-left flex flex-col h-full border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth hover:shadow-xl transition-all !p-0 overflow-hidden bg-white dark:bg-brand-paper relative"
+              className="carte group text-left flex flex-col h-full border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth hover:shadow-xl transition-all !p-0 overflow-hidden bg-white dark:bg-brand-paper relative cursor-pointer"
             >
               <div className="p-4 flex gap-4 mb-2 z-10 relative">
                 <div className="h-20 w-20 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 flex-shrink-0 flex items-center justify-center overflow-hidden border border-brand-light-grey/50 dark:border-white/10 group-hover:scale-105 transition-transform shadow-sm">
@@ -150,7 +155,32 @@ export default function VueCategorie({
                     <span className="text-brand-warm-grey text-[10px] uppercase font-bold opacity-60">Sans image</span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0 pt-1">
+                
+                {/* Actions Rapides au survol */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1.5 z-20">
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setFamilleAEditer({ 
+                        cle: f.cle, 
+                        info: { id: f.cleRaw, nom: f.nom, image_url: f.image_url, description: f.description } 
+                      }); 
+                    }} 
+                    className="p-1.5 bg-black/50 hover:bg-black/80 text-white rounded-md backdrop-blur-sm transition-colors"
+                    title="Éditer la famille (image, nom...)"
+                  >
+                    <IconeImage taille={16} />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); majUrl({ vue: "tableau", cle: f.cle }); }} 
+                    className="p-1.5 bg-brand-orange/80 hover:bg-brand-orange text-white rounded-md backdrop-blur-sm transition-colors"
+                    title="Voir tous les exemplaires"
+                  >
+                    <IconePanier taille={16} />
+                  </button>
+                </div>
+
+                <div className="flex-1 min-w-0 pt-1 pr-6">
                   <h3 className="font-bold text-brand-black dark:text-white font-outfit text-lg leading-tight truncate-2-lines mb-1.5 group-hover:text-brand-orange transition-colors">
                     {f.reference || "Sans référence"}
                   </h3>
@@ -178,9 +208,25 @@ export default function VueCategorie({
                   <div className={`text-[9px] font-bold uppercase tracking-wider ${f.a_tester > 0 ? 'text-amber-600/70 dark:text-amber-500/70' : 'text-brand-warm-grey/50'}`}>À tester</div>
                 </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
+      )}
+      
+      {familleAEditer && (
+        <ModaleEditionFamille
+          familleInfo={familleAEditer.info}
+          cleFamille={familleAEditer.cle}
+          fermer={() => setFamilleAEditer(null)}
+          onSucces={() => {
+            setFamilleAEditer(null);
+            setLoading(true);
+            fetch(`/api/produits/familles?categorie=${encodeURIComponent(categorie)}`)
+              .then(r => r.json())
+              .then(d => { setData(d); setLoading(false); })
+              .catch(e => { console.error(e); setLoading(false); });
+          }}
+        />
       )}
     </div>
   );
