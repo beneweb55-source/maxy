@@ -43,35 +43,37 @@ export async function DELETE(request: NextRequest) {
     // une suppression partielle surprise.
     const cibles = await prisma.produit.findMany({
       where,
-      select: { id: true, statut: true },
+      select: { 
+        id: true, 
+        statut: true,
+        _count: { select: { ventes: true, mouvements: true } }
+      },
     });
     if (cibles.length === 0) {
       return erreur(404, "Aucun produit à supprimer.");
     }
 
-    const vendus = cibles.filter((p) => p.statut === "vendu");
-    const aSupprimer = cibles.filter((p) => p.statut !== "vendu").map((p) => p.id);
+    const vendusOuHistorique = cibles.filter((p) => p.statut === "vendu" || p._count.ventes > 0 || p._count.mouvements > 0);
+    const aSupprimer = cibles.filter((p) => p.statut !== "vendu" && p._count.ventes === 0 && p._count.mouvements === 0).map((p) => p.id);
 
-    if ("ids" in (corps as object) && !modele && vendus.length > 0) {
-      return erreur(400, "Un ou plusieurs produits sont déjà vendus et ne peuvent être supprimés.");
+    if ("ids" in (corps as object) && !modele && vendusOuHistorique.length > 0) {
+      return erreur(400, "Un ou plusieurs produits ont un historique financier (ventes/mouvements) et ne peuvent être supprimés.");
     }
     if (aSupprimer.length === 0) {
-      return erreur(400, "Ces produits sont vendus et ne peuvent être supprimés.");
+      return erreur(400, "Ces produits ont un historique financier et ne peuvent être supprimés.");
     }
 
     await prisma.$transaction(async (tx) => {
       await tx.produitImage.deleteMany({ where: { produit_id: { in: aSupprimer } } });
       await tx.reparation.deleteMany({ where: { produit_id: { in: aSupprimer } } });
       await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: aSupprimer } } });
-      await tx.vente.deleteMany({ where: { produit_id: { in: aSupprimer } } });
-      await tx.mouvementCaisse.deleteMany({ where: { produit_id: { in: aSupprimer } } });
       await tx.produit.deleteMany({ where: { id: { in: aSupprimer } } });
     });
 
     return NextResponse.json({
       ok: true,
       supprimes: aSupprimer.length,
-      vendus_conserves: vendus.length,
+      vendus_conserves: vendusOuHistorique.length,
     });
   } catch (e) {
     console.error("DELETE /api/produits/masse/suppression", e);

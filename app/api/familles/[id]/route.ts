@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { exigerUtilisateur } from "@/lib/api";
+import { exigerUtilisateur, erreur } from "@/lib/api";
+import { validerPhoto } from "@/lib/images";
+import { televerserPhotos } from "@/lib/stockage-images";
 
 export async function GET(
   req: Request,
@@ -39,7 +41,18 @@ export async function PUT(
     const id = decodeURIComponent((await params).id);
     const body = await req.json();
 
-    const { nom, image_url, description } = body;
+    const { nom, description } = body;
+    let { image_url } = body;
+
+    if (image_url) {
+      if (typeof image_url === "string" && image_url.trim()) {
+        const soucisPhoto = validerPhoto(image_url.trim());
+        if (soucisPhoto) return erreur(400, soucisPhoto);
+        image_url = (await televerserPhotos([image_url.trim()]))[0] ?? null;
+      } else {
+        image_url = null;
+      }
+    }
 
     const famille = await prisma.familleInfo.upsert({
       where: { id },

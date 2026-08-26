@@ -71,7 +71,10 @@ export async function PUT(request: NextRequest) {
   try {
     const produits = await prisma.produit.findMany({
       where: { id: { in: produitIds } },
-      include: { images: { orderBy: { position: "asc" }, select: { data: true } } },
+      include: { 
+        images: { orderBy: { position: "asc" }, select: { data: true } },
+        _count: { select: { ventes: true, mouvements: true } }
+      },
     });
     if (produits.length !== produitIds.length) {
       return erreur(404, "Certains produits sont introuvables.");
@@ -121,13 +124,22 @@ export async function PUT(request: NextRequest) {
       // Suppression de l'excédent si la quantité est réduite
       if (diff < 0) {
         const nbASupprimer = -diff;
-        const idsASupprimer = idsAUpdate.splice(-nbASupprimer, nbASupprimer);
+        
+        const deletableProducts = produits.filter(p => p._count.ventes === 0 && p._count.mouvements === 0);
+        if (deletableProducts.length < nbASupprimer) {
+          throw new Error("Impossible de réduire la quantité : certains exemplaires ont un historique financier.");
+        }
+        
+        const idsASupprimer = deletableProducts.slice(0, nbASupprimer).map(p => p.id);
+        
+        for (const id of idsASupprimer) {
+           const idx = idsAUpdate.indexOf(id);
+           if (idx !== -1) idsAUpdate.splice(idx, 1);
+        }
 
         await tx.produitImage.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.reparation.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
-        await tx.vente.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
-        await tx.mouvementCaisse.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.produit.deleteMany({ where: { id: { in: idsASupprimer } } });
       }
 

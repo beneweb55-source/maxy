@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
@@ -266,11 +266,19 @@ export default function Inventaire({ role }: { role: Role }) {
     statutsActifs.length +
     (searchParams?.get("tri") ? 1 : 0);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const charger = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setErreur(null);
     try {
       const res = await fetch(`/api/produits?${searchParams?.toString() || ""}`, {
         cache: "no-store",
+        signal: abortControllerRef.current.signal,
       });
       if (!res.ok) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -278,19 +286,22 @@ export default function Inventaire({ role }: { role: Role }) {
       }
       const data = await res.json() as ReponseInventaire;
       setDonnees(data);
-      // Synchroniser qLoc si q a changé dans l'URL mais pas qLoc
-      if (searchParams?.get("q") && searchParams.get("q") !== qLoc) {
-        setQLoc(searchParams.get("q")!);
-        setQ(searchParams.get("q")!);
-      }
-    } catch (e) {
+    } catch (e: any) {
+      if (e.name === "AbortError") return; // Ignorer les requêtes annulées
       setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
     }
-  }, [searchParams, qLoc]);
+  }, [searchParams]);
 
   useEffect(() => {
     void charger();
   }, [charger]);
+
+  // Synchroniser l'état local si l'URL change (ex: bouton retour du navigateur)
+  useEffect(() => {
+    const urlQ = searchParams?.get("q") ?? "";
+    setQ(urlQ);
+    setQLoc(urlQ);
+  }, [searchParams?.get("q")]);
 
   function basculerStatut(statut: StatutProduit) {
     const suivants = statutsActifs.includes(statut)
@@ -642,6 +653,14 @@ export default function Inventaire({ role }: { role: Role }) {
       total: produitsFiltres.length
     };
   }, [donnees, qLoc]);
+
+  // Correction : rediriger automatiquement si la page courante est hors des limites
+  // (par exemple, si on supprime le dernier élément d'une page).
+  useEffect(() => {
+    if (donnees && donnees.page > donnees.pages && donnees.pages > 0) {
+      majUrl({ page: String(donnees.pages) });
+    }
+  }, [donnees, majUrl]);
 
   const groupes = donneesFiltrees ? grouperDoublons(donneesFiltrees.produits) : [];
 
