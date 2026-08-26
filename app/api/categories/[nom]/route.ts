@@ -6,12 +6,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ nom: s
   const acces = await exigerUtilisateur();
   if (acces.reponse) return acces.reponse;
   
-  if (acces.user.role !== "admin" && acces.user.role !== "manager") {
-    return erreur(403, "Seul un administrateur ou manager peut modifier l'image d'une catégorie.");
+  if (acces.user.role !== "gerant" && acces.user.role !== "dev") {
+    return erreur(403, "Seul un gérant ou développeur peut modifier l'image d'une catégorie.");
   }
 
-  const { nom: rawNom } = await params;
-  const nom = decodeURIComponent(rawNom);
+  const { nom } = await params;
 
   try {
     const data = await req.json();
