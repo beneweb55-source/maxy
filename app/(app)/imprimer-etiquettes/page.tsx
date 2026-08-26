@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Barcode from "react-barcode";
+import { IconeImprimante } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
 
 interface EtiquetteData {
@@ -97,7 +98,7 @@ export default function ImprimerEtiquettes() {
             <div className="flex gap-2 justify-center">
               <button onClick={() => window.close()} className="btn btn-secondaire">Fermer</button>
               <button onClick={lancerImpression} className="btn btn-primaire">
-                🖨️ Imprimer
+                <IconeImprimante taille={16} /> Imprimer
               </button>
             </div>
           </div>
@@ -117,14 +118,14 @@ export default function ImprimerEtiquettes() {
                 onClick={() => void confirmerImpression()} 
                 className="btn bg-succes text-white hover:bg-succes/90 font-bold"
               >
-                ✅ Oui, étiquettes imprimées
+                Oui, étiquettes imprimées
               </button>
             </div>
           </div>
         ) : (
           <div className="text-center space-y-3 animate-entree">
             <span className="inline-flex items-center gap-1.5 rounded-xl bg-succes/10 px-4 py-3 text-base font-bold text-succes">
-              ✅ Marquées comme imprimées
+              Marquées comme imprimées
             </span>
             <p className="text-sm text-brand-warm-grey">Vous pouvez maintenant fermer cette fenêtre.</p>
             <button onClick={() => window.close()} className="btn btn-secondaire mx-auto mt-2">Fermer la fenêtre</button>

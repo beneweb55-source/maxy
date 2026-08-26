@@ -259,6 +259,8 @@ export default function Inventaire({ role }: { role: Role }) {
     (searchParams?.get("au") ? 1 : 0) +
     (searchParams?.get("plus30j") ? 1 : 0) +
     (searchParams?.get("a_tarifer") ? 1 : 0) +
+    (searchParams?.get("sans_photo") ? 1 : 0) +
+    (searchParams?.get("sans_etiquette") ? 1 : 0) +
     (searchParams?.get("a_jeter") ? 1 : 0) +
     (searchParams?.get("en_vitrine") ? 1 : 0) +
     statutsActifs.length +
@@ -950,6 +952,24 @@ export default function Inventaire({ role }: { role: Role }) {
                 className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
               />
               À tarifer
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
+              <input
+                type="checkbox"
+                checked={searchParams?.get("sans_photo") === "1"}
+                onChange={(e) => majUrl({ sans_photo: e.target.checked ? "1" : null })}
+                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+              />
+              Sans photo
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
+              <input
+                type="checkbox"
+                checked={searchParams?.get("sans_etiquette") === "1"}
+                onChange={(e) => majUrl({ sans_etiquette: e.target.checked ? "1" : null })}
+                className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+              />
+              Sans étiquette
             </label>
             <label className="flex items-center gap-2 text-sm font-medium text-brand-black cursor-pointer">
               <input

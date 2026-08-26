@@ -105,7 +105,7 @@ export default function Cockpit({ majUrl }: { majUrl: (modifs: Record<string, st
 
           {Object.values(stats.actions).every(v => v === 0) && (
             <div className="text-sm text-emerald-600 bg-emerald-50 px-4 py-3 rounded-lg border border-emerald-100 w-full font-medium">
-              🎉 Aucun produit nécessitant une action urgente.
+              Aucun produit nécessitant une action urgente.
             </div>
           )}
         </div>
