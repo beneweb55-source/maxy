@@ -1678,7 +1678,6 @@ export default function Inventaire({ role }: { role: Role }) {
             <IconeChevronDroite taille={15} />
           </button>
         </div>
-        </div>
       )}
 
       <Modale
