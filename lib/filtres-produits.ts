@@ -1,5 +1,6 @@
 import type { Prisma, StatutProduit } from "@prisma/client";
 import { STATUTS_PRODUIT, STATUTS_DEFAUT } from "./statuts";
+import { decodeBase64Url } from "./base64url";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -20,6 +21,23 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
   const referenceExacte = params.get("reference_exacte");
   if (referenceExacte) {
     clauses.push({ reference: referenceExacte });
+  }
+
+  const cle = params.get("cle");
+  if (cle) {
+    try {
+      const decoded = decodeBase64Url(cle);
+      const lastPipeIndex = decoded.lastIndexOf("|");
+      if (lastPipeIndex !== -1) {
+        const reference = decoded.substring(0, lastPipeIndex);
+        const categorieCle = decoded.substring(lastPipeIndex + 1);
+        if (reference && categorieCle) {
+          clauses.push({ reference, categorie: categorieCle });
+        }
+      }
+    } catch (e) {
+      console.warn("Invalid cle format", e);
+    }
   }
 
   const statuts = (params.get("statuts") ?? "")

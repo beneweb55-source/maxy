@@ -46,7 +46,14 @@ export default function VueFamille({
   basculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
 }) {
   const searchParams = useSearchParams();
-  const [produits, setProduits] = useState<LigneProduit[]>([]);
+  const [stats, setStats] = useState<{
+    unites: number;
+    dispos: number;
+    aTester: number;
+    prixMin: number | null;
+    prixMax: number | null;
+    image_url: string | null;
+  } | null>(null);
   const [familleInfo, setFamilleInfo] = useState<FamilleInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [editionFamille, setEditionFamille] = useState(false);
@@ -75,10 +82,12 @@ export default function VueFamille({
     params.set("categorie", categorie ?? "");
     params.set("reference_exacte", reference ?? "");
     
-    const fetchProduits = fetch(`/api/produits?${params.toString()}`, { signal }).then(async r => {
-      if (!r.ok) throw new Error("Erreur lors du chargement des produits");
-      return r.json();
-    });
+    // Fetch les statistiques globales de la famille (Niveau 2)
+    const fetchStats = fetch(`/api/produits/familles?categorie=${encodeURIComponent(categorie)}&reference_exacte=${encodeURIComponent(reference)}`, { signal })
+      .then(async r => {
+        if (!r.ok) throw new Error("Erreur lors du chargement des statistiques");
+        return r.json();
+      });
     
     // Convert to base64url explicitly like we do in route
     const encodedId = encodeBase64Url(cleFamille);
@@ -87,10 +96,21 @@ export default function VueFamille({
       return r.json();
     });
 
-    Promise.all([fetchProduits, fetchInfo])
-      .then(([dp, info]) => {
+    Promise.all([fetchStats, fetchInfo])
+      .then(([statsData, info]) => {
         if (signal.aborted) return;
-        setProduits(dp.produits || []);
+        
+        const f = statsData.familles?.[0];
+        if (f) {
+          setStats({
+            unites: f.unites || 0,
+            dispos: f.disponibles || 0,
+            aTester: f.a_tester || 0,
+            prixMin: f.prixMin,
+            prixMax: f.prixMax,
+            image_url: f.image_url || null
+          });
+        }
         setFamilleInfo(info.id ? info : null);
         setLoading(false);
       })
@@ -138,7 +158,7 @@ export default function VueFamille({
     );
   }
 
-  if (produits.length === 0) {
+  if (!stats && !loading) {
     return (
       <div className="space-y-4">
         <button onClick={() => majUrl({ vue: "categorie", cle: null })} className="btn btn-secondaire">
@@ -157,14 +177,13 @@ export default function VueFamille({
     );
   }
 
-  const premier = produits[0]!;
-  const unites = produits.length;
-  const dispos = produits.filter(p => !["vendu", "hs", "a_reparer", "manque_piece"].includes(p.statut)).length;
-  const aTester = produits.filter(p => p.statut === "en_test").length;
+  const unites = stats?.unites || 0;
+  const dispos = stats?.dispos || 0;
+  const aTester = stats?.aTester || 0;
   
-  const prix = produits.map(p => p.prix_vente_fixe).filter(v => v !== null) as number[];
-  const prixMin = prix.length > 0 ? Math.min(...prix) : null;
-  const prixMax = prix.length > 0 ? Math.max(...prix) : null;
+  // Prix: le serveur renvoie Min/Max
+  const prixMin = stats?.prixMin ?? null;
+  const prixMax = stats?.prixMax ?? null;
 
   return (
     <div className="space-y-6 animate-entree pb-8">
@@ -189,8 +208,8 @@ export default function VueFamille({
         <div className="p-6 relative z-10">
           <div className="flex flex-col sm:flex-row gap-8">
             <div className="h-40 w-40 sm:h-48 sm:w-48 rounded-2xl bg-white dark:bg-black/40 border-4 border-white dark:border-brand-paper shadow-md flex items-center justify-center overflow-hidden shrink-0 mx-auto sm:mx-0">
-              {familleInfo?.image_url || premier.image_url ? (
-                <img src={familleInfo?.image_url || premier.image_url!} alt={familleInfo?.nom || reference} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+              {familleInfo?.image_url || stats?.image_url ? (
+                <img src={familleInfo?.image_url || stats?.image_url!} alt={familleInfo?.nom || reference} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
               ) : (
                 <span className="text-brand-warm-grey text-sm uppercase font-bold opacity-50">Sans photo</span>
               )}
@@ -251,114 +270,10 @@ export default function VueFamille({
             <IconeCrayon taille={16} className="text-brand-orange" /> 
             <span className="font-semibold">Personnaliser la fiche</span>
           </button>
-          
-          <div className="h-6 w-px bg-brand-light-grey dark:bg-white/10 hidden sm:block mx-2"></div>
-          
-          <button
-            onClick={() => ouvrirEdition(produits, reference!)}
-            className="btn btn-secondaire text-sm bg-transparent border-transparent hover:bg-brand-light-grey/30 dark:hover:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey"
-          >
-            <IconeCrayon taille={14} /> Modifier tous les produits
-          </button>
-          {produits.some(p => p.statut !== "vendu") && (
-            <button
-              onClick={() => ouvrirSuppressionUnites(produits)}
-              className="btn btn-secondaire text-sm border-transparent hover:border-danger hover:bg-danger/10 text-danger bg-transparent ml-auto"
-            >
-              <IconeCorbeille taille={14} /> Supprimer toute la famille
-              <IconeCorbeille taille={14} /> Supprimer toute la catégorie
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Liste des exemplaires */}
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <h3 className="text-xl font-bold text-brand-black dark:text-white font-outfit">Exemplaires physiques</h3>
-          <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
-            {produits.length}
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {produits.map((p) => (
-            <div key={p.id} className="carte p-0 flex flex-col border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth transition-colors overflow-hidden group">
-              <div className="p-4 flex-1">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="font-bold font-mono text-brand-black dark:text-white text-sm bg-brand-light-grey/30 dark:bg-white/10 inline-block px-2 py-1 rounded-md">{p.code_interne}</div>
-                    <div className="text-xs text-brand-warm-grey dark:text-brand-grey mt-2 font-medium">
-                      Entrée le {new Date(p.date_entree).toLocaleDateString("fr-FR")}
-                    </div>
-                  </div>
-                  <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-4 bg-brand-light-grey/10 dark:bg-white/5 p-3 rounded-lg border border-brand-light-grey/30 dark:border-white/5">
-                  <div>
-                    <span className="text-brand-warm-grey dark:text-brand-grey text-[10px] font-bold uppercase tracking-wider block mb-1">Prix achat</span>
-                    <span className="font-bold text-brand-black dark:text-white">{formaterDA(p.prix_achat)}</span>
-                  </div>
-                  <div>
-                    <span className="text-brand-orange/80 text-[10px] font-bold uppercase tracking-wider block mb-1">Prix vente</span>
-                    <span className="font-extrabold text-brand-orange">
-                      {p.prix_vente_fixe ? formaterDA(p.prix_vente_fixe) : "—"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-1 p-2 bg-brand-light-grey/20 dark:bg-black/20 border-t border-brand-light-grey/50 dark:border-white/5 items-center">
-                <Link
-                  href={`/produits/${p.id}`}
-                  className="px-3 py-1.5 rounded-md text-brand-black dark:text-white bg-white dark:bg-brand-paper hover:bg-brand-light-grey/50 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 text-xs font-bold mr-auto border border-brand-light-grey dark:border-white/10 shadow-sm"
-                  title="Voir la fiche détaillée"
-                >
-                  <IconeOeil taille={14} className="text-brand-orange" /> Ouvrir
-                </Link>
-                <div className="flex items-center opacity-70 group-hover:opacity-100 transition-opacity gap-1">
-                  {p.statut !== "vendu" && (
-                    <button
-                      onClick={() => basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)}
-                      className={`p-1.5 rounded-md transition-colors ${
-                        p.en_vitrine ? "text-brand-orange bg-brand-orange/10" : "text-brand-warm-grey hover:bg-brand-light-grey/20"
-                      }`}
-                      title={p.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
-                    >
-                      <IconeVitrine taille={15} />
-                    </button>
-                  )}
-                  
-                  <BoutonImpression 
-                    ids={[p.id]} 
-                    dejaImprimee={p.etiquette_imprimee} 
-                    className="p-1.5 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/20 transition-colors" 
-                  />
-
-                  <button
-                    onClick={() => ouvrirEdition([p], p.code_interne)}
-                    className="p-1.5 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/20 transition-colors"
-                    title="Modifier cet exemplaire"
-                  >
-                    <IconeCrayon taille={15} />
-                  </button>
-
-                  {p.statut !== "vendu" && (
-                    <button
-                      onClick={() => ouvrirSuppressionUnites([p])}
-                      className="p-1.5 rounded-md text-brand-warm-grey hover:bg-danger/10 hover:text-danger transition-colors"
-                      title="Supprimer"
-                    >
-                      <IconeCorbeille taille={15} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {editionFamille && (
         <ModaleEditionFamille

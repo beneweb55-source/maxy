@@ -13,3 +13,11 @@ export function encodeBase64Url(str: string): string {
     .replace(/\//g, "_")
     .replace(/=/g, "");
 }
+
+/**
+ * Decode une chaîne de caractères base64url.
+ */
+export function decodeBase64Url(str: string): string {
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  return Buffer.from(base64, "base64").toString("utf-8");
+}
