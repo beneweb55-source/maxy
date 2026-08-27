@@ -115,7 +115,12 @@ export async function GET() {
     }
 
     // Récupérer les métadonnées des catégories (Niveau 1)
-    const categorieInfos = await prisma.categorieInfo.findMany();
+    let categorieInfos: any[] = [];
+    try {
+      categorieInfos = await prisma.categorieInfo.findMany();
+    } catch (e) {
+      console.warn("Table CategorieInfo introuvable ou erreur de DB", e);
+    }
     const catInfoMap = new Map(categorieInfos.map(c => [c.nom, c]));
 
     const categories = categoriesGrouped.map(c => {

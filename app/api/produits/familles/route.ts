@@ -57,9 +57,13 @@ export async function GET(request: NextRequest) {
       // 4. Fetch CategorieInfo (Niveau 1 metadata)
       let categorieInfo = null;
       if (categorieParam) {
-        categorieInfo = await prisma.categorieInfo.findUnique({
-          where: { nom: categorieParam }
-        });
+        try {
+          categorieInfo = await prisma.categorieInfo.findUnique({
+            where: { nom: categorieParam }
+          });
+        } catch (e) {
+          console.warn("Table CategorieInfo introuvable ou erreur DB", e);
+        }
       }
 
       return NextResponse.json({
@@ -161,9 +165,13 @@ export async function GET(request: NextRequest) {
     // 4. Fetch CategorieInfo (Niveau 1 metadata)
     let categorieInfo = null;
     if (categorieParam) {
-      categorieInfo = await prisma.categorieInfo.findUnique({
-        where: { nom: categorieParam }
-      });
+      try {
+        categorieInfo = await prisma.categorieInfo.findUnique({
+          where: { nom: categorieParam }
+        });
+      } catch (e) {
+        console.warn("Table CategorieInfo introuvable ou erreur DB", e);
+      }
     }
 
     return NextResponse.json({
