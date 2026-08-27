@@ -38,6 +38,7 @@ import { useBrouillon } from "@/hooks/useBrouillon";
 import Cockpit from "./Cockpit";
 import VueCategorie from "./VueCategorie";
 import VueFamille from "./VueFamille";
+import CarteProduit from "./CarteProduit";
 
 interface LigneProduit {
   id: number;
@@ -215,10 +216,24 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formVitrine, setFormVitrine] = useState(false);
   const [formMettreEnVente, setFormMettreEnVente] = useState(false);
 
-  const vueGroupee = searchParams?.get("vue") !== "detail";
+  const vueGroupee = searchParams?.get("vue") !== "detail" && searchParams?.get("vue") !== "famille";
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
   const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
   const [afficherTableauCockpit, setAfficherTableauCockpit] = useState(false);
+  
+  const vueActuelle = searchParams?.get("vue");
+  const [modeAffichage, setModeAffichage] = useState<"cartes" | "tableau">(
+    vueActuelle === "famille" ? "cartes" : "tableau"
+  );
+
+  // Synchroniser le mode par défaut si on navigue vers une famille
+  useEffect(() => {
+    if (vueActuelle === "famille") {
+      setModeAffichage("cartes");
+    } else if (vueActuelle === "cockpit" || vueActuelle === "atraiter") {
+      setModeAffichage("tableau");
+    }
+  }, [vueActuelle]);
 
   // Édition du statut depuis l'inventaire (transitions manuelles + note contextuelle).
   const [cibleStatut, setCibleStatut] = useState<StatutProduit | null>(null);
@@ -1099,15 +1114,34 @@ export default function Inventaire({ role }: { role: Role }) {
       {(vue === "cockpit" || vue === "atraiter" || vue === "famille") && (
         <div className="space-y-4 animate-entree">
         {donneesFiltrees && (
-            <p className="text-sm text-brand-warm-grey px-2 sm:px-0 mt-4 sm:mt-0">
-              <strong className="text-brand-black dark:text-white">{donneesFiltrees.total}</strong> produit{donneesFiltrees.total > 1 ? "s" : ""}
-              {!estSocial && (
-                <>
-                  {" "}· valeur de la sélection (achat + réparations) :{" "}
-                  <strong className="text-brand-black dark:text-white">{formaterDA(donneesFiltrees.valeur)}</strong>
-                </>
-              )}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 sm:mt-0 px-2 sm:px-0">
+              <p className="text-sm text-brand-warm-grey">
+                <strong className="text-brand-black dark:text-white">{donneesFiltrees.total}</strong> produit{donneesFiltrees.total > 1 ? "s" : ""}
+                {!estSocial && (
+                  <>
+                    {" "}· valeur de la sélection (achat + réparations) :{" "}
+                    <strong className="text-brand-black dark:text-white">{formaterDA(donneesFiltrees.valeur)}</strong>
+                  </>
+                )}
+              </p>
+              
+              <div className="flex items-center self-start sm:self-auto bg-brand-light-grey/20 dark:bg-white/5 rounded-lg p-1 border border-brand-light-grey/50 dark:border-white/10 shrink-0">
+                <button 
+                  type="button"
+                  onClick={() => setModeAffichage("cartes")} 
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${modeAffichage === "cartes" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                >
+                  ▦ Cartes
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setModeAffichage("tableau")} 
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${modeAffichage === "tableau" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                >
+                  ☷ Tableau
+                </button>
+              </div>
+            </div>
           )}
 
           {erreur && (
@@ -1467,117 +1501,23 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {donneesFiltrees && donneesFiltrees.produits.length > 0 && !vueGroupee && (
         <div className="space-y-4">
-          <div className="flex flex-col gap-3 md:hidden">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden sm:grid md:hidden"}`}>
             {donneesFiltrees.produits.map((p) => (
-              <div
+              <CarteProduit
                 key={p.id}
-                onClick={() => router.push(`/produits/${p.id}`)}
-                className="relative flex flex-col gap-3 rounded-xl border border-brand-light-grey bg-brand-white p-4 shadow-sm transition active:scale-[0.99] cursor-pointer"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col">
-                    <span className="font-mono text-xs text-brand-warm-grey">{p.code_interne}</span>
-                    <span className="font-medium text-brand-black">{p.reference}</span>
-                  </div>
-                  <div className="text-right flex flex-col items-end">
-                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mb-0.5">{t("inventaire.vente")}</span>
-                    {prixVenteAffiche(p) !== null ? (
-                      <span className="font-bold text-brand-orange">
-                        {formaterDA(prixVenteAffiche(p)!)}
-                      </span>
-                    ) : (
-                      <span className="text-brand-grey">—</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light-grey/20 px-2 py-1">
-                    <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-brand-light-grey/20 px-2 py-1 text-brand-warm-grey">
-                    {p.categorie}
-                  </span>
-                  {p.en_vitrine && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/10 px-2 py-1 text-brand-orange">
-                      <IconeVitrine taille={12} /> {t("inventaire.vitrine")}
-                    </span>
-                  )}
-                  {p.statut === "vendu" && (
-                    <span className="inline-flex items-center rounded-full bg-brand-grey/20 px-2 py-1 font-semibold text-brand-grey uppercase text-[10px]">
-                      {t("inventaire.statutVendu")}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex justify-between border-t border-brand-light-grey/50 pt-2 text-xs">
-                  <div className="flex flex-col">
-                    <span className="text-brand-warm-grey">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</span>
-                    <span className="text-[10px] text-brand-grey">
-                      {p.lot_id ? t("inventaire.lotShort", { n: p.lot_id }) : t("inventaire.sansArrivage")}
-                    </span>
-                  </div>
-                  {!estSocial && (
-                    <div className="text-right">
-                      <span className="block text-[10px] font-semibold uppercase text-brand-grey">{t("inventaire.achat")}</span>
-                      <span className="font-semibold">{formaterDA(p.prix_achat)}</span>
-                      {p.cout_reparations > 0 && <span className="block text-[10px] text-brand-grey">+{formaterDA(p.cout_reparations)}</span>}
-                    </div>
-                  )}
-                </div>
-
-                {peutModifier && (
-                  <div className="flex justify-end gap-2 border-t border-brand-light-grey/50 pt-2 mt-1">
-                    {p.statut !== "vendu" && (
-                      <button
-                        type="button"
-                        disabled={envoi}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
-                        }}
-                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
-                          p.en_vitrine
-                            ? "bg-brand-orange/10 text-brand-orange"
-                            : "bg-brand-light-grey/20 text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
-                        }`}
-                      >
-                        <IconeVitrine taille={14} /> {p.en_vitrine ? t("inventaire.retirer") : t("inventaire.vitrine")}
-                      </button>
-                    )}
-                    <BoutonImpression 
-                      ids={[p.id]} 
-                      dejaImprimee={p.etiquette_imprimee} 
-                      className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black" 
-                      texte={t("inventaire.imprimer")}
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        ouvrirEdition([p], p.code_interne);
-                      }}
-                      className="flex items-center gap-1 rounded-md bg-brand-light-grey/20 px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover:bg-brand-light-grey hover:text-brand-black"
-                    >
-                      <IconeCrayon taille={14} /> <span className="hidden sm:inline">{t("inventaire.editer")}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        ouvrirSuppressionUnites([p]);
-                      }}
-                      className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
-                    >
-                      <IconeCorbeille taille={14} /> <span className="hidden sm:inline">{t("inventaire.supprimer")}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                produit={p}
+                estSocial={estSocial}
+                peutModifier={peutModifier}
+                envoi={envoi}
+                basculerVitrineIds={basculerVitrineIds}
+                ouvrirEdition={ouvrirEdition}
+                ouvrirSuppressionUnites={ouvrirSuppressionUnites}
+                t={t}
+              />
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper md:block max-h-[800px] shadow-sm relative scrollbar-fine">
+          <div className={`overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "hidden md:block max-h-[800px]" : "hidden"}`}>
             <table className="w-full min-w-[820px] text-[13px] relative">
               <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md">
                 <tr>

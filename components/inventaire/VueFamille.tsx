@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { encodeBase64Url } from "@/lib/base64url";
+import { encodeBase64Url, decodeBase64Url } from "@/lib/base64url";
 import Link from "next/link";
 import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCorbeille, IconeOeil } from "@/components/icons";
 import BadgeStatut from "@/components/BadgeStatut";
@@ -61,10 +61,17 @@ export default function VueFamille({
 
   const [erreur, setErreur] = useState<string | null>(null);
 
-  // Sécurisation: on coupe au dernier "|" au cas où la référence contiendrait un "|"
-  const lastPipeIndex = cleFamille.lastIndexOf("|");
-  const reference = lastPipeIndex !== -1 ? cleFamille.substring(0, lastPipeIndex) : cleFamille;
-  const categorie = lastPipeIndex !== -1 ? cleFamille.substring(lastPipeIndex + 1) : "";
+  // Sécurisation: on décode la cle puis on coupe au dernier "|"
+  let reference = "";
+  let categorie = "";
+  try {
+    const decodedCle = decodeBase64Url(cleFamille);
+    const lastPipeIndex = decodedCle.lastIndexOf("|");
+    reference = lastPipeIndex !== -1 ? decodedCle.substring(0, lastPipeIndex) : decodedCle;
+    categorie = lastPipeIndex !== -1 ? decodedCle.substring(lastPipeIndex + 1) : "";
+  } catch (e) {
+    console.error("Impossible de décoder la clé:", e);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
