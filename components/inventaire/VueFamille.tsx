@@ -96,9 +96,7 @@ export default function VueFamille({
         return r.json();
       });
     
-    // Convert to base64url explicitly like we do in route
-    const encodedId = encodeBase64Url(cleFamille);
-    const fetchInfo = fetch(`/api/familles/${encodeURIComponent(encodedId)}`, { signal }).then(async r => {
+    const fetchInfo = fetch(`/api/familles/${encodeURIComponent(cleFamille)}`, { signal }).then(async r => {
       if (!r.ok) throw new Error("Erreur lors du chargement de la famille");
       return r.json();
     });

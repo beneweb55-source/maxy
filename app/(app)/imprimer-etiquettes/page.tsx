@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Barcode from "react-barcode";
 import { IconeImprimante } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
+import { formaterDA } from "@/lib/caisse";
 
 interface EtiquetteData {
   id: number;
@@ -139,7 +140,7 @@ export default function ImprimerEtiquettes() {
           className="etiquette flex flex-col items-center justify-center bg-white w-[58mm] h-[43mm] overflow-hidden page-break p-1"
         >
           <div className="text-[10px] font-bold text-center leading-tight mb-1 truncate w-full px-1">
-            {etiquette.reference}
+            {etiquette.reference || etiquette.code_interne}
           </div>
           <Barcode 
             value={etiquette.code_interne} 
@@ -149,9 +150,9 @@ export default function ImprimerEtiquettes() {
             margin={10}
             displayValue={true}
           />
-          {etiquette.prix_vente && (
+          {etiquette.prix_vente !== null && etiquette.prix_vente !== undefined && (
             <div className="text-[11px] font-extrabold mt-0.5">
-              {etiquette.prix_vente} DA
+              {formaterDA(etiquette.prix_vente)}
             </div>
           )}
         </div>

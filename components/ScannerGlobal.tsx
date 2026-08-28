@@ -12,14 +12,16 @@ export default function ScannerGlobal() {
   const t = useT();
 
   useBarcodeScanner((code) => {
-    if (pathname !== "/pos") {
-      afficher(t("scannerGlobal.redirection", { code }));
-      const searchParams = new URLSearchParams();
-      searchParams.set("scan_code", code);
-      searchParams.set("t", Date.now().toString());
-      router.push(`/pos?${searchParams.toString()}`);
+    // Ne pas rediriger si on est déjà au POS, dans l'inventaire ou sur une fiche produit
+    // (ces pages gèrent leur propre logique de scan).
+    if (pathname === "/pos" || pathname === "/inventaire" || pathname?.startsWith("/produits")) {
+      return;
     }
-    // Si on est déjà dans la caisse, CaisseClient a son propre useBarcodeScanner qui l'intercepte.
+    afficher(t("scannerGlobal.redirection", { code }));
+    const searchParams = new URLSearchParams();
+    searchParams.set("scan_code", code);
+    searchParams.set("t", Date.now().toString());
+    router.push(`/pos?${searchParams.toString()}`);
   });
 
   return null;

@@ -19,7 +19,7 @@ export function useBarcodeScanner(onScan: (code: string) => void) {
       
       if (e.key === "Enter") {
         if (buffer.current.length > 2) {
-          onScan(buffer.current);
+          onScan(buffer.current.trim());
           buffer.current = "";
           
           // Si le focus était sur un input, on empêche la soumission du formulaire

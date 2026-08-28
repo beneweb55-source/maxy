@@ -35,6 +35,7 @@ import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
 import { useT } from "@/lib/i18n/contexte";
 import { useBrouillon } from "@/hooks/useBrouillon";
+import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
 import Cockpit from "./Cockpit";
 import VueCategorie from "./VueCategorie";
 import VueFamille from "./VueFamille";
@@ -261,6 +262,25 @@ export default function Inventaire({ role }: { role: Role }) {
         else params.set(cle, valeur);
       }
       if (!("page" in modifs)) params.delete("page");
+
+      // Nettoyage contextuel : quand on change de vue, supprimer les
+      // paramètres qui n'ont pas de sens dans la nouvelle vue pour
+      // éviter les « filtres fantômes ».
+      if ("vue" in modifs) {
+        const nouvelleVue = modifs.vue;
+        // Quitter une catégorie / famille → nettoyer cle, categorie, reference_exacte
+        if (nouvelleVue !== "famille") params.delete("cle");
+        if (nouvelleVue !== "categorie" && nouvelleVue !== "famille") {
+          params.delete("reference_exacte");
+        }
+        // Retour au cockpit → nettoyer tous les filtres sauf q
+        if (nouvelleVue === "cockpit") {
+          params.delete("categorie");
+          params.delete("cle");
+          params.delete("reference_exacte");
+        }
+      }
+
       router.replace(`/inventaire?${params.toString()}`, { scroll: false });
     },
     [router, searchParams]
@@ -334,10 +354,21 @@ export default function Inventaire({ role }: { role: Role }) {
     });
   }
 
+  // Scanner local : quand on scanne depuis l'inventaire, on cherche
+  // le produit par code_interne exact et on navigue vers sa fiche.
+  useBarcodeScanner(useCallback((code: string) => {
+    // Recherche exacte par code_interne via la barre de recherche
+    setQ(code);
+    setQLoc(code);
+    majUrl({ q: code, page: "1" });
+    afficher(`Scan : ${code}`);
+  }, [majUrl, afficher]));
+
   function ouvrirAjout() {
     setFormPhotos([]);
     setFormPhotosModifiees(false);
     setFormVitrine(false);
+    setFormMettreEnVente(false);
     setModalAjout(true);
   }
 
@@ -394,7 +425,7 @@ export default function Inventaire({ role }: { role: Role }) {
       
       // Update vitrine in mass
       const res = await fetch(`/api/produits/masse/vitrine`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids, en_vitrine: cible }),
       });
@@ -664,8 +695,8 @@ export default function Inventaire({ role }: { role: Role }) {
 
     return {
       ...donnees,
-      produits: produitsFiltres,
-      total: produitsFiltres.length
+      produits: produitsFiltres
+      // On conserve donnees.total pour ne pas fausser le compteur global
     };
   }, [donnees, qLoc]);
 
@@ -750,6 +781,11 @@ export default function Inventaire({ role }: { role: Role }) {
           }
           className="champ text-right"
         />
+        {modalEdition !== null && Number(formulaire.quantite) !== modalEdition.unites.length && (
+          <div className="mt-2 text-[11px] font-medium leading-tight text-brand-orange bg-brand-orange/10 p-2 rounded-md">
+            ⚠️ Attention : Modifier la quantité entraînera la création ou la suppression physique d'exemplaires dans l'inventaire.
+          </div>
+        )}
       </div>
       <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
         <label
@@ -1501,7 +1537,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {donneesFiltrees && donneesFiltrees.produits.length > 0 && !vueGroupee && (
         <div className="space-y-4">
-          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden sm:grid md:hidden"}`}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden"}`}>
             {donneesFiltrees.produits.map((p) => (
               <CarteProduit
                 key={p.id}
@@ -1517,7 +1553,7 @@ export default function Inventaire({ role }: { role: Role }) {
             ))}
           </div>
 
-          <div className={`overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "hidden md:block max-h-[800px]" : "hidden"}`}>
+          <div className={`overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "block max-h-[800px]" : "hidden"}`}>
             <table className="w-full min-w-[820px] text-[13px] relative">
               <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
