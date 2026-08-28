@@ -13,7 +13,7 @@ async function login() {
   if (!res.ok) throw new Error("Login failed");
   
   const cookies = res.headers.get("set-cookie");
-  return cookies;
+  return cookies || "";
 }
 
 async function runTest() {
@@ -81,15 +81,18 @@ async function runTest() {
     console.log(`🔍 Unités restantes en DB : ${produitsRestants.length} (Attendu: 5).`);
     if (produitsRestants.length !== 5) throw new Error("La suppression n'a pas retiré 5 unités.");
 
-    console.log("✅ La référence a été mise à jour :", produitsRestants[0].reference);
+    const premierProduit = produitsRestants[0];
+    if (!premierProduit) throw new Error("Aucun produit restant");
+
+    console.log("✅ La référence a été mise à jour :", premierProduit.reference);
 
     // 5. Test d'impossibilité de suppression si vendu
     console.log("\n--- TEST: Protection contre la suppression si historique ---");
     // On simule une vente sur le premier produit restant
     await prisma.vente.create({
       data: {
-        produit_id: produitsRestants[0].id,
-        prix: 150,
+        produit_id: premierProduit.id,
+        prix_vente_reel: 150,
         vendu_par: 1,
         date_vente: new Date()
       }
