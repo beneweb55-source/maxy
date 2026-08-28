@@ -36,6 +36,7 @@ import RechercheRapide from "@/components/RechercheRapide";
 import { useT } from "@/lib/i18n/contexte";
 import { useBrouillon } from "@/hooks/useBrouillon";
 import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
+import { decodeBase64Url } from "@/lib/base64url";
 import Cockpit from "./Cockpit";
 import VueCategorie from "./VueCategorie";
 import VueFamille from "./VueFamille";
@@ -168,6 +169,8 @@ export default function Inventaire({ role }: { role: Role }) {
   const [envoi, setEnvoi] = useState(false);
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
+  const [produitSourceDuplication, setProduitSourceDuplication] = useState<LigneProduit | null>(null);
+
   const [modalEdition, setModalEdition] = useState<{
     unites: LigneProduit[];
     titre: string;
@@ -184,11 +187,18 @@ export default function Inventaire({ role }: { role: Role }) {
     vendusExclus: number;
   } | null>(null);
 
+  const [contexteNavigation, setContexteNavigation] = useState<{
+    produits: LigneProduit[];
+    indexCourant: number;
+  } | null>(null);
+
   const brouillonCle = modalEdition 
     ? `produit-edit-${role}-${modalEdition.unites[0]!.id}`
-    : modalAjout 
-      ? `produit-ajout-${role}`
-      : "";
+    : produitSourceDuplication
+      ? `produit-dup-${role}-${produitSourceDuplication.id}`
+      : modalAjout 
+        ? `produit-ajout-${role}`
+        : "";
 
   const {
     valeur: formulaire,
@@ -208,8 +218,19 @@ export default function Inventaire({ role }: { role: Role }) {
       lot_id: modalEdition.unites[0]!.lot_id ? String(modalEdition.unites[0]!.lot_id) : "",
       prix_vente_fixe: modalEdition.unites[0]!.prix_vente_fixe !== null ? String(modalEdition.unites[0]!.prix_vente_fixe) : "",
       quantite: String(modalEdition.unites.length),
-    } : FORMULAIRE_VIDE,
-    modalAjout || modalEdition !== null
+    } : produitSourceDuplication ? {
+      reference: produitSourceDuplication.reference,
+      categorie: produitSourceDuplication.categorie,
+      prix_achat: String(produitSourceDuplication.prix_achat),
+      lot_id: produitSourceDuplication.lot_id ? String(produitSourceDuplication.lot_id) : "",
+      prix_vente_fixe: produitSourceDuplication.prix_vente_fixe !== null ? String(produitSourceDuplication.prix_vente_fixe) : "",
+      quantite: "1",
+    } : {
+      ...FORMULAIRE_VIDE,
+      categorie: searchParams?.get("categorie") || "",
+      reference: searchParams?.get("cle") ? decodeBase64Url(searchParams.get("cle")!).split("|")[0] || "" : "",
+    },
+    modalAjout || modalEdition !== null || produitSourceDuplication !== null
   );
 
   const [formPhotos, setFormPhotos] = useState<string[]>([]);
@@ -364,15 +385,29 @@ export default function Inventaire({ role }: { role: Role }) {
     afficher(`Scan : ${code}`);
   }, [majUrl, afficher]));
 
-  function ouvrirAjout() {
-    setFormPhotos([]);
+  function ouvrirAjout(source?: LigneProduit) {
+    if (source) {
+      setProduitSourceDuplication(source);
+      setFormPhotos(source.image_url ? [source.image_url] : []);
+      if (source.nb_images > 1) {
+        void fetch(`/api/produits/${source.id}`)
+          .then((r) => (r.ok ? (r.json() as Promise<{ images?: string[] }>) : null))
+          .then((d) => {
+            if (d?.images) setFormPhotos(d.images);
+          })
+          .catch(() => undefined);
+      }
+    } else {
+      setProduitSourceDuplication(null);
+      setFormPhotos([]);
+    }
     setFormPhotosModifiees(false);
     setFormVitrine(false);
     setFormMettreEnVente(false);
     setModalAjout(true);
   }
 
-  function ouvrirEdition(unites: LigneProduit[], titre: string) {
+  function ouvrirEdition(unites: LigneProduit[], titre: string, indexContextuel?: number) {
     const premier = unites[0]!;
     setFormPhotos(premier.image_url ? [premier.image_url] : []);
     setFormPhotosModifiees(false);
@@ -380,6 +415,22 @@ export default function Inventaire({ role }: { role: Role }) {
     setNoteStatut("");
     setFormMettreEnVente(false);
     setModalEdition({ unites, titre });
+    
+    if (unites.length === 1 && donneesFiltrees) {
+      if (indexContextuel !== undefined) {
+        setContexteNavigation({ produits: donneesFiltrees.produits, indexCourant: indexContextuel });
+      } else {
+        const idx = donneesFiltrees.produits.findIndex(p => p.id === premier.id);
+        if (idx !== -1) {
+          setContexteNavigation({ produits: donneesFiltrees.produits, indexCourant: idx });
+        } else {
+          setContexteNavigation(null);
+        }
+      }
+    } else {
+      setContexteNavigation(null);
+    }
+
     if (premier.nb_images > 1) {
       void fetch(`/api/produits/${premier.id}`)
         .then((r) => (r.ok ? (r.json() as Promise<{ images?: string[] }>) : null))
@@ -559,6 +610,7 @@ export default function Inventaire({ role }: { role: Role }) {
       afficher(`Produit ${corps?.code_interne} ajouté à l'inventaire.`);
       validerBrouillon();
       setModalAjout(false);
+      setProduitSourceDuplication(null);
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -567,9 +619,9 @@ export default function Inventaire({ role }: { role: Role }) {
     }
   }
 
-  async function modifierProduit() {
-    if (envoi) return;
-    if (!modalEdition) return;
+  async function modifierProduit(fermerModal = true): Promise<boolean> {
+    if (envoi) return false;
+    if (!modalEdition) return false;
     setEnvoi(true);
     try {
       const ids = modalEdition.unites.map(u => u.id);
@@ -590,14 +642,19 @@ export default function Inventaire({ role }: { role: Role }) {
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) {
         afficher(corps?.error ?? "Erreur lors de la modification.", "erreur");
-        return;
+        return false;
       }
       afficher(`Produit(s) ${modalEdition.titre} modifié(s).`);
       validerBrouillon();
-      setModalEdition(null);
+      if (fermerModal) {
+        setModalEdition(null);
+        setContexteNavigation(null);
+      }
       await charger();
+      return true;
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
+      return false;
     } finally {
       setEnvoi(false);
     }
@@ -909,7 +966,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 </a>
               )}
               {peutModifier && (
-                <button type="button" onClick={ouvrirAjout} className="btn btn-primaire w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20">
+                <button type="button" onClick={() => ouvrirAjout()} className="btn btn-primaire w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20">
                   <IconePlus taille={15} />
                   Ajouter
                 </button>
@@ -1144,6 +1201,7 @@ export default function Inventaire({ role }: { role: Role }) {
           ouvrirEdition={ouvrirEdition}
           ouvrirSuppressionUnites={ouvrirSuppressionUnites}
           basculerVitrineIds={basculerVitrineIds}
+          ouvrirAjout={ouvrirAjout}
         />
       )}
 
@@ -1215,7 +1273,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   </button>
                 )}
                 {peutModifier && (
-                  <button type="button" onClick={ouvrirAjout} className="btn btn-primaire">
+                  <button type="button" onClick={() => ouvrirAjout()} className="btn btn-primaire">
                     <IconePlus taille={15} />
                     Ajouter un produit
                   </button>
@@ -1548,6 +1606,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 basculerVitrineIds={basculerVitrineIds}
                 ouvrirEdition={ouvrirEdition}
                 ouvrirSuppressionUnites={ouvrirSuppressionUnites}
+                ouvrirAjout={ouvrirAjout}
                 t={t}
               />
             ))}
@@ -1680,7 +1739,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           </button>
                           <button
                             type="button"
-                            onClick={(e) => {
+                            onClick={(e: React.MouseEvent) => {
                               e.stopPropagation();
                               ouvrirSuppressionUnites([p]);
                             }}
@@ -1777,11 +1836,12 @@ export default function Inventaire({ role }: { role: Role }) {
       )}
 
       <Modale
-        titre={t("inventaire.ajouterProduitTitre")}
+        titre={produitSourceDuplication ? "Ajouter un exemplaire" : t("inventaire.ajouterProduitTitre")}
         ouverte={modalAjout}
         modificationsNonEnregistrees={formulaireModifie || formPhotosModifiees}
         onFermer={() => {
           setModalAjout(false);
+          setProduitSourceDuplication(null);
         }}
       >
         {brouillonDisponible && (
@@ -1859,6 +1919,22 @@ export default function Inventaire({ role }: { role: Role }) {
         )}
         <form
           className="space-y-3"
+          onKeyDown={async (e) => {
+            if (e.key === "Enter" && e.shiftKey) {
+              e.preventDefault();
+              if (!envoi && formulaireValide) {
+                if (contexteNavigation && modalEdition?.unites.length === 1 && contexteNavigation.indexCourant < contexteNavigation.produits.length - 1) {
+                  if (await modifierProduit(false)) {
+                    const nextIndex = contexteNavigation.indexCourant + 1;
+                    const nextProduct = contexteNavigation.produits[nextIndex];
+                    if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, nextIndex);
+                  }
+                } else {
+                  void modifierProduit();
+                }
+              }
+            }
+          }}
           onSubmit={(e) => {
             e.preventDefault();
             if (!envoi && formulaireValide) {
@@ -1872,7 +1948,14 @@ export default function Inventaire({ role }: { role: Role }) {
             <div className="space-y-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
               <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-2">
                 <span className="libelle">{t("inventaire.statut")}</span>
-                <BadgeStatut statut={modalEdition.unites[0]!.statut} aJeter={modalEdition.unites[0]!.a_jeter} />
+                {(() => {
+                  const tousMemeStatut = modalEdition.unites.every(u => u.statut === modalEdition.unites[0]!.statut);
+                  if (tousMemeStatut) {
+                    return <BadgeStatut statut={modalEdition.unites[0]!.statut} aJeter={modalEdition.unites[0]!.a_jeter} />;
+                  } else {
+                    return <span className="text-sm font-semibold text-brand-warm-grey">Statuts multiples</span>;
+                  }
+                })()}
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1888,7 +1971,10 @@ export default function Inventaire({ role }: { role: Role }) {
                   className="champ text-sm py-1.5"
                 >
                   <option value="">{t("inventaire.changerStatut")}</option>
-                  {STATUTS_PRODUIT.filter((s) => s !== modalEdition.unites[0]!.statut).map((s) => (
+                  {STATUTS_PRODUIT.filter((s) => {
+                    const tousMemeStatut = modalEdition.unites.every(u => u.statut === modalEdition.unites[0]!.statut);
+                    return tousMemeStatut ? s !== modalEdition.unites[0]!.statut : true;
+                  }).map((s) => (
                     <option key={s} value={s}>
                       {INFOS_STATUT[s].libelle}
                     </option>
@@ -1973,14 +2059,64 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          <div className="pt-2 text-right">
-            <button
-              type="submit"
-              disabled={envoi || !formulaireValide}
-              className="btn btn-primaire w-full sm:w-auto justify-center"
-            >
-              {t("inventaire.enregistrerModifications")}
-            </button>
+          <div className="pt-2 flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
+            {contexteNavigation && modalEdition?.unites.length === 1 ? (
+              <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                <button
+                  type="button"
+                  disabled={envoi || contexteNavigation.indexCourant <= 0}
+                  onClick={() => {
+                    const prevIndex = contexteNavigation.indexCourant - 1;
+                    const prevProduct = contexteNavigation.produits[prevIndex];
+                    if (prevProduct) ouvrirEdition([prevProduct], prevProduct.code_interne, prevIndex);
+                  }}
+                  className="btn btn-secondaire flex-1 sm:flex-none justify-center"
+                >
+                  <IconeChevronGauche taille={15} /> Précédent
+                </button>
+                <button
+                  type="button"
+                  disabled={envoi || contexteNavigation.indexCourant >= contexteNavigation.produits.length - 1}
+                  onClick={() => {
+                    const nextIndex = contexteNavigation.indexCourant + 1;
+                    const nextProduct = contexteNavigation.produits[nextIndex];
+                    if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, nextIndex);
+                  }}
+                  className="btn btn-secondaire flex-1 sm:flex-none justify-center"
+                >
+                  Suivant <IconeChevronDroite taille={15} />
+                </button>
+              </div>
+            ) : (
+              <div />
+            )}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button
+                type="submit"
+                disabled={envoi || !formulaireValide}
+                className="btn btn-primaire w-full sm:w-auto justify-center"
+                title="Maj + Entrée pour Enregistrer & Suivant"
+              >
+                {t("inventaire.enregistrerModifications")}
+              </button>
+              {contexteNavigation && modalEdition?.unites.length === 1 && contexteNavigation.indexCourant < contexteNavigation.produits.length - 1 && (
+                <button
+                  type="button"
+                  disabled={envoi || !formulaireValide}
+                  onClick={async () => {
+                    if (await modifierProduit(false)) {
+                      const nextIndex = contexteNavigation.indexCourant + 1;
+                      const nextProduct = contexteNavigation.produits[nextIndex];
+                      if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, nextIndex);
+                    }
+                  }}
+                  title="Raccourci: Maj + Entrée"
+                  className="btn bg-brand-black hover:bg-brand-black/90 text-white w-full sm:w-auto justify-center shadow-md"
+                >
+                  Enregistrer & Suivant
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </Modale>

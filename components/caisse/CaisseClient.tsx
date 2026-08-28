@@ -6,7 +6,8 @@ import { useT } from "@/lib/i18n/contexte";
 import { useBarcodeScanner } from "@/lib/useBarcodeScanner";
 import { rechercheTolérante } from "@/lib/recherche";
 import { useSearchParams, useRouter } from "next/navigation";
-import type { Role } from "@prisma/client";
+import type { Role, StatutProduit } from "@prisma/client";
+import { INFOS_STATUT } from "@/lib/statuts";
 import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
@@ -416,10 +417,26 @@ export default function CaisseClient({ role }: { role: Role }) {
         });
       }
     } else {
-      playBeep(false);
-      afficher(`Code non reconnu ou produit indisponible : ${code}`, "erreur");
+      // Le produit n'est pas "en_vente" (ou n'existe pas du tout).
+      // On interroge l'API pour donner la raison précise.
+      fetch(`/api/produits?q=${code}&statuts=recu,en_test,ok,a_reparer,manque_piece,hs,en_vente,vendu`)
+        .then(res => res.json())
+        .then((data: any) => {
+          const p = data.produits?.find((prod: any) => prod.code_interne === code);
+          if (p) {
+            playBeep(false);
+            afficher(`Le produit ${code} ne peut pas être ajouté car il est ${INFOS_STATUT[p.statut as StatutProduit]?.libelle.toLowerCase() || p.statut}.`, "erreur");
+          } else {
+            playBeep(false);
+            afficher(`Code non reconnu : ${code}`, "erreur");
+          }
+        })
+        .catch(() => {
+          playBeep(false);
+          afficher(`Code non reconnu ou produit indisponible : ${code}`, "erreur");
+        });
     }
-  }, [cartes, afficher, modalBundle, modalRetrait, modalVente, modalAnnulation, playBeep]);
+  }, [cartes, afficher, modalBundle, modalRetrait, modalVente, modalAnnulation]);
 
   useBarcodeScanner((code) => {
     gererScan(code);

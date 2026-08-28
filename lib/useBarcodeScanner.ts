@@ -12,8 +12,8 @@ export function useBarcodeScanner(onScan: (code: string) => void) {
       if (e.target && (e.target as HTMLElement).tagName === "TEXTAREA") return;
       
       const now = Date.now();
-      // Tolérance augmentée à 150ms pour gérer la latence Bluetooth et le réveil de la douchette
-      if (now - lastTime.current > 150) {
+      // Tolérance augmentée à 500ms pour gérer la latence Bluetooth et le réveil de la douchette
+      if (now - lastTime.current > 500) {
         buffer.current = ""; // Réinitialiser si on tape trop lentement (frappe humaine)
       }
       

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { encodeBase64Url, decodeBase64Url } from "@/lib/base64url";
 import Link from "next/link";
-import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCorbeille, IconeOeil } from "@/components/icons";
+import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCorbeille, IconeOeil, IconePlus } from "@/components/icons";
 import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
 import type { StatutProduit } from "@prisma/client";
@@ -37,13 +37,15 @@ export default function VueFamille({
   majUrl,
   ouvrirEdition,
   ouvrirSuppressionUnites,
-  basculerVitrineIds
+  basculerVitrineIds,
+  ouvrirAjout
 }: {
   cleFamille: string;
   majUrl: (modifs: Record<string, string | null>) => void;
   ouvrirEdition: (unites: LigneProduit[], titre: string) => void;
   ouvrirSuppressionUnites: (unites: LigneProduit[]) => void;
   basculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
+  ouvrirAjout?: (source?: LigneProduit) => void;
 }) {
   const searchParams = useSearchParams();
   const [stats, setStats] = useState<{
@@ -275,6 +277,16 @@ export default function VueFamille({
             <IconeCrayon taille={16} className="text-brand-orange" /> 
             <span className="font-semibold">Personnaliser la fiche</span>
           </button>
+
+          {ouvrirAjout && (
+            <button
+              onClick={() => ouvrirAjout()}
+              className="btn bg-brand-orange hover:bg-brand-orange/90 text-white text-sm shadow-md"
+            >
+              <IconePlus taille={16} />
+              <span className="font-semibold">Ajouter un exemplaire</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { type StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
-import { IconeCorbeille, IconeCrayon, IconeVitrine } from "@/components/icons";
+import { IconeCorbeille, IconeCrayon, IconePlus, IconeVitrine } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 
 export interface LigneProduit {
@@ -35,6 +35,7 @@ interface CarteProduitProps {
   basculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
   ouvrirEdition: (unites: LigneProduit[], titre: string) => void;
   ouvrirSuppressionUnites: (unites: LigneProduit[]) => void;
+  ouvrirAjout?: (source?: LigneProduit) => void;
   t: (key: string, args?: any) => string;
 }
 
@@ -46,6 +47,7 @@ export default function CarteProduit({
   basculerVitrineIds,
   ouvrirEdition,
   ouvrirSuppressionUnites,
+  ouvrirAjout,
   t
 }: CarteProduitProps) {
   // Prix de vente affiché
@@ -162,6 +164,20 @@ export default function CarteProduit({
           >
             <IconeCrayon taille={16} />
           </button>
+
+          {ouvrirAjout && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                ouvrirAjout(produit);
+              }}
+              title="Ajouter un exemplaire (Copier)"
+              className="p-2 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors"
+            >
+              <IconePlus taille={16} />
+            </button>
+          )}
 
           {produit.statut !== "vendu" && (
             <button
