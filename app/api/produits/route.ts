@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
         prix_achat: p.prix_achat,
         image_url: urlCouverture(avecCouverture.get(p.id), p.id),
         nb_images: (avecCouverture.has(p.id) ? 1 : 0) + p._count.images,
-        cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
+        cout_reparations: p.reparations.reduce((s: number, r: any) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
         prix_vente_reel: p.prix_vente_reel,
         etiquette_imprimee: p.etiquette_imprimee,
