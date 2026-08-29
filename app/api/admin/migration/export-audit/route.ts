@@ -17,7 +17,7 @@ export async function GET() {
       propositions: await prisma.propositionMigration.findMany(),
       historiques: await prisma.historiqueStatut.findMany({
         take: 100,
-        orderBy: { date: 'desc' }
+        orderBy: { created_at: 'desc' }
       }),
       factures: await prisma.factureLigne.findMany({
         select: { produit_id: true, code_interne: true, designation: true, categorie: true }
