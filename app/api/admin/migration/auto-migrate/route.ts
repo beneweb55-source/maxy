@@ -66,9 +66,10 @@ export async function POST() {
             modele_id: null
           },
           data: {
-            modele_id: modele.id,
-            categorie: analyse.cible_categorie_nom!,
-            reference: analyse.cible_modele_nom!
+            modele_id: modele.id
+            // ON GARDE INTACTES LES VALEURS TEXTES D'ORIGINE POUR L'INVENTAIRE :
+            // categorie: analyse.cible_categorie_nom!
+            // reference: analyse.cible_modele_nom!
           }
         });
       });

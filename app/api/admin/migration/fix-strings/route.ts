@@ -11,6 +11,8 @@ export async function POST() {
     });
 
     let up = 0;
+    // DÉSACTIVÉ PAR SÉCURITÉ POUR NE PAS PERDRE L'APPELLATION D'ORIGINE
+    /*
     for (const p of produits) {
       if (p.modele && p.modele.categorie) {
         const nouveauCat = p.modele.categorie.nom;
@@ -28,6 +30,7 @@ export async function POST() {
         }
       }
     }
+    */
 
     return NextResponse.json({
       success: true,
