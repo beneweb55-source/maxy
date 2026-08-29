@@ -1,0 +1,641 @@
+﻿TOTAL PRODUITS: 1678
+
+=== CAT├ëGORIES PAR VOLUME ===
+RAM ECC: 151 produits
+laptop: 132 produits
+Chargeur LENOVO: 87 produits
+SAS ÔÇö 2,5"" ÔÇö 600GB / 900GB HDD: 83 produits
+SATA: 70 produits
+ÔÇïORDINATEURS DE BUREAU (MINI PC): 67 produits
+SATAÔÇö 3,5"" HDD: 62 produits
+Cable: 61 produits
+Stockage-Disque SAS: 61 produits
+serveurs rack: 61 produits
+INTEL: 61 produits
+SAS ÔÇö 2,5"" ÔÇö 300GB / 146GB: 58 produits
+HPE / HP(ALIMENTATIONS SERVEUR): 43 produits
+ADAPTATEURS: 43 produits
+CARTE GRAPHIQUE: 40 produits
+ÔÇïACCESSOIRES ET ├ëQUIPEMENTS DE MONTAGE: 39 produits
+Adapter: 36 produits
+serveurs Tour: 34 produits
+Chargeur DELL: 33 produits
+Mini pc: 31 produits
+PC BUREAU: 30 produits
+Imprimante: 29 produits
+Chargeur HP: 26 produits
+HP ÔÇö TONERS(CONSOMMABLES D'IMPRESSION): 24 produits
+Station de travail: 20 produits
+Samsung: 18 produits
+SAS / NVMe ÔÇö 2,5"" SSD: 18 produits
+Kingston: 18 produits
+REFROIDISSEMENT SERVEUR: 17 produits
+AUTRES COMPATIBLES(CONSOMMABLES D'IMPRESSION): 16 produits
+PC BUREAU SSF: 15 produits
+CLAVIERS & P├ëRIPH├ëRIQUES: 15 produits
+Station d'accueil: 12 produits
+SASÔÇö 2,5"" ÔÇö 1TB / 1,2TB HDD: 12 produits
+SAS ÔÇö 2,5"" ÔÇö 450GB HDD: 11 produits
+RESEAU-SWITCHES: 11 produits
+ÔÇïCLAVIERS ET P├ëRIPH├ëRIQUES: 11 produits
+COMPOSANTS: 10 produits
+Processeurs (CPU): 10 produits
+Cartes raid: 10 produits
+NVMe: 9 produits
+CARTES D'ACQUISITION ET CARTES D'EXTENSION: 9 produits
+PNY Technologies Europe: 9 produits
+ONDULEURS ET PROTECTION ├ëLECTRIQUE (UPS): 9 produits
+Mat├®riel Point de Vente (POS): 9 produits
+NAS, DAS & SAUVEGARDE: 8 produits
+ecran: 6 produits
+CANON / KYOCERA(CONSOMMABLES D'IMPRESSION): 6 produits
+All in One: 5 produits
+ÔÇïSK hynix: 5 produits
+EPSON ÔÇö ENCRES(CONSOMMABLES D'IMPRESSION): 4 produits
+├ëQUIPEMENTS DE VID├ëOCONF├ëRENCE: 4 produits
+DELL (ALIMENTATIONS SERVEUR): 3 produits
+PDU & ACCESSOIRES RACK: 2 produits
+IBM / LENOVO (ALIMENTATIONS SERVEUR): 2 produits
+Support ecran: 1 produits
+Micron: 1 produits
+
+NOMBRE DE CAT├ëGORIES DISTINCTES: 57
+
+=== R├ëF├ëRENCES UNIQUES PAR CAT├ëGORIE ===
+
+--- RAM ECC (151 produits, 34 r├®f distinctes) ---
+  25├ù 16GB Micron (2933)
+  23├ù 16GB SK Hynix (2933)
+  13├ù 16GB Micron (2666V)
+  11├ù 16GB Samsung (2400T)
+  8├ù 16GB Samsung (2666V)
+  5├ù 16GB Kingston (2933)
+  5├ù 16GB Samsung (2933)
+  4├ù 32GB SK Hynix (2133P)
+  4├ù 16GB SK Hynix (2400T)
+  4├ù 8GB SK Hynix (2666V)
+  4├ù 4GB SK Hynix (2666V)
+  4├ù 8GB SK Hynix (2133P)
+  3├ù 32GB SK Hynix (2400T)
+  3├ù 32GB Samsung (2666V)
+  3├ù 4GB Samsung (2133P)
+  3├ù 8GB Samsung (2133P)
+  3├ù 8GB Samsung (2400T)
+  2├ù 32GB Micron (3200AA)
+  2├ù 32GB Samsung (2400T)
+  2├ù 16GB SK Hynix (2666V)
+  2├ù 4GB Micron (2666V)
+  2├ù 16GB Crucial (2666V)
+  2├ù 4GB Samsung (2666V)
+  2├ù 8GB Micron (2666V)
+  2├ù 8GB SK Hynix (2400T)
+  2├ù 8GB Samsung (2666V)
+  1├ù 32GB Kingston (2133P)
+  1├ù 32GB Kingston (2400T)
+  1├ù 32GB Micron (2933)
+  1├ù 32GB Samsung (2933)
+  1├ù 16GB Kingston (2133P)
+  1├ù 8GB Kingston (2133P)
+  1├ù 8GB Kingston (2400T)
+  1├ù 8GB Kingston (2666V)
+
+--- laptop (132 produits, 71 r├®f distinctes) ---
+  18├ù Lenovo thinkpad x390 i5-8265 U 8gb ddr4 256gb ssd nvme 13.3''FHD
+  17├ù Lenovo thinkpad x280 i5-8350 U 8go ddr4 256gb ssd nvme 12.5''FHD
+  8├ù Lenovo 14 G3 AMD Ryzen 5-5500n 8go ddr4 256gb ssd nvme pcle 14p
+  4├ù Lenovo thinkbook 14 G3 Ryzen 5 5500U 16gb ddr4 512gb nvme battery 4h
+  4├ù Lenovo thinkpad E14-G2 i7-1165 G7 16go ddr4 512gb ssd nvme pcle 14p
+  3├ù Dell Latitude E 7250 i5-5300 U DDR3L ssd mSATA (probleme touchpad)
+  3├ù Lenovo thinkpad x270 i5-7300 U 8go ddr4 256gb ssd nvme 12.5p
+  2├ù Dell latitude 7280 i7 7600U 8gb ddr4 256gb nvme fhd 12.8p battery miss
+  2├ù Dell Latitude 7280 i7-7600 U 8go ddr4 256gb ssd nvme 12.5p
+  2├ù Hp probook X360 11 G6 i5 10210Y 8 gb ddr4 128gb nvme tactile fhd 11.6p
+  2├ù Lenovo thinkpad x1 carbon i5-8550 U 8go ddr4 256gb ssd nvme 14p
+  2├ù Lenovo thinkbook 14 G2 I7-1165 G7 16go ddr4 512gb ssd nvme pcle 14p
+  2├ù Dell Latitude 3540 i5-4210 U 8go ddr3l 256gb ssd 15.6p
+  2├ù Dell Latitude 7300 i7-8665 U 8go ddr4 256gb ssd nvme 13.3p
+  2├ù Dell Latitude 7390 i7-8650 U 8go ddr4 256gb ssd nvme 13.3p
+  2├ù Dell Vostro 15 i5-7200 U 8go ddr4 256gb ssd 2.5''sata15.6p
+  2├ù Lenovo thinkpad T14 Gen1 i7-1051 U 16go ddr4 512gb ssd nvme 14p
+  2├ù Dell Vostro 3580 i5-8265 8go ddr4 256gb ssd nvme 15.6p
+  1├ù Dell vostro 5410 i5 11320H 8gb ddr4 256gb nvme fhd 14p battery 81%
+  1├ù Dell vostro 5410 i5 11320H 8gb ddr4 256gb nvme fhd 14p battery 84%
+  1├ù Dell latitude 3410 i3 10110U 8gb ddr4 256gb nvme fhd 14p battery 43%
+  1├ù Dell latitude 3410 i3 10110U 8gb ddr4 256gb nvme fhd 14p battery 45%
+  1├ù Dell latitude 3420 i5 1135G7 8gb ddr4 256gb nvme fhd 14p battery 69%
+  1├ù Dell vostro 5410 i5 11320H 8gb ddr4 256gb nvme fhd 14p battery 78%
+  1├ù Hp notebook 255 G8 ryzen 3 3250U 8 gb ddr4 256gb nvme fhd 15.6p battery 96%
+  1├ù Dell latitude 7390 i7 8650U 16gb ddr4 512gb nvme fhd 13.2p battery HS
+  1├ù Lenovo thinkpad P16V G1 i7 13700H 16gb ddr5 1tb nvme fhd 15.6p rtx A1000 battery 94%
+  1├ù Dell latitude 3410 i3 10110U 8gb ddr4 256gb nvme fhd 14p battery 50%
+  1├ù Dell latitude 3440 i5 1235U 8gb ddr4 256gb nvme fhd 14p
+  1├ù Dell vostro 5410 i5 11320H 8gb ddr4 256gb nvme fhd 14p battery 61%
+  1├ù Lenovo V15 G2 ryzen 5 5500U 8gb ddr4 256gb nvme fhd 15.6p battery 81%
+  1├ù Lenovo thinkbook 13S G2 i5 1135U 8gb ddr4 256gb nvme tactile fhd 13p battery 87%
+  1├ù Lenovo thinkpad P14S G1 i7 10510U 16gb ddr4 256gb nvme fhd 14p Quadro P520 battery 88%
+  1├ù Lenovo thinkpad E585 ryzen 5 2500U 8gb ddr4 256gb nvme fhd 15.6 radeon vega 8 battery 90%
+  1├ù Lenovo thinkpad P15V G3 i7 12700H 16gb ddr5 512gb nvme fhd 15.6p T600 battery 83%
+  1├ù Lenovo thinkpad T14 G1 i7 10510U 16gb ddr4 256gb nvme fhd 14p battery 90%
+  1├ù Lenovo thinkpad T14 G1 i7 10510U 16gb ddr4 512gb nvme fhd 14p battery 85%
+  1├ù Lenovo thinkpad x390 i5 8265U 8gb ddr4 512gb nvme fhd 13p battery 4h
+  1├ù Lenovo thinkpad T14 G1 i7 10510U 16gb ddr4 256gb nvme fhd 14p battery hs
+  1├ù Dell latitude 3410 i3 10110U 8gb ddr4 256gb nvme fhd 14p battery HS
+  1├ù Dell latitude 7390 i7 8650U 8gb ddr4 256gb nvme fhd 13.2p battery miss
+  1├ù Lenovo E31 i5-6200 U 8go ddr4 256gb ssd nvme 13.3p
+  1├ù Lenovo carbon i5-7200 8go ddr4 256gb sssd nvme 14.0''FHD
+  1├ù Lenovo thinkpad x260 i5-6300 U 8go ddr4 256gb ssd nvme 12.5p
+  1├ù Dell latitude 7280 i7 7600U 8gb ddr4 256gb nvme fhd 12.8p battery HS
+  1├ù Dell Latitude 7280 i7-7600 U 8go ddr4 256gb ssd nvme 14p
+  1├ù Dell Latitude 7420 i5-1145 G7 16go LPDDR4x 512gb ssd nvme pcle 14p
+  1├ù Dell Latitude 7480 i7-6600 8go ddr4 256gb ssd nvme 14p
+  1├ù Dell Vostro 3590 i5-10210 U 16go ddr4 512gb ssd nvme 15.6p
+  1├ù Dell vostro 5410 i5 11320H 8gb ddr4 256gb nvme fhd 14p battery 85%
+  1├ù Lenovo thinkpad x13 ryzen 5 4650u 8gb ddr4 256gb nvme ssd 86%
+  1├ù Dell Latitude 7380 i5-8265 U 8go ddr4 256gb ssd nvme 13.3p
+  1├ù Hp Zbook Firefly 14g7 i7 10610u 16gb ddr4 256gb 71% 71 nvme71%
+  1├ù Toshiba Satellite pro R50-C i3-6006 U 8go ddr4 256gb ssd 2.5''sata 15.6p
+  1├ù Acer Extensa 15 i3-1115 G4 16go ddr4 512gb ssd nvme 15.6p
+  1├ù Dell Latitude 3410 i5-7300 U 8go ddr4 256gb ssd nvme 14p
+  1├ù Dell Latitude E7270 i5-6300 U 8go ddr4 ssd 12.5p
+  1├ù Dell Latitude 3410 i5-10210 U 16go ddr4 512gb ssd nvme 14p
+  1├ù Asus Zenbook UX461FA i5-8265 U 16go LPDDR3 512GB ssd nvme 14p
+  1├ù Dell Vostro 14-5410 i5-11320H 16go ddr4 512gb ssd nvme pcle 14p
+  1├ù HP Probook 455R G6  AMD Ryzen 5-3500 U 8go ddr4 256gb ssd nvme 15.6p
+  1├ù Lenovo thinkpad L13 G3 Ryzen 5-5675 U 8go ddr4 256gb ssd nvme 13.3p
+  1├ù Lenovo ideapad 3 81W2 RYZEN 5-3500 U 8go ddr4 256gb ssd nvme 15.6p
+  1├ù DELL VOSTRO I5 11320H 16gb ram 14""
+  1├ù Hp elite book 830 g7 i7 10510u
+  1├ù LENOVO THINKPAD T14 G1 I7 1051U 16GB RAM 500GB NVME 4H BATTERY
+  1├ù Lenovo thinkpad x280 i5 8350U 8gb ddr4 128gb nvme fhd 13p battery 92%
+  1├ù Hp Elitebook x360 830 g7 i7 10710u 16gb ddr4 500gb nvme 80%
+  1├ù Asus Notebook UX305C M5-6Y54 8go LPDDR3 256 gb ssd sata 13.3p
+  1├ù Asus Zenbook UX463FA i5-10210 U 16go LPDDR3 512gb ssd nvme pcle 14p
+  1├ù Dell xps 13 9345 Snapdragon x Elite 32gb ddr5 8445mhz 1tb nvme ssd
+
+--- Chargeur LENOVO (87 produits, 6 r├®f distinctes) ---
+  23├ù LENOVO - 130w / 135 w
+  20├ù LENOVO - 90w
+  15├ù LENOVO - 65w ( type C )
+  13├ù LENOVO - 65w ( normal )
+  9├ù LENOVO - 45w
+  7├ù LENOVO - 150w
+
+--- SAS ÔÇö 2,5"" ÔÇö 600GB / 900GB HDD (83 produits, 11 r├®f distinctes) ---
+  29├ù Dell 900GB ÔÇö SAS 10K 12Gbps ÔÇö avec caddy
+  18├ù HPE 600GB ÔÇö SAS 10K ÔÇö sans caddy
+  9├ù Dell 600GB ÔÇö SAS 10K ÔÇö avec caddy
+  7├ù HPE 600GB ÔÇö SAS 10K ÔÇö avec caddy
+  7├ù Hitachi 600GB ÔÇö SAS 10K ÔÇö sans caddy
+  4├ù Dell 600GB ÔÇö SAS 15K 12Gbps ÔÇö avec adaptateur 3,5""
+  3├ù HPE 600GB ÔÇö SAS 15K ÔÇö avec caddy
+  2├ù HPE 600GB ÔÇö SAS 15K ÔÇö avec adaptateur 3,5""
+  2├ù HPE 600GB ÔÇö SAS 15K ÔÇö sans caddy
+  1├ù FUJITSU 147gb 10k rpm 2.5"" avec adaptateur 3.5""
+  1├ù HP 1tb 7200rpm SAS 2.5"" avec adaptateur 3.5""
+
+--- SATA (70 produits, 6 r├®f distinctes) ---
+  53├ù SSD 256gb
+  7├ù Kingston SSD SATA 480GB
+  6├ù SAMSUNG 960gb
+  2├ù SanDisk SSD SATA 500GB
+  1├ù Kingston SSD 960GB
+  1├ù WDRED SSD SATA 1TB
+
+--- ÔÇïORDINATEURS DE BUREAU (MINI PC) (67 produits, 7 r├®f distinctes) ---
+  34├ù Lenovo ThinkCentre M715q Tiny (AMD A6 PRO-8570E R5)
+  11├ù Dell OptiPlex 3050 Micro (Intel Core i5-6500T, 8 Go RAM, 256 Go SSD)
+  6├ù HP EliteDesk 705 G4 DM 35W (AMD Ryzen 5 PRO 2400GE, 8 Go RAM)
+  6├ù HP ProDesk 405 G4 (AMD Athlon PRO 200GE)
+  5├ù Dell OptiPlex 7050 Micro (Intel Core i5-6500T, 8 Go RAM, 256 Go SSD)
+  4├ù Dell OptiPlex Micro (Intel Core i5-7600T, 8 Go RAM, 256 Go SSD)
+  1├ù HP ProDesk 600 G4 (Intel Core i5-8500T, 8 Go RAM, 256 Go SSD)
+
+--- SATAÔÇö 3,5"" HDD (62 produits, 7 r├®f distinctes) ---
+  32├ù Seagate Barracuda 500GB ÔÇö 3,5""
+  13├ù WD Blue 500GB ÔÇö 3,5""
+  5├ù Western Digital WD RE3 500GB ÔÇö 3,5""
+  4├ù Seagate Desktop HDD 500GB ÔÇö 3,5""
+  3├ù Seagate SkyHawk 1TB ÔÇö 3,5""
+  3├ù Toshiba 1TB ÔÇö 3,5""
+  2├ù Toshiba 500GB ÔÇö 3,5""
+
+--- Cable (61 produits, 1 r├®f distinctes) ---
+  61├ù USB-C to C 5Gbps 100W 5A
+
+--- Stockage-Disque SAS (61 produits, 8 r├®f distinctes) ---
+  21├ù HDD SAS 2To-7.2K RPM-VERT 3.5
+  12├ù HDD SAS 4To-7.2K RPM-VIOLET 3.5
+  9├ù HDD SAS 1To- Seagate Exos 7E8 3.5
+  9├ù HDD SAS 2To-7.2K RPM-VIOLET 3.5
+  4├ù HDD SAS Dell 1 Tb rpm 7.2k
+  3├ù HDD SAS 2To-7.2K RPM-BLEU-Seagate Enterpise Capacity 3.5v5
+  2├ù HDD SAS 146GO -15K RPM 3.5
+  1├ù Caddy/emplacement SAS 300GO -15K RPM vide
+
+--- serveurs rack (61 produits, 19 r├®f distinctes) ---
+  12├ù Dell PowerEdge R630
+  7├ù HPE  PROLiant DL360 Gen9
+  7├ù HP ProLiant DL360 G9 E5-2630 32GB RAM 2x300GB SAS RAID P440 AR
+  5├ù HPE PROLiant DL360 Gen10
+  5├ù HPE PROLiant DL380 Gen10
+  3├ù Fujitsu Primergy RX2540 M2
+  3├ù sans Caddy
+  3├ù Fujitsu Primergy RX2540 M2 Xeon E5-2630 32GB RAM
+  2├ù Dell PowerEdge R430
+  2├ù HPE PROLiant DL325 Gen10
+  2├ù Dell EMC PowerEdge R440
+  2├ù HP ProLiant DL325 G10 AMD EPYC 7302P 32GB RAM 2x300GB SAS RAID P408i
+  2├ù sans RAID + 1 avec RAID
+  1├ù Dell PowerEdge 2950
+  1├ù HPE PROLiant DL380 Gen9
+  1├ù 2├¿me emplacement CPU HS
+  1├ù Dell PowerEdge 2950 (2x 146GB SAS 15K, 2x 300gb SAS 15K)
+  1├ù Lenovo ThinkSystem SR530 2x Xeon Silver 4208 64GB RAM 3x1.2TB SAS RAID 530-8i
+  1├ù Lenovo ThinkSystem S530
+
+--- INTEL (61 produits, 10 r├®f distinctes) ---
+  43├ù i3 - 6100
+  4├ù i3 - 14 eme
+  4├ù i3 - 8100
+  2├ù i5 - 6500T
+  2├ù i3 - 8100T
+  2├ù i3 - 9100
+  1├ù i7 - 6700
+  1├ù i3 - 7100T
+  1├ù i5 - 6500
+  1├ù i5 - 6400T
+
+--- SAS ÔÇö 2,5"" ÔÇö 300GB / 146GB (58 produits, 10 r├®f distinctes) ---
+  16├ù HPE 300GB ÔÇö SAS 10K ÔÇö sans caddy
+  14├ù HPE 300GB ÔÇö SAS 10K ÔÇö avec caddy
+  13├ù Dell 300GB ÔÇö SAS 15K ÔÇö avec caddy
+  4├ù Dell 300GB ÔÇö SAS 10K ÔÇö sans caddy
+  3├ù Dell 146GB ÔÇö SAS 15K ÔÇö avec caddy
+  3├ù HP 300GB ÔÇö SAS 15K ÔÇö avec caddy
+  2├ù ThinkSystem 300GB ÔÇö SAS 10K 12Gbps ÔÇö 2,5""
+  1├ù HPE 300GB ÔÇö SAS 15K ÔÇö sans caddy
+  1├ù HP 146GB ÔÇö SAS 10K ÔÇö avec caddy
+  1├ù HP 300GB ÔÇö SAS 10K ÔÇö avec caddy
+
+--- HPE / HP(ALIMENTATIONS SERVEUR) (43 produits, 6 r├®f distinctes) ---
+  16├ù HPE 500W Flex Slot Platinum Option : 865408-B21 Spare : 866729-001 P/N : 865399-101
+  14├ù HPE 800W Flex Slot Platinum Option : 865414-B21 Spare : 866730-001
+  4├ù HP 460W Spare : 511777-001 Mod├¿le : HSTNS-PL14
+  3├ù HPE 500W Flex Slot Platinum Option : 720478-B21 Spare : 754377-001 Mod├¿le : HSTNS-PL40
+  3├ù HP 750W Spare : 511778-001 Mod├¿le : HSTNS-PL18
+  3├ù HPE 800W Flex Slot Platinum Option : 720479-B21 Spare : 754381-001 P/N : 723600-101
+
+--- ADAPTATEURS (43 produits, 1 r├®f distinctes) ---
+  43├ù Adaptateurs NGFF M.2 / Transfer Card Extension Rack Boards ÔÇö SKU : Y1UB4NB6036
+
+--- CARTE GRAPHIQUE (40 produits, 16 r├®f distinctes) ---
+  11├ù P2000
+  7├ù RX 570
+  4├ù RX 580
+  2├ù RTX 2080 TI
+  2├ù P2200
+  2├ù P6000
+  2├ù GTX 1050 TI
+  2├ù NVIDIA Quadro 4000 ÔÇö Dell OEM, Mod├¿le : P2007, DP/N : 06WTYT et 0731Y3
+  1├ù RTX 3080
+  1├ù NVIDIA Quadro 4000 ÔÇö HP OEM, R├®f. : 616076-001
+  1├ù ASUS GeForce GTX 650 ÔÇö Mod├¿le : GTX650-DC-1GD5
+  1├ù Gigabyte Radeon HD 5770 ÔÇö Mod├¿le : GV-R577UD-1GD, REV : 2.1
+  1├ù NVIDIA Quadro K1200 ÔÇö HP OEM, Spare P/N : 801195-002
+  1├ù A16
+  1├ù AMD Radeon HD 6570 1GB ÔÇö Mod├¿le : HX65701G002
+  1├ù AMD Radeon HD 6570 1GB ÔÇö Mod├¿le : V340, R├®f. HP Spare : 860619-001
+
+--- ÔÇïACCESSOIRES ET ├ëQUIPEMENTS DE MONTAGE (39 produits, 13 r├®f distinctes) ---
+  10├ù i-tec USB-C Gigabit Ethernet Adapter (10/100/1000 Mbps)
+  6├ù SpeaKa Professional Monitor Desk Stand, noir, ajustable 17"" ├á 32"" (R├®f. : 3419447)
+  6├ù HP 2013 UltraSlim Docking Station (Product : D9Y32AA / Spare : 732252-001)
+  4├ù Dell WD19 Docking Station (Mod├¿le : K20A / Type : K20A001)
+  3├ù Lenovo ThinkPad Ultra Docking Station (Type : 40AJ / FRU P/N : 5D20X62306)
+  2├ù AISENS Monitor Desk Mount/POS Full Motion, 17"" ├á 32"" (Mod├¿le : DT32TSR-373)
+  2├ù WAVLINK USB-C 4K Triple Display MST Dock (Mod├¿le : DY-TU4720 Rev.e)
+  1├ù Kensington Universal USB-C Scalable Video Dock with Power Delivery (P/N : K38249 / M/N : M01418)
+  1├ù AISENS Monitor Desk Mount/POS Full Motion, 10"" ├á 24"" (Mod├¿le : DT24TSR-371)
+  1├ù Kit de rails de montage Lenovo ThinkSystem SR530 (FRU P/N : 00YK494 / SN : SM17A18040P1WX08X0121)
+  1├ù HP Kit Cable Arm Easy Install, 1U, G9 (P/N : 729872-001)
+  1├ù HP Kit Cable Arm, 2U, G9 (P/N : 729871-001)
+  1├ù Targus USB-C DisplayPort Alt Mode Docking Station 85W PD (Mod├¿le : DOCK430-A / SKU : DOCK430EUZ-70)
+
+--- Adapter (36 produits, 3 r├®f distinctes) ---
+  17├ù 65w
+  10├ù Adaptateur r├®seau i-tec USB-C Gigabit Ethernet (10/100/1000 Mbps).
+  9├ù 90w
+
+--- serveurs Tour (34 produits, 12 r├®f distinctes) ---
+  10├ù HPE PROLiant ML350 Gen9
+  10├ù Hewlett Packard Enterprise ML 350 G9 Xeon E5-2620 32GB RAM 2x300GB SAS RAID P440 AR
+  3├ù HP PROLiant ML350 Gen9
+  3├ù HP ML350 G9
+  1├ù Carte S2600W, 16GO RAM, XEON E5-2620v3
+  1├ù HP PROLiant ML110 Gen9
+  1├ù Dell EMC PowerEdge T440
+  1├ù Dell EMC PowerEdge T430
+  1├ù HP PROLiant ML10 V2
+  1├ù HP PROLiant ML350 Gen10
+  1├ù Dell EMC T440 Silver 4110
+  1├ù Dell EMC T430
+
+--- Chargeur DELL (33 produits, 4 r├®f distinctes) ---
+  15├ù DELL - 65w
+  10├ù DELL - 130w / 135w
+  6├ù DELL - 45w
+  2├ù DELL - 90w
+
+--- Mini pc (31 produits, 12 r├®f distinctes) ---
+  12├ù Hp pro mini 400G9 i3 12100t 16gb ddr4 256go NVMe
+  4├ù Dell Optiplex 3050 i5-7500T 8gb/256gb ssd
+  3├ù Dell Optiplex 3050 i5-6th 8gb 256gb ssd
+  3├ù Dell Optiplex 3040 i5 6500T 8gb ddr3 256gb sata ssd
+  2├ù Lenovo ThinkCentre amd pro a6 8gb 256gb SSD
+  1├ù Lenovo ThinkCentre i5-6th 8gb 256gb ssd
+  1├ù Hp EliteDesk 705 G4 Ryzen 5 PRO 2400G
+  1├ù Lenovo ThinkCentre i3-10th 8gb ddr4 240gb SSD
+  1├ù Lenovo ThinkCentre m70q gen 3 i5 12400t 16gb ddr4 500gb ssd
+  1├ù Hp ProDesk 600 g4 i5 8500t 8gb ram 256gb data ssd
+  1├ù Lenovo Thinkcentre M75q Gen2 Ryzen 3 pro 5350 GE 16gb ddr4 512gb ssd
+  1├ù HP EliteDesk 800 g6 i5 10500 16gb ddr4 256gb SSD NVMe
+
+--- PC BUREAU (30 produits, 29 r├®f distinctes) ---
+  2├ù Hp G1 i3 4130 4GB ddr3 500gb HDD
+  1├ù Dell Aurora R13 i5 12400t 16gb ram ddr5 1tb ssd nvme Rtx 3060 12gb vram
+  1├ù Hp prodesk 400 g6 mt i5 8500t 8gb ddr4 256gb nvme
+  1├ù HP elitebook AMD Pro a6 8gb ddr3 500gb HDD
+  1├ù Maximpower i3 7eme 8gb ddr4 256gb sata SSD
+  1├ù Acer vertirom i3 7eme 8gb ddr4 256gb sata SSD
+  1├ù Dell Optiplex i7 4790 8gb ddr3 256gb SSD
+  1├ù Dell optiplex 3040 i5 6500t 8gb ddr3 256gb sata SSD
+  1├ù Dell optiplex 7040 i7 6700 8gb ddr3 256gb nvme SSD
+  1├ù Fujitsu mt i3 6eme 8gb ddr4 256gb sata SSD
+  1├ù HP PRODESK 400 G6 i3 9eme 8gb ddr4 256gb nvme SSD
+  1├ù Hp elitedesk i7 upro 6eme 8gb ddr4 256gb sata SSD
+  1├ù Hp pavilion i5 8eme 16gb ddr4 128gb nvme SSD
+  1├ù Hp prodesk i5 8eme 8gb ddr4 256gb sata ssd
+  1├ù ThinkCentre i7 upro 7eme 8gb ddr4 256gb sata SSD
+  1├ù ThinkCentre i7 8700 16gb ddr4 256gb SSD
+  1├ù HP Prodesk 290 G1 i3 7eme 8gb ddr4 250gb sata SSD
+  1├ù Hp Pro tower i5 14400 16gb ddr5 256gb nvme SSD
+  1├ù Dell inspiron i5 8400 8gb ddr4 256gb SSD
+  1├ù ThinkCentre i7 9700 16gb ddr4 256gb SSD
+  1├ù ThinkCentre i5 7400 8gb ddr4 256gb SSD
+  1├ù Hp prodesk 600 g2 i7 6100 8gb ddr4 256gb SSD
+  1├ù Hp Pavillion i5 7400 8gb ddr4 256gb SSD
+  1├ù Dell Optiplex 5040 i7 6eme 8gb ddr4 256gb SSD
+  1├ù Terra i3 8eme 16gb ddr4 240gb sata SSD
+  1├ù HP 295 G8 Microtower Ryzen 5 5600g 16gb ddr4 512 gb nvme 1050 ti
+  1├ù Dell Pr├®cision 3640 i3-10100 8gb ram ddr4 500gb SSD NVMe
+  1├ù Dell Optiplex 9020 i7 4790 8gb ddr3 256gb ssd sata
+  1├ù Hp Elitedisk i7 6700 8gb ddr4 256gb
+
+--- Imprimante (29 produits, 14 r├®f distinctes) ---
+  6├ù HP Color LaserJet Pro MFP M477fdn
+  5├ù HP LaserJet Managed MFP E52645
+  3├ù HP LaserJet Pro M501
+  2├ù Canon imageRUNNER ADVANCE 525i
+  2├ù Canon imageRUNNER C1325iF
+  2├ù HP LaserJet Pro 400 M401a
+  2├ù Lexmark B2442dw
+  1├ù Canon i-sensys LBP6780x
+  1├ù Lexmark MS310dn
+  1├ù HP LaserJet Enterprise M507x - Monochrome Laser Printer
+  1├ù HP LaserJet Managed E60155
+  1├ù Konica Minolta TA 4700
+  1├ù Toshiba B-EX4D2-GS12-QM-R - Barcode Printer
+  1├ù Konica Minolta bizhub 3602P ÔÇö Part Number AAFK021, S/N : AAFK021008527
+
+--- Chargeur HP (26 produits, 4 r├®f distinctes) ---
+  14├ù HP - 65w
+  9├ù HP - 45w
+  2├ù HP - 120w
+  1├ù HP - 150w
+
+--- HP ÔÇö TONERS(CONSOMMABLES D'IMPRESSION) (24 produits, 10 r├®f distinctes) ---
+  6├ù HP 503A Yellow Toner Cartridge ÔÇö Q7582A
+  6├ù CF287X / 87X / 041H Black Toner Cartridge ÔÇö 20,000 pages
+  3├ù HP 503A Cyan Toner Cartridge ÔÇö Q7581A
+  3├ù HP 503A Magenta Toner Cartridge ÔÇö Q7583A
+  1├ù Compatible HP 364A / CC364A Black Toner Cartridge
+  1├ù HP 05A Black Toner Cartridge ÔÇö CE505A
+  1├ù HP 11X Black Toner Cartridge ÔÇö Q6511X
+  1├ù HP 501A Black Toner Cartridge ÔÇö Q6470A
+  1├ù Ink MASTER CF283A Compatible Toner Cartridge
+  1├ù NEWLIGHT 283A / 283X / 737 Compatible Toner Cartridge
+
+--- Station de travail (20 produits, 9 r├®f distinctes) ---
+  11├ù Dell Precision 5820
+  2├ù Tours avec boitier Fractal Design
+  1├ù Hp Z 440 Xeon e5-1620 16gb ddr4 256gb ssd
+  1├ù Lenovo ThinkpadStation P320-intel core i7-7em gen
+  1├ù Tour noir 2CRSI-PROCESSEUR XEON 4214, 16GO RAM,256GB NVME
+  1├ù HP Z240-INTEL CORE i7
+  1├ù Tour noir -carte mere M10 JNP 2SB, 16GO RAM, XEON E-2236
+  1├ù HP t540 Thin Client -Windows 10
+  1├ù Workstation Pro - Xeon 4214 & RTX 2080 Ti - 32Go RAM - 1Tb nvme gen 4
+
+--- Samsung (18 produits, 6 r├®f distinctes) ---
+  10├ù Samsung 4GB DDR4 (M378A5143EB1-CPB / PC4-2133P) - UDIMM
+  3├ù Samsung 16GB DDR4 ECC Registered (M393A2K40EB3-CWEBY) - RDIMM
+  2├ù Samsung 8GB DDR4 ECC Registered (M393A1G40DB0-CPB0Q) - RDIMM
+  1├ù Samsung 16GB DDR4 2933 - UDIMM
+  1├ù Samsung 16GB DDR4 ECC Registered (M393A4K40CB2-CTD7Q) - RDIMM
+  1├ù Samsung 32GB DDR4 ECC Registered (M393A4K40CB2-CTD7Q) - RDIMM
+
+--- SAS / NVMe ÔÇö 2,5"" SSD (18 produits, 7 r├®f distinctes) ---
+  10├ù Dell Enterprise Plus 1.92TB ÔÇö SAS ÔÇö 2,5""
+  2├ù HPE 3.84TB ÔÇö SAS ÔÇö 2,5""
+  2├ù Kioxia 24G 15.36TB ÔÇö SAS ÔÇö 2,5""
+  1├ù Dell Enterprise Plus 1.92TB ÔÇö SAS ÔÇö PX05SRB192Y ÔÇö 2,5""
+  1├ù IBM Storage 3.2TB ÔÇö SAS ÔÇö 2,5""
+  1├ù HPE 400GB ÔÇö SAS ÔÇö 2,5""
+  1├ù Intel D7-P5520 1.92TB ÔÇö NVMe/PCIe ÔÇö 2,5""
+
+--- Kingston (18 produits, 2 r├®f distinctes) ---
+  9├ù Kingston 16GB DDR4 3200MHz ECC Registered (KSM32RS4/16MEI) - RDIMM
+  9├ù Kingston 32GB DDR4 2Rx4 PC4-2400T (Mod├¿le 9995640-032.A00G) - RDIMM
+
+--- REFROIDISSEMENT SERVEUR (17 produits, 4 r├®f distinctes) ---
+  7├ù Heatsink pour HPE ProLiant DL360 Gen9 (P/N : 734042-001 / 775403-001)
+  5├ù Heatsink pour HP DL380 / DL380P G10 (P/N : 875070-001 / 839274-001 / 873592-001)
+  3├ù Heatsink pour HP ProLiant ML350 Gen9 (P/N : 769018-001 / Spare : 780977-001)
+  2├ù HP CPU Heatsink (HPE P/N : 747608-001 / Spare : 777290-001)
+
+--- AUTRES COMPATIBLES(CONSOMMABLES D'IMPRESSION) (16 produits, 6 r├®f distinctes) ---
+  4├ù KOANAN Compatible Toner Cartridge
+  4├ù TONE-BANK Compatible Toner Cartridge
+  2├ù Nova Cartuchos Compatible Black Toner Cartridge
+  2├ù Nova Cartuchos Compatible Cyan Toner Cartridge
+  2├ù Nova Cartuchos Compatible Magenta Toner Cartridge
+  2├ù Nova Cartuchos Compatible Yellow Toner Cartridge
+
+--- PC BUREAU SSF (15 produits, 15 r├®f distinctes) ---
+  1├ù Dell Optiplex 5050 i7 6eme 8gb ddr4 256gb SSD
+  1├ù Hp 280 g2 i3 6eme 8gb ddr4 240gb sata SSD
+  1├ù Dell optiplex 3040 i5 6500t 8gb ddr3 256gb sata SSD
+  1├ù Acer aspire XR 780 i3 7eme 8gb GT710 1GB VRAM 256gb sata SSD
+  1├ù FUJI SFF i5 7400 4gb 256gb
+  1├ù HP prodesk 600 G2 i3 6eme 8gb ddr3 256gb nvme SSD
+  1├ù Dell Optiplex 3060 i3 8100 8gb ddr4 256gb nvme SSD
+  1├ù HP prodesk 400 g3 i3 6eme 8gb ddr4 240gb sata SSD
+  1├ù HP PRODESK 400 G7 I3 10TH 256GB SSD 8GB RAM
+  1├ù HP PRODESK I3 7100 8GB RAM SANS DISQUE
+  1├ù HP PRODESK 400 G4 I3 7100T 8GB RAM 256GB SSD
+  1├ù HP PRODESK 400 G6 I3 9TH 8GB RAM 256GB SSD
+  1├ù Hp pro 290 G9 i3-12100 8gb Ram sans disque
+  1├ù Hp prodesk 400 G4 i3 8100 8gb 240gb SSD
+  1├ù Dell Optiplex 7070 i7 9700 16gb ram ddr4 256gb sata
+
+--- CLAVIERS & P├ëRIPH├ëRIQUES (15 produits, 7 r├®f distinctes) ---
+  3├ù Starter Wired Combo keyboard/mouse
+  3├ù Dell Combo Wireless keyboard/Mouse
+  2├ù Dell Wired Keyboard
+  2├ù Lenovo Wired Combo keyboard/mouse
+  2├ù Starter Wireless Combo keyboard/mouse
+  2├ù HP Wired Desktop Keyboard
+  1├ù PORT Connect Slim Wireless Keyboard
+
+--- Station d'accueil (12 produits, 4 r├®f distinctes) ---
+  5├ù Station d'accueil Dell Dock WD15
+  3├ù HP UltraSlim Docking Station
+  3├ù Station d'accueil Lenovo ThinkPad Ultra dock
+  1├ù Wavlink WL-UTD03 USB-C 4K Triple Display Docking Station
+
+--- SASÔÇö 2,5"" ÔÇö 1TB / 1,2TB HDD (12 produits, 3 r├®f distinctes) ---
+  7├ù Dell Enterprise Plus 1.2TB ÔÇö SAS 10K ÔÇö 2,5""
+  3├ù Dell Enterprise Class 1.2TB ÔÇö SAS 10K ÔÇö 2,5""
+  2├ù Dell Enterprise Capacity 1TB ÔÇö SAS ÔÇö 2,5""
+
+--- SAS ÔÇö 2,5"" ÔÇö 450GB HDD (11 produits, 3 r├®f distinctes) ---
+  7├ù HP 450GB ÔÇö SAS 10K ÔÇö avec caddy
+  3├ù HP 450GB ÔÇö SAS 10K ÔÇö sans caddy
+  1├ù HPE 450GB ÔÇö SAS 15K ÔÇö sans caddy
+
+--- RESEAU-SWITCHES (11 produits, 7 r├®f distinctes) ---
+  2├ù Cisco  WS-C2960X -24PS-L Switch
+  2├ù Cisco SG350-28MP-K9-EU Switch
+  2├ù NETGEAR GS752TPP-100EUS Switch
+  2├ù ZYXEL Ethernet Switch - En boite
+  1├ù Cisco  WS-C2960X -48PS-L Switch
+  1├ù HP JE006A-V1910-24G Switch
+  1├ù HPE J9855A-2530-48G-PoE+ Switch
+
+--- ÔÇïCLAVIERS ET P├ëRIPH├ëRIQUES (11 produits, 4 r├®f distinctes) ---
+  5├ù HP Keyboard (Mod├¿le : KU-1469)
+  3├ù HP Keyboard (Mod├¿le : PR1101U / Spares P/N : 537924-051)
+  2├ù Dell Keyboard Wired Combo
+  1├ù Dell Keyboard KB212-B (DP/N : 0DJ497)
+
+--- COMPOSANTS (10 produits, 2 r├®f distinctes) ---
+  8├ù Blocs d'alimentation (PSU) serveur 800W
+  2├ù Blocs/modules de ventilation complets pour serveur Lot de ventilateurs SUNON - Mod├¿le PF92381BX-D110-Q99-- et Nidec UltraFlo  Lot de dissipateurs thermiques (Heatsinks) pour processeurs Lot de cages et fonds de panier (Backplanes) SAS/SATA pour disques durs  Divers: p├óte thermique, supports de montage CPU et caddies pour disques durs  R├ëCAPITULATIF COMPLET
+
+--- Processeurs (CPU) (10 produits, 2 r├®f distinctes) ---
+  8├ù Intel Xeon E5-2620 v3
+  2├ù Intel Xeon E5-2620 v4
+
+--- Cartes raid (10 produits, 3 r├®f distinctes) ---
+  5├ù Contr├┤leurs HPE Smart Array PCle (Microsemi) (Format carte PCle classique, 2 ports)
+  3├ù HPE Smart Array P440ar (Serveurs Gen9, format Flexible, 2 ports)
+  2├ù HPE Smart Array P816i-a SR Gen10 (Serveurs Gen10, format Flexible, 4 ports)
+
+--- NVMe (9 produits, 9 r├®f distinctes) ---
+  1├ù SSD 4TB SanDisk NVME PCIe Gen4 x4
+  1├ù SSD 4tb Sabrent Rocket Q4 PCIe Gen4
+  1├ù SSD 128GB NVMe
+  1├ù SSD 128gb PCIe Gen3 LITE-ON
+  1├ù SSD 128gb PCIe Gen3 SK Hynix
+  1├ù SSD 128gb PCIe Gen3 Samsung
+  1├ù SSD 128gb PCIe Gen3 Western Digital
+  1├ù SSD 2TB PCIe Gen4 SK hynix
+  1├ù SSD 512GB Western Digital
+
+--- CARTES D'ACQUISITION ET CARTES D'EXTENSION (9 produits, 7 r├®f distinctes) ---
+  3├ù HP 546FLR / 556FLR ÔÇö FlexibleLOM, 2├ù SFP+ 10GbE
+  1├ù Carte HBA Lenovo ThinkSystem 430-8e ÔÇö PCIe, 2├ù Mini-SAS HD
+  1├ù Dell Intel X550-T2 ÔÇö PCIe, 2├ù RJ45 10GbE
+  1├ù Carte d'acquisition National Instruments X Series ÔÇö PCIe, calibr├®e
+  1├ù HP 366FLR ÔÇö FlexibleLOM, 4├ù RJ45 1GbE
+  1├ù Riser NVMe HPE Quad Slim SAS ÔÇö Serveur Gen10
+  1├ù Riser PCIe x16 HP ÔÇö Pour unit├® centrale SFF CARTES R├ëSEAU
+
+--- PNY Technologies Europe (9 produits, 1 r├®f distinctes) ---
+  9├ù PNY Technologies Europe Black 4GB DDR4 DIMM (64C0JJFDL8G09) - UDIMM
+
+--- ONDULEURS ET PROTECTION ├ëLECTRIQUE (UPS) (9 produits, 5 r├®f distinctes) ---
+  3├ù EATON Ellipse ECO 650
+  2├ù Eaton 5PX EBM 48V RT2U G2 (Module batterie / Catalog Nb : 5PXEBM48RT2UG2)
+  2├ù Eaton 9SX 5000VA/4500W UPS (P/N : 9104-5210-00P / Mod├¿le : 9SX5KIRT)
+  1├ù Eaton 5P 850
+  1├ù Eaton 9PX 6000i 3:1 Power Module (Catalog Nb : 9PX6KiPM31 / P/N : 9105-1201-00P)
+
+--- Mat├®riel Point de Vente (POS) (9 produits, 5 r├®f distinctes) ---
+  5├ù Oracle MICROS Compact Workstation 310
+  1├ù AURES YUNO TXE15J19 Touchscreen POS Terminal
+  1├ù Lenovo ThinkSmart Hub 500  (10V5)
+  1├ù Oracle MICROS Workstation 6 Series 2 (WS625x) POS Terminal
+  1├ù Oracle MICROS Express Station 4 (EWS4) POS Terminal
+
+--- NAS, DAS & SAUVEGARDE (8 produits, 8 r├®f distinctes) ---
+  1├ù Beemo 4-Bay NAS / Backup Unit
+  1├ù Boitier de sauvegarde Rex-Backup -Fireproof/ Waterproof, avec boite QNAP
+  1├ù Dell PowerVault MD3420 DAS
+  1├ù NAS Buffalo TeraStaion -format rack
+  1├ù NETGEAR ReadyNAS 2100 NAS
+  1├ù QNAP TS-453A NAS
+  1├ù Serveuur NAS Terra- Format tour
+  1├ù Synology DiskStation DS1512+NAS
+
+--- ecran (6 produits, 5 r├®f distinctes) ---
+  2├ù Lenovo ThinkVision T22i-20
+  1├ù HP EliteDisplay E22 G4 FHD 21.5""
+  1├ù Hp elitedisplay E22 G4 22p
+  1├ù Lenovo ThinkVision T24-40
+  1├ù Dell 27 s2725HS-Boite
+
+--- CANON / KYOCERA(CONSOMMABLES D'IMPRESSION) (6 produits, 2 r├®f distinctes) ---
+  4├ù Canon Cartridge 724 H Black Toner Cartridge
+  2├ù Compatible Kyocera TK-5490 Toner Cartridge Set ÔÇö TK#SET5490
+
+--- All in One (5 produits, 5 r├®f distinctes) ---
+  1├ù HP EliteOne 800 g5 i5 9600 8gb ram 240gb nvme
+  1├ù HP ProOne 600 G4 21.5 i3 8eme 16gb ram 256gb ssd
+  1├ù HP Pro One 600 G4 I5 8500 8GB RAM 256GB
+  1├ù Dell Optiplex 7410 i5 13500T 8gb ram 256gb nvme
+  1├ù Hp Pro One 600G2 i5 6500T 4gb rma 256gb ssd
+
+--- ÔÇïSK hynix (5 produits, 3 r├®f distinctes) ---
+  3├ù SK hynix 4GB DDR4 (HMA851U6CJR6N-VK) - UDIMM
+  1├ù SK hynix 16GB DDR4 2400T - RDIMM
+  1├ù SK hynix 16GB DDR4 3200AA (HMAG78EXNRA084N AD) - RDIMM
+
+--- EPSON ÔÇö ENCRES(CONSOMMABLES D'IMPRESSION) (4 produits, 4 r├®f distinctes) ---
+  1├ù Epson T9452 Cyan XL Ink Supply Unit
+  1├ù Epson T9451 Black XL Ink Supply Unit
+  1├ù Epson T9453 Magenta XL Ink Supply Unit
+  1├ù Epson T9454 Yellow XL Ink Supply Unit
+
+--- ├ëQUIPEMENTS DE VID├ëOCONF├ëRENCE (4 produits, 4 r├®f distinctes) ---
+  1├ù Logitech Device (M/N : V-U0032 / P/N : 860-000504)
+  1├ù Logitech Group (M/N : V-U0036 / P/N : 886-000056)
+  1├ù Logitech Rally Camera (M/N : V-R0010 / P/N : 860-000569)
+  1├ù Logitech Group (M/N : V-U0036 / P/N : 886-000062)
+
+--- DELL (ALIMENTATIONS SERVEUR) (3 produits, 2 r├®f distinctes) ---
+  2├ù Dell 570W DP/N : 0RXCPH R├®f : CWA2-0570-10-DL01
+  1├ù Dell 870W DP/N : 0YFG1C Mod├¿le : N870P-S0
+
+--- PDU & ACCESSOIRES RACK (2 produits, 2 r├®f distinctes) ---
+  1├ù HPE P9Q37A G2 Basic PDU
+  1├ù HPE 729871-001 -2U Cable MANAGEMENT Arm kit
+
+--- IBM / LENOVO (ALIMENTATIONS SERVEUR) (2 produits, 1 r├®f distinctes) ---
+  2├ù IBM / Lenovo 550W IBM P/N : 94Y8109 FRU : 94Y8110 Mod├¿le : FSA011
+
+--- Support ecran (1 produits, 1 r├®f distinctes) ---
+  1├ù Support de bureau articul├® AISENS DT24TSR-371 (├ëcrans 10"" ├á 24"")
+
+--- Micron (1 produits, 1 r├®f distinctes) ---
+  1├ù Micron 16GB DDR4 ECC - RDIMM
