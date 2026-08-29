@@ -1252,6 +1252,9 @@ export default function Inventaire({ role }: { role: Role }) {
                 {!estSocial && (
                   <>
                     {" "}· valeur de la sélection (achat + réparations) :{" "}
+                    <strong>{formaterDA(donneesFiltrees.valeur)}</strong>
+                  </>
+                )}
               </p>
             </div>
           )}
