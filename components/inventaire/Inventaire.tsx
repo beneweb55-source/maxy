@@ -179,6 +179,7 @@ export default function Inventaire({ role }: { role: Role }) {
   } | null>(null);
 
   const [modalClassification, setModalClassification] = useState<LigneProduit[] | null>(null);
+  const [selection, setSelection] = useState<number[]>([]);
 
   // Suppression : soit des unités précises (« unites »), soit tout un modèle
   // (« modele ») = tous les exemplaires en stock d'une référence, au-delà de la
@@ -1016,6 +1017,27 @@ export default function Inventaire({ role }: { role: Role }) {
                 </div>
               )}
             </div>
+            {/* Barre d'actions groupées si sélection */}
+            {selection.length > 0 && vue !== "cockpit" && (
+              <div className="absolute inset-0 bg-brand-orange dark:bg-brand-orange z-30 rounded-lg flex items-center justify-between px-4 animate-entree text-white shadow-lg">
+                <div className="flex items-center gap-4">
+                  <span className="font-bold">{selection.length} sélectionné{selection.length > 1 ? 's' : ''}</span>
+                  <button type="button" onClick={() => setSelection([])} className="text-white/80 hover:text-white text-sm">Annuler</button>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    type="button" 
+                    className="btn bg-white/20 hover:bg-white/30 text-white border-none"
+                    onClick={() => {
+                      const prods = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) || [];
+                      setModalClassification(prods);
+                    }}
+                  >
+                    <IconeArchive taille={14} /> Classer
+                  </button>
+                </div>
+              </div>
+            )}
             
             {vue !== "cockpit" && (
               <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
@@ -1146,6 +1168,15 @@ export default function Inventaire({ role }: { role: Role }) {
                     className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
                   />
                   +30 jours
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-orange cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("a_classer") === "1"}
+                    onChange={(e) => majUrl({ a_classer: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                  À classer
                 </label>
                 <label className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400 cursor-pointer">
                   <input
@@ -1649,15 +1680,31 @@ export default function Inventaire({ role }: { role: Role }) {
                     </th>
                   ))}
                   <th className="py-3 px-4 text-right font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">{t("inventaire.jours")}</th>
-                  <th className="py-3 px-4" />
+                  <th className="py-3 px-4">
+                    <input 
+                      type="checkbox"
+                      checked={selection.length > 0 && selection.length === donneesFiltrees.produits.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelection(donneesFiltrees.produits.map(p => p.id));
+                        } else {
+                          setSelection([]);
+                        }
+                      }}
+                      className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey"
+                    />
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
                 {donneesFiltrees.produits.map((p) => (
                   <tr
                     key={p.id}
-                    onClick={() => router.push(`/produits/${p.id}`)}
-                    className="group cursor-pointer transition-colors hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
+                      router.push(`/produits/${p.id}`);
+                    }}
+                    className={`group cursor-pointer transition-colors hover:bg-brand-light-grey/30 dark:hover:bg-white/5 ${selection.includes(p.id) ? 'bg-brand-orange/5 dark:bg-brand-orange/10' : ''}`}
                   >
                     <td className="px-4 py-2.5 font-mono text-xs text-brand-warm-grey dark:text-brand-grey font-semibold">
                       {p.code_interne}

@@ -9,6 +9,7 @@ import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
 import ChampPhotos from "@/components/ChampPhotos";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
+import ModalClassification from "@/components/inventaire/ModalClassification";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
@@ -29,6 +30,7 @@ import {
   IconePlus,
   IconeTelechargement,
   IconeVitrine,
+  IconeArchive,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import { useBrouillon } from "@/hooks/useBrouillon";
@@ -94,6 +96,7 @@ export default function FicheProduit({
   const [notes, setNotes] = useState("");
   const [modalNote, setModalNote] = useState<StatutProduit | null>(null);
   const [noteTexte, setNoteTexte] = useState("");
+  const [modalClassification, setModalClassification] = useState(false);
   const [modalPrix, setModalPrix] = useState(false);
   const [prixTexte, setPrixTexte] = useState("");
   const [modalReparation, setModalReparation] = useState(false);
@@ -549,6 +552,15 @@ export default function FicheProduit({
                 <button
                   type="button"
                   disabled={envoi}
+                  onClick={() => setModalClassification(true)}
+                  className="btn btn-secondaire"
+                >
+                  <IconeArchive taille={14} />
+                  Classer
+                </button>
+                <button
+                  type="button"
+                  disabled={envoi}
                   onClick={ouvrirEdition}
                   className="btn btn-secondaire"
                 >
@@ -982,6 +994,24 @@ export default function FicheProduit({
           onNaviguer={setIndexActif}
           lienTelechargement={(i) => `${produit.images[i]}?download=1`}
           titre={produit.code_interne}
+        />
+      )}
+
+      {modalClassification && (
+        <ModalClassification
+          produits={[{
+            id: produit.id,
+            reference: produit.reference,
+            code_interne: produit.code_interne,
+            categorie: produit.categorie,
+            image_url: produit.image_url
+          }]}
+          ouverte={true}
+          onFermer={() => setModalClassification(false)}
+          onSucces={() => {
+            setModalClassification(false);
+            void rafraichir();
+          }}
         />
       )}
     </div>

@@ -47,23 +47,30 @@ export default function ModalClassification({
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  // Charger l'arbre au montage
-  useEffect(() => {
-    if (!ouverte) return;
+  const fetchCategories = () => {
     fetch("/api/categories")
       .then(res => res.json())
       .then(data => setCategoriesTree(data))
       .catch(console.error);
+  };
+
+  const fetchModeles = (cibleId: number) => {
+    fetch(`/api/modeles?categorie_id=${cibleId}`)
+      .then(res => res.json())
+      .then(data => setModeles(data))
+      .catch(console.error);
+  };
+
+  // Charger l'arbre au montage
+  useEffect(() => {
+    if (ouverte) fetchCategories();
   }, [ouverte]);
 
   // Charger les modèles quand la catégorie/sous-catégorie la plus profonde change
   useEffect(() => {
     const cibleId = sousCategorieId || categorieId || familleId;
     if (cibleId) {
-      fetch(`/api/modeles?categorie_id=${cibleId}`)
-        .then(res => res.json())
-        .then(data => setModeles(data))
-        .catch(console.error);
+      fetchModeles(Number(cibleId));
     } else {
       setModeles([]);
     }
@@ -76,6 +83,39 @@ export default function ModalClassification({
 
   const familleSelect = categoriesTree.find(f => f.id === familleId);
   const categorieSelect = familleSelect?.enfants?.find(c => c.id === categorieId);
+
+  const handleCreer = async (type: 'categorie' | 'modele', parent_id: number | null) => {
+    const nom = window.prompt("Entrez le nom :");
+    if (!nom || !nom.trim()) return;
+    
+    try {
+      if (type === 'modele') {
+        const res = await fetch("/api/modeles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nom: nom.trim(), categorie_id: parent_id })
+        });
+        if (!res.ok) throw new Error("Erreur lors de la création du modèle");
+        const data = await res.json();
+        fetchModeles(Number(parent_id));
+        setModeleId(data.id);
+      } else {
+        const res = await fetch("/api/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nom: nom.trim(), parent_id })
+        });
+        if (!res.ok) throw new Error("Erreur lors de la création de la catégorie");
+        const data = await res.json();
+        fetchCategories();
+        if (!parent_id) setFamilleId(data.id);
+        else if (parent_id === familleId) setCategorieId(data.id);
+        else setSousCategorieId(data.id);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
 
   const soumettre = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +190,9 @@ export default function ModalClassification({
                   <option key={f.id} value={f.id}>{f.nom}</option>
                 ))}
               </select>
+              <button type="button" onClick={() => handleCreer('categorie', null)} className="btn btn-secondaire px-3" title="Créer une famille">
+                <IconePlus taille={16} />
+              </button>
             </div>
           </div>
 
@@ -163,6 +206,9 @@ export default function ModalClassification({
                     <option key={c.id} value={c.id}>{c.nom}</option>
                   ))}
                 </select>
+                <button type="button" onClick={() => handleCreer('categorie', Number(familleId))} className="btn btn-secondaire px-3" title="Créer une catégorie">
+                  <IconePlus taille={16} />
+                </button>
               </div>
             </div>
           )}
@@ -177,6 +223,9 @@ export default function ModalClassification({
                     <option key={sc.id} value={sc.id}>{sc.nom}</option>
                   ))}
                 </select>
+                <button type="button" onClick={() => handleCreer('categorie', Number(categorieId))} className="btn btn-secondaire px-3" title="Créer une sous-catégorie">
+                  <IconePlus taille={16} />
+                </button>
               </div>
             </div>
           )}
@@ -191,6 +240,9 @@ export default function ModalClassification({
                     <option key={m.id} value={m.id}>{m.nom}</option>
                   ))}
                 </select>
+                <button type="button" onClick={() => handleCreer('modele', Number(sousCategorieId || categorieId || familleId))} className="btn btn-secondaire px-3" title="Créer un modèle">
+                  <IconePlus taille={16} />
+                </button>
               </div>
             </div>
           )}

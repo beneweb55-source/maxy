@@ -98,6 +98,12 @@ export function construireFiltresProduits(
     });
   }
 
+  if (params.get("a_classer") === "1") {
+    clauses.push({
+      categorie_id: null,
+    });
+  }
+
   if (params.get("a_jeter") === "1") {
     clauses.push({ statut: "hs", a_jeter: true });
   }
