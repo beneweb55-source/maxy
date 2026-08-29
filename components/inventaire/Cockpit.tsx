@@ -12,6 +12,7 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
   const t = useT();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [afficherFamilles, setAfficherFamilles] = useState(false);
 
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -259,9 +260,26 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
 
       {/* Explorer */}
       <div>
-        <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Explorer par famille/référence</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+          <h2 className="text-xl font-bold text-brand-black dark:text-white font-outfit">Explorer par famille/référence</h2>
+          <div className="flex items-center bg-brand-light-grey/20 dark:bg-white/5 p-1 rounded-lg border border-brand-light-grey/50 dark:border-white/10 shrink-0">
+            <button
+              onClick={() => setAfficherFamilles(true)}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${afficherFamilles ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+            >
+              Afficher les familles
+            </button>
+            <button
+              onClick={() => setAfficherFamilles(false)}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${!afficherFamilles ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+            >
+              Uniquement l'inventaire
+            </button>
+          </div>
+        </div>
         
-        {categoriesAffichees.length === 0 && q ? (
+        {afficherFamilles && (
+          categoriesAffichees.length === 0 && q ? (
           <div className="text-sm text-brand-warm-grey p-4 text-center border border-dashed border-brand-light-grey dark:border-white/10 rounded-2xl">
             Aucune famille/référence ne correspond à "{q}"
           </div>
@@ -314,7 +332,8 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
               </button>
             );
           })}
-          </div>
+            </div>
+          )
         )}
       </div>
     </div>

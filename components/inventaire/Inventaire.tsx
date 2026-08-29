@@ -242,7 +242,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formVitrine, setFormVitrine] = useState(false);
   const [formMettreEnVente, setFormMettreEnVente] = useState(false);
 
-  const vueGroupee = searchParams?.get("vue") !== "detail" && searchParams?.get("vue") !== "famille";
+  const vueGroupee = false;
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
   const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
   const [afficherTableauCockpit, setAfficherTableauCockpit] = useState(false);
@@ -989,23 +989,8 @@ export default function Inventaire({ role }: { role: Role }) {
               />
               {vue !== "cockpit" && vue !== "categorie" && (
                 <div className="flex items-center self-stretch bg-brand-light-grey/20 dark:bg-white/5 rounded-lg p-1 border border-brand-light-grey/50 dark:border-white/10 shrink-0 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => majUrl({ vue: vueGroupee ? "detail" : null })}
-                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all h-full ${vueGroupee ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
-                  >
-                    Groupé
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => majUrl({ vue: "detail" })}
-                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all h-full ${!vueGroupee ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
-                  >
-                    Détaillé
-                  </button>
-                  
-                  {!vueGroupee && (
-                    <div className="flex items-center ml-2 pl-2 border-l border-brand-light-grey/50 dark:border-white/10 h-full">
+                  {/* Retrait de vueGroupee, seule la bascule Cartes/Tableau subsiste */}
+                  <div className="flex items-center h-full">
                       <button 
                         type="button"
                         onClick={() => setModeAffichage("cartes")} 
@@ -1023,7 +1008,6 @@ export default function Inventaire({ role }: { role: Role }) {
                         ☷
                       </button>
                     </div>
-                  )}
                 </div>
               )}
             </div>
