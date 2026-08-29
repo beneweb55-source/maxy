@@ -354,7 +354,7 @@ export default function Inventaire({ role }: { role: Role }) {
       if (e.name === "AbortError") return; // Ignorer les requêtes annulées
       setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
     }
-  }, [searchParams]);
+  }, [searchParams, vueGroupee]);
 
   useEffect(() => {
     void charger();
