@@ -67,8 +67,8 @@ export async function POST() {
           },
           data: {
             modele_id: modele.id,
-            categorie: analyse.cible_categorie_nom,
-            reference: analyse.cible_modele_nom
+            categorie: analyse.cible_categorie_nom!,
+            reference: analyse.cible_modele_nom!
           }
         });
       });
