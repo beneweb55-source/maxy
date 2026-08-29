@@ -129,12 +129,12 @@ export async function GET(request: NextRequest) {
 
     const maintenant = Date.now();
     return NextResponse.json({
-      total,
-      pages: Math.max(1, Math.ceil(total / PAR_PAGE)),
+      total: totalProduits,
+      pages: totalPages,
       page,
-      valeur: (sommeAchat._sum.prix_achat ?? 0) + (sommeReparations._sum.cout ?? 0),
-      categories: categories.map((c) => c.categorie).sort(),
-      lots: lots.map((l) => ({
+      valeur: (sommeAchatResult._sum.prix_achat ?? 0) + (sommeReparationsResult._sum.cout ?? 0),
+      categories: categoriesResult.map((c) => c.categorie).sort(),
+      lots: lotsResult.map((l) => ({
         id: l.id,
         libelle: `n°${l.id} — ${l.fournisseur} (${l.date_entree.toLocaleDateString("fr-FR")})`,
       })),
