@@ -122,17 +122,8 @@ export default function MigrationPage() {
     setApplying(false);
   };
 
-  const genererAudit = async () => {
-    setApplying(true);
-    try {
-      const res = await fetch("/api/admin/migration/export-audit");
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      alert(`✅ Audit généré avec succès dans le fichier :\n${data.file}`);
-    } catch (e: any) {
-      alert("Erreur d'audit: " + e.message);
-    }
-    setApplying(false);
+  const genererAudit = () => {
+    window.location.href = "/api/admin/migration/export-audit";
   };
 
   return (

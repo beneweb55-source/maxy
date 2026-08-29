@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import fs from "fs";
-import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -24,10 +22,13 @@ export async function GET() {
       })
     };
 
-    const filePath = path.join(process.cwd(), "scratch", "audit_post_migration.json");
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-
-    return NextResponse.json({ success: true, file: filePath });
+    return new NextResponse(JSON.stringify(data, null, 2), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Disposition': 'attachment; filename="audit_post_migration.json"'
+      }
+    });
   } catch (error) {
     console.error("Export error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
