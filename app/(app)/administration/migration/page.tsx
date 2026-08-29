@@ -122,6 +122,19 @@ export default function MigrationPage() {
     setApplying(false);
   };
 
+  const genererAudit = async () => {
+    setApplying(true);
+    try {
+      const res = await fetch("/api/admin/migration/export-audit");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      alert(`✅ Audit généré avec succès dans le fichier :\n${data.file}`);
+    } catch (e: any) {
+      alert("Erreur d'audit: " + e.message);
+    }
+    setApplying(false);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -169,6 +182,16 @@ export default function MigrationPage() {
             className="px-4 py-2 bg-yellow-500 text-white font-bold rounded-md hover:bg-yellow-600 disabled:opacity-50"
           >
             Mettre à jour l'Affichage Inventaire
+          </button>
+
+          <div className="w-px bg-gray-300 mx-2"></div>
+
+          <button 
+            onClick={genererAudit}
+            disabled={applying}
+            className="px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600 disabled:opacity-50"
+          >
+            🔍 Générer Rapport Audit
           </button>
         </div>
       </div>
