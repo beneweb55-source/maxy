@@ -2164,7 +2164,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     if (await modifierProduit(false)) {
                       const nextIndex = contexteNavigation.indexCourant + 1;
                       const nextProduct = contexteNavigation.produits[nextIndex];
-                      if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, nextIndex);
+                      if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, contexteNavigation.produits);
                     }
                   }}
                   title="Raccourci: Maj + Entrée"
