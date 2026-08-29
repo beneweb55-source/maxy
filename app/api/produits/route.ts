@@ -151,16 +151,18 @@ export async function GET(request: NextRequest) {
       pages: totalPages,
       page,
       valeur: (sommeAchatResult._sum.prix_achat ?? 0) + (sommeReparationsResult._sum.cout ?? 0),
-      categories: categoriesResult.map((c) => c.categorie).sort(),
+      categories: categoriesResult.map((c: any) => c.nom || c.categorie).sort(),
       lots: lotsResult.map((l) => ({
         id: l.id,
         libelle: `n°${l.id} — ${l.fournisseur} (${l.date_entree.toLocaleDateString("fr-FR")})`,
       })),
-      produits: produits.map((p) => ({
+      produits: produits.map((p: any) => ({
         id: p.id,
         code_interne: p.code_interne,
         reference: p.reference,
         categorie: p.categorie,
+        categorie_id: p.categorie_id,
+        categorie_rel: p.categorie_rel,
         statut: p.statut,
         a_jeter: p.a_jeter,
         en_vitrine: p.en_vitrine,
