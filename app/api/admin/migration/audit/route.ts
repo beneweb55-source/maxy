@@ -58,7 +58,7 @@ export async function GET() {
           stats.niveauB_reconstructible += nbExemplaires;
           detailsRecuperables.push({
             produit_actuel: `${m.categorie?.nom || ''} / ${m.nom}`,
-            donnee_originale: propsPourModele[0].groupe_reference,
+            donnee_originale: propsPourModele[0]!.groupe_reference,
             nb_exemplaires: nbExemplaires,
             action: "Restaurer depuis PropositionMigration"
           });
