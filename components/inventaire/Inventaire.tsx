@@ -245,7 +245,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const vueGroupee = false;
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
   const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
-  const [afficherTableauCockpit, setAfficherTableauCockpit] = useState(false);
+  const [afficherFamilles, setAfficherFamilles] = useState(true);
   
   const vueActuelle = searchParams?.get("vue");
   const [modeAffichage, setModeAffichage] = useState<"cartes" | "tableau">(
@@ -1208,7 +1208,11 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {vue === "cockpit" && (
         <div className="mb-8">
-          <Cockpit majUrl={majUrl} />
+          <Cockpit 
+            majUrl={majUrl} 
+            afficherFamilles={afficherFamilles} 
+            setAfficherFamilles={setAfficherFamilles} 
+          />
         </div>
       )}
       
@@ -1227,7 +1231,7 @@ export default function Inventaire({ role }: { role: Role }) {
         />
       )}
 
-      {(vue === "cockpit" || vue === "atraiter" || vue === "famille") && (
+      {((vue === "cockpit" && !afficherFamilles) || vue === "atraiter" || vue === "famille") && (
         <div className="space-y-4 animate-entree">
         {donneesFiltrees && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 sm:mt-0 px-2 sm:px-0">

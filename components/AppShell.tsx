@@ -62,6 +62,7 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     roles: ["gerant", "technicien", "dev"],
   },
   { href: "/inventaire", cle: "nav.inventaire", icone: IconeArchive, sousChemins: ["/produits"] },
+  { href: "/categories", cle: "nav.categories", icone: IconeArchive, sousChemins: [] },
   { href: "/vitrine", cle: "nav.vitrine", icone: IconeVitrine, sousChemins: [] },
   {
     href: "/rapports",

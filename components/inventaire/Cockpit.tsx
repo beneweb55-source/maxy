@@ -8,11 +8,20 @@ interface StatsData {
   categories: { name: string; total: number; disponibles: number; image: string | null }[];
 }
 
-export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<string, string | null>) => void, q?: string }) {
+export default function Cockpit({ 
+  majUrl, 
+  q = "", 
+  afficherFamilles, 
+  setAfficherFamilles 
+}: { 
+  majUrl: (modifs: Record<string, string | null>) => void, 
+  q?: string,
+  afficherFamilles: boolean,
+  setAfficherFamilles: (val: boolean) => void
+}) {
   const t = useT();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [afficherFamilles, setAfficherFamilles] = useState(false);
 
   const [erreur, setErreur] = useState<string | null>(null);
 

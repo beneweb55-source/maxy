@@ -58,6 +58,7 @@ export const fr = {
     dashboard: "Dashboard",
     arrivages: "Arrivages",
     inventaire: "Inventaire",
+    categories: "Catégories",
     vitrine: "Vitrine",
     rapports: "Rapports",
     ventes: "Ventes",

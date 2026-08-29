@@ -138,6 +138,42 @@ model Lot {
   @@map("lots")
 }
 
+model Categorie {
+  id          Int         @id @default(autoincrement())
+  nom         String
+  parent_id   Int?
+  image_url   String?
+  description String?
+  ordre       Int         @default(0)
+  attributs_schema Json?  
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  parent      Categorie?  @relation("HierarchieCategorie", fields: [parent_id], references: [id])
+  enfants     Categorie[] @relation("HierarchieCategorie")
+  modeles     Modele[]
+
+  @@map("categories")
+}
+
+model Modele {
+  id           Int      @id @default(autoincrement())
+  categorie_id Int
+  nom          String   
+  image_url    String?
+  description  String?
+  attributs    Json?     
+  prix_vente_conseille Int? 
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  categorie    Categorie @relation(fields: [categorie_id], references: [id])
+  exemplaires  Produit[] 
+
+  @@index([categorie_id])
+  @@map("modeles")
+}
+
 model CategorieInfo {
   nom         String   @id // The name of the categorie field (e.g. "laptop")
   image_url   String?
@@ -160,6 +196,7 @@ model FamilleInfo {
 model Produit {
   id               Int              @id @default(autoincrement())
   lot_id           Int?
+  modele_id        Int?
   code_interne     String           @unique
   reference        String
   categorie        String
@@ -178,6 +215,7 @@ model Produit {
   created_at       DateTime         @default(now())
 
   lot         Lot?               @relation(fields: [lot_id], references: [id])
+  modele      Modele?            @relation(fields: [modele_id], references: [id])
   reparations Reparation[]
   historique  HistoriqueStatut[]
   mouvements  MouvementCaisse[]
@@ -185,6 +223,7 @@ model Produit {
   images      ProduitImage[]
 
   @@index([lot_id])
+  @@index([modele_id])
   @@index([statut])
   @@index([categorie])
   @@index([lot_id, reference, categorie])
