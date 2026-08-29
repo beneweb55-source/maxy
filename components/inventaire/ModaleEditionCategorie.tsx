@@ -61,7 +61,7 @@ export default function ModaleEditionCategorie({
         payloadImageUrl = previewUrl;
       }
 
-      const res = await fetch(`/api/categories/${encodeURIComponent(nomCategorie)}`, {
+      const res = await fetch(`/api/categories/info/${encodeURIComponent(nomCategorie)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
