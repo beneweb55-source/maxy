@@ -102,11 +102,11 @@ export default function VueCategorie({
             )}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-brand-warm-grey">Famille</span>
+                <span className="text-sm text-brand-warm-grey">Catégorie</span>
                 <span className="text-brand-warm-grey">/</span>
                 {data && (
                   <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                    {data.total} catégories
+                    {data.total} modèles
                   </span>
                 )}
               </div>
@@ -127,7 +127,7 @@ export default function VueCategorie({
           className="btn btn-secondaire flex items-center gap-2 shrink-0 self-start sm:self-center"
         >
           <IconeCrayon taille={14} />
-          Modifier Famille
+          Modifier Catégorie
         </button>
       </div>
 

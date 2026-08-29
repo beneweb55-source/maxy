@@ -227,8 +227,12 @@ export default function Inventaire({ role }: { role: Role }) {
       quantite: "1",
     } : {
       ...FORMULAIRE_VIDE,
-      categorie: searchParams?.get("categorie") || "",
-      reference: searchParams?.get("cle") ? decodeBase64Url(searchParams.get("cle")!).split("|")[0] || "" : "",
+      categorie: searchParams?.get("cle")
+        ? decodeBase64Url(searchParams.get("cle")!).substring(decodeBase64Url(searchParams.get("cle")!).lastIndexOf("|") + 1)
+        : searchParams?.get("categorie") || "",
+      reference: searchParams?.get("cle") 
+        ? decodeBase64Url(searchParams.get("cle")!).substring(0, decodeBase64Url(searchParams.get("cle")!).lastIndexOf("|")) 
+        : "",
     },
     modalAjout || modalEdition !== null || produitSourceDuplication !== null
   );
@@ -332,7 +336,11 @@ export default function Inventaire({ role }: { role: Role }) {
 
     setErreur(null);
     try {
-      const res = await fetch(`/api/produits?${searchParams?.toString() || ""}`, {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+      if (vueGroupee) {
+        params.set("grouper", "1");
+      }
+      const res = await fetch(`/api/produits?${params.toString()}`, {
         cache: "no-store",
         signal: abortControllerRef.current.signal,
       });
@@ -363,7 +371,7 @@ export default function Inventaire({ role }: { role: Role }) {
     const suivants = statutsActifs.includes(statut)
       ? statutsActifs.filter((s) => s !== statut)
       : [...statutsActifs, statut];
-    majUrl({ statuts: suivants.join(",") || null });
+    majUrl({ statuts: suivants.join(",") || null, page: "1" });
   }
 
   function trierPar(cle: string) {
@@ -372,6 +380,7 @@ export default function Inventaire({ role }: { role: Role }) {
     majUrl({
       tri: cle,
       ordre: triActuel === cle && ordreActuel === "asc" ? "desc" : "asc",
+      page: "1",
     });
   }
 
@@ -407,7 +416,7 @@ export default function Inventaire({ role }: { role: Role }) {
     setModalAjout(true);
   }
 
-  function ouvrirEdition(unites: LigneProduit[], titre: string, indexContextuel?: number) {
+  function ouvrirEdition(unites: LigneProduit[], titre: string, contexteCustom?: LigneProduit[]) {
     const premier = unites[0]!;
     setFormPhotos(premier.image_url ? [premier.image_url] : []);
     setFormPhotosModifiees(false);
@@ -416,16 +425,13 @@ export default function Inventaire({ role }: { role: Role }) {
     setFormMettreEnVente(false);
     setModalEdition({ unites, titre });
     
-    if (unites.length === 1 && donneesFiltrees) {
-      if (indexContextuel !== undefined) {
-        setContexteNavigation({ produits: donneesFiltrees.produits, indexCourant: indexContextuel });
+    if (unites.length === 1) {
+      const liste = contexteCustom || (donneesFiltrees ? donneesFiltrees.produits : []);
+      const idx = liste.findIndex(p => p.id === premier.id);
+      if (idx !== -1) {
+        setContexteNavigation({ produits: liste, indexCourant: idx });
       } else {
-        const idx = donneesFiltrees.produits.findIndex(p => p.id === premier.id);
-        if (idx !== -1) {
-          setContexteNavigation({ produits: donneesFiltrees.produits, indexCourant: idx });
-        } else {
-          setContexteNavigation(null);
-        }
+        setContexteNavigation(null);
       }
     } else {
       setContexteNavigation(null);
@@ -949,13 +955,6 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
             
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-              <button
-                type="button"
-                onClick={() => majUrl({ vue: vueGroupee ? "detail" : null })}
-                className="btn btn-secondaire w-full sm:w-auto justify-center bg-white dark:bg-brand-paper shadow-sm"
-              >
-                {vueGroupee ? "Vue détaillée" : "Vue groupée"}
-              </button>
               {estGerant && (
                 <a
                   href={`/api/produits/export?${searchParams?.toString() || ""}`}
@@ -975,8 +974,8 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
 
           {/* Barre d'outils unifiée (Toolbar) */}
-          <div className="carte !p-2 sm:!p-3 flex flex-col lg:flex-row gap-3 items-center shadow-sm">
-            <div className="flex-1 w-full relative">
+          <div className="carte !p-2 sm:!p-3 flex flex-col lg:flex-row gap-3 items-center shadow-sm z-20 relative">
+            <div className="flex-1 w-full relative flex flex-col sm:flex-row gap-2">
               <RechercheRapide
                 valeur={q}
                 onInstantChange={(valeur) => setQLoc(valeur)}
@@ -988,6 +987,45 @@ export default function Inventaire({ role }: { role: Role }) {
                 debounceMs={300}
                 className="w-full pl-10 pr-4 py-2.5 bg-brand-paper dark:bg-black/20 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-brand-orange transition-all font-medium text-sm"
               />
+              {vue !== "cockpit" && vue !== "categorie" && (
+                <div className="flex items-center self-stretch bg-brand-light-grey/20 dark:bg-white/5 rounded-lg p-1 border border-brand-light-grey/50 dark:border-white/10 shrink-0 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => majUrl({ vue: vueGroupee ? "detail" : null })}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all h-full ${vueGroupee ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                  >
+                    Groupé
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => majUrl({ vue: "detail" })}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all h-full ${!vueGroupee ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                  >
+                    Détaillé
+                  </button>
+                  
+                  {!vueGroupee && (
+                    <div className="flex items-center ml-2 pl-2 border-l border-brand-light-grey/50 dark:border-white/10 h-full">
+                      <button 
+                        type="button"
+                        onClick={() => setModeAffichage("cartes")} 
+                        className={`px-2 py-1.5 rounded-md text-xs font-bold transition-all h-full ${modeAffichage === "cartes" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                        title="Vue Cartes"
+                      >
+                        ▦
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setModeAffichage("tableau")} 
+                        className={`px-2 py-1.5 rounded-md text-xs font-bold transition-all h-full ${modeAffichage === "tableau" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                        title="Vue Tableau"
+                      >
+                        ☷
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             {vue !== "cockpit" && (
@@ -1214,27 +1252,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 {!estSocial && (
                   <>
                     {" "}· valeur de la sélection (achat + réparations) :{" "}
-                    <strong className="text-brand-black dark:text-white">{formaterDA(donneesFiltrees.valeur)}</strong>
-                  </>
-                )}
               </p>
-              
-              <div className="flex items-center self-start sm:self-auto bg-brand-light-grey/20 dark:bg-white/5 rounded-lg p-1 border border-brand-light-grey/50 dark:border-white/10 shrink-0">
-                <button 
-                  type="button"
-                  onClick={() => setModeAffichage("cartes")} 
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${modeAffichage === "cartes" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
-                >
-                  ▦ Cartes
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setModeAffichage("tableau")} 
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${modeAffichage === "tableau" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
-                >
-                  ☷ Tableau
-                </button>
-              </div>
             </div>
           )}
 
@@ -1565,7 +1583,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             />
                             <button
                               type="button"
-                              onClick={() => ouvrirEdition([p], p.code_interne)}
+                              onClick={() => ouvrirEdition([p], p.code_interne, g.unites)}
                               title={t("inventaire.editer")}
                               aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
                               className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
@@ -1884,7 +1902,17 @@ export default function Inventaire({ role }: { role: Role }) {
             </select>
           </div>
           {champsProduit}
-          <div className="pt-2 text-right">
+          <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setModalAjout(false);
+                setProduitSourceDuplication(null);
+              }}
+              className="btn btn-secondaire w-full sm:w-auto justify-center"
+            >
+              Annuler
+            </button>
             <button
               type="submit"
               disabled={envoi || !formulaireValide}
@@ -1927,7 +1955,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   if (await modifierProduit(false)) {
                     const nextIndex = contexteNavigation.indexCourant + 1;
                     const nextProduct = contexteNavigation.produits[nextIndex];
-                    if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, nextIndex);
+                    if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, contexteNavigation.produits);
                   }
                 } else {
                   void modifierProduit();
@@ -2059,7 +2087,7 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          <div className="pt-2 flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
+          <div className="pt-2 flex flex-col-reverse sm:flex-row justify-between items-center gap-4 border-t border-brand-light-grey/50 pt-4 mt-4">
             {contexteNavigation && modalEdition?.unites.length === 1 ? (
               <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-start">
                 <button
@@ -2068,7 +2096,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   onClick={() => {
                     const prevIndex = contexteNavigation.indexCourant - 1;
                     const prevProduct = contexteNavigation.produits[prevIndex];
-                    if (prevProduct) ouvrirEdition([prevProduct], prevProduct.code_interne, prevIndex);
+                    if (prevProduct) ouvrirEdition([prevProduct], prevProduct.code_interne, contexteNavigation.produits);
                   }}
                   className="btn btn-secondaire flex-1 sm:flex-none justify-center"
                 >
@@ -2080,7 +2108,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   onClick={() => {
                     const nextIndex = contexteNavigation.indexCourant + 1;
                     const nextProduct = contexteNavigation.produits[nextIndex];
-                    if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, nextIndex);
+                    if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, contexteNavigation.produits);
                   }}
                   className="btn btn-secondaire flex-1 sm:flex-none justify-center"
                 >
@@ -2088,9 +2116,35 @@ export default function Inventaire({ role }: { role: Role }) {
                 </button>
               </div>
             ) : (
-              <div />
+              <div className="w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setModalEdition(null)}
+                  className="btn btn-secondaire w-full sm:w-auto justify-center"
+                >
+                  Annuler
+                </button>
+              </div>
             )}
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {contexteNavigation && modalEdition?.unites.length === 1 && (
+                <button
+                  type="button"
+                  onClick={() => setModalEdition(null)}
+                  className="btn btn-secondaire w-full sm:w-auto justify-center sm:hidden"
+                >
+                  Annuler
+                </button>
+              )}
+              {contexteNavigation && modalEdition?.unites.length === 1 && (
+                <button
+                  type="button"
+                  onClick={() => setModalEdition(null)}
+                  className="btn btn-secondaire w-full sm:w-auto justify-center hidden sm:flex"
+                >
+                  Annuler
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={envoi || !formulaireValide}

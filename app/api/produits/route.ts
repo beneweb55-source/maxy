@@ -40,43 +40,89 @@ export async function GET(request: NextRequest) {
       console.log("==========================");
     }
 
-    const [total, sommeAchat, sommeReparations, produits, categories, lots] =
-      await Promise.all([
+    const grouper = params.get("grouper") === "1";
+
+    let totalProduits = 0;
+    let sommeAchatResult = { _sum: { prix_achat: 0 as number | null } };
+    let sommeReparationsResult = { _sum: { cout: 0 as number | null } };
+    let categoriesResult: { categorie: string }[] = [];
+    let lotsResult: any[] = [];
+    let produits: any[] = [];
+    let totalPages = 1;
+
+    if (grouper) {
+      // 1. Pagination basée sur les groupes (familles)
+      const countGroups = await prisma.produit.groupBy({ by: ["reference", "categorie"], where });
+      const totalGroups = countGroups.length;
+      totalPages = Math.max(1, Math.ceil(totalGroups / PAR_PAGE));
+
+      const distinctRefs = await prisma.produit.findMany({
+        where,
+        distinct: ["reference", "categorie"],
+        select: { reference: true, categorie: true },
+        orderBy: { reference: "asc" },
+        skip: (page - 1) * PAR_PAGE,
+        take: PAR_PAGE,
+      });
+
+      const refFilter = distinctRefs.length > 0 
+        ? { OR: distinctRefs.map((r) => ({ reference: r.reference, categorie: r.categorie })) }
+        : { id: -1 }; // Force empty if no groups
+
+      const [totalCount, sommeAchat, sommeReparations, fetchedProduits, categories, lots] = await Promise.all([
         prisma.produit.count({ where }),
         prisma.produit.aggregate({ where, _sum: { prix_achat: true } }),
         prisma.reparation.aggregate({ where: { produit: where }, _sum: { cout: true } }),
-        // `select` explicite : ne JAMAIS rapatrier `image_url` (photo base64)
-        // pour une liste — la présence d'une photo est récupérée séparément
-        // sous forme de simple booléen (voir lib/images-flags).
+        prisma.produit.findMany({
+          where: { AND: [where, refFilter] },
+          orderBy,
+          select: {
+            id: true, code_interne: true, reference: true, categorie: true,
+            statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
+            prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
+            etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
+            reparations: { select: { cout: true } }, _count: { select: { images: true } },
+          },
+        }),
+        prisma.produit.findMany({ distinct: ["categorie"], select: { categorie: true } }),
+        prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }),
+      ]);
+      totalProduits = totalCount;
+      sommeAchatResult = sommeAchat;
+      sommeReparationsResult = sommeReparations;
+      produits = fetchedProduits;
+      categoriesResult = categories;
+      lotsResult = lots;
+    } else {
+      // Pagination standard par item
+      const [totalCount, sommeAchat, sommeReparations, fetchedProduits, categories, lots] = await Promise.all([
+        prisma.produit.count({ where }),
+        prisma.produit.aggregate({ where, _sum: { prix_achat: true } }),
+        prisma.reparation.aggregate({ where: { produit: where }, _sum: { cout: true } }),
         prisma.produit.findMany({
           where,
           orderBy,
           skip: (page - 1) * PAR_PAGE,
           take: PAR_PAGE,
           select: {
-            id: true,
-            code_interne: true,
-            reference: true,
-            categorie: true,
-            statut: true,
-            a_jeter: true,
-            en_vitrine: true,
-            prix_achat: true,
-            prix_vente_fixe: true,
-            prix_vente_reel: true,
-            created_at: true,
-            etiquette_imprimee: true,
-            lot: { select: { id: true, fournisseur: true, date_entree: true } },
-            reparations: { select: { cout: true } },
-            _count: { select: { images: true } },
+            id: true, code_interne: true, reference: true, categorie: true,
+            statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
+            prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
+            etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
+            reparations: { select: { cout: true } }, _count: { select: { images: true } },
           },
         }),
         prisma.produit.findMany({ distinct: ["categorie"], select: { categorie: true } }),
-        prisma.lot.findMany({
-          orderBy: { id: "desc" },
-          select: { id: true, fournisseur: true, date_entree: true },
-        }),
+        prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }),
       ]);
+      totalProduits = totalCount;
+      totalPages = Math.max(1, Math.ceil(totalCount / PAR_PAGE));
+      sommeAchatResult = sommeAchat;
+      sommeReparationsResult = sommeReparations;
+      produits = fetchedProduits;
+      categoriesResult = categories;
+      lotsResult = lots;
+    }
 
     // Présence d'une photo de couverture : booléen seul, aucune image transférée.
     const avecCouverture = await couverturesProduits(produits.map((p) => p.id));

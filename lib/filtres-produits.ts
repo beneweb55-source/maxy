@@ -4,7 +4,10 @@ import { decodeBase64Url } from "./base64url";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
-export function construireFiltresProduits(params: URLSearchParams): Prisma.ProduitWhereInput {
+export function construireFiltresProduits(
+  params: URLSearchParams,
+  options?: { ignorerStatuts?: boolean }
+): Prisma.ProduitWhereInput {
   const clauses: Prisma.ProduitWhereInput[] = [];
 
   const q = params.get("q")?.trim();
@@ -40,15 +43,18 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     }
   }
 
-  const statuts = (params.get("statuts") ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s): s is StatutProduit => (STATUTS_PRODUIT as readonly string[]).includes(s));
-  if (statuts.length > 0) {
-    clauses.push({ statut: { in: statuts } });
-  } else {
-    // Si aucun statut spécifique n'est demandé, on masque les vendus par défaut
-    clauses.push({ statut: { not: "vendu" } });
+  if (!options?.ignorerStatuts) {
+    const statuts = (params.get("statuts") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s): s is StatutProduit => (STATUTS_PRODUIT as readonly string[]).includes(s));
+    
+    if (statuts.length > 0) {
+      clauses.push({ statut: { in: statuts } });
+    } else {
+      // Si aucun statut spécifique n'est demandé, on masque les vendus et jetés par défaut
+      clauses.push({ statut: { notIn: ["vendu", "hs"] } });
+    }
   }
 
   const categorie = params.get("categorie")?.trim();

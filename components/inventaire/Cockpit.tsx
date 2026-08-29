@@ -101,7 +101,7 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
 
           <div 
             className="carte relative overflow-hidden group cursor-pointer border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-brand-paper dark:border-emerald-900/50 !p-5"
-            onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu" })}
+            onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu,en_test,en_vente" })}
           >
             <div className="absolute -right-4 -top-4 text-emerald-500/5 dark:text-emerald-500/10 transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">
               <IconeCocheCercle taille={100} />
@@ -259,11 +259,11 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
 
       {/* Explorer */}
       <div>
-        <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Explorer par catégorie</h2>
+        <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Explorer par famille/référence</h2>
         
         {categoriesAffichees.length === 0 && q ? (
           <div className="text-sm text-brand-warm-grey p-4 text-center border border-dashed border-brand-light-grey dark:border-white/10 rounded-2xl">
-            Aucune catégorie ne correspond à "{q}"
+            Aucune famille/référence ne correspond à "{q}"
           </div>
         ) : (
           <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
