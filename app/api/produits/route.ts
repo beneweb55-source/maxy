@@ -46,8 +46,24 @@ export async function GET(request: NextRequest) {
     let sommeAchatResult = { _sum: { prix_achat: 0 as number | null } };
     let sommeReparationsResult = { _sum: { cout: 0 as number | null } };
     let categoriesResult: { categorie: string }[] = [];
-    let lotsResult: any[] = [];
-    let produits: any[] = [];
+    let lotsResult: { id: number; fournisseur: string; date_entree: Date }[] = [];
+    let produits: {
+      id: number;
+      code_interne: string;
+      reference: string;
+      categorie: string;
+      statut: string;
+      a_jeter: boolean;
+      en_vitrine: boolean;
+      prix_achat: number;
+      prix_vente_fixe: number | null;
+      prix_vente_reel: number | null;
+      created_at: Date;
+      etiquette_imprimee: boolean;
+      lot: { id: number; fournisseur: string; date_entree: Date } | null;
+      reparations: { cout: number }[];
+      _count: { images: number };
+    }[] = [];
     let totalPages = 1;
 
     if (grouper) {
@@ -149,7 +165,7 @@ export async function GET(request: NextRequest) {
         prix_achat: p.prix_achat,
         image_url: urlCouverture(avecCouverture.get(p.id), p.id),
         nb_images: (avecCouverture.has(p.id) ? 1 : 0) + p._count.images,
-        cout_reparations: p.reparations.reduce((s: number, r: any) => s + r.cout, 0),
+        cout_reparations: p.reparations.reduce((s: number, r: { cout: number }) => s + r.cout, 0),
         prix_vente_fixe: p.prix_vente_fixe,
         prix_vente_reel: p.prix_vente_reel,
         etiquette_imprimee: p.etiquette_imprimee,
