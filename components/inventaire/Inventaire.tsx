@@ -49,6 +49,11 @@ interface LigneProduit {
   code_interne: string;
   reference: string;
   categorie: string;
+  categorie_id?: number | null;
+  categorie_rel?: {
+    nom: string;
+    parent: { nom: string; parent: { nom: string } | null } | null;
+  } | null;
   statut: StatutProduit;
   a_jeter: boolean;
   en_vitrine: boolean;
@@ -63,6 +68,17 @@ interface LigneProduit {
   image_url: string | null;
   nb_images: number;
   etiquette_imprimee: boolean;
+}
+
+function formatCategoriePath(p: LigneProduit): string {
+  if (p.categorie_rel) {
+    const parts = [];
+    if (p.categorie_rel.parent?.parent?.nom) parts.push(p.categorie_rel.parent.parent.nom);
+    if (p.categorie_rel.parent?.nom) parts.push(p.categorie_rel.parent.nom);
+    parts.push(p.categorie_rel.nom);
+    return parts.join(" > ");
+  }
+  return p.categorie || "Non classé";
 }
 
 interface ReponseInventaire {
@@ -128,7 +144,8 @@ interface GroupeProduits {
 function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
   const groupes = new Map<string, LigneProduit[]>();
   for (const p of produits) {
-    const cle = `${p.lot_id ?? "sans-lot"}|${p.reference.trim().toLowerCase()}|${p.categorie.trim().toLowerCase()}`;
+    const catFormatee = formatCategoriePath(p);
+    const cle = `${p.lot_id ?? "sans-lot"}|${p.reference.trim().toLowerCase()}|${catFormatee.trim().toLowerCase()}`;
     const existant = groupes.get(cle);
     if (existant) existant.push(p);
     else groupes.set(cle, [p]);
@@ -144,7 +161,7 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
     return {
       cle,
       reference: premier.reference,
-      categorie: premier.categorie,
+      categorie: formatCategoriePath(premier),
       image_url: unites.find((u) => u.image_url)?.image_url ?? null,
       nbImages: Math.max(...unites.map((u) => u.nb_images)),
       enVitrine: unites.filter((u) => u.en_vitrine).length,
@@ -1712,7 +1729,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     <td className="max-w-64 truncate px-4 py-2.5 font-semibold text-brand-black dark:text-white" title={p.reference}>
                       {p.reference}
                     </td>
-                    <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-warm-grey">{p.categorie}</td>
+                    <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-warm-grey">{formatCategoriePath(p)}</td>
                     <td className="px-4 py-2.5">
                       <span className="inline-flex items-center gap-2">
                         <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />

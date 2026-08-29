@@ -68,21 +68,21 @@ export async function GET(request: NextRequest) {
 
     if (grouper) {
       // 1. Pagination basée sur les groupes (familles)
-      const countGroups = await prisma.produit.groupBy({ by: ["reference", "categorie"], where });
+      const countGroups = await prisma.produit.groupBy({ by: ["reference", "categorie_id", "categorie"], where });
       const totalGroups = countGroups.length;
       totalPages = Math.max(1, Math.ceil(totalGroups / PAR_PAGE));
 
       const distinctRefs = await prisma.produit.findMany({
         where,
-        distinct: ["reference", "categorie"],
-        select: { reference: true, categorie: true },
+        distinct: ["reference", "categorie_id", "categorie"],
+        select: { reference: true, categorie_id: true, categorie: true },
         orderBy: { reference: "asc" },
         skip: (page - 1) * PAR_PAGE,
         take: PAR_PAGE,
       });
 
       const refFilter = distinctRefs.length > 0 
-        ? { OR: distinctRefs.map((r) => ({ reference: r.reference, categorie: r.categorie })) }
+        ? { OR: distinctRefs.map((r) => ({ reference: r.reference, categorie_id: r.categorie_id, categorie: r.categorie })) }
         : { id: -1 }; // Force empty if no groups
 
       const [totalCount, sommeAchat, sommeReparations, fetchedProduits, categories, lots] = await Promise.all([
@@ -93,14 +93,15 @@ export async function GET(request: NextRequest) {
           where: { AND: [where, refFilter] },
           orderBy,
           select: {
-            id: true, code_interne: true, reference: true, categorie: true,
+            id: true, code_interne: true, reference: true, categorie: true, categorie_id: true,
+            categorie_rel: { select: { nom: true, parent: { select: { nom: true, parent: { select: { nom: true } } } } } },
             statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
             prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
             etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
             reparations: { select: { cout: true } }, _count: { select: { images: true } },
           },
         }),
-        prisma.produit.findMany({ distinct: ["categorie"], select: { categorie: true } }),
+        prisma.categorie.findMany({ where: { parent_id: null }, select: { nom: true } }),
         prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }),
       ]);
       totalProduits = totalCount;
@@ -121,14 +122,15 @@ export async function GET(request: NextRequest) {
           skip: (page - 1) * PAR_PAGE,
           take: PAR_PAGE,
           select: {
-            id: true, code_interne: true, reference: true, categorie: true,
+            id: true, code_interne: true, reference: true, categorie: true, categorie_id: true,
+            categorie_rel: { select: { nom: true, parent: { select: { nom: true, parent: { select: { nom: true } } } } } },
             statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
             prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
             etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
             reparations: { select: { cout: true } }, _count: { select: { images: true } },
           },
         }),
-        prisma.produit.findMany({ distinct: ["categorie"], select: { categorie: true } }),
+        prisma.categorie.findMany({ where: { parent_id: null }, select: { nom: true } }),
         prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }),
       ]);
       totalProduits = totalCount;
