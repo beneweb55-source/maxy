@@ -66,7 +66,9 @@ export async function POST() {
             modele_id: null
           },
           data: {
-            modele_id: modele.id
+            modele_id: modele.id,
+            categorie: analyse.cible_categorie_nom,
+            reference: analyse.cible_modele_nom
           }
         });
       });

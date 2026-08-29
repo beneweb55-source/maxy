@@ -18,7 +18,8 @@
     "postinstall": "prisma generate",
     "electron:start": "electron .",
     "electron:build": "electron-builder --win",
-    "migrate:inventory": "tsx scripts/auto_migrate_inventory.ts"
+    "migrate:inventory": "tsx scripts/auto_migrate_inventory.ts",
+    "fix:strings": "tsx scripts/fix_legacy_strings.ts"
   },
   "build": {
     "appId": "com.gestionmaxi.desktop",

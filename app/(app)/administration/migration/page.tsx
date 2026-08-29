@@ -107,6 +107,21 @@ export default function MigrationPage() {
     setAutoMigrating(false);
   };
 
+  const corrigerTextesInventaire = async () => {
+    if (!confirm("Voulez-vous écraser les anciennes références texte de l'inventaire pour afficher la nouvelle organisation ?")) return;
+    
+    setApplying(true);
+    try {
+      const res = await fetch("/api/admin/migration/fix-strings", { method: "POST" });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      alert(`✅ Textes corrigés avec succès !\n${data.mis_a_jour} produits mis à jour.`);
+    } catch (e: any) {
+      alert("Erreur: " + e.message);
+    }
+    setApplying(false);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -144,6 +159,16 @@ export default function MigrationPage() {
             className="px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 disabled:opacity-50"
           >
             {autoMigrating ? "Migration en cours..." : "🚀 TOUT RÉORGANISER (1 Clic)"}
+          </button>
+
+          <div className="w-px bg-gray-300 mx-2"></div>
+
+          <button 
+            onClick={corrigerTextesInventaire}
+            disabled={applying}
+            className="px-4 py-2 bg-yellow-500 text-white font-bold rounded-md hover:bg-yellow-600 disabled:opacity-50"
+          >
+            Mettre à jour l'Affichage Inventaire
           </button>
         </div>
       </div>

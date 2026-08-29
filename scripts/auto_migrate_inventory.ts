@@ -78,17 +78,18 @@ async function main() {
         });
       }
 
-      // 5. Mettre à jour tous les produits de ce groupe avec ce modele_id
-      await tx.produit.updateMany({
-        where: {
-          categorie: categorieLegacy,
-          reference: referenceLegacy,
-          modele_id: null
-        },
-        data: {
-          modele_id: modele.id
-        }
-      });
+        await tx.produit.updateMany({
+          where: {
+            categorie: categorieLegacy,
+            reference: referenceLegacy,
+            modele_id: null
+          },
+          data: {
+            modele_id: modele.id,
+            categorie: analyse.cible_categorie_nom,
+            reference: analyse.cible_modele_nom
+          }
+        });
     });
 
     migres += nbProduits;
