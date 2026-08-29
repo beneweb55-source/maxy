@@ -152,6 +152,7 @@ model Categorie {
   parent      Categorie?  @relation("HierarchieCategorie", fields: [parent_id], references: [id])
   enfants     Categorie[] @relation("HierarchieCategorie")
   modeles     Modele[]
+  produits    Produit[]
 
   @@map("categories")
 }
@@ -197,6 +198,7 @@ model Produit {
   id               Int              @id @default(autoincrement())
   lot_id           Int?
   modele_id        Int?
+  categorie_id     Int?
   code_interne     String           @unique
   reference        String
   categorie        String
@@ -216,6 +218,7 @@ model Produit {
 
   lot         Lot?               @relation(fields: [lot_id], references: [id])
   modele      Modele?            @relation(fields: [modele_id], references: [id])
+  categorie_rel Categorie?       @relation(fields: [categorie_id], references: [id])
   reparations Reparation[]
   historique  HistoriqueStatut[]
   mouvements  MouvementCaisse[]

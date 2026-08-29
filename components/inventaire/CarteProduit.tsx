@@ -3,7 +3,7 @@ import Link from "next/link";
 import { type StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
-import { IconeCorbeille, IconeCrayon, IconePlus, IconeVitrine } from "@/components/icons";
+import { IconeCorbeille, IconeCrayon, IconePlus, IconeVitrine, IconeArchive } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 
 export interface LigneProduit {
@@ -35,6 +35,7 @@ interface CarteProduitProps {
   basculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
   ouvrirEdition: (unites: LigneProduit[], titre: string) => void;
   ouvrirSuppressionUnites: (unites: LigneProduit[]) => void;
+  ouvrirClassification: (unites: LigneProduit[]) => void;
   ouvrirAjout?: (source?: LigneProduit) => void;
   t: (key: string, args?: any) => string;
 }
@@ -47,6 +48,7 @@ export default function CarteProduit({
   basculerVitrineIds,
   ouvrirEdition,
   ouvrirSuppressionUnites,
+  ouvrirClassification,
   ouvrirAjout,
   t
 }: CarteProduitProps) {
@@ -157,10 +159,22 @@ export default function CarteProduit({
             type="button"
             onClick={(e) => {
               e.preventDefault();
+              ouvrirClassification([produit]);
+            }}
+            title="Modifier la classification"
+            className="p-2 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-orange transition-colors ml-auto"
+          >
+            <IconeArchive taille={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
               ouvrirEdition([produit], produit.code_interne);
             }}
             title={t("inventaire.editer")}
-            className="p-2 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors ml-auto"
+            className="p-2 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors"
           >
             <IconeCrayon taille={16} />
           </button>

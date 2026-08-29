@@ -30,6 +30,7 @@ import {
   IconeVitrine,
   IconeOeil,
   IconeOeilBarre,
+  IconeArchive,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
@@ -41,6 +42,7 @@ import Cockpit from "./Cockpit";
 import VueCategorie from "./VueCategorie";
 import VueFamille from "./VueFamille";
 import CarteProduit from "./CarteProduit";
+import ModalClassification from "./ModalClassification";
 
 interface LigneProduit {
   id: number;
@@ -175,6 +177,9 @@ export default function Inventaire({ role }: { role: Role }) {
     unites: LigneProduit[];
     titre: string;
   } | null>(null);
+
+  const [modalClassification, setModalClassification] = useState<LigneProduit[] | null>(null);
+
   // Suppression : soit des unités précises (« unites »), soit tout un modèle
   // (« modele ») = tous les exemplaires en stock d'une référence, au-delà de la
   // page courante. `vendusExclus` : exemplaires vendus écartés (conservés pour
@@ -1614,6 +1619,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 envoi={envoi}
                 basculerVitrineIds={basculerVitrineIds}
                 ouvrirEdition={ouvrirEdition}
+                ouvrirClassification={setModalClassification}
                 ouvrirSuppressionUnites={ouvrirSuppressionUnites}
                 ouvrirAjout={ouvrirAjout}
                 t={t}
@@ -1734,6 +1740,17 @@ export default function Inventaire({ role }: { role: Role }) {
                             dejaImprimee={p.etiquette_imprimee} 
                             className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white" 
                           />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalClassification([p]);
+                            }}
+                            title="Modifier la classification"
+                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-orange/10 hover:text-brand-orange"
+                          >
+                            <IconeArchive taille={15} />
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -2253,6 +2270,18 @@ export default function Inventaire({ role }: { role: Role }) {
           </form>
         )}
       </Modale>
+
+      {modalClassification && (
+        <ModalClassification
+          produits={modalClassification}
+          ouverte={true}
+          onFermer={() => setModalClassification(null)}
+          onSucces={() => {
+            setModalClassification(null);
+            void charger();
+          }}
+        />
+      )}
     </>
   );
 }
