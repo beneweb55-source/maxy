@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     let totalProduits = 0;
     let sommeAchatResult = { _sum: { prix_achat: 0 as number | null } };
     let sommeReparationsResult = { _sum: { cout: 0 as number | null } };
-    let categoriesResult: { categorie: string }[] = [];
+    let categoriesResult: any[] = [];
     let lotsResult: { id: number; fournisseur: string; date_entree: Date }[] = [];
     let produits: {
       id: number;
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       lot: { id: number; fournisseur: string; date_entree: Date } | null;
       reparations: { cout: number }[];
       _count: { images: number };
-    }[] = [];
+    }[] | any[] = [];
     let totalPages = 1;
 
     if (grouper) {

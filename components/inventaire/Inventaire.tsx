@@ -43,6 +43,7 @@ import VueCategorie from "./VueCategorie";
 import VueFamille from "./VueFamille";
 import CarteProduit from "./CarteProduit";
 import ModalClassification from "./ModalClassification";
+import ModalSuppression from "./ModalSuppression";
 
 interface LigneProduit {
   id: number;
@@ -2247,93 +2248,16 @@ export default function Inventaire({ role }: { role: Role }) {
         </form>
       </Modale>
 
-      <Modale
-        titre={
-          modalSuppression
-            ? modalSuppression.unites.length === 0
-              ? t("inventaire.suppressionImpossible")
-              : modalSuppression.type === "modele"
-                ? t("inventaire.supprimerModeleTitre", { ref: modalSuppression.reference })
-                : modalSuppression.unites.length === 1
-                  ? t("inventaire.supprimerUniteTitre", { code: modalSuppression.unites[0]!.code_interne })
-                  : t("inventaire.supprimerMasseTitre", { n: modalSuppression.unites.length })
-            : ""
-        }
-        ouverte={modalSuppression !== null}
+      <ModalSuppression
+        modalSuppression={modalSuppression}
         onFermer={() => setModalSuppression(null)}
-      >
-        {modalSuppression && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!envoi && modalSuppression.unites.length > 0) {
-                void supprimerProduits();
-              }
-            }}
-          >
-            {modalSuppression.unites.length === 0 ? (
-              <p className="text-sm text-brand-warm-grey">
-                {modalSuppression.vendusExclus === 1
-                  ? t("inventaire.suppressionImpossibleVendu")
-                  : modalSuppression.vendusExclus > 1
-                    ? t("inventaire.suppressionImpossibleVendus", { n: modalSuppression.vendusExclus })
-                    : t("inventaire.aucuneSuppression")}
-              </p>
-            ) : modalSuppression.type === "modele" ? (
-              <p className="text-sm text-brand-warm-grey">
-                {t("inventaire.suppressionModeleAvertissement", { ref: modalSuppression.reference, cat: modalSuppression.categorie })}
-              </p>
-            ) : modalSuppression.unites.length === 1 ? (
-              <p className="text-sm text-brand-warm-grey">
-                {t("inventaire.suppressionUniteAvertissement", { ref: modalSuppression.unites[0]!.reference })}
-              </p>
-            ) : (
-              <p className="text-sm text-brand-warm-grey">
-                {t("inventaire.suppressionMasseAvertissement", { n: modalSuppression.unites!.length })}
-                <strong className="text-brand-black">{modalSuppression.reference}</strong> (
-                {modalSuppression.unites[0]?.code_interne} {t("inventaire.a")} {" "}
-                {modalSuppression.unites[modalSuppression.unites.length - 1]?.code_interne}) {t("inventaire.suppressionIreversible")}
-              </p>
-            )}
-
-            {modalSuppression.unites.length > 0 &&
-              modalSuppression.vendusExclus > 0 &&
-              (modalSuppression.type === "modele" ? (
-                <p className="mt-2 rounded-lg bg-brand-light-grey/30 px-3 py-2 text-xs text-brand-warm-grey">
-                  Les exemplaires déjà vendus de ce modèle sont conservés (historique de vente
-                  préservé).
-                </p>
-              ) : (
-                <p className="mt-2 rounded-lg bg-brand-light-grey/30 px-3 py-2 text-xs text-brand-warm-grey">
-                  {modalSuppression.vendusExclus} exemplaire
-                  {modalSuppression.vendusExclus > 1 ? "s" : ""} vendu
-                  {modalSuppression.vendusExclus > 1 ? "s" : ""} conservé
-                  {modalSuppression.vendusExclus > 1 ? "s" : ""} (historique de vente préservé).
-                </p>
-              ))}
-
-            <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setModalSuppression(null)}
-                className="btn btn-secondaire w-full sm:w-auto justify-center"
-              >
-                {modalSuppression.unites.length === 0 ? "Fermer" : "Annuler"}
-              </button>
-              {modalSuppression.unites.length > 0 && (
-                <button
-                  type="submit"
-                  disabled={envoi}
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center justify-center gap-1.5 w-full sm:w-auto"
-                >
-                  <IconeCorbeille taille={15} />
-                  Supprimer définitivement
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-      </Modale>
+        onSubmit={() => {
+          if (!envoi && modalSuppression?.unites.length) {
+            void supprimerProduits();
+          }
+        }}
+        envoi={envoi}
+      />
 
       {modalClassification && (
         <ModalClassification
