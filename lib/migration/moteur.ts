@@ -52,9 +52,9 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
 
     // Attribut CPU/RAM
     const matchCPU = texteComplet.match(/\b(i[3579]|ryzen\s*\d)\b/);
-    if (matchCPU) attributs["CPU"] = matchCPU[1].toUpperCase();
+    if (matchCPU && matchCPU[1]) attributs["CPU"] = matchCPU[1].toUpperCase();
     const matchRAM = texteComplet.match(/\b(\d+)\s*(gb|go)\b/);
-    if (matchRAM) attributs["RAM"] = `${matchRAM[1]}GB`;
+    if (matchRAM && matchRAM[1]) attributs["RAM"] = `${matchRAM[1]}GB`;
 
     attributs["Details"] = referenceLegacy;
   }

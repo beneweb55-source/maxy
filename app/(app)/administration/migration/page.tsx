@@ -21,6 +21,7 @@ export default function MigrationPage() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [autoMigrating, setAutoMigrating] = useState(false);
   
   useEffect(() => {
     fetchPropositions();
@@ -90,6 +91,22 @@ export default function MigrationPage() {
     setApplying(false);
   };
 
+  const lancerMigrationAutomatique = async () => {
+    if (!confirm("🚨 ATTENTION : Cette action va lire tous vos anciens produits et les réorganiser automatiquement dans les nouvelles catégories. Voulez-vous continuer ?")) return;
+    
+    setAutoMigrating(true);
+    try {
+      const res = await fetch("/api/admin/migration/auto-migrate", { method: "POST" });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      alert(`✅ Migration Automatique Réussie !\n\nProduits migrés : ${data.migres}\nProduits laissés à classer manuellement : ${data.ignores}`);
+      await fetchPropositions();
+    } catch (e: any) {
+      alert("Erreur: " + e.message);
+    }
+    setAutoMigrating(false);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -117,6 +134,16 @@ export default function MigrationPage() {
             className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
           >
             {applying ? "Application..." : "3. Appliquer les Validés"}
+          </button>
+          
+          <div className="w-px bg-gray-300 mx-2"></div>
+          
+          <button 
+            onClick={lancerMigrationAutomatique}
+            disabled={autoMigrating || analyzing || applying}
+            className="px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 disabled:opacity-50"
+          >
+            {autoMigrating ? "Migration en cours..." : "🚀 TOUT RÉORGANISER (1 Clic)"}
           </button>
         </div>
       </div>
