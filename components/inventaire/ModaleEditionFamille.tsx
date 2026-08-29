@@ -25,6 +25,8 @@ export default function ModaleEditionFamille({
   const [nom, setNom] = useState(familleInfo?.nom || "");
   const [description, setDescription] = useState(familleInfo?.description || "");
   const [imageUrl, setImageUrl] = useState(familleInfo?.image_url || "");
+  const [prixVente, setPrixVente] = useState("");
+  const [prixAchat, setPrixAchat] = useState("");
   const [fichier, setFichier] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(familleInfo?.image_url || null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +72,9 @@ export default function ModaleEditionFamille({
         body: JSON.stringify({ 
           nom: nom.trim() || null, 
           image_url: payloadImageUrl.trim() || null, 
-          description: description.trim() || null 
+          description: description.trim() || null,
+          prix_vente: prixVente ? parseInt(prixVente) : undefined,
+          prix_achat: prixAchat ? parseInt(prixAchat) : undefined
         })
       });
 
@@ -93,6 +97,45 @@ export default function ModaleEditionFamille({
       <form onSubmit={sauvegarder} className="space-y-6">
         {erreur && <div className="text-sm text-red-600 p-3 bg-red-50 dark:bg-red-900/30 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800/50">{erreur}</div>}
         
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-white">Nom d'affichage personnalisé</label>
+          <input
+            type="text"
+            value={nom}
+            onChange={e => setNom(e.target.value)}
+            className="w-full px-4 py-2 bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange text-brand-black dark:text-white"
+            placeholder={`Par défaut: ${reference}`}
+          />
+          <p className="text-xs text-brand-warm-grey mt-1">Laissez vide pour utiliser la référence d'origine.</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-white">Appliquer un prix de vente (DA)</label>
+            <input
+              type="number"
+              min="0"
+              value={prixVente}
+              onChange={e => setPrixVente(e.target.value)}
+              className="w-full px-4 py-2 bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange text-brand-black dark:text-white"
+              placeholder="Ex: 5000"
+            />
+            <p className="text-xs text-brand-warm-grey mt-1">S'applique à TOUS les produits de cette fiche.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-white">Appliquer un prix d'achat (DA)</label>
+            <input
+              type="number"
+              min="0"
+              value={prixAchat}
+              onChange={e => setPrixAchat(e.target.value)}
+              className="w-full px-4 py-2 bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange text-brand-black dark:text-white"
+              placeholder="Ex: 3000"
+            />
+            <p className="text-xs text-brand-warm-grey mt-1">Modifie le coût d'achat de TOUS ces produits.</p>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-semibold mb-2 text-brand-black dark:text-white">Image de la Catégorie</label>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">

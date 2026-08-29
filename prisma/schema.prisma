@@ -456,3 +456,43 @@ model CarnetPieceJointe {
 
   @@map("carnet_pieces_jointes")
 }
+
+enum StatutProposition {
+  en_attente
+  conflit
+  valide
+  rejete
+}
+
+model PropositionMigration {
+  id                String   @id // Hash unique du groupe legacy
+  groupe_categorie  String   // Valeur legacy
+  groupe_reference  String   // Valeur legacy
+  
+  // Propositions
+  cible_categorie_id Int?    
+  cible_modele_nom   String?
+  cible_attributs    Json?
+  
+  // Métriques & Workflow
+  statut            StatutProposition @default(en_attente)
+  confiance         Int               // 0 à 100
+  raisons_json      Json?             // Explicabilité (pourquoi ce choix)
+  
+  nb_produits       Int      @default(0)
+  
+  @@map("propositions_migration")
+}
+
+model MigrationLog {
+  id                Int      @id @default(autoincrement())
+  batch_id          String
+  produit_id        Int
+  modele_id_avant   Int?
+  modele_id_apres   Int?
+  date              DateTime @default(now())
+
+  @@index([batch_id])
+  @@index([produit_id])
+  @@map("migration_logs")
+}
