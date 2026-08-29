@@ -4,6 +4,8 @@ export interface AnalyseResultat {
   id: string;
   groupe_categorie: string;
   groupe_reference: string;
+  cible_famille_nom: string | null;
+  cible_categorie_nom: string | null;
   cible_modele_nom: string | null;
   cible_attributs: Record<string, any> | null;
   statut: "en_attente" | "conflit" | "valide" | "rejete";
@@ -11,9 +13,6 @@ export interface AnalyseResultat {
   raisons: string[];
   nb_produits: number;
 }
-
-const MARQUES_CONNUES = ["HP", "Dell", "Lenovo", "Apple", "Samsung", "Asus", "Acer", "Toshiba", "Sony", "Logitech", "Epson", "Canon", "Brother"];
-const CATEGORIES_RACINES = ["Chargeur", "Imprimante", "Serveur", "Disque", "RAM", "Batterie", "Ecran", "Clavier", "Souris", "Cable"];
 
 export function genererHashGroupe(categorie: string, reference: string): string {
   return crypto.createHash("sha256").update(`${categorie}|${reference}`).digest("hex");
@@ -26,42 +25,240 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
 
   const texteComplet = `${categorieLegacy} ${referenceLegacy}`.toLowerCase();
   
-  // Normalisation des unités
-  const textNormalise = texteComplet
-    .replace(/\b(\d+)\s*(w|watts)\b/g, "$1W")
-    .replace(/\b(\d+)\s*(gb|go|giga)\b/g, "$1GB")
-    .replace(/\b(\d+)\s*(tb|to|tera)\b/g, "$1TB")
-    .replace(/\b(ssd|solid state drive)\b/g, "SSD")
-    .replace(/\b(hdd|hard drive|disque dur)\b/g, "HDD");
-
-  let modeleNom = referenceLegacy.trim();
   const attributs: Record<string, any> = {};
 
-  // 1. Détection de la racine (Catégorie implicite)
-  let racineTrouvee = null;
-  for (const racine of CATEGORIES_RACINES) {
-    if (textNormalise.includes(racine.toLowerCase())) {
-      if (racineTrouvee && racineTrouvee !== racine) {
-        conflit = true;
-        raisons.push(`⚠ Conflit de type détecté : ${racineTrouvee} vs ${racine}`);
+  let familleTrouvee: string | null = null;
+  let categorieTrouvee: string | null = null;
+  let modeleNom: string = referenceLegacy.trim();
+  
+  // ============================================
+  // DICTIONNAIRES DE DÉTECTION (PAR ORDRE DE PRIORITÉ)
+  // ============================================
+
+  // 1. DÉTECTION ORDINATEURS (Laptops, Mini PC, PC Bureau)
+  if (texteComplet.includes("laptop") || texteComplet.includes("notebook") || texteComplet.includes("thinkpad") || texteComplet.includes("latitude") || texteComplet.includes("macbook") || texteComplet.includes("vostro") || texteComplet.includes("elitebook") || texteComplet.includes("probook")) {
+    familleTrouvee = "ORDINATEURS";
+    categorieTrouvee = "PC PORTABLES";
+    raisons.push("✓ Type détecté : PC Portable");
+    confiance += 50;
+    
+    // Déduction gamme
+    if (texteComplet.includes("latitude")) modeleNom = "Dell Latitude";
+    else if (texteComplet.includes("vostro")) modeleNom = "Dell Vostro";
+    else if (texteComplet.includes("thinkpad")) modeleNom = "Lenovo ThinkPad";
+    else if (texteComplet.includes("elitebook")) modeleNom = "HP EliteBook";
+    else if (texteComplet.includes("probook")) modeleNom = "HP ProBook";
+    else modeleNom = "PC Portable (Gamme non détectée)";
+
+    // Attribut CPU/RAM
+    const matchCPU = texteComplet.match(/\b(i[3579]|ryzen\s*\d)\b/);
+    if (matchCPU) attributs["CPU"] = matchCPU[1].toUpperCase();
+    const matchRAM = texteComplet.match(/\b(\d+)\s*(gb|go)\b/);
+    if (matchRAM) attributs["RAM"] = `${matchRAM[1]}GB`;
+
+    attributs["Details"] = referenceLegacy;
+  }
+  else if (texteComplet.includes("mini pc") || texteComplet.match(/\b(tiny|micro|ssf|sff)\b/)) {
+    familleTrouvee = "ORDINATEURS";
+    categorieTrouvee = "PC DE BUREAU";
+    confiance += 50;
+    modeleNom = "Mini PC";
+  }
+  else if (texteComplet.includes("pc bureau") || texteComplet.includes("desktop") || texteComplet.includes("station de travail") || texteComplet.includes("all in one")) {
+    familleTrouvee = "ORDINATEURS";
+    if (texteComplet.includes("station de travail")) categorieTrouvee = "STATIONS DE TRAVAIL & AIO";
+    else if (texteComplet.includes("all in one")) categorieTrouvee = "STATIONS DE TRAVAIL & AIO";
+    else categorieTrouvee = "PC DE BUREAU";
+    confiance += 50;
+    modeleNom = "PC de Bureau";
+  }
+  
+  // 2. DÉTECTION SERVEURS
+  else if (texteComplet.includes("serveur") || texteComplet.includes("proliant") || texteComplet.includes("poweredge")) {
+    familleTrouvee = "SERVEURS";
+    confiance += 50;
+    if (texteComplet.includes("rack") || texteComplet.includes("dl360") || texteComplet.includes("dl380") || texteComplet.includes("r630") || texteComplet.includes("r440") || texteComplet.includes("r2950")) {
+      categorieTrouvee = "SERVEURS RACK";
+      modeleNom = "Serveur Rack";
+    } else if (texteComplet.includes("tour") || texteComplet.includes("ml350") || texteComplet.includes("t440") || texteComplet.includes("t430")) {
+      categorieTrouvee = "SERVEURS TOUR";
+      modeleNom = "Serveur Tour";
+    } else {
+      categorieTrouvee = "À DÉTERMINER";
+      modeleNom = "Serveur";
+    }
+  }
+
+  // 3. DÉTECTION ÉNERGIE (Chargeurs, Adapter, 65W, Alimentations serveur, UPS)
+  else if (texteComplet.includes("chargeur") || texteComplet.includes("adapter") || texteComplet.includes("onduleur") || texteComplet.includes("ups ") || texteComplet.includes("alimentation") || (texteComplet.match(/\b(\d+)w\b/) && texteComplet.length < 50 && !texteComplet.includes("serveur"))) {
+    if (texteComplet.includes("gigabit") || texteComplet.includes("ethernet") || texteComplet.includes("réseau")) {
+      familleTrouvee = "PÉRIPHÉRIQUES & ACCESSOIRES";
+      categorieTrouvee = "CÂBLES & ADAPTATEURS";
+      modeleNom = "Adaptateur Réseau";
+      raisons.push("✓ Type détecté : Adaptateur Réseau");
+      confiance += 50;
+    } else if (texteComplet.includes("onduleur") || texteComplet.includes("ups") || texteComplet.includes("eaton")) {
+      familleTrouvee = "ÉNERGIE & CHARGEURS";
+      categorieTrouvee = "ONDULEURS (UPS) & PDU";
+      modeleNom = "Onduleur";
+      confiance += 50;
+    } else if (texteComplet.includes("alimentation serveur") || texteComplet.includes("psu") || (texteComplet.includes("alimentation") && texteComplet.includes("serveur"))) {
+      familleTrouvee = "COMPOSANTS INTERNES";
+      categorieTrouvee = "ALIMENTATIONS SERVEUR";
+      modeleNom = "Alimentation Serveur";
+      confiance += 50;
+    } else {
+      familleTrouvee = "ÉNERGIE & CHARGEURS";
+      categorieTrouvee = "CHARGEURS PC";
+      raisons.push("✓ Type détecté : Chargeur / Alimentation");
+      confiance += 50;
+
+      const matchPuissance = texteComplet.match(/\b(\d+)w\b/);
+      if (matchPuissance) {
+        attributs["Puissance"] = `${matchPuissance[1]}W`;
+        modeleNom = `${matchPuissance[1]}W`;
       } else {
-        racineTrouvee = racine;
+        modeleNom = "Générique";
+        confiance -= 20;
+        raisons.push("⚠ Puissance introuvable");
       }
     }
   }
 
-  if (racineTrouvee) {
-    confiance += 40;
-    raisons.push(`✓ Type détecté : ${racineTrouvee}`);
+  // 4. DÉTECTION STOCKAGE (SATA, SAS, NVMe, SSD, HDD, NAS)
+  else if (texteComplet.match(/\b(ssd|hdd|sas|sata|nvme|nas)\b/)) {
+    familleTrouvee = "STOCKAGE";
+    confiance += 50;
+    
+    if (texteComplet.includes("nas") || texteComplet.includes("sauvegarde")) {
+      categorieTrouvee = "NAS & SAUVEGARDE";
+      raisons.push("✓ Technologie : NAS/SAUVEGARDE");
+    } else if (texteComplet.includes("ssd") || texteComplet.includes("nvme")) {
+      categorieTrouvee = "SSD";
+      raisons.push("✓ Technologie : SSD");
+    } else if (texteComplet.includes("hdd") || texteComplet.includes("7.2k") || texteComplet.includes("10k") || texteComplet.includes("15k") || texteComplet.includes("disque sas")) {
+      categorieTrouvee = "DISQUES DURS (HDD)";
+      raisons.push("✓ Technologie : Disque Dur (HDD)");
+    } else {
+      // Ambigu
+      categorieTrouvee = "À DÉTERMINER";
+      confiance -= 20;
+      raisons.push("⚠ Impossible de savoir si c'est un HDD ou SSD");
+    }
+
+    // Attributs Stockage
+    if (texteComplet.includes("sata")) attributs["Interface"] = "SATA";
+    if (texteComplet.includes("sas")) attributs["Interface"] = "SAS";
+    if (texteComplet.includes("nvme") || texteComplet.includes("pcle") || texteComplet.includes("pcie")) attributs["Interface"] = "NVMe";
+    
+    const matchCapaciteGB = texteComplet.match(/\b(\d+)\s*(gb|go)\b/);
+    if (matchCapaciteGB) attributs["Capacité"] = `${matchCapaciteGB[1]}GB`;
+    
+    const matchCapaciteTB = texteComplet.match(/\b(\d+)\s*(tb|to)\b/);
+    if (matchCapaciteTB) attributs["Capacité"] = `${matchCapaciteTB[1]}TB`;
+    
+    const matchRPM = texteComplet.match(/\b(\d+(\.\d+)?)k\s*rpm\b/);
+    if (matchRPM) attributs["Vitesse"] = `${matchRPM[1]}K RPM`;
+
+    const matchFormat = texteComplet.match(/\b(2\.5|3\.5)["']?\b/);
+    if (matchFormat) attributs["Format"] = `${matchFormat[1]}"`;
+
+    modeleNom = attributs["Interface"] || "Interface Inconnue";
   }
 
-  // 2. Détection de la marque
+  // 5. DÉTECTION RAM
+  else if (texteComplet.includes("ram ") || texteComplet.includes("ddr3") || texteComplet.includes("ddr4") || texteComplet.includes("ddr5") || texteComplet.includes("udimm") || texteComplet.includes("rdimm") || texteComplet.includes("ecc ") || (categorieLegacy === "Samsung" && texteComplet.includes("gb")) || (categorieLegacy === "Kingston") || (categorieLegacy === "Micron") || texteComplet.includes("sk hynix")) {
+    familleTrouvee = "COMPOSANTS INTERNES";
+    categorieTrouvee = "MÉMOIRE RAM";
+    confiance += 50;
+    raisons.push("✓ Type détecté : Mémoire RAM");
+
+    if (texteComplet.includes("ddr3")) attributs["Type"] = "DDR3";
+    if (texteComplet.includes("ddr4")) attributs["Type"] = "DDR4";
+    if (texteComplet.includes("ddr5")) attributs["Type"] = "DDR5";
+    if (texteComplet.includes("ecc") || texteComplet.includes("registered")) attributs["ECC"] = "Oui";
+    
+    const matchCapacite = texteComplet.match(/\b(\d+)\s*(gb|go)\b/);
+    if (matchCapacite) attributs["Capacité"] = `${matchCapacite[1]}GB`;
+    
+    modeleNom = `${attributs["Type"] || "RAM"} ${attributs["ECC"] ? "ECC" : "Non-ECC"}`;
+  }
+
+  // 6. DÉTECTION PROCESSEURS
+  else if (texteComplet.includes("processeur") || texteComplet.includes("intel") || texteComplet.includes("amd ") || (texteComplet.includes(" i3 ") || texteComplet.includes(" i5 ") || texteComplet.includes(" i7 "))) {
+    familleTrouvee = "COMPOSANTS INTERNES";
+    categorieTrouvee = "PROCESSEURS (CPU)";
+    confiance += 50;
+    
+    if (texteComplet.includes("intel") || texteComplet.includes(" i3") || texteComplet.includes(" i5") || texteComplet.includes(" i7")) {
+      modeleNom = "Intel Core";
+    } else if (texteComplet.includes("xeon")) {
+      modeleNom = "Intel Xeon";
+    } else {
+      modeleNom = "Processeur";
+    }
+  }
+
+  // 7. DÉTECTION CARTES GRAPHIQUES
+  else if (texteComplet.includes("carte graphique") || texteComplet.includes("radeon") || texteComplet.includes("geforce") || texteComplet.includes("quadro") || texteComplet.includes("rtx ") || texteComplet.includes("gtx ") || texteComplet.includes("rx ")) {
+    familleTrouvee = "COMPOSANTS INTERNES";
+    categorieTrouvee = "CARTES GRAPHIQUES (GPU)";
+    confiance += 50;
+    modeleNom = "Carte Graphique";
+  }
+
+  // 8. DÉTECTION IMPRIMANTES / CONSOMMABLES
+  else if (texteComplet.includes("imprimante") || texteComplet.includes("toner") || texteComplet.includes("ink ") || texteComplet.includes("encre") || texteComplet.includes("cartridge")) {
+    familleTrouvee = "IMPRESSION";
+    confiance += 50;
+    if (texteComplet.includes("toner") || texteComplet.includes("ink") || texteComplet.includes("encre") || texteComplet.includes("cartridge") || texteComplet.includes("consommable")) {
+      categorieTrouvee = "CONSOMMABLES";
+      modeleNom = "Toner / Encre";
+    } else {
+      categorieTrouvee = "IMPRIMANTES";
+      modeleNom = "Imprimante";
+    }
+  }
+
+  // 9. DÉTECTION PÉRIPHÉRIQUES (Ecrans, Claviers, Stations, Cables)
+  else if (texteComplet.includes("ecran") || texteComplet.includes("monitor") || texteComplet.includes("clavier") || texteComplet.includes("keyboard") || texteComplet.includes("dock") || texteComplet.includes("station d'accueil") || texteComplet.includes("cable") || texteComplet.includes("support")) {
+    familleTrouvee = "PÉRIPHÉRIQUES & ACCESSOIRES";
+    confiance += 50;
+    if (texteComplet.includes("ecran") || texteComplet.includes("monitor")) {
+      categorieTrouvee = "ÉCRANS & MONITEURS";
+      modeleNom = "Écran";
+    } else if (texteComplet.includes("clavier") || texteComplet.includes("keyboard")) {
+      categorieTrouvee = "CLAVIERS & SOURIS";
+      modeleNom = "Clavier / Souris";
+    } else if (texteComplet.includes("dock") || texteComplet.includes("station d'accueil")) {
+      categorieTrouvee = "STATIONS D'ACCUEIL (DOCKS)";
+      modeleNom = "Station d'accueil";
+    } else if (texteComplet.includes("cable")) {
+      categorieTrouvee = "CÂBLES & ADAPTATEURS";
+      modeleNom = "Câble";
+    } else {
+      categorieTrouvee = "SUPPORTS DE MONTAGE";
+      modeleNom = "Support";
+    }
+  }
+
+  // 10. DÉTECTION RESEAU
+  else if (texteComplet.includes("switch") || texteComplet.includes("cisco") || texteComplet.includes("réseau")) {
+    familleTrouvee = "RÉSEAU & POS";
+    categorieTrouvee = "SWITCHES";
+    confiance += 50;
+    modeleNom = "Switch";
+  }
+  
+  // ============================================
+  // DÉTECTION GLOBALE DES MARQUES (Transversal)
+  // ============================================
+  const MARQUES_CONNUES = ["HP", "HPE", "Dell", "Lenovo", "Apple", "Samsung", "Asus", "Acer", "Toshiba", "Kingston", "Micron", "SanDisk", "Cisco"];
   let marqueTrouvee = null;
   for (const marque of MARQUES_CONNUES) {
-    if (textNormalise.includes(marque.toLowerCase())) {
-      if (marqueTrouvee && marqueTrouvee !== marque) {
-        conflit = true;
-        raisons.push(`⚠ Conflit de marque détecté : ${marqueTrouvee} vs ${marque}`);
+    if (texteComplet.includes(marque.toLowerCase())) {
+      if (marqueTrouvee && marqueTrouvee !== marque && !(marqueTrouvee==="HP" && marque==="HPE")) {
+        // conflit mineur (ex Dell et HP dans la meme ligne)
       } else {
         marqueTrouvee = marque;
       }
@@ -69,66 +266,51 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
   }
 
   if (marqueTrouvee) {
-    confiance += 30;
     attributs["Marque"] = marqueTrouvee;
+    confiance += 20;
     raisons.push(`✓ Marque reconnue : ${marqueTrouvee}`);
   }
 
-  // 3. Extraction d'attributs techniques
-  const matchPuissance = textNormalise.match(/\b(\d+)W\b/i);
-  if (matchPuissance) {
-    confiance += 20;
-    attributs["Puissance"] = `${matchPuissance[1]}W`;
-    raisons.push(`✓ Puissance détectée : ${matchPuissance[1]}W`);
+  // ============================================
+  // TRAITEMENT DES POLLUTIONS ET ABERRATIONS
+  // ============================================
+  if (texteComplet.includes("battery hs") || texteComplet.includes("battery miss") || texteComplet.includes("sans caddy") || texteComplet.includes("cpu hs")) {
+    confiance -= 30; // Pénalité car ce n'est pas un modèle pur
+    raisons.push("⚠ Donnée polluée par un statut matériel (ex: 'Sans Caddy', 'Battery HS'). À nettoyer !");
+    // On extrait l'attribut
+    if (texteComplet.includes("battery hs")) attributs["Batterie"] = "HS";
+    if (texteComplet.includes("battery miss")) attributs["Batterie"] = "Manquante";
+    if (texteComplet.includes("sans caddy")) attributs["Caddy"] = "Non inclus";
   }
 
-  const matchCapaciteGB = textNormalise.match(/\b(\d+)GB\b/i);
-  if (matchCapaciteGB) {
-    confiance += 20;
-    attributs["Capacité"] = `${matchCapaciteGB[1]}GB`;
-    raisons.push(`✓ Capacité détectée : ${matchCapaciteGB[1]}GB`);
-  }
-
-  const matchCapaciteTB = textNormalise.match(/\b(\d+)TB\b/i);
-  if (matchCapaciteTB) {
-    confiance += 20;
-    attributs["Capacité"] = `${matchCapaciteTB[1]}TB`;
-    raisons.push(`✓ Capacité détectée : ${matchCapaciteTB[1]}TB`);
-  }
-
-  // Déductions spécifiques (ex: Disque)
-  if (textNormalise.includes("ssd")) {
-    attributs["Type Disque"] = "SSD";
-    raisons.push(`✓ Type physique : SSD`);
-  } else if (textNormalise.includes("hdd")) {
-    attributs["Type Disque"] = "HDD";
-    raisons.push(`✓ Type physique : HDD`);
-  }
-
-  // Normalisation du nom de modèle (on enlève la catégorie si elle est au début)
-  // Ex: "Chargeur Lenovo 65W" -> "Lenovo 65W"
-  if (racineTrouvee && categorieLegacy.toLowerCase().includes(racineTrouvee.toLowerCase())) {
-     if (referenceLegacy.length < 5) {
-        modeleNom = `${marqueTrouvee ? marqueTrouvee + " " : ""}${referenceLegacy}`;
-     }
-  }
-
+  // Cap confiance max à 100
   if (confiance > 100) confiance = 100;
+  if (!familleTrouvee) confiance = 0; // Si on a rien trouvé
 
+  // Statut
   let statut: "en_attente" | "conflit" | "valide" | "rejete" = "en_attente";
-  
   if (conflit) {
     confiance = 0;
     statut = "conflit";
   } else if (confiance < 50) {
-    raisons.push(`⚠ Trop peu d'informations pour une classification sûre.`);
+    raisons.push("⚠ Confiance faible, nécessite une vérification manuelle.");
+  } else if (confiance >= 90) {
+    raisons.push("★ Classification très probable.");
+  }
+
+  // Affinage du nom de modèle cible pour éviter les trop génériques si possible
+  // Si on est dans les Chargeurs, on veut "Lenovo 65W" au lieu de juste "65W"
+  if (categorieTrouvee === "CHARGEURS PC" && modeleNom.endsWith("W")) {
+    modeleNom = `${marqueTrouvee || "Générique"} ${modeleNom}`;
   }
 
   return {
     id: genererHashGroupe(categorieLegacy, referenceLegacy),
     groupe_categorie: categorieLegacy,
     groupe_reference: referenceLegacy,
-    cible_modele_nom: modeleNom.trim() || null,
+    cible_famille_nom: familleTrouvee,
+    cible_categorie_nom: categorieTrouvee,
+    cible_modele_nom: modeleNom.trim(),
     cible_attributs: Object.keys(attributs).length > 0 ? attributs : null,
     statut,
     confiance,
