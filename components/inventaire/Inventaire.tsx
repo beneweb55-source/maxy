@@ -45,6 +45,11 @@ import CarteProduit from "./CarteProduit";
 import ModalClassification from "./ModalClassification";
 import ModalSuppression from "./ModalSuppression";
 import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
+import BreadcrumbNavigation from "./BreadcrumbNavigation";
+import RechercheMultiModal from "./RechercheMultiModal";
+import FilterDrawer from "./FilterDrawer";
+import ActiveFilterBadges from "./ActiveFilterBadges";
+import { Filter as IconFilter } from "lucide-react";
 
 interface LigneProduit {
   id: number;
@@ -191,6 +196,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
   const [modalAjoutTerrain, setModalAjoutTerrain] = useState(false);
+  const [tiroirFiltresOuvert, setTiroirFiltresOuvert] = useState(false);
   const [produitSourceDuplication, setProduitSourceDuplication] = useState<LigneProduit | null>(null);
 
   const [modalEdition, setModalEdition] = useState<{
@@ -343,21 +349,23 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const nbFiltresActifs =
     (q ? 1 : 0) +
-    (searchParams?.get("categorie") ? 1 : 0) +
-    (searchParams?.get("famille_id") ? 1 : 0) +
-    (searchParams?.get("categorie_id") ? 1 : 0) +
-    (searchParams?.get("sous_categorie_id") ? 1 : 0) +
-    (searchParams?.get("modele_id") ? 1 : 0) +
+    (searchParams?.get("grade") ? 1 : 0) +
+    (searchParams?.get("emplacement") ? 1 : 0) +
+    (searchParams?.get("cpu") ? 1 : 0) +
+    (searchParams?.get("ram") ? 1 : 0) +
+    (searchParams?.get("stockage") ? 1 : 0) +
+    (searchParams?.get("format") ? 1 : 0) +
+    (searchParams?.get("type_disque") ? 1 : 0) +
+    (searchParams?.get("capacite_disque") ? 1 : 0) +
+    (searchParams?.get("taille_ecran") ? 1 : 0) +
     (searchParams?.get("lot") || searchParams?.get("sans_lot") ? 1 : 0) +
     (searchParams?.get("du") ? 1 : 0) +
     (searchParams?.get("au") ? 1 : 0) +
     (searchParams?.get("plus30j") ? 1 : 0) +
-    (searchParams?.get("a_classer") ? 1 : 0) +
     (searchParams?.get("a_tarifer") ? 1 : 0) +
     (searchParams?.get("sans_photo") ? 1 : 0) +
     (searchParams?.get("sans_etiquette") ? 1 : 0) +
     (searchParams?.get("a_jeter") ? 1 : 0) +
-    (searchParams?.get("en_vitrine") ? 1 : 0) +
     statutsActifs.length +
     (searchParams?.get("tri") ? 1 : 0);
 
@@ -970,89 +978,58 @@ export default function Inventaire({ role }: { role: Role }) {
   return (
     <>
       <div className="space-y-4 animate-entree mb-8">
-        {/* Header & Actions principales */}
+        {/* Header avec Breadcrumb & Actions principales */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
-          <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium">
-            {vue !== "cockpit" ? (
-              <>
-                <button 
-                  onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null, famille_id: null, categorie_id: null, sous_categorie_id: null, modele_id: null })} 
-                  className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2.5 py-1 rounded-lg border border-brand-light-grey dark:border-white/10 shadow-sm text-xs font-semibold"
-                >
-                  <IconeChevronGauche taille={14} /> Cockpit
-                </button>
-                <span>/</span>
-                <span className="font-bold text-brand-black dark:text-white font-outfit text-base sm:text-lg">
-                  {vue === "atraiter" ? "À traiter" : "Inventaire"}
-                </span>
-                {(searchParams?.get("famille_id") || searchParams?.get("categorie_id") || searchParams?.get("sous_categorie_id")) && (
-                  <span className="bg-brand-orange/15 text-brand-orange border border-brand-orange/30 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
-                    Filtre actif
-                    <button 
-                      type="button" 
-                      onClick={() => majUrl({ famille_id: null, categorie_id: null, sous_categorie_id: null, page: "1" })}
-                      className="hover:text-brand-black dark:hover:text-white ml-0.5 text-sm leading-none"
-                      title="Effacer le filtre taxonomique"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="font-bold text-brand-black dark:text-white font-outfit text-xl">
-                Cockpit
-              </span>
-            )}
-            {donnees && (
-              <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold ml-2">
-                {donnees.total}
-              </span>
-            )}
-          </div>
+          <BreadcrumbNavigation
+            vue={vue}
+            familleId={searchParams?.get("famille_id") ? Number(searchParams.get("famille_id")) : null}
+            categorieId={searchParams?.get("categorie_id") ? Number(searchParams.get("categorie_id")) : null}
+            sousCategorieId={searchParams?.get("sous_categorie_id") ? Number(searchParams.get("sous_categorie_id")) : null}
+            totalArticles={donnees?.total}
+            majUrl={majUrl}
+          />
             
-            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-              {estGerant && (
-                <a
-                  href={`/api/produits/export?${searchParams?.toString() || ""}`}
-                  className="btn btn-secondaire w-full sm:w-auto justify-center bg-white dark:bg-brand-paper shadow-sm"
-                >
-                  <IconeTelechargement taille={15} />
-                  Export CSV
-                </a>
-              )}
-              {peutModifier && (
-                <button type="button" onClick={() => ouvrirAjout()} className="btn btn-primaire w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20">
-                  <IconePlus taille={15} />
-                  Ajouter
-                </button>
-              )}
-            </div>
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 shrink-0">
+            {estGerant && (
+              <a
+                href={`/api/produits/export?${searchParams?.toString() || ""}`}
+                className="btn btn-secondaire w-full sm:w-auto justify-center bg-white dark:bg-brand-paper shadow-sm"
+              >
+                <IconeTelechargement taille={15} />
+                Export CSV
+              </a>
+            )}
+            {peutModifier && (
+              <button type="button" onClick={() => ouvrirAjout()} className="btn btn-primaire w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20">
+                <IconePlus taille={15} />
+                Ajouter
+              </button>
+            )}
           </div>
+        </div>
 
-          {/* Barre d'outils unifiée (Toolbar) */}
-          {(vue === "tableau" || vue === "atraiter" || (!afficherFamilles && vue === "cockpit") || q.trim() !== "") && (
+        {/* Barre d'outils unifiée (Toolbar) */}
+        {(vue === "tableau" || vue === "atraiter" || (!afficherFamilles && vue === "cockpit") || q.trim() !== "") && (
+          <div className="space-y-2">
             <div className="carte !p-2 sm:!p-3 flex flex-col lg:flex-row gap-3 items-center shadow-sm z-20 relative">
-            <div className="flex-1 w-full relative flex flex-col sm:flex-row gap-2">
-              <RechercheRapide
-                valeur={q}
-                onInstantChange={(valeur) => setQLoc(valeur)}
-                onChange={(valeur) => {
-                  setQ(valeur);
-                  majUrl({ q: valeur.trim() || null, page: "1" });
-                }}
-                placeholder={t("inventaire.recherche")}
-                debounceMs={300}
-                className="w-full pl-10 pr-4 py-2.5 bg-brand-paper dark:bg-black/20 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-brand-orange transition-all font-medium text-sm"
-              />
-              {vue !== "cockpit" && vue !== "categorie" && (
-                <div className="flex items-center self-stretch bg-brand-light-grey/20 dark:bg-white/5 rounded-lg p-1 border border-brand-light-grey/50 dark:border-white/10 shrink-0 gap-1">
-                  {/* Retrait de vueGroupee, seule la bascule Cartes/Tableau subsiste */}
-                  <div className="flex items-center h-full">
+              <div className="flex-1 w-full relative flex flex-col sm:flex-row gap-2">
+                <RechercheMultiModal
+                  valeur={q}
+                  onInstantChange={(valeur) => setQLoc(valeur)}
+                  onChange={(valeur) => {
+                    setQ(valeur);
+                    majUrl({ q: valeur.trim() || null, page: "1" });
+                  }}
+                  className="flex-1"
+                />
+
+                {vue !== "cockpit" && vue !== "categorie" && (
+                  <div className="flex items-center self-stretch bg-brand-light-grey/20 dark:bg-white/5 rounded-xl p-1 border border-brand-light-grey/50 dark:border-white/10 shrink-0 gap-1">
+                    <div className="flex items-center h-full">
                       <button 
                         type="button"
                         onClick={() => setModeAffichage("cartes")} 
-                        className={`px-2 py-1.5 rounded-md text-xs font-bold transition-all h-full ${modeAffichage === "cartes" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all h-full ${modeAffichage === "cartes" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
                         title="Vue Cartes"
                       >
                         ▦
@@ -1060,113 +1037,110 @@ export default function Inventaire({ role }: { role: Role }) {
                       <button 
                         type="button"
                         onClick={() => setModeAffichage("tableau")} 
-                        className={`px-2 py-1.5 rounded-md text-xs font-bold transition-all h-full ${modeAffichage === "tableau" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all h-full ${modeAffichage === "tableau" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
                         title="Vue Tableau"
                       >
                         ☷
                       </button>
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Barre d'actions groupées si sélection */}
+              {selection.length > 0 && vue !== "cockpit" && (
+                <div className="absolute inset-0 bg-brand-orange dark:bg-brand-orange z-30 rounded-lg flex items-center justify-between px-4 animate-entree text-white shadow-lg">
+                  <div className="flex items-center gap-4">
+                    <span className="font-bold">{selection.length} sélectionné{selection.length > 1 ? 's' : ''}</span>
+                    <button type="button" onClick={() => setSelection([])} className="text-white/80 hover:text-white text-sm">Annuler</button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      type="button" 
+                      className="btn bg-white/20 hover:bg-white/30 text-white border-none"
+                      onClick={() => {
+                        const prods = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) || [];
+                        setModalClassification(prods);
+                      }}
+                    >
+                      <IconeArchive taille={14} /> Classer
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {vue !== "cockpit" && (
+                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                  {/* Sélecteur d'arrivage / lot */}
+                  <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-xl bg-white dark:bg-brand-paper px-3 py-2 h-[44px]">
+                    <select
+                      value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "__sans__") majUrl({ sans_lot: "1", lot: null, page: "1" });
+                        else majUrl({ lot: v || null, sans_lot: null, page: "1" });
+                      }}
+                      className="bg-transparent text-xs sm:text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                    >
+                      <option value="">Tous les arrivages</option>
+                      <option value="__sans__">Sans arrivage (Indépendant)</option>
+                      {(donnees?.lots ?? []).map((l) => (
+                        <option key={l.id} value={l.id}>{l.libelle}</option>
+                      ))}
+                    </select>
+                    <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+                  </div>
+                  
+                  {/* Tri */}
+                  <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-xl bg-white dark:bg-brand-paper px-3 py-2 h-[44px]">
+                    <select
+                      value={
+                        (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
+                      }
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc", page: "1" });
+                        else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc", page: "1" });
+                        else majUrl({ tri: null, ordre: null, page: "1" });
+                      }}
+                      className="bg-transparent text-xs sm:text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
+                    >
+                      <option value="">Trier par défaut</option>
+                      <option value="prix_asc">Prix croissant</option>
+                      <option value="prix_desc">Prix décroissant</option>
+                    </select>
+                    <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
+                  </div>
+
+                  {/* Bouton d'ouverture du tiroir de filtres avec compteur */}
+                  <button
+                    type="button"
+                    onClick={() => setTiroirFiltresOuvert(true)}
+                    className={`flex-none min-h-[44px] flex items-center gap-2 border rounded-xl px-4 py-2 transition-all text-xs sm:text-sm font-bold active:scale-95 ${
+                      tiroirFiltresOuvert || nbFiltresActifs > 0 
+                      ? 'border-brand-orange bg-brand-orange/10 text-brand-orange shadow-inner' 
+                      : 'border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper text-brand-warm-grey hover:bg-brand-light-grey/30 hover:text-brand-black dark:hover:text-white'
+                    }`}
+                  >
+                    <IconFilter className="w-4 h-4" />
+                    <span>Filtres</span>
+                    {nbFiltresActifs > 0 && (
+                      <span className="bg-brand-orange text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black ml-0.5">
+                        {nbFiltresActifs}
+                      </span>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
-            {/* Barre d'actions groupées si sélection */}
-            {selection.length > 0 && vue !== "cockpit" && (
-              <div className="absolute inset-0 bg-brand-orange dark:bg-brand-orange z-30 rounded-lg flex items-center justify-between px-4 animate-entree text-white shadow-lg">
-                <div className="flex items-center gap-4">
-                  <span className="font-bold">{selection.length} sélectionné{selection.length > 1 ? 's' : ''}</span>
-                  <button type="button" onClick={() => setSelection([])} className="text-white/80 hover:text-white text-sm">Annuler</button>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    type="button" 
-                    className="btn bg-white/20 hover:bg-white/30 text-white border-none"
-                    onClick={() => {
-                      const prods = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) || [];
-                      setModalClassification(prods);
-                    }}
-                  >
-                    <IconeArchive taille={14} /> Classer
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {vue !== "cockpit" && (
-              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-brand-light-grey/20 dark:bg-white/5 px-3 py-2 h-[42px] min-w-[140px]">
-                  <select
-                    value={searchParams?.get("categorie") ?? ""}
-                    onChange={(e) => majUrl({ categorie: e.target.value || null, page: "1" })}
-                    className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
-                  >
-                    <option value="">Toutes les catégories</option>
-                    {(donnees?.categories ?? []).map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
-                </div>
 
-                <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
-                  <select
-                    value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "__sans__") majUrl({ sans_lot: "1", lot: null, page: "1" });
-                      else majUrl({ lot: v || null, sans_lot: null, page: "1" });
-                    }}
-                    className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
-                  >
-                    <option value="">Tous les arrivages</option>
-                    <option value="__sans__">Sans arrivage</option>
-                    {(donnees?.lots ?? []).map((l) => (
-                      <option key={l.id} value={l.id}>{l.libelle}</option>
-                    ))}
-                  </select>
-                  <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
-                </div>
-                
-                <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-lg bg-white dark:bg-brand-paper px-3 py-2 h-[42px]">
-                  <select
-                    value={
-                      (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
-                    }
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "prix_asc") majUrl({ tri: "prix_achat", ordre: "asc", page: "1" });
-                      else if (v === "prix_desc") majUrl({ tri: "prix_achat", ordre: "desc", page: "1" });
-                      else majUrl({ tri: null, ordre: null, page: "1" });
-                    }}
-                    className="bg-transparent text-sm text-brand-black dark:text-white font-medium focus:outline-none w-full cursor-pointer appearance-none pr-4"
-                  >
-                    <option value="">Trier par défaut</option>
-                    <option value="prix_asc">Prix croissant</option>
-                    <option value="prix_desc">Prix décroissant</option>
-                  </select>
-                  <IconeChevronBas taille={14} className="absolute right-3 text-brand-warm-grey pointer-events-none" />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setAfficherPlusFiltres(!afficherPlusFiltres)}
-                  className={`flex-none flex items-center gap-2 border rounded-lg px-3 py-2 h-[42px] transition-colors text-sm font-bold ${
-                    afficherPlusFiltres || nbFiltresActifs > 0 
-                    ? 'border-brand-orange bg-brand-orange/10 text-brand-orange shadow-inner' 
-                    : 'border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper text-brand-warm-grey hover:bg-brand-light-grey/30'
-                  }`}
-                >
-                  <IconeTriBas taille={16} className={afficherPlusFiltres ? 'rotate-180 transition-transform' : 'transition-transform'} />
-                  <span className="hidden sm:inline">Filtres</span>
-                  {nbFiltresActifs > 0 && (
-                    <span className="bg-brand-orange text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full ml-1">
-                      {nbFiltresActifs}
-                    </span>
-                  )}
-                </button>
-              </div>
-            )}
+            {/* Barre de badges des filtres actifs */}
+            <ActiveFilterBadges
+              searchParams={{ get: (k) => searchParams?.get(k) || null }}
+              majUrl={majUrl}
+            />
           </div>
-          )}
+        )}
 
           {/* Tiroir de filtres avancés */}
           {vue !== "cockpit" && afficherPlusFiltres && (
@@ -2317,6 +2291,16 @@ export default function Inventaire({ role }: { role: Role }) {
           }}
         />
       )}
+
+      <FilterDrawer
+        ouvert={tiroirFiltresOuvert}
+        onFermer={() => setTiroirFiltresOuvert(false)}
+        searchParams={{ get: (k) => searchParams?.get(k) || null }}
+        majUrl={majUrl}
+        lotsDisponibles={donnees?.lots || []}
+        familleNom={searchParams?.get("famille_id") ? `Famille #${searchParams.get("famille_id")}` : ""}
+        categorieNom={searchParams?.get("categorie_id") ? `Catégorie #${searchParams.get("categorie_id")}` : ""}
+      />
 
       <ModaleAjoutTerrain
         ouverte={modalAjoutTerrain}

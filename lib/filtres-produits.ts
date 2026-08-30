@@ -16,6 +16,7 @@ export function construireFiltresProduits(
       OR: [
         { reference: { contains: q, mode: "insensitive" } },
         { code_interne: { contains: q, mode: "insensitive" } },
+        { numero_serie: { contains: q, mode: "insensitive" } },
         { notes: { contains: q, mode: "insensitive" } },
         { categorie: { contains: q, mode: "insensitive" } },
         { categorie_rel: { nom: { contains: q, mode: "insensitive" } } },
@@ -27,6 +28,112 @@ export function construireFiltresProduits(
   const referenceExacte = params.get("reference_exacte");
   if (referenceExacte) {
     clauses.push({ reference: referenceExacte });
+  }
+
+  const codeExact = params.get("code_exact");
+  if (codeExact) {
+    clauses.push({
+      OR: [
+        { code_interne: { equals: codeExact, mode: "insensitive" } },
+        { numero_serie: { equals: codeExact, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  const gradeParam = params.get("grade") || params.get("grades");
+  if (gradeParam) {
+    const grades = gradeParam.split(",").map((g) => g.trim()).filter(Boolean);
+    if (grades.length > 0) {
+      clauses.push({ grade: { in: grades } });
+    }
+  }
+
+  const emplacement = params.get("emplacement")?.trim();
+  if (emplacement) {
+    if (emplacement === "vitrine") {
+      clauses.push({ OR: [{ emplacement: "vitrine" }, { en_vitrine: true }] });
+    } else if (emplacement === "reserve") {
+      clauses.push({ OR: [{ emplacement: "reserve" }, { en_vitrine: false }] });
+    } else {
+      clauses.push({ emplacement });
+    }
+  }
+
+  // Filtres de spécifications matérielles adaptatives
+  const cpu = params.get("cpu")?.trim();
+  if (cpu) {
+    clauses.push({
+      OR: [
+        { reference: { contains: cpu, mode: "insensitive" } },
+        { modele: { nom: { contains: cpu, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  const ram = params.get("ram")?.trim();
+  if (ram) {
+    clauses.push({
+      OR: [
+        { reference: { contains: `${ram}Go`, mode: "insensitive" } },
+        { reference: { contains: `${ram} GB`, mode: "insensitive" } },
+        { reference: { contains: `${ram}G`, mode: "insensitive" } },
+        { reference: { contains: ram, mode: "insensitive" } },
+        { modele: { nom: { contains: ram, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  const stockage = params.get("stockage")?.trim();
+  if (stockage) {
+    clauses.push({
+      OR: [
+        { reference: { contains: stockage, mode: "insensitive" } },
+        { modele: { nom: { contains: stockage, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  const formatSpec = params.get("format")?.trim();
+  if (formatSpec) {
+    clauses.push({
+      OR: [
+        { reference: { contains: formatSpec, mode: "insensitive" } },
+        { categorie: { contains: formatSpec, mode: "insensitive" } },
+        { categorie_rel: { nom: { contains: formatSpec, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  const typeDisque = params.get("type_disque")?.trim();
+  if (typeDisque) {
+    clauses.push({
+      OR: [
+        { reference: { contains: typeDisque, mode: "insensitive" } },
+        { modele: { nom: { contains: typeDisque, mode: "insensitive" } } },
+        { categorie: { contains: typeDisque, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  const capaciteDisque = params.get("capacite_disque")?.trim();
+  if (capaciteDisque) {
+    clauses.push({
+      OR: [
+        { reference: { contains: capaciteDisque, mode: "insensitive" } },
+        { modele: { nom: { contains: capaciteDisque, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  const tailleEcran = params.get("taille_ecran")?.trim();
+  if (tailleEcran) {
+    clauses.push({
+      OR: [
+        { reference: { contains: `${tailleEcran}"`, mode: "insensitive" } },
+        { reference: { contains: tailleEcran, mode: "insensitive" } },
+        { modele: { nom: { contains: tailleEcran, mode: "insensitive" } } },
+      ],
+    });
   }
 
   const cle = params.get("cle");

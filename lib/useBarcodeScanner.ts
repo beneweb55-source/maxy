@@ -2,46 +2,80 @@
 
 import { useEffect, useRef } from "react";
 
-export function useBarcodeScanner(onScan: (code: string) => void) {
-  const buffer = useRef("");
-  const lastTime = useRef(0);
+export interface BarcodeScannerOptions {
+  maxIntervalMs?: number;
+  minLength?: number;
+  preventInTextarea?: boolean;
+}
+
+export function useBarcodeScanner(
+  onScan: (code: string) => void,
+  options: BarcodeScannerOptions = {}
+) {
+  const {
+    maxIntervalMs = 60,
+    minLength = 3,
+    preventInTextarea = true,
+  } = options;
+
+  const buffer = useRef<string>("");
+  const lastTime = useRef<number>(0);
+  const timestamps = useRef<number[]>([]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Ignorer si on est dans un champ texte long, mais pas dans l'input scanner par defaut
-      if (e.target && (e.target as HTMLElement).tagName === "TEXTAREA") return;
-      
-      const now = Date.now();
-      // Tolérance augmentée à 500ms pour gérer la latence Bluetooth et le réveil de la douchette
-      if (now - lastTime.current > 500) {
-        buffer.current = ""; // Réinitialiser si on tape trop lentement (frappe humaine)
-      }
-      
-      if (e.key === "Enter") {
-        if (buffer.current.length > 2) {
-          onScan(buffer.current.trim());
-          buffer.current = "";
-          
-          // Si le focus était sur un input, on empêche la soumission du formulaire
-          if (e.target && (e.target as HTMLElement).tagName === "INPUT") {
-            const input = e.target as HTMLInputElement;
-            // On peut optionnellement vider l'input si le code barre y a été écrit
-            input.value = "";
-          }
-          e.preventDefault();
-        }
+      const target = e.target as HTMLElement | null;
+
+      // Ignorer si l'utilisateur est dans un textarea
+      if (preventInTextarea && target && target.tagName === "TEXTAREA") {
         return;
       }
-      
-      // Stocker les caractères standards (lettres et chiffres)
+
+      const now = Date.now();
+      const interval = now - lastTime.current;
+
+      // Si le temps entre 2 touches dépasse le seuil max, on réinitialise le buffer
+      if (interval > maxIntervalMs && buffer.current.length > 0) {
+        buffer.current = "";
+        timestamps.current = [];
+      }
+
+      if (e.key === "Enter") {
+        if (buffer.current.length >= minLength) {
+          // Vérification de la vitesse moyenne de frappe (< 50ms = douchette matérielle)
+          const totalDuration = now - (timestamps.current[0] || now);
+          const avgInterval = timestamps.current.length > 1 ? totalDuration / timestamps.current.length : interval;
+
+          if (avgInterval <= maxIntervalMs || timestamps.current.length >= 4) {
+            const scannedCode = buffer.current.trim();
+            onScan(scannedCode);
+            buffer.current = "";
+            timestamps.current = [];
+
+            // Si le focus était dans un champ texte, empêcher l'envoi de formulaire ou le saut de ligne
+            if (target && (target.tagName === "INPUT" || target.tagName === "SELECT")) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            return;
+          }
+        }
+        buffer.current = "";
+        timestamps.current = [];
+        return;
+      }
+
+      // Stocker les caractères imprimables
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         buffer.current += e.key;
+        timestamps.current.push(now);
       }
       lastTime.current = now;
     }
 
-    // Capture (true) permet d'intercepter l'événement avant qu'il n'atteigne les inputs
+    // Capture = true pour intercepter avant les handlers locaux
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [onScan]);
+  }, [onScan, maxIntervalMs, minLength, preventInTextarea]);
 }
+

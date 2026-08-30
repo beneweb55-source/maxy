@@ -10,6 +10,7 @@ import {
   IconeAlerte,
   IconePlus
 } from "@/components/icons";
+import BreadcrumbNavigation from "./BreadcrumbNavigation";
 
 interface SousCategorieNode {
   id: number;
@@ -140,27 +141,17 @@ export default function VueFamille({
     <div className="space-y-6 animate-entree">
       {/* Fil d'Ariane & En-tête Tactile */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-light-grey/40 dark:border-white/5">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => majUrl({ vue: "cockpit", famille_id: null, categorie_id: null, sous_categorie_id: null })}
-            className="btn btn-secondaire text-xs py-2 px-3 rounded-xl font-bold bg-white dark:bg-brand-paper shadow-xs hover:border-brand-orange active:scale-[0.98] flex items-center gap-1.5"
-          >
-            <IconeChevronGauche taille={14} /> Cockpit
-          </button>
-          <span className="text-brand-warm-grey font-bold">/</span>
-          <h1 className="text-xl sm:text-2xl font-black font-outfit text-brand-black dark:text-white">
-            {famille.nom}
-          </h1>
-          <span className="bg-brand-orange/15 text-brand-orange text-xs font-extrabold px-2.5 py-1 rounded-lg ml-2">
-            {totalProduitsFamille} articles
-          </span>
-        </div>
+        <BreadcrumbNavigation
+          vue="famille"
+          familleId={familleId}
+          totalArticles={totalProduitsFamille}
+          majUrl={majUrl}
+        />
 
         <button
           type="button"
           onClick={() => majUrl({ vue: "tableau", famille_id: String(familleId), categorie_id: null, sous_categorie_id: null })}
-          className="btn btn-primaire text-xs py-2 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+          className="btn btn-primaire text-xs py-2.5 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
         >
           <IconeArchive taille={15} /> Voir tous les {totalProduitsFamille} produits de la famille
         </button>

@@ -8,6 +8,7 @@ import {
   IconeArchive, 
   IconeAlerte 
 } from "@/components/icons";
+import BreadcrumbNavigation from "./BreadcrumbNavigation";
 
 interface SousCategorieDetail {
   id: number;
@@ -123,41 +124,18 @@ export default function VueCategorie({
     <div className="space-y-6 animate-entree">
       {/* Fil d'Ariane & En-tête Tactile (Niveau 3) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-light-grey/40 dark:border-white/5">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => majUrl({ vue: "cockpit", famille_id: null, categorie_id: null, sous_categorie_id: null })}
-            className="btn btn-secondaire text-xs py-2 px-3 rounded-xl font-bold bg-white dark:bg-brand-paper shadow-xs hover:border-brand-orange active:scale-[0.98] flex items-center gap-1.5"
-          >
-            <IconeChevronGauche taille={14} /> Cockpit
-          </button>
-          
-          {categorie.parent && (
-            <>
-              <span className="text-brand-warm-grey font-bold">/</span>
-              <button
-                type="button"
-                onClick={() => majUrl({ vue: "famille", famille_id: String(categorie.parent!.id), categorie_id: null, sous_categorie_id: null })}
-                className="text-xs font-bold text-brand-warm-grey hover:text-brand-orange transition-colors px-2 py-1 rounded-lg bg-brand-light-grey/20 dark:bg-white/5"
-              >
-                {categorie.parent.nom}
-              </button>
-            </>
-          )}
-
-          <span className="text-brand-warm-grey font-bold">/</span>
-          <h1 className="text-xl sm:text-2xl font-black font-outfit text-brand-black dark:text-white">
-            {categorie.nom}
-          </h1>
-          <span className="bg-brand-orange/15 text-brand-orange text-xs font-extrabold px-2.5 py-1 rounded-lg ml-1">
-            {totalProduitsCat} articles
-          </span>
-        </div>
+        <BreadcrumbNavigation
+          vue="categorie"
+          categorieId={categorieId}
+          familleId={categorie.parent?.id}
+          totalArticles={totalProduitsCat}
+          majUrl={majUrl}
+        />
 
         <button
           type="button"
           onClick={() => majUrl({ vue: "tableau", categorie_id: String(categorieId), sous_categorie_id: null })}
-          className="btn btn-primaire text-xs py-2 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+          className="btn btn-primaire text-xs py-2.5 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
         >
           <IconeArchive taille={15} /> Voir toute la catégorie ({totalProduitsCat})
         </button>
