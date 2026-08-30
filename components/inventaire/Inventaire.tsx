@@ -327,6 +327,10 @@ export default function Inventaire({ role }: { role: Role }) {
           params.delete("categorie");
           params.delete("cle");
           params.delete("reference_exacte");
+          params.delete("famille_id");
+          params.delete("categorie_id");
+          params.delete("sous_categorie_id");
+          params.delete("modele_id");
         }
       }
 
@@ -338,10 +342,15 @@ export default function Inventaire({ role }: { role: Role }) {
   const nbFiltresActifs =
     (q ? 1 : 0) +
     (searchParams?.get("categorie") ? 1 : 0) +
+    (searchParams?.get("famille_id") ? 1 : 0) +
+    (searchParams?.get("categorie_id") ? 1 : 0) +
+    (searchParams?.get("sous_categorie_id") ? 1 : 0) +
+    (searchParams?.get("modele_id") ? 1 : 0) +
     (searchParams?.get("lot") || searchParams?.get("sans_lot") ? 1 : 0) +
     (searchParams?.get("du") ? 1 : 0) +
     (searchParams?.get("au") ? 1 : 0) +
     (searchParams?.get("plus30j") ? 1 : 0) +
+    (searchParams?.get("a_classer") ? 1 : 0) +
     (searchParams?.get("a_tarifer") ? 1 : 0) +
     (searchParams?.get("sans_photo") ? 1 : 0) +
     (searchParams?.get("sans_etiquette") ? 1 : 0) +
@@ -966,15 +975,28 @@ export default function Inventaire({ role }: { role: Role }) {
             {vue !== "cockpit" ? (
               <>
                 <button 
-                  onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null })} 
-                  className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
+                  onClick={() => majUrl({ vue: "cockpit", a_tarifer: null, statuts: null, sans_photo: null, sans_etiquette: null, famille_id: null, categorie_id: null, sous_categorie_id: null, modele_id: null })} 
+                  className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2.5 py-1 rounded-lg border border-brand-light-grey dark:border-white/10 shadow-sm text-xs font-semibold"
                 >
                   <IconeChevronGauche taille={14} /> Cockpit
                 </button>
                 <span>/</span>
-                <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
-                  {vue === "atraiter" ? "À traiter" : "Inventaire complet"}
+                <span className="font-bold text-brand-black dark:text-white font-outfit text-base sm:text-lg">
+                  {vue === "atraiter" ? "À traiter" : "Inventaire"}
                 </span>
+                {(searchParams?.get("famille_id") || searchParams?.get("categorie_id") || searchParams?.get("sous_categorie_id")) && (
+                  <span className="bg-brand-orange/15 text-brand-orange border border-brand-orange/30 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
+                    Filtre actif
+                    <button 
+                      type="button" 
+                      onClick={() => majUrl({ famille_id: null, categorie_id: null, sous_categorie_id: null, page: "1" })}
+                      className="hover:text-brand-black dark:hover:text-white ml-0.5 text-sm leading-none"
+                      title="Effacer le filtre taxonomique"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
               </>
             ) : (
               <span className="font-bold text-brand-black dark:text-white font-outfit text-xl">

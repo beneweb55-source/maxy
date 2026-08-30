@@ -11,6 +11,13 @@ export interface LigneProduit {
   code_interne: string;
   reference: string;
   categorie: string;
+  categorie_id?: number | null;
+  categorie_rel?: {
+    nom: string;
+    parent: { nom: string; parent: { nom: string } | null } | null;
+  } | null;
+  modele_id?: number | null;
+  modele?: { id: number; nom: string; image_url?: string | null } | null;
   statut: StatutProduit;
   a_jeter: boolean;
   en_vitrine: boolean;
@@ -58,6 +65,14 @@ export default function CarteProduit({
     prixVente = produit.prix_vente_reel;
   }
 
+  const cheminArbo = produit.categorie_rel
+    ? [
+        produit.categorie_rel.parent?.parent?.nom,
+        produit.categorie_rel.parent?.nom,
+        produit.categorie_rel.nom
+      ].filter(Boolean).join(" › ")
+    : produit.categorie;
+
   return (
     <div className="group flex flex-col rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm transition-all hover:border-brand-smooth hover:shadow-md overflow-hidden h-full">
       {/* Zone Image Clickable -> Fiche Produit */}
@@ -89,14 +104,27 @@ export default function CarteProduit({
       {/* Contenu principal */}
       <Link href={`/produits/${produit.id}`} className="flex-1 flex flex-col p-4 outline-none focus-visible:bg-brand-light-grey/10">
         <div className="mb-3">
-          <div className="font-mono text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey mb-1 bg-brand-light-grey/30 dark:bg-white/5 inline-block px-1.5 py-0.5 rounded">
-            {produit.code_interne}
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <div className="font-mono text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey bg-brand-light-grey/30 dark:bg-white/5 inline-block px-1.5 py-0.5 rounded">
+              {produit.code_interne}
+            </div>
+            {produit.modele?.nom && (
+              <span className="text-[10px] font-bold text-brand-warm-grey px-1.5 py-0.5 rounded bg-brand-light-grey/20 dark:bg-white/5 truncate max-w-[120px]">
+                {produit.modele.nom}
+              </span>
+            )}
           </div>
           <h4 className="font-semibold text-brand-black dark:text-white leading-tight line-clamp-2" title={produit.reference}>
             {produit.reference}
           </h4>
-          <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-1 line-clamp-1">
-            {produit.categorie}
+          <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-1 line-clamp-1" title={cheminArbo}>
+            {produit.categorie_rel ? (
+              <span className="bg-brand-light-grey/40 dark:bg-white/5 px-1.5 py-0.5 rounded text-[10px] font-semibold text-brand-black dark:text-brand-warm-grey">
+                {cheminArbo}
+              </span>
+            ) : (
+              <span>{produit.categorie}</span>
+            )}
           </div>
         </div>
 

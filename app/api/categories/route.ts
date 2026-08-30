@@ -1,27 +1,57 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 
-const prisma = new PrismaClient();
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const parentIdParam = searchParams.get("parent_id");
+    const fullTree = searchParams.get("tree") === "1" || !parentIdParam;
+
+    if (!fullTree && parentIdParam) {
+      const categories = await prisma.categorie.findMany({
+        where: {
+          parent_id: parentIdParam === "null" ? null : Number(parentIdParam),
+        },
+        include: {
+          _count: {
+            select: { modeles: true, produits: true, enfants: true },
+          },
+        },
+        orderBy: {
+          ordre: "asc",
+        },
+      });
+      return NextResponse.json(categories);
+    }
+
     const categories = await prisma.categorie.findMany({
+      where: {
+        parent_id: null,
+      },
       include: {
         enfants: {
           include: {
-            enfants: true // Profondeur de 3 niveaux supportée
-          }
+            enfants: {
+              include: {
+                _count: {
+                  select: { modeles: true, produits: true },
+                },
+              },
+              orderBy: { ordre: "asc" },
+            },
+            _count: {
+              select: { modeles: true, produits: true, enfants: true },
+            },
+          },
+          orderBy: { ordre: "asc" },
         },
         _count: {
-          select: { modeles: true }
-        }
-      },
-      where: {
-        parent_id: null
+          select: { modeles: true, produits: true, enfants: true },
+        },
       },
       orderBy: {
-        ordre: 'asc'
-      }
+        ordre: "asc",
+      },
     });
 
     return NextResponse.json(categories);

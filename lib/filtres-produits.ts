@@ -57,6 +57,37 @@ export function construireFiltresProduits(
     }
   }
 
+  const familleId = Number(params.get("famille_id"));
+  if (Number.isInteger(familleId) && familleId > 0) {
+    clauses.push({
+      OR: [
+        { categorie_id: familleId },
+        { categorie_rel: { parent_id: familleId } },
+        { categorie_rel: { parent: { parent_id: familleId } } },
+      ],
+    });
+  }
+
+  const catRelId = Number(params.get("categorie_id"));
+  if (Number.isInteger(catRelId) && catRelId > 0) {
+    clauses.push({
+      OR: [
+        { categorie_id: catRelId },
+        { categorie_rel: { parent_id: catRelId } },
+      ],
+    });
+  }
+
+  const sousCatId = Number(params.get("sous_categorie_id"));
+  if (Number.isInteger(sousCatId) && sousCatId > 0) {
+    clauses.push({ categorie_id: sousCatId });
+  }
+
+  const modeleId = Number(params.get("modele_id"));
+  if (Number.isInteger(modeleId) && modeleId > 0) {
+    clauses.push({ modele_id: modeleId });
+  }
+
   const categorie = params.get("categorie")?.trim();
   if (categorie) clauses.push({ categorie });
 

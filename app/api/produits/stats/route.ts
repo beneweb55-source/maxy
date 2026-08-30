@@ -140,8 +140,76 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Trier les catégories par nombre total (décroissant)
-    categories.sort((a, b) => b.total - a.total);
+    // Récupérer l'arborescence complète des 9 Familles avec leurs enfants
+    let famillesArborescence: any[] = [];
+    try {
+      const famillesDb = await prisma.categorie.findMany({
+        where: { parent_id: null },
+        include: {
+          enfants: {
+            include: {
+              enfants: {
+                include: {
+                  _count: { select: { produits: true, modeles: true } },
+                },
+                orderBy: { ordre: "asc" },
+              },
+              _count: { select: { produits: true, modeles: true } },
+            },
+            orderBy: { ordre: "asc" },
+          },
+          _count: { select: { produits: true, modeles: true } },
+        },
+        orderBy: { ordre: "asc" },
+      });
+
+      // Calculer le total récursif de produits par famille et par catégorie
+      famillesArborescence = famillesDb.map((f) => {
+        let totalFamille = f._count.produits;
+        let totalModelesFamille = f._count.modeles;
+
+        const categoriesEnfants = (f.enfants || []).map((cat) => {
+          let totalCat = cat._count.produits;
+          let totalModelesCat = cat._count.modeles;
+
+          const sousCats = (cat.enfants || []).map((sc) => {
+            totalCat += sc._count.produits;
+            totalModelesCat += sc._count.modeles;
+            return {
+              id: sc.id,
+              nom: sc.nom,
+              total: sc._count.produits,
+              modelesCount: sc._count.modeles,
+              image_url: sc.image_url,
+            };
+          });
+
+          totalFamille += totalCat;
+          totalModelesFamille += totalModelesCat;
+
+          return {
+            id: cat.id,
+            nom: cat.nom,
+            total: totalCat,
+            modelesCount: totalModelesCat,
+            image_url: cat.image_url,
+            sousCategories: sousCats,
+          };
+        });
+
+        return {
+          id: f.id,
+          nom: f.nom,
+          description: f.description,
+          image_url: f.image_url,
+          total: totalFamille,
+          modelesCount: totalModelesFamille,
+          categories: categoriesEnfants,
+        };
+      });
+    } catch (err) {
+      console.warn("Erreur chargement familles arborescence:", err);
+    }
 
     return NextResponse.json({
       summary: {
@@ -157,6 +225,7 @@ export async function GET(request: NextRequest) {
         sans_etiquette: sansEtiquetteCount,
       },
       categories,
+      familles: famillesArborescence,
     });
 
   } catch (e) {

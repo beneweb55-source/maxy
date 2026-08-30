@@ -95,6 +95,8 @@ export async function GET(request: NextRequest) {
           select: {
             id: true, code_interne: true, reference: true, categorie: true, categorie_id: true,
             categorie_rel: { select: { nom: true, parent: { select: { nom: true, parent: { select: { nom: true } } } } } },
+            modele_id: true,
+            modele: { select: { id: true, nom: true, image_url: true } },
             statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
             prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
             etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
@@ -124,6 +126,8 @@ export async function GET(request: NextRequest) {
           select: {
             id: true, code_interne: true, reference: true, categorie: true, categorie_id: true,
             categorie_rel: { select: { nom: true, parent: { select: { nom: true, parent: { select: { nom: true } } } } } },
+            modele_id: true,
+            modele: { select: { id: true, nom: true, image_url: true } },
             statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
             prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
             etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
@@ -163,6 +167,8 @@ export async function GET(request: NextRequest) {
         categorie: p.categorie,
         categorie_id: p.categorie_id,
         categorie_rel: p.categorie_rel,
+        modele_id: p.modele_id,
+        modele: p.modele,
         statut: p.statut,
         a_jeter: p.a_jeter,
         en_vitrine: p.en_vitrine,
