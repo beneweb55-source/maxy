@@ -44,6 +44,7 @@ import VueFamille from "./VueFamille";
 import CarteProduit from "./CarteProduit";
 import ModalClassification from "./ModalClassification";
 import ModalSuppression from "./ModalSuppression";
+import NavigationTaxonomie from "./NavigationTaxonomie";
 
 interface LigneProduit {
   id: number;
@@ -271,9 +272,31 @@ export default function Inventaire({ role }: { role: Role }) {
   const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
   const [afficherFamilles, setAfficherFamilles] = useState(true);
   
+  // Nouveaux états Taxonomie "Drill-down"
+  const [taxArbre, setTaxArbre] = useState<Record<string, any> | null>(null);
+  const [taxTotal, setTaxTotal] = useState(0);
+  const taxFam = searchParams?.get("taxFamille") || null;
+  const taxCat = searchParams?.get("taxCategorie") || null;
+  const taxSousCat = searchParams?.get("taxSousCategorie") || null;
+
+  useEffect(() => {
+    fetch("/api/taxonomie")
+      .then(r => r.json())
+      .then(d => {
+        if (d.arbre) {
+          setTaxArbre(d.arbre);
+          setTaxTotal(d.total);
+        }
+      })
+      .catch(e => console.error("Erreur chargement taxonomie:", e));
+  }, []);
+
   const vueActuelle = searchParams?.get("vue");
-  const [modeAffichage, setModeAffichage] = useState<"cartes" | "tableau" | "masque">(
-    vueActuelle === "famille" ? "cartes" : "tableau"
+  
+  // Par défaut, si on n'a ni recherche, ni filtre spécifique, on affiche les cartes/taxonomie.
+  const hasActiveSearch = Boolean(searchParams?.get("q") || searchParams?.get("statuts") || searchParams?.get("lot") || taxSousCat);
+  const [modeAffichage, setModeAffichage] = useState<"cartes" | "tableau" | "masque" | "taxonomie">(
+    vueActuelle === "famille" || !hasActiveSearch ? "taxonomie" : "tableau"
   );
 
   // Synchroniser le mode par défaut si on navigue vers une famille
@@ -282,8 +305,10 @@ export default function Inventaire({ role }: { role: Role }) {
       setModeAffichage("cartes");
     } else if (vueActuelle === "cockpit" || vueActuelle === "atraiter") {
       setModeAffichage("tableau");
+    } else if (!hasActiveSearch && !vueActuelle) {
+      setModeAffichage("taxonomie");
     }
-  }, [vueActuelle]);
+  }, [vueActuelle, hasActiveSearch]);
 
   // Édition du statut depuis l'inventaire (transitions manuelles + note contextuelle).
   const [cibleStatut, setCibleStatut] = useState<StatutProduit | null>(null);
@@ -1292,8 +1317,23 @@ export default function Inventaire({ role }: { role: Role }) {
           ouvrirAjout={ouvrirAjout}
         />
       )}
+      
+      {modeAffichage === "taxonomie" && taxArbre && (
+        <div className="mb-6">
+          <NavigationTaxonomie 
+            arbre={taxArbre}
+            totalProduits={taxTotal}
+            familleSelectionnee={taxFam}
+            categorieSelectionnee={taxCat}
+            sousCategorieSelectionnee={taxSousCat}
+            setFamille={(f) => majUrl({ taxFamille: f, taxCategorie: null, taxSousCategorie: null, page: "1" })}
+            setCategorie={(c) => majUrl({ taxCategorie: c, taxSousCategorie: null, page: "1" })}
+            setSousCategorie={(s) => majUrl({ taxSousCategorie: s, page: "1" })}
+          />
+        </div>
+      )}
 
-      {((vue === "cockpit" && !afficherFamilles) || vue === "atraiter" || vue === "famille") && (
+      {((vue === "cockpit" && !afficherFamilles) || vue === "atraiter" || vue === "famille" || taxSousCat || searchParams?.get("q") || searchParams?.get("statuts") || searchParams?.get("lot")) && (
         <div className="space-y-4 animate-entree">
         {donneesFiltrees && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 sm:mt-0 px-2 sm:px-0">

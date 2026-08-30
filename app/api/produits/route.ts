@@ -19,6 +19,30 @@ export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
     let where = construireFiltresProduits(params);
+    
+    // Filtres Taxonomiques dynamiques (calculés en mémoire)
+    const taxFam = params.get("taxFamille");
+    const taxCat = params.get("taxCategorie");
+    const taxSousCat = params.get("taxSousCategorie");
+
+    if (taxFam || taxCat || taxSousCat) {
+      const { classifierProduit } = await import("@/lib/taxonomie");
+      const tousLesProduitsBase = await prisma.produit.findMany({
+        where, // On applique les filtres de base d'abord (recherche, date, etc)
+        select: { id: true, reference: true, categorie: true, code_interne: true }
+      });
+      
+      const idsMatch = tousLesProduitsBase.filter(p => {
+        const classif = classifierProduit(p);
+        if (taxSousCat && classif.sousCategorie !== taxSousCat) return false;
+        if (taxCat && classif.categorie !== taxCat) return false;
+        if (taxFam && classif.famille !== taxFam) return false;
+        return true;
+      }).map(p => p.id);
+      
+      where = { AND: [where, { id: { in: idsMatch.length > 0 ? idsMatch : [-1] } }] };
+    }
+
     // Le rôle social_media ne voit que les produits en vente, vendus ou
     // exposés en vitrine, quels que soient les filtres demandés
     // (restriction côté serveur).
