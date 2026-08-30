@@ -44,6 +44,7 @@ import VueFamille from "./VueFamille";
 import CarteProduit from "./CarteProduit";
 import ModalClassification from "./ModalClassification";
 import ModalSuppression from "./ModalSuppression";
+import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
 
 interface LigneProduit {
   id: number;
@@ -189,6 +190,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const [envoi, setEnvoi] = useState(false);
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
+  const [modalAjoutTerrain, setModalAjoutTerrain] = useState(false);
   const [produitSourceDuplication, setProduitSourceDuplication] = useState<LigneProduit | null>(null);
 
   const [modalEdition, setModalEdition] = useState<{
@@ -439,14 +441,13 @@ export default function Inventaire({ role }: { role: Role }) {
           })
           .catch(() => undefined);
       }
+      setFormPhotosModifiees(false);
+      setFormVitrine(false);
+      setFormMettreEnVente(false);
+      setModalAjout(true);
     } else {
-      setProduitSourceDuplication(null);
-      setFormPhotos([]);
+      setModalAjoutTerrain(true);
     }
-    setFormPhotosModifiees(false);
-    setFormVitrine(false);
-    setFormMettreEnVente(false);
-    setModalAjout(true);
   }
 
   function ouvrirEdition(unites: LigneProduit[], titre: string, contexteCustom?: LigneProduit[]) {
@@ -888,8 +889,8 @@ export default function Inventaire({ role }: { role: Role }) {
           className="champ text-right"
         />
         {modalEdition !== null && Number(formulaire.quantite) !== modalEdition.unites.length && (
-          <div className="mt-2 text-[11px] font-medium leading-tight text-brand-orange bg-brand-orange/10 p-2 rounded-md">
-            ⚠️ Attention : Modifier la quantité entraînera la création ou la suppression physique d'exemplaires dans l'inventaire.
+          <div className="mt-2 text-[11px] font-medium leading-tight text-brand-orange bg-brand-orange/10 p-2 rounded-md flex items-center gap-1.5">
+            <span className="font-bold">Attention :</span> Modifier la quantité entraînera la création ou la suppression physique d'exemplaires dans l'inventaire.
           </div>
         )}
       </div>
@@ -2316,6 +2317,16 @@ export default function Inventaire({ role }: { role: Role }) {
           }}
         />
       )}
+
+      <ModaleAjoutTerrain
+        ouverte={modalAjoutTerrain}
+        onFermer={() => setModalAjoutTerrain(false)}
+        lotsDisponibles={donnees?.lots || []}
+        onSucces={({ codes, ajoutes }) => {
+          afficher(`${ajoutes} exemplaire(s) généré(s) avec succès.`);
+          void charger();
+        }}
+      />
     </>
   );
 }

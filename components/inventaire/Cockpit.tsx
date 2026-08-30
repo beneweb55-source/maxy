@@ -56,68 +56,90 @@ interface StatsData {
   familles?: FamilleArbo[];
 }
 
+import { 
+  Laptop, 
+  HardDrive, 
+  Server, 
+  Zap, 
+  Cpu, 
+  Printer, 
+  Monitor, 
+  CircuitBoard, 
+  Globe, 
+  Package, 
+  Archive, 
+  CheckCircle2, 
+  ShoppingCart, 
+  AlertTriangle, 
+  Clock, 
+  Wrench, 
+  Image as ImageIcon, 
+  Tag, 
+  ChevronRight 
+} from "lucide-react";
+
 // Thèmes visuels épurés pour les 9 Grandes Familles (Palette POS tactile moderne)
-const FAMILLE_THEMES: Record<string, { bgSoft: string; iconBg: string; icon: string; textAccent: string; badgeBg: string }> = {
+const FAMILLE_THEMES: Record<string, { bgSoft: string; iconBg: string; IconComponent: React.ComponentType<{ className?: string }>; textAccent: string; badgeBg: string }> = {
   "ORDINATEURS": {
     bgSoft: "hover:border-blue-400/80 dark:hover:border-blue-500/80",
     iconBg: "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
-    icon: "💻",
+    IconComponent: Laptop,
     textAccent: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
     badgeBg: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
   },
   "STOCKAGE": {
     bgSoft: "hover:border-cyan-400/80 dark:hover:border-cyan-500/80",
     iconBg: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/15 dark:text-cyan-300",
-    icon: "💾",
+    IconComponent: HardDrive,
     textAccent: "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
     badgeBg: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300",
   },
   "SERVEURS & BAIES": {
     bgSoft: "hover:border-purple-400/80 dark:hover:border-purple-500/80",
     iconBg: "bg-purple-500/10 text-purple-600 dark:bg-purple-400/15 dark:text-purple-300",
-    icon: "🖥️",
+    IconComponent: Server,
     textAccent: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
     badgeBg: "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300",
   },
   "ÉLECTRICITÉ & CONNECTIQUE": {
     bgSoft: "hover:border-amber-400/80 dark:hover:border-amber-500/80",
     iconBg: "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
-    icon: "⚡",
+    IconComponent: Zap,
     textAccent: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
     badgeBg: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
   },
   "MÉMOIRE & PROCESSEURS": {
     bgSoft: "hover:border-emerald-400/80 dark:hover:border-emerald-500/80",
     iconBg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
-    icon: "🧠",
+    IconComponent: Cpu,
     textAccent: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
     badgeBg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
   },
   "IMPRESSION & CONSOMMABLES": {
     bgSoft: "hover:border-rose-400/80 dark:hover:border-rose-500/80",
     iconBg: "bg-rose-500/10 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300",
-    icon: "🖨️",
+    IconComponent: Printer,
     textAccent: "group-hover:text-rose-600 dark:group-hover:text-rose-400",
     badgeBg: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
   },
   "ÉCRANS & PÉRIPHÉRIQUES": {
     bgSoft: "hover:border-sky-400/80 dark:hover:border-sky-500/80",
     iconBg: "bg-sky-500/10 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
-    icon: "🖥️",
+    IconComponent: Monitor,
     textAccent: "group-hover:text-sky-600 dark:group-hover:text-sky-400",
     badgeBg: "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
   },
   "COMPOSANTS & CARTES D'EXTENSION": {
     bgSoft: "hover:border-violet-400/80 dark:hover:border-violet-500/80",
     iconBg: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
-    icon: "🔌",
+    IconComponent: CircuitBoard,
     textAccent: "group-hover:text-violet-600 dark:group-hover:text-violet-400",
     badgeBg: "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
   },
   "RÉSEAU ACTIF & COMMUTATION": {
     bgSoft: "hover:border-teal-400/80 dark:hover:border-teal-500/80",
     iconBg: "bg-teal-500/10 text-teal-600 dark:bg-teal-400/15 dark:text-teal-300",
-    icon: "🌐",
+    IconComponent: Globe,
     textAccent: "group-hover:text-teal-600 dark:group-hover:text-teal-400",
     badgeBg: "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300",
   },
@@ -126,7 +148,7 @@ const FAMILLE_THEMES: Record<string, { bgSoft: string; iconBg: string; icon: str
 const THEME_DEFAUT = {
   bgSoft: "hover:border-slate-400",
   iconBg: "bg-slate-500/10 text-slate-700 dark:bg-slate-400/15 dark:text-slate-200",
-  icon: "📦",
+  IconComponent: Package,
   textAccent: "group-hover:text-brand-orange",
   badgeBg: "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
 };
@@ -448,8 +470,8 @@ export default function Cockpit({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${theme.iconBg}`}>
-                        {theme.icon}
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${theme.iconBg}`}>
+                        <theme.IconComponent className="w-6 h-6" />
                       </div>
                       <div>
                         <h3 className={`font-bold text-base sm:text-lg font-outfit text-brand-black dark:text-white leading-snug transition-colors ${theme.textAccent}`}>

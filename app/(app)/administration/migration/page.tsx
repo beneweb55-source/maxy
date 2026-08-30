@@ -162,7 +162,7 @@ export default function MigrationPage() {
             disabled={autoMigrating || analyzing || applying}
             className="px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 disabled:opacity-50"
           >
-            {autoMigrating ? "Migration en cours..." : "🚀 TOUT RÉORGANISER (1 Clic)"}
+            {autoMigrating ? "Migration en cours..." : "TOUT RÉORGANISER (1 Clic)"}
           </button>
 
           <div className="w-px bg-gray-300 mx-2"></div>

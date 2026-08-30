@@ -9,18 +9,30 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const categorie_id = searchParams.get("categorie_id");
+    const q = searchParams.get("q")?.trim();
 
-    if (!categorie_id) {
-      return NextResponse.json({ error: "categorie_id est requis" }, { status: 400 });
+    const where: any = {};
+    if (categorie_id) {
+      where.categorie_id = Number(categorie_id);
+    }
+    if (q) {
+      where.nom = { contains: q, mode: "insensitive" };
     }
 
     const modeles = await prisma.modele.findMany({
-      where: {
-        categorie_id: Number(categorie_id),
+      where,
+      include: {
+        categorie: {
+          select: { id: true, nom: true, parent_id: true },
+        },
+        _count: {
+          select: { exemplaires: true },
+        },
       },
       orderBy: {
         nom: 'asc'
-      }
+      },
+      take: 100,
     });
 
     return NextResponse.json(modeles);

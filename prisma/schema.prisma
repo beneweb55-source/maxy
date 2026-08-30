@@ -202,6 +202,9 @@ model Produit {
   code_interne     String           @unique
   reference        String
   categorie        String
+  numero_serie     String?
+  grade            String?
+  emplacement      String?          @default("reserve")
   statut           StatutProduit    @default(recu)
   prix_achat       Int
   prix_vente_fixe  Int?
@@ -227,7 +230,10 @@ model Produit {
 
   @@index([lot_id])
   @@index([modele_id])
+  @@index([categorie_id])
   @@index([statut])
+  @@index([en_vitrine])
+  @@index([numero_serie])
   @@index([categorie])
   @@index([lot_id, reference, categorie])
   @@map("produits")

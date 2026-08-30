@@ -35,9 +35,14 @@ export async function creerProduitsGroupes(
     const crees = await tx.produit.createManyAndReturn({
       data: tranche.map((ligne, i) => ({
         lot_id: lotId,
+        modele_id: ligne.modele_id ?? null,
+        categorie_id: ligne.categorie_id ?? null,
         code_interne: codesTranche[i]!,
         reference: ligne.reference,
         categorie: ligne.categorie,
+        numero_serie: ligne.numero_serie ?? null,
+        grade: ligne.grade ?? null,
+        emplacement: ligne.emplacement ?? (enVitrine ? "vitrine" : "reserve"),
         prix_achat: ligne.prix_achat,
         prix_vente_fixe: ligne.prix_vente_fixe ?? null,
         image_url: ligne.images[0] ?? null,
