@@ -105,11 +105,13 @@ export function useBrouillon<T>(
     setValeur(nouvelleValeur);
   }, []);
 
+  const estModifie = JSON.stringify(valeur) !== JSON.stringify(valeurInitiale);
+
   return {
     valeur,
     setValeur,
     setValeurForcee,
-    isDirty: isDirty.current,
+    isDirty: estModifie,
     brouillonDisponible,
     restaurerBrouillon,
     supprimerBrouillon,

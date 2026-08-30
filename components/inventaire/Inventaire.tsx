@@ -612,7 +612,7 @@ export default function Inventaire({ role }: { role: Role }) {
     });
   }
 
-  async function ajouterProduit() {
+  async function ajouterProduit(garderOuvert = false) {
     if (envoi) return;
     setEnvoi(true);
     try {
@@ -639,8 +639,18 @@ export default function Inventaire({ role }: { role: Role }) {
       }
       afficher(`Produit ${corps?.code_interne} ajouté à l'inventaire.`);
       validerBrouillon();
-      setModalAjout(false);
-      setProduitSourceDuplication(null);
+      if (garderOuvert) {
+        setFormulaireForcee({
+          ...formulaire,
+          reference: "",
+          quantite: "1",
+        });
+        setFormPhotos([]);
+        setFormPhotosModifiees(false);
+      } else {
+        setModalAjout(false);
+        setProduitSourceDuplication(null);
+      }
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -1985,6 +1995,14 @@ export default function Inventaire({ role }: { role: Role }) {
               className="btn btn-secondaire w-full sm:w-auto justify-center"
             >
               Annuler
+            </button>
+            <button
+              type="button"
+              disabled={envoi || !formulaireValide}
+              onClick={() => void ajouterProduit(true)}
+              className="btn btn-secondaire w-full sm:w-auto justify-center text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 font-bold"
+            >
+              Enregistrer & Suivant
             </button>
             <button
               type="submit"

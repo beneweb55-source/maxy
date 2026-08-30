@@ -280,7 +280,26 @@ export default function VueFamille({
 
           {ouvrirAjout && (
             <button
-              onClick={() => ouvrirAjout()}
+              onClick={() => ouvrirAjout({
+                id: 0,
+                code_interne: "",
+                reference,
+                categorie,
+                statut: "recu",
+                a_jeter: false,
+                en_vitrine: false,
+                prix_achat: stats?.prixMin ?? 0,
+                cout_reparations: 0,
+                prix_vente_fixe: stats?.prixMax ?? null,
+                prix_vente_reel: null,
+                lot_id: null,
+                fournisseur: null,
+                date_entree: new Date().toISOString(),
+                jours_stock: 0,
+                image_url: familleInfo?.image_url || stats?.image_url || null,
+                nb_images: (familleInfo?.image_url || stats?.image_url) ? 1 : 0,
+                etiquette_imprimee: false
+              })}
               className="btn bg-brand-orange hover:bg-brand-orange/90 text-white text-sm shadow-md"
             >
               <IconePlus taille={16} />

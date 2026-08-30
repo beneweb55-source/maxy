@@ -32,7 +32,13 @@ export default function Cockpit({
     setLoading(true);
     setErreur(null);
     
-    fetch("/api/produits/stats", { signal })
+    const params = new URLSearchParams();
+    if (q?.trim()) {
+      params.set("q", q.trim());
+    }
+    const url = params.toString() ? `/api/produits/stats?${params.toString()}` : "/api/produits/stats";
+    
+    fetch(url, { signal })
       .then(async r => {
         if (!r.ok) throw new Error("Erreur de chargement des statistiques");
         return r.json();
@@ -50,7 +56,7 @@ export default function Cockpit({
       });
 
     return () => controller.abort();
-  }, []);
+  }, [q]);
 
   if (loading) {
     return (
