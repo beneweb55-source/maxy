@@ -272,7 +272,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const [afficherFamilles, setAfficherFamilles] = useState(true);
   
   const vueActuelle = searchParams?.get("vue");
-  const [modeAffichage, setModeAffichage] = useState<"cartes" | "tableau">(
+  const [modeAffichage, setModeAffichage] = useState<"cartes" | "tableau" | "masque">(
     vueActuelle === "famille" ? "cartes" : "tableau"
   );
 
@@ -1031,6 +1031,14 @@ export default function Inventaire({ role }: { role: Role }) {
                       >
                         ☷
                       </button>
+                      <button 
+                        type="button"
+                        onClick={() => setModeAffichage("masque")} 
+                        className={`px-2 py-1.5 rounded-md text-xs font-bold transition-all h-full ${modeAffichage === "masque" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
+                        title="Masquer"
+                      >
+                        <IconeOeil taille={14} className={modeAffichage === "masque" ? "opacity-50" : ""} />
+                      </button>
                     </div>
                 </div>
               )}
@@ -1658,7 +1666,8 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {donneesFiltrees && donneesFiltrees.produits.length > 0 && !vueGroupee && (
         <div className="space-y-4">
-          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden"}`}>
+          {modeAffichage === "cartes" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {donneesFiltrees.produits.map((p) => (
               <CarteProduit
                 key={p.id}
@@ -1675,8 +1684,10 @@ export default function Inventaire({ role }: { role: Role }) {
               />
             ))}
           </div>
+          )}
 
-          <div className={`overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "block max-h-[800px]" : "hidden"}`}>
+          {modeAffichage === "tableau" && (
+          <div className="overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine block max-h-[800px]">
             <table className="w-full min-w-[820px] text-[13px] relative">
               <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
@@ -1773,6 +1784,16 @@ export default function Inventaire({ role }: { role: Role }) {
                             </span>
                           )}
                         </span>
+                      ) : peutModifier ? (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ouvrirEdition([p], p.code_interne);
+                          }}
+                          className="bg-brand-orange/10 text-brand-orange hover:bg-brand-orange hover:text-white px-2 py-0.5 rounded text-xs font-bold transition-colors whitespace-nowrap"
+                        >
+                          + Prix
+                        </button>
                       ) : (
                         <span className="text-brand-warm-grey dark:text-brand-grey font-medium">—</span>
                       )}
@@ -1791,7 +1812,7 @@ export default function Inventaire({ role }: { role: Role }) {
                               }}
                               title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
                               aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
-                              className={`rounded-lg p-2 transition-colors disabled:opacity-40 ${
+                              className={`rounded-lg p-2 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors disabled:opacity-40 ${
                                 p.en_vitrine
                                   ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
                                   : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
@@ -1803,7 +1824,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           <BoutonImpression 
                             ids={[p.id]} 
                             dejaImprimee={p.etiquette_imprimee} 
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white" 
+                            className="rounded-lg p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white" 
                           />
                           <button
                             type="button"
@@ -1812,7 +1833,7 @@ export default function Inventaire({ role }: { role: Role }) {
                               setModalClassification([p]);
                             }}
                             title="Modifier la classification"
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-orange/10 hover:text-brand-orange"
+                            className="rounded-lg p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-warm-grey transition-colors hover:bg-brand-orange/10 hover:text-brand-orange"
                           >
                             <IconeArchive taille={15} />
                           </button>
@@ -1824,7 +1845,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             }}
                             title={t("inventaire.editer")}
                             aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
+                            className="rounded-lg p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
                           >
                             <IconeCrayon taille={15} />
                           </button>
@@ -1836,7 +1857,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             }}
                             title={t("inventaire.supprimer")}
                             aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-danger/10 hover:text-danger"
+                            className="rounded-lg p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-warm-grey transition-colors hover:bg-danger/10 hover:text-danger"
                           >
                             <IconeCorbeille taille={15} />
                           </button>
@@ -1848,6 +1869,7 @@ export default function Inventaire({ role }: { role: Role }) {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 

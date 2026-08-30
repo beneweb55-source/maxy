@@ -120,9 +120,23 @@ export default function CarteProduit({
             <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange/80">
               {t("inventaire.colPrixVente")}
             </span>
-            <span className="font-extrabold text-brand-orange text-sm whitespace-nowrap">
-              {prixVente !== null ? formaterDA(prixVente) : "—"}
-            </span>
+            {prixVente !== null ? (
+              <span className="font-extrabold text-brand-orange text-sm whitespace-nowrap">
+                {formaterDA(prixVente)}
+              </span>
+            ) : peutModifier ? (
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  ouvrirEdition([produit], produit.code_interne);
+                }}
+                className="bg-brand-orange/10 text-brand-orange hover:bg-brand-orange hover:text-white px-2 py-0.5 rounded text-xs font-bold transition-colors whitespace-nowrap mt-0.5"
+              >
+                + Prix
+              </button>
+            ) : (
+              <span className="font-extrabold text-brand-orange text-sm whitespace-nowrap">—</span>
+            )}
           </div>
         </div>
       </Link>
