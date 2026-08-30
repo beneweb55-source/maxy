@@ -17,6 +17,9 @@ export function construireFiltresProduits(
         { reference: { contains: q, mode: "insensitive" } },
         { code_interne: { contains: q, mode: "insensitive" } },
         { notes: { contains: q, mode: "insensitive" } },
+        { categorie: { contains: q, mode: "insensitive" } },
+        { categorie_rel: { nom: { contains: q, mode: "insensitive" } } },
+        { modele: { nom: { contains: q, mode: "insensitive" } } },
       ],
     });
   }

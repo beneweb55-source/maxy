@@ -1,7 +1,12 @@
 import { useState, useRef } from "react";
 import Modale from "@/components/Modale";
 import { IconeEnregistrer, IconeImage, IconeCrayon } from "@/components/icons";
-import type { CategorieInfo } from "./VueCategorie";
+export interface CategorieInfo {
+  id?: number;
+  nom?: string;
+  description: string | null;
+  image_url: string | null;
+}
 
 export default function ModaleEditionCategorie({
   nomCategorie,

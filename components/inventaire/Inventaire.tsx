@@ -1030,7 +1030,8 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
 
           {/* Barre d'outils unifiée (Toolbar) */}
-          <div className="carte !p-2 sm:!p-3 flex flex-col lg:flex-row gap-3 items-center shadow-sm z-20 relative">
+          {(vue === "tableau" || vue === "atraiter" || (!afficherFamilles && vue === "cockpit") || q.trim() !== "") && (
+            <div className="carte !p-2 sm:!p-3 flex flex-col lg:flex-row gap-3 items-center shadow-sm z-20 relative">
             <div className="flex-1 w-full relative flex flex-col sm:flex-row gap-2">
               <RechercheRapide
                 valeur={q}
@@ -1164,6 +1165,7 @@ export default function Inventaire({ role }: { role: Role }) {
               </div>
             )}
           </div>
+          )}
 
           {/* Tiroir de filtres avancés */}
           {vue !== "cockpit" && afficherPlusFiltres && (
@@ -1296,28 +1298,32 @@ export default function Inventaire({ role }: { role: Role }) {
         <div className="mb-8">
           <Cockpit 
             majUrl={majUrl} 
+            q={q}
             afficherFamilles={afficherFamilles} 
             setAfficherFamilles={setAfficherFamilles} 
           />
         </div>
       )}
       
-      {vue === "categorie" && searchParams?.get("categorie") && (
-        <VueCategorie categorie={searchParams.get("categorie")!} majUrl={majUrl} />
-      )}
-      
-      {vue === "famille" && searchParams?.get("cle") && (
-        <VueFamille 
-          cleFamille={searchParams.get("cle")!} 
-          majUrl={majUrl} 
-          ouvrirEdition={ouvrirEdition}
-          ouvrirSuppressionUnites={ouvrirSuppressionUnites}
-          basculerVitrineIds={basculerVitrineIds}
-          ouvrirAjout={ouvrirAjout}
-        />
+      {vue === "famille" && searchParams?.get("famille_id") && (
+        <div className="mb-8">
+          <VueFamille 
+            familleId={Number(searchParams.get("famille_id"))} 
+            majUrl={majUrl} 
+          />
+        </div>
       )}
 
-      {((vue === "cockpit" && !afficherFamilles) || vue === "atraiter" || vue === "famille") && (
+      {vue === "categorie" && searchParams?.get("categorie_id") && (
+        <div className="mb-8">
+          <VueCategorie 
+            categorieId={Number(searchParams.get("categorie_id"))} 
+            majUrl={majUrl} 
+          />
+        </div>
+      )}
+
+      {(vue === "tableau" || vue === "atraiter" || (!["cockpit", "famille", "categorie"].includes(vue)) || (vue === "cockpit" && !afficherFamilles)) && (
         <div className="space-y-4 animate-entree">
         {donneesFiltrees && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 sm:mt-0 px-2 sm:px-0">
