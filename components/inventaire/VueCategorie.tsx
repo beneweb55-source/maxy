@@ -52,39 +52,21 @@ export default function VueCategorie({
     setLoading(true);
     setErreur(null);
 
-    // Charger les sous-catégories de cette catégorie
-    fetch(`/api/categories?parent_id=${categorieId}`, { signal })
+    // Charger directement les détails de la catégorie et ses sous-catégories
+    fetch(`/api/categories/${categorieId}`, { signal })
       .then(async (res) => {
-        if (!res.ok) throw new Error("Erreur lors du chargement des sous-catégories");
+        if (!res.ok) throw new Error("Erreur lors du chargement de la catégorie");
         return res.json();
       })
-      .then(async (sousCats: SousCategorieDetail[]) => {
+      .then((data: any) => {
         if (signal.aborted) return;
 
-        // Récupérer l'arbre pour trouver la catégorie parente et la famille
-        const resTree = await fetch("/api/categories?tree=1", { signal });
-        const treeData: any[] = await resTree.json();
-
-        let foundCat: any = null;
-        let foundParentFamille: any = null;
-
-        for (const f of treeData) {
-          for (const c of f.enfants || []) {
-            if (c.id === categorieId) {
-              foundCat = c;
-              foundParentFamille = f;
-              break;
-            }
-          }
-          if (foundCat) break;
-        }
-
         setCategorie({
-          id: categorieId,
-          nom: foundCat?.nom || `Catégorie #${categorieId}`,
-          parent_id: foundParentFamille?.id || null,
-          parent: foundParentFamille ? { id: foundParentFamille.id, nom: foundParentFamille.nom } : null,
-          sousCategories: sousCats || []
+          id: data.id,
+          nom: data.nom || `Catégorie #${categorieId}`,
+          parent_id: data.parent?.id || null,
+          parent: data.parent ? { id: data.parent.id, nom: data.parent.nom } : null,
+          sousCategories: data.enfants || [],
         });
         setLoading(false);
       })
@@ -129,15 +111,13 @@ export default function VueCategorie({
     );
   }
 
-  // Filtrer les sous-catégories (masquer stock à 0 par défaut ou filtrer par recherche)
-  const sousCatsFiltrees = categorie.sousCategories.filter((sc) => {
-    const count = sc._count?.produits || 0;
-    if (count <= 0) return false;
+  // Filtrer les sous-catégories selon le terme de recherche
+  const sousCatsFiltrees = (categorie.sousCategories || []).filter((sc) => {
     if (!q.trim()) return true;
     return sc.nom.toLowerCase().includes(q.toLowerCase());
   });
 
-  const totalProduitsCat = categorie.sousCategories.reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
+  const totalProduitsCat = (categorie.sousCategories || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
 
   return (
     <div className="space-y-6 animate-entree">

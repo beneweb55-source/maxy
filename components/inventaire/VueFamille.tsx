@@ -62,26 +62,21 @@ export default function VueFamille({
     setLoading(true);
     setErreur(null);
 
-    // Charger les catégories de la famille
-    fetch(`/api/categories?parent_id=${familleId}`, { signal })
+    // Charger directement les détails de la famille et ses catégories rattachées
+    fetch(`/api/categories/${familleId}`, { signal })
       .then(async (res) => {
-        if (!res.ok) throw new Error("Erreur de chargement des catégories");
+        if (!res.ok) throw new Error("Erreur de chargement de la famille");
         return res.json();
       })
-      .then(async (categories: CategorieNode[]) => {
+      .then((data: any) => {
         if (signal.aborted) return;
         
-        // Charger les informations de la famille racine
-        const resFamilles = await fetch("/api/categories?tree=1", { signal });
-        const dataTree: any[] = await resFamilles.json();
-        const fInfo = dataTree.find((f: any) => f.id === familleId);
-
         setFamille({
-          id: familleId,
-          nom: fInfo?.nom || `Famille #${familleId}`,
-          description: fInfo?.description || null,
-          image_url: fInfo?.image_url || null,
-          categories: categories || []
+          id: data.id,
+          nom: data.nom || `Famille #${familleId}`,
+          description: data.description || null,
+          image_url: data.image_url || null,
+          categories: data.enfants || [],
         });
         setLoading(false);
       })
@@ -125,19 +120,17 @@ export default function VueFamille({
     );
   }
 
-  // Filtrer les catégories (masquer stock à 0 par défaut ou filtrer par recherche)
-  const categoriesFiltrees = famille.categories.filter((cat) => {
-    const totalProduits = (cat._count?.produits || 0) + (cat.enfants || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
-    if (totalProduits <= 0) return false;
+  // Filtrer les catégories selon le terme de recherche
+  const categoriesFiltrees = (famille.categories || []).filter((cat) => {
     if (!q.trim()) return true;
     const qLower = q.toLowerCase();
     return (
       cat.nom.toLowerCase().includes(qLower) ||
-      cat.enfants.some((sc) => sc.nom.toLowerCase().includes(qLower))
+      (cat.enfants || []).some((sc) => sc.nom.toLowerCase().includes(qLower))
     );
   });
 
-  const totalProduitsFamille = famille.categories.reduce((acc, cat) => {
+  const totalProduitsFamille = (famille.categories || []).reduce((acc, cat) => {
     const direct = cat._count?.produits || 0;
     const enfants = (cat.enfants || []).reduce((a, sc) => a + (sc._count?.produits || 0), 0);
     return acc + direct + enfants;
@@ -214,23 +207,23 @@ export default function VueFamille({
                     </div>
 
                     <div className="text-xs text-brand-warm-grey">
-                      {sousCatsNonZero.length} sous-catégorie{sousCatsNonZero.length > 1 ? "s" : ""} · {totalModeles} modèle{totalModeles > 1 ? "s" : ""}
+                      {(cat.enfants || []).length} sous-catégorie{(cat.enfants || []).length > 1 ? "s" : ""} · {totalModeles} modèle{totalModeles > 1 ? "s" : ""}
                     </div>
 
                     {/* Chips d'aperçu des sous-catégories */}
-                    {sousCatsNonZero.length > 0 && (
+                    {(cat.enfants || []).length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-brand-light-grey/30 dark:border-white/5">
-                        {sousCatsNonZero.slice(0, 4).map((sc) => (
+                        {(cat.enfants || []).slice(0, 4).map((sc) => (
                           <span 
                             key={sc.id}
                             className="text-[11px] px-2 py-0.5 rounded-md bg-brand-light-grey/25 dark:bg-white/5 text-brand-warm-grey dark:text-brand-grey font-medium"
                           >
-                            {sc.nom} ({sc._count.produits})
+                            {sc.nom} {sc._count?.produits ? `(${sc._count.produits})` : ""}
                           </span>
                         ))}
-                        {sousCatsNonZero.length > 4 && (
-                          <span className="text-[11px] px-1.5 py-0.5 text-brand-warm-grey">
-                            +{sousCatsNonZero.length - 4}
+                        {(cat.enfants || []).length > 4 && (
+                          <span className="text-[11px] px-1.5 py-0.5 text-brand-warm-grey font-semibold">
+                            +{(cat.enfants || []).length - 4}
                           </span>
                         )}
                       </div>

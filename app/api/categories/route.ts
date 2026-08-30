@@ -13,6 +13,14 @@ export async function GET(request: Request) {
           parent_id: parentIdParam === "null" ? null : Number(parentIdParam),
         },
         include: {
+          enfants: {
+            include: {
+              _count: {
+                select: { modeles: true, produits: true },
+              },
+            },
+            orderBy: { ordre: "asc" },
+          },
           _count: {
             select: { modeles: true, produits: true, enfants: true },
           },

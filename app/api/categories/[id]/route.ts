@@ -1,6 +1,57 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "ID invalide" }, { status: 400 });
+    }
+
+    const categorie = await prisma.categorie.findUnique({
+      where: { id },
+      include: {
+        parent: {
+          select: { id: true, nom: true, parent_id: true },
+        },
+        enfants: {
+          include: {
+            enfants: {
+              include: {
+                _count: { select: { modeles: true, produits: true } },
+              },
+              orderBy: { ordre: "asc" },
+            },
+            _count: {
+              select: { modeles: true, produits: true, enfants: true },
+            },
+          },
+          orderBy: { ordre: "asc" },
+        },
+        _count: {
+          select: { modeles: true, produits: true, enfants: true },
+        },
+      },
+    });
+
+    if (!categorie) {
+      return NextResponse.json({ error: "Catégorie introuvable" }, { status: 404 });
+    }
+
+    return NextResponse.json(categorie);
+  } catch (error) {
+    console.error("Erreur GET /api/categories/[id]:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la récupération de la catégorie" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
