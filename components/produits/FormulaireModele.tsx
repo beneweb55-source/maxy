@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { 
   Layers, 
   Sparkles, 
@@ -20,7 +20,9 @@ import {
   SlidersHorizontal,
   Info,
   Building2,
-  FolderTree
+  FolderTree,
+  UploadCloud,
+  Trash2
 } from "lucide-react";
 import { 
   determinerProfilEquipement, 
@@ -83,6 +85,27 @@ export default function FormulaireModele({
   const [specs, setSpecs] = useState<Record<string, any>>({});
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  // Upload Photo Drag & Drop
+  const [enGlissement, setEnGlissement] = useState(false);
+  const inputFichierRef = useRef<HTMLInputElement>(null);
+
+  const traiterFichier = (fichier: File) => {
+    if (!fichier.type.startsWith("image/")) {
+      setErreur("Veuillez sélectionner un fichier image valide (.jpg, .png, .webp).");
+      return;
+    }
+    if (fichier.size > 5 * 1024 * 1024) {
+      setErreur("L'image ne doit pas dépasser 5 Mo.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setImageUrl(dataUrl);
+    };
+    reader.readAsDataURL(fichier);
+  };
 
   // Charger l'arbre des catégories et verrouillage scroll body
   useEffect(() => {
@@ -502,18 +525,81 @@ export default function FormulaireModele({
 
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-brand-warm-grey mb-1.5">
-                    Photo du Modèle (URL ou CDN)
+                    Photo du Modèle
                   </label>
-                  <div className="relative">
-                    <ImageIcon className="w-4 h-4 text-brand-warm-grey absolute left-3.5 top-3.5" />
-                    <input
-                      type="text"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="input w-full pl-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-medium h-11"
-                    />
-                  </div>
+                  
+                  {imageUrl ? (
+                    <div className="relative rounded-2xl border-2 border-brand-orange/30 p-2.5 bg-brand-orange/5 flex items-center gap-3">
+                      <img
+                        src={imageUrl}
+                        alt="Aperçu du modèle"
+                        className="w-14 h-14 rounded-xl object-cover border border-brand-light-grey dark:border-white/10 bg-white dark:bg-zinc-800 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-brand-black dark:text-white truncate">
+                          Photo sélectionnée
+                        </p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => inputFichierRef.current?.click()}
+                            className="btn btn-secondaire text-[11px] py-1 px-2.5 h-auto rounded-lg font-bold"
+                          >
+                            Remplacer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageUrl("")}
+                            className="btn bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 hover:bg-red-100 text-[11px] py-1 px-2.5 h-auto rounded-lg font-bold"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setEnGlissement(true);
+                      }}
+                      onDragLeave={() => setEnGlissement(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setEnGlissement(false);
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                          traiterFichier(e.dataTransfer.files[0]);
+                        }
+                      }}
+                      onClick={() => inputFichierRef.current?.click()}
+                      className={`border-2 border-dashed rounded-2xl p-3 text-center cursor-pointer transition-all ${
+                        enGlissement
+                          ? "border-brand-orange bg-brand-orange/10 scale-101"
+                          : "border-brand-light-grey dark:border-white/15 bg-brand-light-grey/10 dark:bg-white/2 hover:border-brand-orange hover:bg-brand-orange/5"
+                      }`}
+                    >
+                      <UploadCloud className="w-6 h-6 mx-auto text-brand-orange mb-1" />
+                      <p className="text-xs font-bold text-brand-black dark:text-white">
+                        Glissez une photo ou <span className="text-brand-orange underline">parcourez</span>
+                      </p>
+                      <p className="text-[10px] text-brand-warm-grey font-medium mt-0.5">
+                        PNG, JPG, WEBP jusqu'à 5 Mo
+                      </p>
+                    </div>
+                  )}
+
+                  <input
+                    ref={inputFichierRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        traiterFichier(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
                 </div>
               </div>
 

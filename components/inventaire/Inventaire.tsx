@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import type { Role, StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
@@ -50,13 +51,31 @@ import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
 import AssistantImportation from "./AssistantImportation";
 import ModaleExport from "./ModaleExport";
 import ModaleVenteInventaire from "./ModaleVenteInventaire";
+import ModaleSelectionQuantite from "./ModaleSelectionQuantite";
+import ModaleArrivageRapide from "@/components/produits/ModaleArrivageRapide";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import RechercheMultiModal from "./RechercheMultiModal";
 import FilterDrawer from "./FilterDrawer";
 import ActiveFilterBadges from "./ActiveFilterBadges";
-import { Filter as IconFilter, UploadCloud } from "lucide-react";
+import { 
+  Filter as IconFilter, 
+  UploadCloud,
+  Layers,
+  SlidersHorizontal,
+  ChevronRight,
+  ChevronDown,
+  CheckCircle2,
+  PackagePlus,
+  Hash,
+  X,
+  Sparkles,
+  Barcode,
+  Tag,
+  Boxes,
+  Plus
+} from "lucide-react";
 
-interface LigneProduit {
+export interface LigneProduit {
   id: number;
   code_interne: string;
   reference: string;
@@ -66,6 +85,8 @@ interface LigneProduit {
     nom: string;
     parent: { nom: string; parent: { nom: string } | null } | null;
   } | null;
+  modele_id?: number | null;
+  modele?: { id: number; nom: string; image_url?: string | null } | null;
   statut: StatutProduit;
   a_jeter: boolean;
   en_vitrine: boolean;
@@ -73,6 +94,9 @@ interface LigneProduit {
   cout_reparations: number;
   prix_vente_fixe: number | null;
   prix_vente_reel: number | null;
+  numero_serie?: string | null;
+  grade?: string | null;
+  emplacement?: string | null;
   lot_id: number | null;
   fournisseur: string | null;
   date_entree: string;
@@ -138,10 +162,12 @@ function prixVenteAffiche(p: LigneProduit): number | null {
   return p.prix_vente_fixe;
 }
 
-interface GroupeProduits {
+export interface GroupeProduits {
   cle: string;
   reference: string;
   categorie: string;
+  modele_id: number | null;
+  categorie_id: number | null;
   image_url: string | null;
   nbImages: number;
   enVitrine: number;
@@ -151,13 +177,16 @@ interface GroupeProduits {
   venteMin: number | null;
   venteMax: number | null;
   resumeStatuts: { statut: StatutProduit; n: number }[];
+  totalDisponibles: number;
 }
 
 function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
   const groupes = new Map<string, LigneProduit[]>();
   for (const p of produits) {
     const catFormatee = formatCategoriePath(p);
-    const cle = `${p.lot_id ?? "sans-lot"}|${p.reference.trim().toLowerCase()}|${catFormatee.trim().toLowerCase()}`;
+    const cle = p.modele_id
+      ? `mod-${p.modele_id}`
+      : `${p.reference.trim().toLowerCase()}|${catFormatee.trim().toLowerCase()}`;
     const existant = groupes.get(cle);
     if (existant) existant.push(p);
     else groupes.set(cle, [p]);
@@ -170,12 +199,15 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
     const parStatut = new Map<StatutProduit, number>();
     for (const u of unites) parStatut.set(u.statut, (parStatut.get(u.statut) ?? 0) + 1);
     const premier = unites[0]!;
+    const nonVendus = unites.filter((u) => u.statut !== "vendu" && u.statut !== "hs");
     return {
       cle,
       reference: premier.reference,
       categorie: formatCategoriePath(premier),
-      image_url: unites.find((u) => u.image_url)?.image_url ?? null,
-      nbImages: Math.max(...unites.map((u) => u.nb_images)),
+      modele_id: premier.modele_id || null,
+      categorie_id: premier.categorie_id || null,
+      image_url: unites.find((u) => u.image_url)?.image_url ?? premier.modele?.image_url ?? null,
+      nbImages: Math.max(...unites.map((u) => u.nb_images || 0), 0),
       enVitrine: unites.filter((u) => u.en_vitrine).length,
       unites,
       prixMin: Math.min(...prix),
@@ -183,6 +215,7 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
       venteMin: vente.length > 0 ? Math.min(...vente) : null,
       venteMax: vente.length > 0 ? Math.max(...vente) : null,
       resumeStatuts: Array.from(parStatut.entries()).map(([statut, n]) => ({ statut, n })),
+      totalDisponibles: nonVendus.length,
     };
   });
 }
@@ -272,6 +305,20 @@ export default function Inventaire({ role }: { role: Role }) {
   const [modalClassification, setModalClassification] = useState<LigneProduit[] | null>(null);
   const [selection, setSelection] = useState<number[]>([]);
   const [modalVenteUnites, setModalVenteUnites] = useState<LigneProduit[] | null>(null);
+  const [modalSelectionQuantite, setModalSelectionQuantite] = useState<{
+    action: "facturer" | "statut" | "supprimer";
+    groupe: GroupeProduits;
+  } | null>(null);
+  const [modalArrivageRapideModele, setModalArrivageRapideModele] = useState<{
+    modeleId?: number | null;
+    modeleNom: string;
+    categorieId?: number | null;
+    prixAchatDefaut?: number;
+    prixVenteDefaut?: number | null;
+  } | null>(null);
+  const [modalStatutMasse, setModalStatutMasse] = useState<{
+    unites: LigneProduit[];
+  } | null>(null);
 
   function ouvrirVenteInventaire(unites: LigneProduit[]) {
     setModalVenteUnites(unites);
@@ -525,20 +572,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
   function ouvrirAjout(source?: LigneProduit) {
     if (source) {
-      setProduitSourceDuplication(source);
-      setFormPhotos(source.image_url ? [source.image_url] : []);
-      if (source.nb_images > 1) {
-        void fetch(`/api/produits/${source.id}`)
-          .then((r) => (r.ok ? (r.json() as Promise<{ images?: string[] }>) : null))
-          .then((d) => {
-            if (d?.images) setFormPhotos(d.images);
-          })
-          .catch(() => undefined);
-      }
-      setFormPhotosModifiees(false);
-      setFormVitrine(false);
-      setFormMettreEnVente(false);
-      setModalAjout(true);
+      void creerExemplaireRapide(source);
     } else {
       setModalAjoutTerrain(true);
     }
@@ -868,6 +902,99 @@ export default function Inventaire({ role }: { role: Role }) {
       setModalSuppression(null);
       await charger();
     } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  async function changerStatutUnites(unites: LigneProduit[], cible: StatutProduit, note?: string) {
+    if (envoi || unites.length === 0) return;
+    setEnvoi(true);
+    try {
+      const ids = unites.map((u) => u.id);
+      const res = await fetch(`/api/produits/masse/statut`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          statut: cible,
+          note: note || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        afficher(err?.error ?? "Erreur lors du changement de statut.", "erreur");
+        return;
+      }
+      afficher(`${ids.length} exemplaire(s) mis à jour → ${INFOS_STATUT[cible].libelle}`, "succes");
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  async function creerExemplaireRapide(cible: GroupeProduits | LigneProduit) {
+    if (envoi) return;
+    setEnvoi(true);
+    try {
+      const isGroupe = "unites" in cible;
+      const ref = cible.reference;
+      const cat = cible.categorie;
+      const modeleId = cible.modele_id;
+      const categorieId = cible.categorie_id;
+      const prixAchat = isGroupe ? (cible.prixMin || 0) : (cible.prix_achat || 0);
+      const prixVente = isGroupe ? cible.venteMin : cible.prix_vente_fixe;
+      const imageUrl = cible.image_url;
+
+      if (modeleId) {
+        const res = await fetch(`/api/modeles/${modeleId}/exemplaires`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            quantite: 1,
+            prix_achat: prixAchat,
+            prix_vente_fixe: prixVente,
+            emplacement: "reserve",
+            grade: "Grade A",
+            statut: "recu",
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          afficher(data?.error ?? "Erreur lors de la création de l'exemplaire.", "erreur");
+          return;
+        }
+        const codeGenere = Array.isArray(data?.codes) && data.codes[0] ? ` (${data.codes[0]})` : "";
+        afficher(`1 exemplaire créé avec succès pour ${ref}${codeGenere} !`, "succes");
+      } else {
+        const res = await fetch(`/api/produits`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reference: ref,
+            categorie: cat,
+            categorie_id: categorieId || undefined,
+            prix_achat: prixAchat,
+            prix_vente_fixe: prixVente,
+            quantite: 1,
+            image_url: imageUrl || undefined,
+            statut: "recu",
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          afficher(data?.error ?? "Erreur lors de la création du produit.", "erreur");
+          return;
+        }
+        const codeGenere = Array.isArray(data?.codes) && data.codes[0] ? ` (${data.codes[0]})` : "";
+        afficher(`1 exemplaire créé avec succès pour ${ref}${codeGenere} !`, "succes");
+      }
+      await charger();
+    } catch (err) {
+      console.error("Erreur creation rapide exemplaire:", err);
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
       setEnvoi(false);
@@ -1505,532 +1632,589 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          {donneesFiltrees && donneesFiltrees.produits.length > 0 && vueGroupee && (
-        <div className="space-y-2">
-          {groupes.map((g) => {
-            const ouvert = groupesOuverts.has(g.cle);
-            const multiple = g.unites.length > 1;
-            return (
-              <div
-                key={g.cle}
-                className="overflow-hidden rounded-2xl border border-brand-light-grey/80 dark:border-white/10 bg-white dark:bg-brand-paper shadow-2xs transition-all"
-              >
-                <div className="flex items-center gap-3 px-4 py-3">
-                  {g.image_url ? (
-                    <img
-                      src={g.image_url}
-                      alt={`Photo de ${g.reference}`}
-                      loading="lazy"
-                      className="h-11 w-11 shrink-0 rounded-xl border border-brand-light-grey/60 dark:border-white/10 object-cover"
-                    />
-                  ) : (
-                    <div className="h-11 w-11 shrink-0 rounded-xl border border-dashed border-brand-light-grey dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/2" />
-                  )}
-                  <span
-                    className={`inline-flex h-7 shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-black ${
-                      multiple
-                        ? "bg-brand-orange text-white"
-                        : "bg-brand-light-grey/40 dark:bg-white/10 text-brand-warm-grey dark:text-brand-grey"
-                    }`}
-                  >
-                    {g.unites.length}×
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-extrabold text-brand-black dark:text-white" title={g.reference}>
-                      {g.reference}
-                    </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-brand-warm-grey dark:text-brand-grey">
-                      <span className="font-semibold">{g.categorie}</span>
-                      {g.resumeStatuts.map((r) => (
-                        <span
-                          key={r.statut}
-                          className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${INFOS_STATUT[r.statut].badge}`}
-                        >
-                          {r.n}× {INFOS_STATUT[r.statut].libelle}
-                        </span>
-                      ))}
-                      {g.enVitrine > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/15 text-[11px] font-bold text-brand-orange px-2 py-0.5">
-                          <IconeVitrine taille={11} />
-                          {g.enVitrine > 1 ? `${g.enVitrine}× vitrine` : "Vitrine"}
-                        </span>
-                      )}
-                      {g.nbImages > 1 && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-light-grey/40 dark:bg-white/10 px-1.5 py-0.5 text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey">
-                          <IconeImage taille={11} />
-                          {g.nbImages}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  {!estSocial && (
-                    <div className="hidden shrink-0 text-right text-sm sm:block">
-                      <span className="font-bold text-brand-black dark:text-white">
-                        {g.prixMin === g.prixMax
-                          ? formaterDA(g.prixMin)
-                          : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
-                      </span>
-                      <span className="block text-[10px] font-semibold uppercase text-brand-warm-grey dark:text-brand-grey mt-0.5">{t("inventaire.achatUnitaire")}</span>
-                    </div>
-                  )}
-                  <div className="hidden shrink-0 rounded-xl bg-brand-glow/30 dark:bg-white/5 border border-brand-orange/20 px-3 py-1 text-right text-sm sm:block">
-                    <span className="font-extrabold text-brand-orange">
-                      {g.venteMin === null
-                        ? "—"
-                        : g.venteMin === g.venteMax
-                          ? formaterDA(g.venteMin)
-                          : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
-                    </span>
-                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/80 mt-0.5">
-                      {t("inventaire.vente")}
-                    </span>
-                  </div>
-                  <div className="flex sm:hidden flex-col items-end gap-1">
-                    <div className="text-right text-sm">
-                      <span className="font-bold text-brand-orange">
-                        {g.venteMin === null
-                          ? "—"
-                          : g.venteMin === g.venteMax
-                            ? formaterDA(g.venteMin)
-                            : `${formaterDA(g.venteMin)}`}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-1">
-                  {peutModifier &&
-                    (() => {
-                      const nonVendu = g.unites.filter((u) => u.statut !== "vendu");
-                      const exposeIds = g.unites.filter((u) => u.en_vitrine).map((u) => u.id);
-                      const enVitrine = g.enVitrine > 0;
-                      const desactive = envoi || (!enVitrine && nonVendu.length === 0);
-                      return (
-                        <button
-                          type="button"
-                          disabled={desactive}
-                          onClick={() =>
-                            enVitrine
-                              ? void basculerVitrineIds(exposeIds, false, g.reference)
-                              : void basculerVitrineIds([nonVendu[0]!.id], true, g.reference)
-                          }
-                          title={
-                            enVitrine
-                              ? t("inventaire.retirerDeVitrine")
-                              : t("inventaire.mettreVitrine")
-                          }
-                          aria-label={
-                            enVitrine
-                              ? t("inventaire.retirerReferenceVitrine", { ref: g.reference })
-                              : t("inventaire.mettreReferenceVitrine", { ref: g.reference })
-                          }
-                          className={`rounded-xl p-2 transition disabled:opacity-40 ${
-                            enVitrine
-                              ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
-                              : "text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-orange"
-                          }`}
-                        >
-                          <IconeVitrine taille={15} />
-                        </button>
-                      );
-                    })()}
-                    <BoutonImpression 
-                      ids={g.unites.map(u => u.id)} 
-                      dejaImprimee={g.unites.every(u => u.etiquette_imprimee)} 
-                      className="rounded-xl p-2 text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors" 
-                    />
-                    {peutModifier && (
-                      <button
-                        type="button"
-                        onClick={() => ouvrirEdition(g.unites, g.reference)}
-                        title={t("inventaire.editerTout")}
-                        aria-label={t("inventaire.editerGroupe", { ref: g.reference })}
-                        className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
-                      >
-                        <IconeCrayon taille={15} />
-                      </button>
-                    )}
-                  {peutModifier && (
-                    <button
-                      type="button"
-                      onClick={() => ouvrirSuppressionModele(g)}
-                      title={
-                        g.unites.length > 1
-                          ? t("inventaire.supprimerTous", { ref: g.reference })
-                          : t("inventaire.supprimerProduit")
-                      }
-                      aria-label={t("inventaire.supprimerGroupe", { ref: g.reference })}
-                      className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                    >
-                      <IconeCorbeille taille={15} />
-                    </button>
-                  )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => basculerGroupe(g.cle)}
-                    aria-label={ouvert ? t("inventaire.reduire") : t("inventaire.developper")}
-                    className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
-                  >
-                    <IconeChevronBas
-                      taille={16}
-                      className={`transition ${ouvert ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                </div>
-                {peutModifier && (
-                  <div className="flex sm:hidden items-center justify-between border-t border-brand-light-grey/40 dark:border-white/5 px-4 py-2 bg-brand-light-grey/10 dark:bg-white/2">
-                    {(() => {
-                      const nonVendu = g.unites.filter((u) => u.statut !== "vendu");
-                      const exposeIds = g.unites.filter((u) => u.en_vitrine).map((u) => u.id);
-                      const enVitrine = g.enVitrine > 0;
-                      const desactive = envoi || (!enVitrine && nonVendu.length === 0);
-                      return (
-                        <button
-                          type="button"
-                          disabled={desactive}
-                          onClick={() =>
-                            enVitrine
-                              ? void basculerVitrineIds(exposeIds, false, g.reference)
-                              : void basculerVitrineIds([nonVendu[0]!.id], true, g.reference)
-                          }
-                          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
-                            enVitrine
-                              ? "bg-brand-orange/10 text-brand-orange"
-                              : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
-                          }`}
-                        >
-                          <IconeVitrine taille={14} /> {enVitrine ? t("inventaire.retirer") : t("inventaire.vitrine")}
-                        </button>
-                      );
-                    })()}
-                    <div className="flex items-center gap-2">
-                      <BoutonImpression 
-                        ids={g.unites.map(u => u.id)} 
-                        dejaImprimee={g.unites.every(u => u.etiquette_imprimee)} 
-                        className="flex items-center gap-1.5 rounded-xl bg-brand-light-grey/30 dark:bg-white/5 px-3 py-1.5 text-xs font-semibold text-brand-black dark:text-white transition hover:bg-brand-light-grey" 
-                        texte={t("inventaire.imprimer")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => ouvrirEdition(g.unites, g.reference)}
-                        className="flex items-center gap-1.5 rounded-xl bg-brand-light-grey/30 dark:bg-white/5 px-3 py-1.5 text-xs font-semibold text-brand-black dark:text-white transition hover:bg-brand-light-grey"
-                      >
-                        <IconeCrayon taille={14} /> <span className="hidden sm:inline">{t("inventaire.editer")}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => ouvrirSuppressionModele(g)}
-                        className="flex items-center gap-1.5 rounded-xl bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
-                      >
-                        <IconeCorbeille taille={14} /> <span className="hidden sm:inline">{t("inventaire.supprimer")}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+          {donneesFiltrees && donneesFiltrees.produits.length > 0 && (
+            <div className="space-y-4">
+              
+              {/* ===================== VUE CARTES REGROUPÉE PAR MODÈLE ===================== */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden"}`}>
+                {groupes.map((g) => {
+                  const ouvert = groupesOuverts.has(g.cle);
+                  const tousCoches = g.unites.length > 0 && g.unites.every(u => selection.includes(u.id));
 
-                {ouvert && (
-                  <ul className="divide-y divide-brand-light-grey/40 dark:divide-white/5 border-t border-brand-light-grey/60 dark:border-white/5">
-                    {g.unites.map((p) => (
-                      <li key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-2.5 text-sm hover:bg-brand-light-grey/15 dark:hover:bg-white/2 transition-colors">
-                        <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto sm:flex-1">
-                          <button
-                            type="button"
-                            onClick={() => router.push(`/produits/${p.id}`)}
-                            className="min-w-0 flex-1 text-left transition hover:text-brand-orange"
-                          >
-                          <span className="font-mono text-xs font-bold text-brand-warm-grey dark:text-brand-grey bg-brand-light-grey/20 dark:bg-white/5 px-1.5 py-0.5 rounded">
-                            {p.code_interne}
-                          </span>{" "}
-                          <span className="text-xs text-brand-warm-grey dark:text-brand-grey">
-                            {p.lot_id ? t("inventaire.lotNumero", { n: p.lot_id }) : t("inventaire.sansArrivage")}
-                            {` · ${t("inventaire.achat")} ${formaterDA(p.prix_achat)}`} · {t("inventaire.joursNb", { n: p.jours_stock })}
-                          </span>{" "}
-                          <span className="text-xs font-extrabold text-brand-orange">
-                            {prixVenteAffiche(p) !== null
-                              ? `${t("inventaire.vente")} ${formaterDA(prixVenteAffiche(p)!)}`
-                              : ""}
+                  return (
+                    <div
+                      key={g.cle}
+                      className={`group flex flex-col rounded-2xl border bg-white dark:bg-brand-paper shadow-xs transition-all hover:shadow-md overflow-hidden ${
+                        tousCoches
+                          ? "border-brand-orange ring-2 ring-brand-orange/30"
+                          : "border-slate-200 dark:border-white/10 hover:border-brand-orange/40"
+                      }`}
+                    >
+                      {/* Image / Header de la Carte */}
+                      <div className="relative aspect-video bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+                        {g.image_url ? (
+                          <img 
+                            src={g.image_url}
+                            alt={g.reference}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full text-slate-400 opacity-40">
+                            <Boxes className="w-10 h-10" />
+                          </div>
+                        )}
+
+                        {/* Badges Disponibilité */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-black text-xs shadow-md ${
+                            g.totalDisponibles > 0 
+                              ? "bg-emerald-600 text-white" 
+                              : "bg-red-600 text-white"
+                          }`}>
+                            En stock : {g.totalDisponibles}
                           </span>
-                        </button>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                            {p.en_vitrine && (
-                              <IconeVitrine
-                                taille={14}
-                                className="shrink-0 text-brand-orange"
-                                aria-label={t("inventaire.enVitrine")}
-                              />
-                            )}
+                        </div>
+
+                        {/* Checkbox Sélection Modèle */}
+                        <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
+                          <input 
+                            type="checkbox"
+                            checked={tousCoches}
+                            onChange={() => {
+                              const idsGroupe = g.unites.map(u => u.id);
+                              if (tousCoches) {
+                                setSelection(prev => prev.filter(id => !idsGroupe.includes(id)));
+                              } else {
+                                setSelection(prev => Array.from(new Set([...prev, ...idsGroupe])));
+                              }
+                            }}
+                            className="accent-brand-orange w-5 h-5 rounded border-white shadow-md cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Corps de la Carte */}
+                      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                          <p className="text-[11px] font-bold text-brand-orange uppercase tracking-wider truncate">
+                            {g.categorie}
+                          </p>
+                          <h3 
+                            onClick={() => basculerGroupe(g.cle)}
+                            className="font-black text-sm text-slate-900 dark:text-white line-clamp-2 hover:text-brand-orange cursor-pointer mt-0.5"
+                            title={g.reference}
+                          >
+                            {g.reference}
+                          </h3>
+
+                          {/* Statuts */}
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {g.resumeStatuts.map((r) => (
+                              <span key={r.statut} className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
+                                {r.n}× {INFOS_STATUT[r.statut].libelle}
+                              </span>
+                            ))}
                           </div>
                         </div>
-                        {peutModifier && (
-                          <div className="flex items-center justify-end gap-1 mt-1 sm:mt-0">
-                            {p.statut !== "vendu" && (
-                              <button
-                                type="button"
-                                disabled={envoi}
-                                onClick={() =>
-                                  void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne)
-                                }
-                                title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
-                                aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
-                                className={`rounded-xl p-2 transition disabled:opacity-40 ${
-                                  p.en_vitrine
-                                    ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
-                                    : "text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-orange"
-                                }`}
-                              >
-                                <IconeVitrine taille={14} />
-                              </button>
-                            )}
-                            <BoutonImpression 
-                              ids={[p.id]} 
-                              dejaImprimee={p.etiquette_imprimee} 
-                              className="rounded-xl p-2 text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors" 
-                            />
-                            <button
-                              type="button"
-                              onClick={() => ouvrirEdition([p], p.code_interne, g.unites)}
-                              title={t("inventaire.editer")}
-                              aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
-                              className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
-                            >
-                              <IconeCrayon taille={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => ouvrirSuppressionUnites([p])}
-                              title={t("inventaire.supprimer")}
-                              aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
-                              className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
-                            >
-                              <IconeCorbeille taille={14} />
-                            </button>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
 
-      {donneesFiltrees && donneesFiltrees.produits.length > 0 && !vueGroupee && (
-        <div className="space-y-4">
-          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden"}`}>
-            {donneesFiltrees.produits.map((p) => (
-              <CarteProduit
-                key={p.id}
-                produit={p}
-                estSocial={estSocial}
-                peutModifier={peutModifier}
-                envoi={envoi}
-                estSelectionne={selection.includes(p.id)}
-                onToggleSelection={(id) => {
-                  setSelection((prev) =>
-                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-                  );
-                }}
-                basculerVitrineIds={basculerVitrineIds}
-                ouvrirEdition={ouvrirEdition}
-                ouvrirClassification={setModalClassification}
-                ouvrirSuppressionUnites={ouvrirSuppressionUnites}
-                ouvrirAjout={ouvrirAjout}
-                ouvrirVente={(prod) => ouvrirVenteInventaire([prod])}
-                t={t}
-              />
-            ))}
-          </div>
-
-          <div className={`w-full overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "block max-h-[800px]" : "hidden"}`}>
-            <table className="w-full min-w-[820px] text-[13px] relative">
-              <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md">
-                <tr>
-                  {COLONNES_TRI.filter(c => c.cle !== 'prix_achat' || !estSocial).map((c) => (
-                    <th
-                      key={c.cle}
-                      onClick={() => trierPar(c.cle)}
-                      className="cursor-pointer select-none transition-colors hover:text-brand-orange whitespace-nowrap py-3 px-4 text-left font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]"
-                    >
-                      <span className="inline-flex items-center gap-1.5">
-                        {t(c.libelle)}
-                        {triActuel === c.cle &&
-                          (ordreActuel === "asc" ? (
-                            <IconeTriHaut taille={12} className="text-brand-orange" />
-                          ) : (
-                            <IconeTriBas taille={12} className="text-brand-orange" />
-                          ))}
-                      </span>
-                    </th>
-                  ))}
-                  <th className="py-3 px-4 text-right font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">{t("inventaire.jours")}</th>
-                  <th className="py-3 px-4">
-                    <input 
-                      type="checkbox"
-                      checked={selection.length > 0 && selection.length === donneesFiltrees.produits.length}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelection(donneesFiltrees.produits.map(p => p.id));
-                        } else {
-                          setSelection([]);
-                        }
-                      }}
-                      className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey"
-                    />
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
-                {donneesFiltrees.produits.map((p) => (
-                  <tr
-                    key={p.id}
-                    onClick={(e) => {
-                      if ((e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
-                      router.push(`/produits/${p.id}`);
-                    }}
-                    className={`group cursor-pointer transition-colors hover:bg-brand-light-grey/30 dark:hover:bg-white/5 ${selection.includes(p.id) ? 'bg-brand-orange/5 dark:bg-brand-orange/10' : ''}`}
-                  >
-                    <td className="px-4 py-2.5 font-mono text-xs text-brand-warm-grey dark:text-brand-grey font-semibold">
-                      {p.code_interne}
-                    </td>
-                    <td className="max-w-64 truncate px-4 py-2.5 font-semibold text-brand-black dark:text-white" title={p.reference}>
-                      {p.reference}
-                    </td>
-                    <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-warm-grey">{formatCategoriePath(p)}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center gap-2">
-                        <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                        {p.en_vitrine && (
-                          <IconeVitrine
-                            taille={14}
-                            className="text-brand-orange"
-                            aria-label={t("inventaire.enVitrine")}
-                          />
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-brand-black dark:text-brand-warm-grey">
-                      <div className="font-medium">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</div>
-                      <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
-                        {p.lot_id
-                          ? t("inventaire.lotLong", { n: p.lot_id, f: p.fournisseur || "" })
-                          : t("inventaire.sansArrivage")}
-                      </div>
-                    </td>
-                    {!estSocial && (
-                      <td className="px-4 py-2.5 text-right">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mb-0.5">{t("inventaire.achat")}</span>
-                        <span className="font-bold text-brand-black dark:text-white">{formaterDA(p.prix_achat)}</span>
-                        {p.cout_reparations > 0 && (
-                          <span className="block text-[10px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
-                            +{formaterDA(p.cout_reparations)} {t("inventaire.reparationsAbr")}
-                          </span>
-                        )}
-                      </td>
-                    )}
-                    <td className="px-4 py-2.5 text-right">
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-orange/80 mb-0.5">{t("inventaire.vente")}</span>
-                      {prixVenteAffiche(p) !== null ? (
-                        <span className="font-extrabold text-brand-orange text-sm">
-                          {formaterDA(prixVenteAffiche(p)!)}
-                          {p.statut === "vendu" && (
-                            <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mt-0.5">
-                              {t("inventaire.statutVendu")}
-                            </span>
+                        {/* Prix */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-baseline justify-between">
+                          {!estSocial && (
+                            <div>
+                              <span className="text-[10px] text-slate-400 font-bold block uppercase">Achat</span>
+                              <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
+                                {formaterDA(g.prixMin)}
+                              </span>
+                            </div>
                           )}
-                        </span>
-                      ) : (
-                        <span className="text-brand-warm-grey dark:text-brand-grey font-medium">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-warm-grey font-medium">{p.jours_stock}</td>
-                    <td className="px-3 py-2.5">
-                      {peutModifier && (
-                        <div className="flex items-center justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity">
-                          {p.statut !== "vendu" && (
+                          <div className="text-right">
+                            <span className="text-[10px] text-brand-orange font-bold block uppercase">Vente</span>
+                            <span className="text-sm font-mono font-black text-brand-orange">
+                              {g.venteMin ? formaterDA(g.venteMin) : "—"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions Rapides */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-1">
+                          {/* Bouton (+) Création Immédiate d'un Exemplaire */}
+                          {peutModifier && (
                             <button
                               type="button"
                               disabled={envoi}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
-                              }}
-                              title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
-                              aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
-                              className={`rounded-lg p-2 transition-colors disabled:opacity-40 ${
-                                p.en_vitrine
-                                  ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
-                                  : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
-                              }`}
+                              onClick={() => void creerExemplaireRapide(g)}
+                              className="p-2 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition font-bold disabled:opacity-50"
+                              title="Créer 1 exemplaire immédiatement (+1 au stock)"
                             >
-                              <IconeVitrine taille={15} />
+                              <Plus className="w-4 h-4" />
                             </button>
                           )}
-                          {p.statut !== "vendu" && (
+
+                          {/* Bouton Facturer */}
+                          {g.totalDisponibles > 0 && (
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                ouvrirVenteInventaire([p]);
+                              onClick={() => {
+                                if (g.totalDisponibles === 1) {
+                                  const disponible = g.unites.find(u => u.statut !== "vendu" && u.statut !== "hs") || g.unites[0]!;
+                                  ouvrirVenteInventaire([disponible]);
+                                } else {
+                                  setModalSelectionQuantite({ action: "facturer", groupe: g });
+                                }
                               }}
-                              title="Vendre & créer la facture"
-                              aria-label={`Vendre ${p.code_interne}`}
-                              className="rounded-lg p-2 text-brand-orange hover:bg-brand-orange/10 transition-colors"
+                              className="p-2 rounded-xl text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20 transition"
+                              title="Facturer"
                             >
-                              <IconeBillet taille={15} />
+                              <IconeBillet taille={16} />
                             </button>
                           )}
-                          <BoutonImpression 
-                            ids={[p.id]} 
-                            dejaImprimee={p.etiquette_imprimee} 
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white" 
-                          />
+
+                          {/* Bouton Drilldown (Voir exemplaires) */}
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalClassification([p]);
-                            }}
-                            title="Modifier la classification"
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-orange/10 hover:text-brand-orange"
+                            onClick={() => basculerGroupe(g.cle)}
+                            className={`p-2 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                              ouvert
+                                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                                : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                            }`}
+                            title="Voir les Numéros de Série"
                           >
-                            <IconeArchive taille={15} />
+                            <Hash className="w-3.5 h-3.5" />
+                            <span>{g.unites.length} S/N</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              ouvrirEdition([p], p.code_interne);
-                            }}
-                            title={t("inventaire.editer")}
-                            aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
-                          >
-                            <IconeCrayon taille={15} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              ouvrirSuppressionUnites([p]);
-                            }}
-                            title={t("inventaire.supprimer")}
-                            aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-danger/10 hover:text-danger"
-                          >
-                            <IconeCorbeille taille={15} />
-                          </button>
+
+                          {/* Bouton Éditer */}
+                          {peutModifier && (
+                            <button
+                              type="button"
+                              onClick={() => ouvrirEdition(g.unites, g.reference)}
+                              className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                              title="Éditer le modèle"
+                            >
+                              <IconeCrayon taille={15} />
+                            </button>
+                          )}
                         </div>
+
+                        {/* Si Déplié dans la carte */}
+                        {ouvert && (
+                          <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                            <span className="text-[10px] font-black uppercase text-slate-400 block">Exemplaires :</span>
+                            {g.unites.map((u) => (
+                              <div key={u.id} className="p-1.5 rounded-lg bg-slate-50 dark:bg-zinc-800/50 flex items-center justify-between text-xs">
+                                <div>
+                                  <span className="font-mono font-bold text-brand-orange">{u.code_interne}</span>
+                                  <span className="text-[10px] text-slate-500 block">{u.numero_serie ? `S/N: ${u.numero_serie}` : "Sans S/N"}</span>
+                                </div>
+                                <BadgeStatut statut={u.statut} aJeter={u.a_jeter} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ===================== VUE TABLEAU REGROUPÉE PAR MODÈLE ===================== */}
+              <div className={`w-full overflow-x-auto rounded-2xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "block" : "hidden"}`}>
+                <table className="w-full min-w-[900px] text-[13px] relative border-collapse">
+                  <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md border-b border-brand-light-grey dark:border-white/10">
+                    <tr>
+                      <th className="py-3.5 px-3 w-10 text-center">
+                        <input 
+                          type="checkbox"
+                          checked={donneesFiltrees.produits.length > 0 && donneesFiltrees.produits.every(p => selection.includes(p.id))}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelection(donneesFiltrees.produits.map(p => p.id));
+                            } else {
+                              setSelection([]);
+                            }
+                          }}
+                          className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
+                          title="Tout sélectionner"
+                        />
+                      </th>
+                      <th className="py-3.5 px-2 w-8 text-center"></th>
+                      <th className="py-3.5 px-3 text-left font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
+                        Modèle / Référence
+                      </th>
+                      <th className="py-3.5 px-3 text-left font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
+                        Catégorie
+                      </th>
+                      <th className="py-3.5 px-3 text-center font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
+                        Disponibilité / Stock
+                      </th>
+                      {!estSocial && (
+                        <th className="py-3.5 px-3 text-right font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
+                          Prix Achat Unitaire
+                        </th>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                      <th className="py-3.5 px-3 text-right font-black text-brand-orange uppercase tracking-wider text-[11px]">
+                        Prix Vente
+                      </th>
+                      <th className="py-3.5 px-4 text-right font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
+                    {groupes.map((g) => {
+                      const ouvert = groupesOuverts.has(g.cle);
+                      const tousCoches = g.unites.length > 0 && g.unites.every(u => selection.includes(u.id));
+                      const certainsCoches = g.unites.some(u => selection.includes(u.id)) && !tousCoches;
+
+                      return (
+                        <React.Fragment key={g.cle}>
+                          {/* Ligne Principale du Modèle */}
+                          <tr className={`group transition-colors ${tousCoches || certainsCoches ? "bg-brand-orange/5 dark:bg-brand-orange/10" : "hover:bg-brand-light-grey/20 dark:hover:bg-white/2"}`}>
+                            {/* Checkbox Modèle */}
+                            <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input 
+                                type="checkbox"
+                                checked={tousCoches}
+                                ref={(el) => {
+                                  if (el) el.indeterminate = certainsCoches;
+                                }}
+                                onChange={() => {
+                                  const idsGroupe = g.unites.map(u => u.id);
+                                  if (tousCoches) {
+                                    setSelection(prev => prev.filter(id => !idsGroupe.includes(id)));
+                                  } else {
+                                    setSelection(prev => Array.from(new Set([...prev, ...idsGroupe])));
+                                  }
+                                }}
+                                className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
+                              />
+                            </td>
+
+                            {/* Chevron Drill-Down */}
+                            <td className="py-3 px-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => basculerGroupe(g.cle)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10 transition"
+                                title={ouvert ? "Masquer les exemplaires" : "Voir les exemplaires physiques (S/N)"}
+                              >
+                                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${ouvert ? "rotate-180 text-brand-orange" : ""}`} />
+                              </button>
+                            </td>
+
+                            {/* Photo & Référence Modèle */}
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-3">
+                                {g.image_url ? (
+                                  <img 
+                                    src={g.image_url}
+                                    alt={g.reference}
+                                    className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0 bg-slate-50"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-dashed border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-400 shrink-0">
+                                    <Boxes className="w-5 h-5 opacity-40" />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <div 
+                                    onClick={() => basculerGroupe(g.cle)}
+                                    className="font-extrabold text-sm text-slate-900 dark:text-white hover:text-brand-orange cursor-pointer truncate max-w-xs sm:max-w-md"
+                                    title={g.reference}
+                                  >
+                                    {g.reference}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                    {g.resumeStatuts.map((r) => (
+                                      <span key={r.statut} className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
+                                        {r.n}× {INFOS_STATUT[r.statut].libelle}
+                                      </span>
+                                    ))}
+                                    {g.enVitrine > 0 && (
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-brand-orange/15 text-[10px] font-bold text-brand-orange">
+                                        <IconeVitrine taille={10} /> Vitrine ({g.enVitrine})
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Catégorie */}
+                            <td className="py-3 px-3 text-xs font-semibold text-slate-500">
+                              {g.categorie}
+                            </td>
+
+                            {/* Badge Quantité en Stock */}
+                            <td className="py-3 px-3 text-center">
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-xs shadow-2xs ${
+                                g.totalDisponibles > 0 
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" 
+                                  : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800"
+                              }`}>
+                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>En stock : {g.totalDisponibles}</span>
+                                {g.unites.length > g.totalDisponibles && (
+                                  <span className="text-[10px] text-slate-400 font-normal">({g.unites.length} total)</span>
+                                )}
+                              </span>
+                            </td>
+
+                            {/* Prix Achat */}
+                            {!estSocial && (
+                              <td className="py-3 px-3 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
+                                {g.prixMin === g.prixMax
+                                  ? formaterDA(g.prixMin)
+                                  : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
+                              </td>
+                            )}
+
+                            {/* Prix Vente */}
+                            <td className="py-3 px-3 text-right font-mono font-black text-sm text-brand-orange">
+                              {g.venteMin === null
+                                ? "—"
+                                : g.venteMin === g.venteMax
+                                ? formaterDA(g.venteMin)
+                                : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
+                            </td>
+
+                            {/* Actions Rapides Modèle */}
+                            <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                              <div className="inline-flex items-center gap-1 justify-end">
+                                {/* Bouton (+) Création Immédiate d'un Exemplaire */}
+                                {peutModifier && (
+                                  <button
+                                    type="button"
+                                    disabled={envoi}
+                                    onClick={() => void creerExemplaireRapide(g)}
+                                    className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-2xs font-bold disabled:opacity-50"
+                                    title="Créer 1 exemplaire immédiatement (+1 au stock)"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </button>
+                                )}
+
+                                {/* Bouton Facturer / Vendre */}
+                                {g.totalDisponibles > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (g.totalDisponibles === 1) {
+                                        const disponible = g.unites.find(u => u.statut !== "vendu" && u.statut !== "hs") || g.unites[0]!;
+                                        ouvrirVenteInventaire([disponible]);
+                                      } else {
+                                        setModalSelectionQuantite({ action: "facturer", groupe: g });
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-xl text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20 transition shadow-2xs"
+                                    title="Vendre / Facturer ce modèle"
+                                  >
+                                    <IconeBillet taille={16} />
+                                  </button>
+                                )}
+
+                                {/* Bouton Changer Statut */}
+                                {peutModifier && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setModalSelectionQuantite({ action: "statut", groupe: g });
+                                    }}
+                                    className="p-1.5 rounded-xl text-slate-400 hover:text-brand-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                                    title="Changer le statut en masse"
+                                  >
+                                    <SlidersHorizontal className="w-4 h-4" />
+                                  </button>
+                                )}
+
+                                {/* Bouton Vitrine */}
+                                {peutModifier && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const exposeIds = g.unites.filter(u => u.en_vitrine).map(u => u.id);
+                                      const nonVendu = g.unites.filter(u => u.statut !== "vendu");
+                                      if (g.enVitrine > 0) {
+                                        void basculerVitrineIds(exposeIds, false, g.reference);
+                                      } else if (nonVendu.length > 0) {
+                                        void basculerVitrineIds([nonVendu[0]!.id], true, g.reference);
+                                      }
+                                    }}
+                                    className={`p-1.5 rounded-xl transition ${
+                                      g.enVitrine > 0
+                                        ? "text-brand-orange bg-brand-orange/15"
+                                        : "text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10"
+                                    }`}
+                                    title={g.enVitrine > 0 ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                                  >
+                                    <IconeVitrine taille={16} />
+                                  </button>
+                                )}
+
+                                {/* Bouton Imprimer */}
+                                <BoutonImpression
+                                  ids={g.unites.map(u => u.id)}
+                                  dejaImprimee={g.unites.every(u => u.etiquette_imprimee)}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                                />
+
+                                {/* Bouton Éditer */}
+                                {peutModifier && (
+                                  <button
+                                    type="button"
+                                    onClick={() => ouvrirEdition(g.unites, g.reference)}
+                                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                                    title="Modifier les informations du modèle"
+                                  >
+                                    <IconeCrayon taille={15} />
+                                  </button>
+                                )}
+
+                                {/* Bouton Supprimer */}
+                                {peutModifier && (
+                                  <button
+                                    type="button"
+                                    onClick={() => ouvrirSuppressionModele(g)}
+                                    className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                                    title="Supprimer tous les exemplaires"
+                                  >
+                                    <IconeCorbeille taille={15} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* Drill-down : Liste des Exemplaires Physiques Dépliée */}
+                          {ouvert && (
+                            <tr>
+                              <td colSpan={8} className="p-0 bg-slate-50/70 dark:bg-zinc-900/60 border-y border-slate-200 dark:border-white/10">
+                                <div className="py-3 px-6 space-y-2">
+                                  <div className="flex items-center justify-between text-xs font-black text-slate-400 uppercase tracking-wider">
+                                    <span>Exemplaires physiques actifs ({g.unites.length})</span>
+                                    <span>S/N & Emplacement</span>
+                                  </div>
+
+                                  <div className="divide-y divide-slate-200/60 dark:divide-white/5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
+                                    {g.unites.map((p) => {
+                                      const estCoche = selection.includes(p.id);
+                                      return (
+                                        <div 
+                                          key={p.id}
+                                          className={`flex items-center justify-between p-3 transition-colors ${
+                                            estCoche ? "bg-brand-orange/10" : "hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <input 
+                                              type="checkbox"
+                                              checked={estCoche}
+                                              onChange={() => {
+                                                setSelection(prev =>
+                                                  prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id]
+                                                );
+                                              }}
+                                              className="accent-brand-orange w-4 h-4 rounded border-slate-300 cursor-pointer"
+                                            />
+
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <Link
+                                                  href={`/produits/${p.id}`}
+                                                  className="font-mono text-xs font-black text-brand-orange hover:underline"
+                                                >
+                                                  {p.code_interne}
+                                                </Link>
+                                                {p.grade && (
+                                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
+                                                    {p.grade}
+                                                  </span>
+                                                )}
+                                                {p.emplacement && (
+                                                  <span className="text-[10px] font-medium text-slate-400">
+                                                    · {p.emplacement === "vitrine" ? "Vitrine" : "Réserve"}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <div className="text-[11px] font-mono font-bold text-slate-500 mt-0.5">
+                                                {p.numero_serie ? `S/N: ${p.numero_serie}` : "Sans numéro de série"}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-4">
+                                            <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+
+                                            <div className="text-right">
+                                              <div className="font-mono font-bold text-xs text-slate-900 dark:text-white">
+                                                {p.prix_vente_fixe ? formaterDA(p.prix_vente_fixe) : "—"}
+                                              </div>
+                                              <div className="text-[10px] font-mono text-slate-400">
+                                                Achat: {formaterDA(p.prix_achat)}
+                                              </div>
+                                            </div>
+
+                                            {peutModifier && (
+                                              <div className="flex items-center gap-1">
+                                                {/* Bouton (+) Créer 1 exemplaire identique */}
+                                                <button
+                                                  type="button"
+                                                  disabled={envoi}
+                                                  onClick={() => void creerExemplaireRapide(p)}
+                                                  className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold disabled:opacity-50"
+                                                  title="Créer 1 exemplaire identique (+1 au stock)"
+                                                >
+                                                  <Plus className="w-3.5 h-3.5" />
+                                                </button>
+                                                {p.statut !== "vendu" && (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => ouvrirVenteInventaire([p])}
+                                                    className="p-1 rounded-lg text-brand-orange hover:bg-brand-orange/10 transition"
+                                                    title="Facturer cette unité"
+                                                  >
+                                                    <IconeBillet taille={14} />
+                                                  </button>
+                                                )}
+                                                <button
+                                                  type="button"
+                                                  onClick={() => ouvrirEdition([p], p.code_interne, g.unites)}
+                                                  className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+                                                  title="Éditer cette unité"
+                                                >
+                                                  <IconeCrayon taille={13} />
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => ouvrirSuppressionUnites([p])}
+                                                  className="p-1 rounded-lg text-slate-400 hover:text-red-600 transition"
+                                                  title="Supprimer cette unité"
+                                                >
+                                                  <IconeCorbeille taille={13} />
+                                                </button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
 
       {/* Pagination (seulement si non filtré localement pour éviter désynchronisation) */}
       {donneesFiltrees && donneesFiltrees.pages > 1 && !qLoc.trim() && (
@@ -2107,55 +2291,83 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {/* Barre d'actions groupées flottante si sélection active */}
       {selection.length > 0 && (
-        <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-orange/30 bg-brand-white/95 dark:bg-zinc-900/95 p-3.5 sm:p-4 shadow-2xl backdrop-blur-md animate-entree">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 rounded-xl bg-brand-orange text-white font-black text-sm items-center justify-center">
-              {selection.length}
-            </span>
-            <div className="text-xs sm:text-sm text-brand-warm-grey dark:text-brand-grey">
-              <strong className="text-brand-black dark:text-white font-bold">{selection.length}</strong> article{selection.length > 1 ? "s" : ""} sélectionné{selection.length > 1 ? "s" : ""}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-entree max-w-[95vw]">
+          <div className="flex flex-wrap items-center gap-3 px-5 py-3 rounded-2xl bg-brand-black/95 dark:bg-zinc-900/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
+            <div className="flex items-center gap-2 pr-3 border-r border-white/20">
+              <span className="w-7 h-7 rounded-xl bg-brand-orange text-white font-black text-xs flex items-center justify-center shadow-md">
+                {selection.length}
+              </span>
+              <span className="text-xs font-bold whitespace-nowrap">
+                {selection.length} sélectionné{selection.length > 1 ? "s" : ""}
+              </span>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelection([])}
-              className="btn btn-secondaire min-h-[42px] text-xs font-bold"
-            >
-              Désélectionner
-            </button>
-            <BoutonImpression
-              ids={selection}
-              dejaImprimee={selection.every(id => donneesFiltrees?.produits.find(p => p.id === id)?.etiquette_imprimee)}
-              className="btn btn-secondaire min-h-[42px] text-xs font-bold"
-              texte="Imprimer étiquettes"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
-                if (selectedProds.length > 0) {
-                  setModalClassification(selectedProds);
-                }
-              }}
-              className="btn btn-secondaire min-h-[42px] text-xs font-bold text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 gap-1.5"
-            >
-              <IconeArchive taille={15} />
-              Classifier
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
-                if (selectedProds.length > 0) {
-                  ouvrirVenteInventaire(selectedProds);
-                }
-              }}
-              className="btn btn-primaire min-h-[42px] text-xs font-bold gap-1.5 shadow-md"
-            >
-              <IconeBillet taille={16} />
-              Vendre & Créer Facture
-            </button>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Facturer */}
+              <button
+                type="button"
+                onClick={() => {
+                  const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
+                  if (selectedProds.length > 0) {
+                    ouvrirVenteInventaire(selectedProds);
+                  }
+                }}
+                className="btn bg-brand-orange hover:bg-brand-orange/90 text-white text-xs font-bold py-2 px-3.5 h-auto rounded-xl flex items-center gap-1.5 shadow-md shadow-brand-orange/20"
+              >
+                <IconeBillet taille={15} />
+                <span>Facturer ({selection.length})</span>
+              </button>
+
+              {/* Changer Statut */}
+              <button
+                type="button"
+                onClick={() => {
+                  const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
+                  if (selectedProds.length > 0) {
+                    setModalStatutMasse({ unites: selectedProds });
+                  }
+                }}
+                className="btn bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-3.5 h-auto rounded-xl flex items-center gap-1.5"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Changer statut</span>
+              </button>
+
+              {/* Imprimer Étiquettes */}
+              <BoutonImpression
+                ids={selection}
+                dejaImprimee={selection.every(id => donneesFiltrees?.produits.find(p => p.id === id)?.etiquette_imprimee)}
+                className="btn bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-3.5 h-auto rounded-xl flex items-center gap-1.5"
+                texte={`Imprimer (${selection.length})`}
+              />
+
+              {/* Supprimer en masse */}
+              {peutModifier && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
+                    if (selectedProds.length > 0) {
+                      ouvrirSuppressionUnites(selectedProds);
+                    }
+                  }}
+                  className="btn bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold py-2 px-3.5 h-auto rounded-xl flex items-center gap-1.5"
+                >
+                  <IconeCorbeille taille={15} />
+                  <span>Supprimer</span>
+                </button>
+              )}
+
+              {/* Désélectionner */}
+              <button
+                type="button"
+                onClick={() => setSelection([])}
+                className="p-2 text-white/60 hover:text-white rounded-xl hover:bg-white/10 transition ml-1"
+                title="Désélectionner tout"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2565,6 +2777,67 @@ export default function Inventaire({ role }: { role: Role }) {
             setModalVenteUnites(null);
             setSelection([]);
             void charger();
+          }}
+        />
+      )}
+
+      {/* Modale de Sélection de Quantité ou S/N pour Actions Groupées */}
+      {modalSelectionQuantite && (
+        <ModaleSelectionQuantite
+          ouvert={true}
+          action={modalSelectionQuantite.action}
+          reference={modalSelectionQuantite.groupe.reference}
+          categorie={modalSelectionQuantite.groupe.categorie}
+          unites={modalSelectionQuantite.groupe.unites}
+          onFermer={() => setModalSelectionQuantite(null)}
+          onConfirmer={(unitesSelectionnees, statutCible, note) => {
+            if (modalSelectionQuantite.action === "facturer") {
+              ouvrirVenteInventaire(unitesSelectionnees);
+            } else if (modalSelectionQuantite.action === "statut" && statutCible) {
+              void changerStatutUnites(unitesSelectionnees, statutCible, note);
+            } else if (modalSelectionQuantite.action === "supprimer") {
+              ouvrirSuppressionUnites(unitesSelectionnees);
+            }
+          }}
+        />
+      )}
+
+      {/* Modale Arrivage Rapide / Douchette (Bouton + 100% Fonctionnel) */}
+      {modalArrivageRapideModele && (
+        <ModaleArrivageRapide
+          ouvert={true}
+          onFermer={() => setModalArrivageRapideModele(null)}
+          onSucces={() => {
+            setModalArrivageRapideModele(null);
+            void charger();
+          }}
+          modeleId={modalArrivageRapideModele.modeleId}
+          modeleNom={modalArrivageRapideModele.modeleNom}
+          categorieId={modalArrivageRapideModele.categorieId}
+          prixAchatDefaut={modalArrivageRapideModele.prixAchatDefaut}
+          prixVenteDefaut={modalArrivageRapideModele.prixVenteDefaut}
+          lots={(donnees?.lots || []).map((l) => ({
+            id: l.id,
+            fournisseur: l.libelle,
+            date_entree: new Date().toISOString(),
+          }))}
+        />
+      )}
+
+      {/* Modale Changement Statut en Masse pour Sélection Multiple */}
+      {modalStatutMasse && (
+        <ModaleSelectionQuantite
+          ouvert={true}
+          action="statut"
+          reference={`${modalStatutMasse.unites.length} produits sélectionnés`}
+          categorie="Sélection groupée"
+          unites={modalStatutMasse.unites}
+          onFermer={() => setModalStatutMasse(null)}
+          onConfirmer={(unitesSelectionnees, statutCible, note) => {
+            if (statutCible) {
+              void changerStatutUnites(unitesSelectionnees, statutCible, note);
+            }
+            setModalStatutMasse(null);
           }}
         />
       )}
