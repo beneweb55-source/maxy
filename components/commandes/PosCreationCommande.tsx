@@ -74,13 +74,19 @@ export default function PosCreationCommande() {
   const [formNouveauClient, setFormNouveauClient] = useState({ nom: "", telephone: "", email: "", adresse: "" });
   const [ongetClient, setOngletClient] = useState<"recherche" | "nouveau">("recherche");
 
-  // Modale Paiement
+  // Modale Paiement & Facturation
   const [modalPaiement, setModalPaiement] = useState(false);
   const [statutVente, setStatutVente] = useState<"payee" | "en_attente" | "devis">("payee");
+  const [typeFacture, setTypeFacture] = useState<"normale" | "tva" | "proforma">("normale");
   const [typePaiement, setTypePaiement] = useState<"especes" | "carte" | "virement" | "cheque">("especes");
   const [montantRecu, setMontantRecu] = useState<string>("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [etiquetteManuelleValidee, setEtiquetteManuelleValidee] = useState(false);
+  const [clientAdresse, setClientAdresse] = useState("");
+  const [clientRc, setClientRc] = useState("");
+  const [clientNif, setClientNif] = useState("");
+  const [clientAi, setClientAi] = useState("");
+  const [clientNis, setClientNis] = useState("");
 
   const inputScannerRef = useRef<HTMLInputElement>(null);
 
@@ -259,7 +265,12 @@ export default function PosCreationCommande() {
         client_id: clientSelectionne?.id || null,
         client_nom: clientSelectionne?.nom || "Client Comptoir",
         client_tel: clientSelectionne?.telephone || null,
-        client_adresse: clientSelectionne?.adresse || null,
+        client_adresse: clientAdresse.trim() || clientSelectionne?.adresse || null,
+        client_rc: clientRc.trim() || null,
+        client_nif: clientNif.trim() || null,
+        client_ai: clientAi.trim() || null,
+        client_nis: clientNis.trim() || null,
+        type_facture: typeFacture,
         statut: statutVente,
         type_paiement: typePaiement,
         remise_globale: remiseGlobale,
@@ -292,8 +303,11 @@ export default function PosCreationCommande() {
       }
 
       const commande = await res.json();
-      afficher(`Vente ${commande.numero} enregistrée avec succès !`, "succes");
+      afficher(`Commande ${commande.numero} ${commande.facture_numero ? `et Facture ${commande.facture_numero}` : ""} créée avec succès !`, "succes");
       setModalPaiement(false);
+      if (commande.facture_id) {
+        window.open(`/factures/${commande.facture_id}`, "_blank");
+      }
       router.push(`/commandes/${commande.id}`);
     } catch (err: any) {
       afficher(err.message || "Erreur enregistrement vente.", "erreur");
@@ -680,26 +694,29 @@ export default function PosCreationCommande() {
             
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Validation & Paiement
+                Validation & Facturation
               </h3>
               <button onClick={() => setModalPaiement(false)} className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl p-1 text-slate-400 hover:text-slate-900">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Type d'opération (Vente Comptant vs Devis vs En attente) */}
+            {/* Statut de l'Opération */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-slate-500">Type de Document</label>
+              <label className="text-xs font-bold uppercase text-slate-500">Statut de la Commande</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: "payee", label: "Vente Payée", desc: "Déstockage immédiat" },
+                  { id: "payee", label: "Payée (Comptant)", desc: "Déstockage immédiat" },
                   { id: "en_attente", label: "En Attente", desc: "Commande réservée" },
-                  { id: "devis", label: "Devis Proforma", desc: "Sans déstockage" },
+                  { id: "devis", label: "Devis / Proforma", desc: "Sans déstockage" },
                 ].map((st) => (
                   <button
                     key={st.id}
                     type="button"
-                    onClick={() => setStatutVente(st.id as any)}
+                    onClick={() => {
+                      setStatutVente(st.id as any);
+                      if (st.id === "devis") setTypeFacture("proforma");
+                    }}
                     className={`p-3 rounded-2xl border text-left transition-all ${
                       statutVente === st.id
                         ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
@@ -713,30 +730,37 @@ export default function PosCreationCommande() {
               </div>
             </div>
 
-            {/* Mode de Paiement */}
-            {statutVente === "payee" && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase text-slate-500">Mode de Règlement</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(["especes", "carte", "virement", "cheque"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setTypePaiement(mode)}
-                      className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wider transition-all ${
-                        typePaiement === mode
-                          ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
-                          : "border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/40 text-slate-600 dark:text-slate-300"
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
+            {/* Type de Document / Facture */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Type de Document</label>
+                <select
+                  value={typeFacture}
+                  onChange={(e) => setTypeFacture(e.target.value as any)}
+                  className="select select-sm w-full rounded-xl font-bold border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/40 text-xs"
+                >
+                  <option value="normale">Facture Normale (Standard)</option>
+                  <option value="tva">Facture avec TVA</option>
+                  <option value="proforma">Devis / Facture Proforma</option>
+                </select>
               </div>
-            )}
 
-            {/* Calcul de Monnaie */}
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Mode de Règlement</label>
+                <select
+                  value={typePaiement}
+                  onChange={(e) => setTypePaiement(e.target.value as any)}
+                  className="select select-sm w-full rounded-xl font-bold border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/40 text-xs"
+                >
+                  <option value="especes">Espèces</option>
+                  <option value="carte">Carte Bancaire / CIB</option>
+                  <option value="virement">Virement CCP</option>
+                  <option value="cheque">Chèque</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Calcul de Monnaie si Espèces */}
             {statutVente === "payee" && typePaiement === "especes" && (
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200 dark:border-zinc-700 space-y-3">
                 <div className="flex justify-between items-center">
@@ -829,6 +853,35 @@ export default function PosCreationCommande() {
                 </div>
               );
             })()}
+
+            {/* Accordéon Informations Légales & Entreprise */}
+            <details className="group">
+              <summary className="cursor-pointer text-xs font-bold text-brand-orange hover:underline outline-none">
+                + Informations légales pour facture d&apos;entreprise / proforma (Optionnel)
+              </summary>
+              <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 dark:bg-zinc-800/40 rounded-xl text-xs border border-slate-200 dark:border-zinc-700">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">Adresse</label>
+                  <input type="text" value={clientAdresse} onChange={(e) => setClientAdresse(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Adresse du client" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">RC (Registre Commerce)</label>
+                  <input type="text" value={clientRc} onChange={(e) => setClientRc(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 16/00-1234567B19" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">NIF</label>
+                  <input type="text" value={clientNif} onChange={(e) => setClientNif(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 001916001234567" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">NIS</label>
+                  <input type="text" value={clientNis} onChange={(e) => setClientNis(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 001916012345678" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">Article d&apos;imposition (AI)</label>
+                  <input type="text" value={clientAi} onChange={(e) => setClientAi(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 16123456789" />
+                </div>
+              </div>
+            </details>
 
             {/* Durée de garantie */}
             <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/20">

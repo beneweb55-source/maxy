@@ -11,6 +11,76 @@ export async function GET(request: NextRequest) {
 
   try {
     const params = request.nextUrl.searchParams;
+
+    // Récupération par IDs pour impression en masse
+    const idsParam = params.get("ids");
+    if (idsParam) {
+      const ids = idsParam.split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0);
+      if (ids.length > 0) {
+        const [facturesCompletes, parametres] = await Promise.all([
+          prisma.facture.findMany({
+            where: { id: { in: ids } },
+            orderBy: { id: "asc" },
+            select: {
+              id: true,
+              numero: true,
+              date_emission: true,
+              client_nom: true,
+              client_tel: true,
+              total: true,
+              garantie_mois: true,
+              garantie_fin: true,
+              canal: true,
+              type_facture: true,
+              client_adresse: true,
+              client_rc: true,
+              client_nif: true,
+              client_ai: true,
+              client_nis: true,
+              mode_paiement: true,
+              annulee: true,
+              createur: { select: { username: true } },
+              lignes: {
+                orderBy: { id: "asc" },
+                select: {
+                  id: true,
+                  produit_id: true,
+                  vente_id: true,
+                  code_interne: true,
+                  designation: true,
+                  categorie: true,
+                  prix: true,
+                  garantie_fin: true,
+                },
+              },
+            },
+          }),
+          prisma.parametres.findUnique({ where: { id: 1 } }),
+        ]);
+
+        return NextResponse.json({
+          factures: facturesCompletes.map((f) => ({
+            ...f,
+            date_emission: f.date_emission.toISOString(),
+            garantie_fin: f.garantie_fin.toISOString(),
+            total_net: f.total,
+            vendeur: f.createur.username,
+            entreprise: {
+              nom: parametres?.entreprise_nom ?? "Solution Maxi",
+              adresse: parametres?.entreprise_adresse ?? "Alger, Algérie",
+              tel: parametres?.entreprise_tel ?? "0000 00 00 00",
+              rc: parametres?.entreprise_rc ?? "RC XXXXXXXXX",
+              nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
+              nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
+              art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
+              rib: parametres?.entreprise_rib ?? null,
+              cachet: parametres?.entreprise_cachet ?? null,
+            },
+          })),
+        });
+      }
+    }
+
     const clauses: Prisma.FactureWhereInput[] = [];
 
     const q = params.get("q")?.trim();

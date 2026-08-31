@@ -22,6 +22,8 @@ import {
   IconeCoche,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
+import ModaleVente, { ArticleAVendre } from "@/components/ventes/ModaleVente";
+import ModaleMiseEnVente from "@/components/ventes/ModaleMiseEnVente";
 
 interface UniteVendable {
   id: number;
@@ -67,10 +69,6 @@ interface LignePanier {
   etiquette_imprimee: boolean;
 }
 
-function aujourdhuiIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export default function Vitrine({ role }: { role: Role }) {
   const router = useRouter();
   const { afficher } = useToast();
@@ -89,26 +87,10 @@ export default function Vitrine({ role }: { role: Role }) {
 
   // Modale Mise en vente (fixation de prix et statut en_vente)
   const [modalMiseEnVente, setModalMiseEnVente] = useState<CarteVitrine | null>(null);
-  const [prixMiseEnVente, setPrixMiseEnVente] = useState("");
-  const [unitesSelectionMiseEnVente, setUnitesSelectionMiseEnVente] = useState<number[]>([]);
 
   // Modale Vente & Facturation
   const [modalVente, setModalVente] = useState(false);
-  const [clientNom, setClientNom] = useState("");
-  const [clientTel, setClientTel] = useState("");
-  const [clientAdresse, setClientAdresse] = useState("");
-  const [clientRc, setClientRc] = useState("");
-  const [clientNif, setClientNif] = useState("");
-  const [clientAi, setClientAi] = useState("");
-  const [clientNis, setClientNis] = useState("");
-  const [canal, setCanal] = useState("");
-  const [dateVente, setDateVente] = useState(aujourdhuiIso());
-  const [typeFacture, setTypeFacture] = useState("normale");
-  const [modePaiement, setModePaiement] = useState("especes");
-  const [especesRecues, setEspecesRecues] = useState("");
-  const [garantieMois, setGarantieMois] = useState(6);
-  const [etiquetteValidee, setEtiquetteValidee] = useState(false);
-  const [avertissement, setAvertissement] = useState<string | null>(null);
+  const [articlesPourVente, setArticlesPourVente] = useState<ArticleAVendre[]>([]);
 
   const peutRetirer = role === "gerant" || role === "technicien" || role === "dev" || role === "social_media";
   const peutVendre = role === "gerant" || role === "dev" || role === "social_media";
@@ -159,41 +141,6 @@ export default function Vitrine({ role }: { role: Role }) {
 
   function ouvrirMiseEnVente(carte: CarteVitrine) {
     setModalMiseEnVente(carte);
-    setPrixMiseEnVente(carte.prix_vente_fixe ? String(carte.prix_vente_fixe) : "");
-    const ids = (carte.unites_stock ?? carte.vendables).map((u) => u.id);
-    setUnitesSelectionMiseEnVente(ids);
-  }
-
-  async function validerMiseEnVente() {
-    if (!modalMiseEnVente || unitesSelectionMiseEnVente.length === 0) return;
-    const prix = Number(prixMiseEnVente);
-    if (!prix || prix <= 0) {
-      afficher("Veuillez saisir un prix de vente valide supérieur à 0.", "erreur");
-      return;
-    }
-    setEnvoi(true);
-    try {
-      const res = await fetch("/api/produits/masse/prix", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ids: unitesSelectionMiseEnVente,
-          prix_vente_fixe: prix,
-        }),
-      });
-      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
-      if (!res.ok) {
-        afficher(corps?.error ?? "Erreur lors de la mise en vente.", "erreur");
-        return;
-      }
-      afficher(`${unitesSelectionMiseEnVente.length} exemplaire(s) mis en vente à ${formaterDA(prix)}.`);
-      setModalMiseEnVente(null);
-      await charger();
-    } catch {
-      afficher("Impossible de joindre le serveur.", "erreur");
-    } finally {
-      setEnvoi(false);
-    }
   }
 
   function ajouterUnite(carte: CarteVitrine) {
@@ -248,109 +195,39 @@ export default function Vitrine({ role }: { role: Role }) {
     });
   }
 
-  function ouvrirVente() {
-    setClientNom("");
-    setClientTel("");
-    setClientAdresse("");
-    setClientRc("");
-    setClientNif("");
-    setClientAi("");
-    setClientNis("");
-    setCanal("");
-    setDateVente(aujourdhuiIso());
-    setTypeFacture("normale");
-    setModePaiement("especes");
-    setEspecesRecues("");
-    setGarantieMois(6);
-    setEtiquetteValidee(false);
-    setAvertissement(null);
+  function ouvrirVentePanier() {
+    const articles: ArticleAVendre[] = Array.from(panier.values()).map((l) => ({
+      id: l.id,
+      code_interne: l.code_interne,
+      reference: l.reference,
+      prix_vente_fixe: l.prix,
+      prix_vente_reel: l.prix,
+      etiquette_imprimee: l.etiquette_imprimee,
+    }));
+    setArticlesPourVente(articles);
+    setModalVente(true);
+  }
+
+  function ouvrirVenteDirecte(carte: CarteVitrine) {
+    const dispo = unitesVendables(carte);
+    if (dispo.length === 0) {
+      ouvrirMiseEnVente(carte);
+      return;
+    }
+    const articles: ArticleAVendre[] = dispo.map((v) => ({
+      id: v.id,
+      code_interne: v.code_interne,
+      reference: carte.reference,
+      prix_vente_fixe: v.prix_vente_fixe,
+      prix_vente_reel: v.prix_vente_fixe,
+      etiquette_imprimee: v.etiquette_imprimee,
+    }));
+    setArticlesPourVente(articles);
     setModalVente(true);
   }
 
   const lignesPanier = Array.from(panier.values());
   const totalPanier = lignesPanier.reduce((s, l) => s + l.prix, 0);
-  const monnaieARendre = Number(especesRecues) > 0 ? Math.max(0, Number(especesRecues) - totalPanier) : 0;
-
-  async function enregistrerVente(confirmer: boolean) {
-    if (lignesPanier.length === 0) return;
-    if (modePaiement === "credit" && !clientNom.trim()) {
-      afficher("Veuillez saisir le nom du client pour une vente à crédit.", "erreur");
-      return;
-    }
-    setEnvoi(true);
-    try {
-      const commun = {
-        canal: canal.trim() || undefined,
-        date_vente: dateVente !== aujourdhuiIso() ? dateVente : undefined,
-        client_nom: clientNom.trim() || undefined,
-        client_tel: clientTel.trim() || undefined,
-        client_adresse: clientAdresse.trim() || undefined,
-        client_rc: clientRc.trim() || undefined,
-        client_nif: clientNif.trim() || undefined,
-        client_ai: clientAi.trim() || undefined,
-        client_nis: clientNis.trim() || undefined,
-        type_facture: typeFacture,
-        mode_paiement: modePaiement,
-        etiquette_imprimee: etiquetteValidee || undefined,
-        confirmer: confirmer || undefined,
-      };
-    
-      const res =
-        lignesPanier.length === 1
-          ? await fetch("/api/ventes", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                produit_id: lignesPanier[0]!.id,
-                prix_vente_reel: lignesPanier[0]!.prix,
-                ...commun,
-              }),
-            })
-          : await fetch("/api/ventes/groupee", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                produit_ids: lignesPanier.map((l) => l.id),
-                prix_total: totalPanier,
-                ...commun,
-              }),
-            });
-
-      const corps = (await res.json().catch(() => null)) as
-        | {
-            ok?: boolean;
-            confirmation_required?: boolean;
-            message?: string;
-            error?: string;
-            facture_id?: number;
-            facture_numero?: string;
-          }
-        | null;
-
-      if (!res.ok) {
-        afficher(corps?.error ?? "Erreur lors de la vente.", "erreur");
-        return;
-      }
-      if (corps?.confirmation_required) {
-        setAvertissement(corps.message ?? "Prix sous la marge minimum. Confirmer ?");
-        return;
-      }
-
-      afficher(
-        `Vente enregistrée avec succès — facture ${corps?.facture_numero ?? ""} créée.`
-      );
-      setModalVente(false);
-      setPanier(new Map());
-      await charger();
-      if (corps?.facture_id) {
-        window.open(`/factures/${corps.facture_id}`, "_blank");
-      }
-    } catch {
-      afficher("Impossible de joindre le serveur.", "erreur");
-    } finally {
-      setEnvoi(false);
-    }
-  }
 
   const produits = donnees?.produits ?? [];
 
@@ -603,7 +480,7 @@ export default function Vitrine({ role }: { role: Role }) {
             </button>
             <button
               type="button"
-              onClick={ouvrirVente}
+              onClick={ouvrirVentePanier}
               className="btn btn-primaire flex-1 sm:flex-initial min-h-[44px] text-xs font-bold gap-1.5 shadow-md"
             >
               <IconeBillet taille={16} />
@@ -615,360 +492,37 @@ export default function Vitrine({ role }: { role: Role }) {
 
       {/* ===================== MODALE MISE EN VENTE ===================== */}
       {modalMiseEnVente && (
-        <Modale
-          titre={`Mise en vente — ${modalMiseEnVente.reference}`}
+        <ModaleMiseEnVente
           ouverte={modalMiseEnVente !== null}
+          reference={modalMiseEnVente.reference}
+          categorie={modalMiseEnVente.categorie}
+          unites={(modalMiseEnVente.unites_stock ?? modalMiseEnVente.vendables).map((u) => ({
+            id: u.id,
+            code_interne: u.code_interne,
+            prix_vente_fixe: u.prix_vente_fixe,
+          }))}
+          prixActuel={modalMiseEnVente.prix_vente_fixe}
           onFermer={() => setModalMiseEnVente(null)}
-        >
-          <div className="space-y-4">
-            <p className="text-xs text-brand-warm-grey">
-              Fixez le prix de vente unitaire pour rendre les exemplaires de ce modèle disponibles à la vente en boutique et en caisse.
-            </p>
-
-            <div>
-              <label className="libelle mb-1.5" htmlFor="prix-fixe-input">
-                Prix de vente fixe (DA) *
-              </label>
-              <input
-                id="prix-fixe-input"
-                type="number"
-                value={prixMiseEnVente}
-                onChange={(e) => setPrixMiseEnVente(e.target.value)}
-                placeholder="Ex. 45000"
-                autoFocus
-                className="champ text-lg font-mono font-bold"
-              />
-            </div>
-
-            {/* Sélection des exemplaires concernés */}
-            {(() => {
-              const unites = modalMiseEnVente.unites_stock ?? modalMiseEnVente.vendables;
-              if (unites.length <= 1) return null;
-
-              return (
-                <div className="space-y-2 pt-2 border-t border-brand-light-grey/50">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span>Exemplaires concernés ({unitesSelectionMiseEnVente.length}/{unites.length})</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setUnitesSelectionMiseEnVente(
-                          unitesSelectionMiseEnVente.length === unites.length ? [] : unites.map((u) => u.id)
-                        )
-                      }
-                      className="text-brand-orange hover:underline text-xs font-semibold"
-                    >
-                      {unitesSelectionMiseEnVente.length === unites.length ? "Tout désélectionner" : "Tout sélectionner"}
-                    </button>
-                  </div>
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 rounded-xl bg-brand-light-grey/20 p-2 text-xs">
-                    {unites.map((u) => (
-                      <label key={u.id} className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-brand-white/80">
-                        <input
-                          type="checkbox"
-                          checked={unitesSelectionMiseEnVente.includes(u.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setUnitesSelectionMiseEnVente([...unitesSelectionMiseEnVente, u.id]);
-                            } else {
-                              setUnitesSelectionMiseEnVente(unitesSelectionMiseEnVente.filter((id) => id !== u.id));
-                            }
-                          }}
-                          className="rounded text-brand-orange focus:ring-brand-orange h-4 w-4"
-                        />
-                        <span className="font-mono font-bold text-brand-black">{u.code_interne}</span>
-                        {u.prix_vente_fixe && (
-                          <span className="text-brand-warm-grey">({formaterDA(u.prix_vente_fixe)})</span>
-                        )}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setModalMiseEnVente(null)}
-                className="btn btn-secondaire"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                disabled={envoi || !prixMiseEnVente.trim() || Number(prixMiseEnVente) <= 0 || unitesSelectionMiseEnVente.length === 0}
-                onClick={validerMiseEnVente}
-                className="btn btn-primaire"
-              >
-                {envoi ? "Application..." : "Valider et Mettre en vente"}
-              </button>
-            </div>
-          </div>
-        </Modale>
+          onSucces={async () => {
+            setModalMiseEnVente(null);
+            await charger();
+          }}
+        />
       )}
 
       {/* ===================== MODALE VENTE & FACTURATION ===================== */}
-      <Modale
-        titre={`Vente & Facturation — ${lignesPanier.length} article${lignesPanier.length > 1 ? "s" : ""}`}
-        ouverte={modalVente}
-        onFermer={() => setModalVente(false)}
-      >
-        <div className="space-y-4 max-h-[80dvh] overflow-y-auto pr-1">
-          {/* Liste des articles du panier */}
-          <ul className="max-h-36 space-y-1.5 overflow-y-auto rounded-xl bg-brand-light-grey/25 p-3 text-xs">
-            {lignesPanier.map((l) => (
-              <li key={l.id} className="flex justify-between items-center gap-2">
-                <span className="truncate" title={l.reference}>
-                  <span className="font-mono font-bold text-brand-orange mr-1.5">{l.code_interne}</span>
-                  <span className="font-medium text-brand-black">{l.reference}</span>
-                </span>
-                <span className="shrink-0 font-bold font-mono text-brand-black">{formaterDA(l.prix)}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex justify-between items-center p-3 rounded-xl bg-brand-orange/10 border border-brand-orange/20">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-black">Total à Encaisser</span>
-            <span className="text-xl font-black font-mono text-brand-orange">{formaterDA(totalPanier)}</span>
-          </div>
-
-          {/* Type de Document & Mode de Paiement */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="libelle mb-1.5" htmlFor="type-facture-vitrine">
-                Type de Facture
-              </label>
-              <select
-                id="type-facture-vitrine"
-                value={typeFacture}
-                onChange={(e) => setTypeFacture(e.target.value)}
-                className="champ text-xs font-bold"
-              >
-                <option value="normale">Facture Normale (Standard)</option>
-                <option value="tva">Facture avec TVA</option>
-                <option value="proforma">Devis / Facture Proforma</option>
-              </select>
-            </div>
-            <div>
-              <label className="libelle mb-1.5" htmlFor="mode-paiement-vitrine">
-                Mode de Paiement
-              </label>
-              <select
-                id="mode-paiement-vitrine"
-                value={modePaiement}
-                onChange={(e) => setModePaiement(e.target.value)}
-                className="champ text-xs font-bold"
-              >
-                <option value="especes">Espèces</option>
-                <option value="carte">Carte Bancaire / CIB</option>
-                <option value="virement">Virement CCP</option>
-                <option value="cheque">Chèque</option>
-                <option value="credit">Vente à Crédit</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Calcul de Monnaie si Espèces */}
-          {modePaiement === "especes" && (
-            <div className="p-3.5 rounded-xl bg-brand-light-grey/25 border border-brand-light-grey/60 space-y-2">
-              <label className="libelle text-xs" htmlFor="especes-recues-vitrine">
-                Montant Reçu en Espèces (DA)
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  id="especes-recues-vitrine"
-                  type="number"
-                  value={especesRecues}
-                  onChange={(e) => setEspecesRecues(e.target.value)}
-                  placeholder={String(totalPanier)}
-                  className="champ flex-1 font-bold font-mono text-base"
-                />
-                {monnaieARendre > 0 && (
-                  <div className="flex flex-col text-right">
-                    <span className="text-[10px] font-bold uppercase text-brand-grey">Monnaie à rendre</span>
-                    <span className="text-base font-black font-mono text-succes">{formaterDA(monnaieARendre)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* RÈGLE 2 ERP/WMS : Contrôle Étiquette Produit */}
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <label htmlFor="toggle-etiquette-vitrine" className="text-xs font-bold text-amber-900 dark:text-amber-200 cursor-pointer select-none">
-                Avez-vous imprimé et collé l&apos;étiquette sur les articles ?
-              </label>
-              <input
-                id="toggle-etiquette-vitrine"
-                type="checkbox"
-                checked={etiquetteValidee}
-                onChange={(e) => setEtiquetteValidee(e.target.checked)}
-                className="toggle toggle-warning h-6 w-11 cursor-pointer"
-              />
-            </div>
-            {!etiquetteValidee && (
-              <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
-                <span className="text-[11px] text-amber-800 dark:text-amber-300">
-                  Sans confirmation, l&apos;article sera réservé.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const ids = lignesPanier.map((l) => l.id);
-                    window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
-                    setEtiquetteValidee(true);
-                  }}
-                  className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
-                >
-                  Imprimer l&apos;étiquette
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Coordonnées Client & Canal */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label className="libelle mb-1.5" htmlFor="vitrine-client">
-                {t("vitrine.nomClient")} {modePaiement === "credit" ? "*" : ""}
-              </label>
-              <input
-                id="vitrine-client"
-                type="text"
-                value={clientNom}
-                onChange={(e) => setClientNom(e.target.value)}
-                placeholder="Ex. Karim M."
-                className="champ"
-              />
-            </div>
-            <div>
-              <label className="libelle mb-1.5" htmlFor="vitrine-tel">
-                Téléphone
-              </label>
-              <input
-                id="vitrine-tel"
-                type="tel"
-                value={clientTel}
-                onChange={(e) => setClientTel(e.target.value)}
-                placeholder="0X XX XX XX XX"
-                className="champ"
-              />
-            </div>
-            <div>
-              <label className="libelle mb-1.5" htmlFor="vitrine-date">
-                Date de vente
-              </label>
-              <input
-                id="vitrine-date"
-                type="date"
-                value={dateVente}
-                max={aujourdhuiIso()}
-                onChange={(e) => setDateVente(e.target.value)}
-                className="champ font-mono"
-              />
-            </div>
-            <div>
-              <label className="libelle mb-1.5" htmlFor="vitrine-canal">
-                Canal de Vente
-              </label>
-              <input
-                id="vitrine-canal"
-                type="text"
-                value={canal}
-                onChange={(e) => setCanal(e.target.value)}
-                placeholder="Boutique, Ouedkniss, Facebook…"
-                className="champ"
-              />
-            </div>
-          </div>
-
-          {/* Accordéon Informations Légales & Entreprise */}
-          <details className="group">
-            <summary className="cursor-pointer text-xs font-bold text-brand-orange hover:underline outline-none">
-              + Informations légales pour facture proforma / entreprise (Optionnel)
-            </summary>
-            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-brand-light-grey/20 rounded-xl text-xs">
-              <div>
-                <label className="libelle mb-1" htmlFor="client-adresse-vitrine">Adresse</label>
-                <input id="client-adresse-vitrine" type="text" value={clientAdresse} onChange={(e) => setClientAdresse(e.target.value)} className="champ" />
-              </div>
-              <div>
-                <label className="libelle mb-1" htmlFor="client-rc-vitrine">RC</label>
-                <input id="client-rc-vitrine" type="text" value={clientRc} onChange={(e) => setClientRc(e.target.value)} className="champ" />
-              </div>
-              <div>
-                <label className="libelle mb-1" htmlFor="client-nif-vitrine">NIF</label>
-                <input id="client-nif-vitrine" type="text" value={clientNif} onChange={(e) => setClientNif(e.target.value)} className="champ" />
-              </div>
-              <div>
-                <label className="libelle mb-1" htmlFor="client-nis-vitrine">NIS</label>
-                <input id="client-nis-vitrine" type="text" value={clientNis} onChange={(e) => setClientNis(e.target.value)} className="champ" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="libelle mb-1" htmlFor="client-ai-vitrine">Article d&apos;imposition</label>
-                <input id="client-ai-vitrine" type="text" value={clientAi} onChange={(e) => setClientAi(e.target.value)} className="champ" />
-              </div>
-            </div>
-          </details>
-
-          {/* Garantie Matériel */}
-          <div className="flex items-center justify-between p-3 rounded-xl border border-brand-light-grey/60 bg-brand-light-grey/15 text-xs">
-            <span className="font-bold text-brand-black">Garantie Matériel :</span>
-            <select
-              value={garantieMois}
-              onChange={(e) => setGarantieMois(Number(e.target.value))}
-              className="select select-sm rounded-lg font-bold border-brand-light-grey text-xs"
-            >
-              <option value={1}>1 Mois</option>
-              <option value={3}>3 Mois</option>
-              <option value={6}>6 Mois (Standard)</option>
-              <option value={12}>12 Mois (1 An)</option>
-              <option value={24}>24 Mois (2 Ans)</option>
-            </select>
-          </div>
-
-          {avertissement && (
-            <div className="flex items-start gap-2 rounded-xl bg-brand-glow/40 px-3 py-2 text-xs text-brand-smooth">
-              <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
-              {avertissement}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-brand-light-grey/50">
-            {avertissement ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setAvertissement(null)}
-                  className="btn btn-secondaire text-xs"
-                >
-                  Revoir le prix
-                </button>
-                <button
-                  type="button"
-                  disabled={envoi}
-                  onClick={() => void enregistrerVente(true)}
-                  className="btn btn-primaire text-xs"
-                >
-                  Vendre quand même
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                disabled={envoi || lignesPanier.length === 0}
-                onClick={() => void enregistrerVente(false)}
-                className="btn btn-primaire w-full sm:w-auto min-h-[46px] text-xs font-bold shadow-lg"
-              >
-                <IconeBillet taille={16} />
-                {envoi ? "Enregistrement en cours..." : "Valider & Générer la Facture"}
-              </button>
-            )}
-          </div>
-        </div>
-      </Modale>
+      {modalVente && (
+        <ModaleVente
+          ouverte={modalVente}
+          unites={articlesPourVente}
+          onFermer={() => setModalVente(false)}
+          onSucces={async () => {
+            setModalVente(false);
+            setPanier(new Map());
+            await charger();
+          }}
+        />
+      )}
 
       {apercuPhotos && (
         <VisionneusePhotos

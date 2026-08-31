@@ -10,6 +10,7 @@ import {
   IconeChevronDroite,
   IconeRecherche,
   IconeCorbeille,
+  IconeImprimante,
 } from "@/components/icons";
 import { useToast } from "@/components/toast";
 
@@ -470,27 +471,42 @@ export default function ListeFactures({ role }: { role?: string }) {
 
       {/* Barre d'action globale pour la sélection multiple */}
       {selection.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-brand-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-6 animate-entree z-50">
-          <span className="font-semibold text-sm">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-brand-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-4 sm:gap-6 animate-entree z-50 border border-white/10 backdrop-blur-md">
+          <span className="font-bold text-xs sm:text-sm whitespace-nowrap">
             {selection.size} facture(s) sélectionnée(s)
           </span>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setSelection(new Set())}
-              disabled={envoi}
-              className="text-xs font-semibold text-brand-grey hover:text-white transition px-2"
+              onClick={() => {
+                const ids = Array.from(selection).join(",");
+                window.open(`/factures/impression-masse?ids=${ids}`, "_blank");
+              }}
+              className="btn bg-brand-orange text-white hover:bg-brand-orange/90 border-0 shadow-lg shadow-brand-orange/20 text-xs font-bold gap-1.5"
             >
-              Annuler
+              <IconeImprimante taille={15} />
+              <span>Imprimer le lot ({selection.size})</span>
             </button>
+
+            {peutSupprimer && (
+              <button
+                type="button"
+                onClick={() => void supprimerSelection()}
+                disabled={envoi}
+                className="btn bg-danger text-white hover:bg-danger/90 border-0 shadow-lg shadow-danger/20 disabled:opacity-50 text-xs font-bold gap-1.5"
+              >
+                <IconeCorbeille taille={15} />
+                <span>Supprimer</span>
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={() => void supprimerSelection()}
+              onClick={() => setSelection(new Set())}
               disabled={envoi}
-              className="btn bg-danger text-white hover:bg-danger/90 border-0 shadow-lg shadow-danger/20 disabled:opacity-50"
+              className="text-xs font-bold text-brand-grey hover:text-white transition px-2"
             >
-              <IconeCorbeille taille={15} />
-              Supprimer
+              Annuler
             </button>
           </div>
         </div>

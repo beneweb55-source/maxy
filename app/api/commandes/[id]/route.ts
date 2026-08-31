@@ -44,7 +44,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev", "social_media"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 

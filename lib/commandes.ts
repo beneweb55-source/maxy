@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
+import { creerFacture } from "@/lib/factures";
 import type { StatutCommande, TypePaiement, StatutProduit } from "@prisma/client";
 
 export interface LigneCommandeInput {
@@ -21,6 +22,11 @@ export interface CreateOrderInput {
   client_nom?: string | null;
   client_tel?: string | null;
   client_adresse?: string | null;
+  client_rc?: string | null;
+  client_nif?: string | null;
+  client_ai?: string | null;
+  client_nis?: string | null;
+  type_facture?: string | null;
   statut?: StatutCommande; // "payee" | "en_attente" | "devis" | "annulee" | "remboursee"
   type_paiement?: TypePaiement; // "especes" | "carte" | "virement" | "cheque"
   remise_globale?: number;
@@ -194,10 +200,43 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
       }
     }
 
-    return cmd;
+    // 4. Création conjointe de la facture si payée ou si préparée
+    let factureInfo: { id: number; numero: string } | null = null;
+    const lignesFacture = lignesTraitees
+      .filter((l) => l.produit_id !== null)
+      .map((l) => ({
+        produit_id: l.produit_id!,
+        code_interne: l.code_interne,
+        designation: l.designation,
+        categorie: l.categorie,
+        prix: l.prix_unitaire,
+      }));
+
+    if (lignesFacture.length > 0 && (statut === "payee" || data.type_facture)) {
+      factureInfo = await creerFacture(tx, {
+        lignes: lignesFacture,
+        userId,
+        quand: new Date(),
+        clientNom: data.client_nom || (data.client_id ? null : "Client Particulier"),
+        clientTel: data.client_tel,
+        clientAdresse: data.client_adresse,
+        clientRc: data.client_rc,
+        clientNif: data.client_nif,
+        clientAi: data.client_ai,
+        clientNis: data.client_nis,
+        typeFacture: data.type_facture || (statut === "devis" ? "proforma" : "normale"),
+        modePaiement: type_paiement,
+      });
+    }
+
+    return {
+      ...cmd,
+      facture_id: factureInfo?.id ?? null,
+      facture_numero: factureInfo?.numero ?? null,
+    };
   });
 
-  // 4. Journal d'audit
+  // 5. Journal d'audit
   await enregistrerActivite(
     prisma,
     userId,

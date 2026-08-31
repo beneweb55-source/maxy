@@ -10,6 +10,40 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = request.nextUrl;
+    const idsParam = searchParams.get("ids");
+    if (idsParam) {
+      const ids = idsParam.split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0);
+      if (ids.length > 0) {
+        const [commandes, parametres] = await Promise.all([
+          prisma.commande.findMany({
+            where: { id: { in: ids } },
+            orderBy: { id: "asc" },
+            include: {
+              client: true,
+              vendeur: { select: { id: true, username: true, role: true } },
+              lignes: true,
+            },
+          }),
+          prisma.parametres.findUnique({ where: { id: 1 } }),
+        ]);
+
+        return NextResponse.json({
+          commandes,
+          entreprise: {
+            nom: parametres?.entreprise_nom ?? "Solution Maxi",
+            adresse: parametres?.entreprise_adresse ?? "Alger, Algérie",
+            tel: parametres?.entreprise_tel ?? "0000 00 00 00",
+            rc: parametres?.entreprise_rc ?? "RC XXXXXXXXX",
+            nif: parametres?.entreprise_nif ?? "NIF XXXXXXXXX",
+            nis: parametres?.entreprise_nis ?? "NIS XXXXXXXXX",
+            art: parametres?.entreprise_art ?? "ART XXXXXXXXX",
+            rib: parametres?.entreprise_rib ?? null,
+            cachet: parametres?.entreprise_cachet ?? null,
+          },
+        });
+      }
+    }
+
     const statut = searchParams.get("statut");
     const q = searchParams.get("q")?.trim();
     const periode = searchParams.get("periode"); // "aujourdhui", "semaine", "mois"
@@ -81,7 +115,7 @@ export async function GET(request: NextRequest) {
 import { createOrder } from "@/lib/commandes";
 
 export async function POST(request: NextRequest) {
-  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev", "social_media"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 
