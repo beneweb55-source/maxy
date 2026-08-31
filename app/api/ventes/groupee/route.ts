@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_ids, prix_total, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement } =
+  const { produit_ids, prix_total, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement, etiquette_imprimee } =
     (corps ?? {}) as {
       produit_ids?: unknown;
       prix_total?: unknown;
