@@ -2469,7 +2469,7 @@ export default function Inventaire({ role }: { role: Role }) {
         ouverte={modalExport}
         onFermer={() => setModalExport(false)}
         searchParamsString={searchParams?.toString() || ""}
-        nbArticlesFiltres={produits.length}
+        nbArticlesFiltres={donnees?.total || donnees?.produits?.length || 0}
       />
     </>
   );

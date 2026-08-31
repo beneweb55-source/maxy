@@ -71,6 +71,7 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     sousChemins: [],
     roles: ["gerant", "technicien", "dev"],
   },
+  { href: "/commandes", cle: "nav.ventes", icone: IconePanier, sousChemins: ["/commandes"] },
   { href: "/factures", cle: "nav.factures", icone: IconeBillet, sousChemins: [] },
   {
     href: "/caisse",

@@ -91,6 +91,7 @@ model User {
   push_subscriptions PushSubscription[]
   fcm_tokens    FcmToken[]
   ventes        Vente[]            @relation("ventes_effectuees")
+  commandes     Commande[]
   factures      Facture[]
   journal       JournalActivite[]
   carnets       CarnetEntree[]
@@ -170,6 +171,7 @@ model Modele {
 
   categorie    Categorie @relation(fields: [categorie_id], references: [id])
   exemplaires  Produit[] 
+  lignes_commande LigneCommande[]
 
   @@index([categorie_id])
   @@map("modeles")
@@ -226,6 +228,7 @@ model Produit {
   historique  HistoriqueStatut[]
   mouvements  MouvementCaisse[]
   ventes      Vente[]
+  lignes_commande LigneCommande[]
   images      ProduitImage[]
 
   @@index([lot_id])
@@ -504,4 +507,100 @@ model MigrationLog {
   @@index([batch_id])
   @@index([produit_id])
   @@map("migration_logs")
+}
+
+enum StatutCommande {
+  devis
+  en_attente
+  payee
+  annulee
+  remboursee
+}
+
+enum TypePaiement {
+  especes
+  virement
+  carte
+  cheque
+}
+
+model Client {
+  id                  Int        @id @default(autoincrement())
+  nom                 String
+  telephone           String?
+  email               String?
+  adresse             String?
+  registre_commerce   String?
+  nif                 String?
+  nis                 String?
+  article_imposition  String?
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+
+  commandes           Commande[]
+
+  @@map("clients")
+}
+
+model Commande {
+  id               Int            @id @default(autoincrement())
+  numero           String         @unique
+  date_commande    DateTime       @default(now())
+  statut           StatutCommande @default(payee)
+  type_paiement    TypePaiement   @default(especes)
+  
+  client_id        Int?
+  client           Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  
+  client_nom       String?
+  client_tel       String?
+  client_adresse   String?
+
+  total_ht         Int
+  total_tva        Int            @default(0)
+  total_ttc        Int
+  remise_globale   Int            @default(0)
+  
+  garantie_mois    Int            @default(6)
+  garantie_fin     DateTime
+  
+  notes            String?
+  cree_par         Int
+  vendeur          User           @relation(fields: [cree_par], references: [id])
+  
+  lignes           LigneCommande[]
+  
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  @@index([date_commande])
+  @@index([statut])
+  @@index([client_id])
+  @@map("commandes")
+}
+
+model LigneCommande {
+  id              Int       @id @default(autoincrement())
+  commande_id     Int
+  commande        Commande  @relation(fields: [commande_id], references: [id], onDelete: Cascade)
+  
+  produit_id      Int?
+  produit         Produit?  @relation(fields: [produit_id], references: [id], onDelete: SetNull)
+  
+  modele_id       Int?
+  modele          Modele?   @relation(fields: [modele_id], references: [id], onDelete: SetNull)
+
+  code_interne    String
+  designation     String
+  numero_serie    String?
+  categorie       String?
+  
+  quantite        Int       @default(1)
+  prix_unitaire   Int
+  remise_ligne    Int       @default(0)
+  total_ligne     Int
+
+  @@index([commande_id])
+  @@index([produit_id])
+  @@map("lignes_commande")
 }
