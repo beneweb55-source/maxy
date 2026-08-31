@@ -79,7 +79,7 @@ export default function FormulaireModele({
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  // Charger l'arbre des catégories
+  // Charger l'arbre des catégories et verrouillage scroll body
   useEffect(() => {
     if (ouvert) {
       setLoadingCategories(true);
@@ -90,6 +90,12 @@ export default function FormulaireModele({
         })
         .catch((err) => console.error("Erreur chargement catégories:", err))
         .finally(() => setLoadingCategories(false));
+
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
     }
   }, [ouvert]);
 
@@ -222,7 +228,7 @@ export default function FormulaireModele({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
       <div className="relative w-full max-w-[95vw] sm:max-w-3xl max-h-[90dvh] flex flex-col bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden text-slate-900">
         
         {/* Header de la Modale */}

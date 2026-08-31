@@ -79,6 +79,16 @@ export default function GestionCategories() {
     chargerDonnees();
   }, []);
 
+  useEffect(() => {
+    if (modalOuverte) {
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
+    }
+  }, [modalOuverte]);
+
   async function chargerDonnees() {
     setChargement(true);
     setErreur(null);
@@ -558,7 +568,7 @@ export default function GestionCategories() {
 
       {/* MODALE D'AJOUT / ÉDITION CONTEXTUELLE */}
       {modalOuverte && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 animate-entree-rapide">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-3 sm:p-4 animate-entree-rapide">
           <div className="bg-white dark:bg-brand-paper w-full max-w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl shadow-2xl border border-brand-light-grey/60 dark:border-white/10">
             <div className="flex items-center justify-between p-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/5">
               <h3 className="font-bold text-base text-brand-black dark:text-white font-outfit">

@@ -51,6 +51,15 @@ export default function ListeFactures({ role }: { role?: string }) {
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [envoi, setEnvoi] = useState(false);
 
+  // Debounce automatique de la recherche
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      setRecherche(q.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [q]);
+
   const peutSupprimer = role === "gerant" || role === "dev" || role === "social_media";
 
   const charger = useCallback(async () => {

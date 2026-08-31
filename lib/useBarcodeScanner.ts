@@ -40,24 +40,27 @@ export function useBarcodeScanner(
         timestamps.current = [];
       }
 
-      if (e.key === "Enter") {
+      if (e.key === "Enter" || e.key === "Tab") {
         if (buffer.current.length >= minLength) {
-          // Vérification de la vitesse moyenne de frappe (< 50ms = douchette matérielle)
+          // Vérification de la vitesse moyenne de frappe (< 60ms = douchette matérielle)
           const totalDuration = now - (timestamps.current[0] || now);
           const avgInterval = timestamps.current.length > 1 ? totalDuration / timestamps.current.length : interval;
 
           if (avgInterval <= maxIntervalMs || timestamps.current.length >= 4) {
-            const scannedCode = buffer.current.trim();
-            onScan(scannedCode);
-            buffer.current = "";
-            timestamps.current = [];
+            // Nettoyage des caractères de contrôle résiduels (\r, \n, \t)
+            const scannedCode = buffer.current.replace(/[\r\n\t]/g, "").trim();
+            if (scannedCode.length >= minLength) {
+              onScan(scannedCode);
+              buffer.current = "";
+              timestamps.current = [];
 
-            // Si le focus était dans un champ texte, empêcher l'envoi de formulaire ou le saut de ligne
-            if (target && (target.tagName === "INPUT" || target.tagName === "SELECT")) {
-              e.preventDefault();
-              e.stopPropagation();
+              // Si le focus était dans un champ texte, empêcher l'envoi de formulaire ou le saut de tabulation
+              if (target && (target.tagName === "INPUT" || target.tagName === "SELECT")) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+              return;
             }
-            return;
           }
         }
         buffer.current = "";

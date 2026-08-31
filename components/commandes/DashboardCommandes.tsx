@@ -71,6 +71,16 @@ export default function DashboardCommandes() {
     nb?: number;
   } | null>(null);
 
+  useEffect(() => {
+    if (modalSuppression) {
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
+    }
+  }, [modalSuppression]);
+
   // Filtres
   const statutActuel = searchParams.get("statut") || "tous";
   const periodeActuelle = searchParams.get("periode") || "tous";
@@ -89,6 +99,16 @@ export default function DashboardCommandes() {
     },
     [searchParams, router]
   );
+
+  // Debounce automatique de la recherche
+  useEffect(() => {
+    const qUrl = searchParams.get("q") || "";
+    if (recherche === qUrl) return;
+    const timer = setTimeout(() => {
+      majUrl({ q: recherche.trim() || null, page: "1" });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [recherche, searchParams, majUrl]);
 
   const chargerCommandes = useCallback(async () => {
     setChargement(true);
@@ -514,7 +534,7 @@ export default function DashboardCommandes() {
 
       {/* ================= MODALE DE CONFIRMATION DE SUPPRESSION ================= */}
       {modalSuppression && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-entree">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
           <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-black text-slate-900 dark:text-white">

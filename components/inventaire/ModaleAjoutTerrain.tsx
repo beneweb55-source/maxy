@@ -162,7 +162,11 @@ export default function ModaleAjoutTerrain({
             });
           }
           setSousCategories(feuilles);
-          if (!sousCatId && feuilles.length > 0 && !categorieDefautId && feuilles[0]) {
+          if (categorieDefautId) {
+            const match = feuilles.find((f) => f.id === categorieDefautId || f.parent_id === categorieDefautId);
+            if (match) setSousCatId(match.id);
+            else setSousCatId(categorieDefautId);
+          } else if (!sousCatId && feuilles.length > 0 && feuilles[0]) {
             setSousCatId(feuilles[0].id);
           }
         }
@@ -172,6 +176,11 @@ export default function ModaleAjoutTerrain({
     }
     if (ouverte) {
       void chargerArborescence();
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
     }
   }, [ouverte, categorieDefautId]);
 
@@ -372,7 +381,7 @@ export default function ModaleAjoutTerrain({
   if (!ouverte) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree overflow-y-auto">
       <div className="relative w-full max-w-[95vw] sm:max-w-4xl max-h-[90dvh] bg-white dark:bg-brand-paper rounded-3xl shadow-2xl border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden my-auto">
         
         {/* HEADER MODALE POS */}

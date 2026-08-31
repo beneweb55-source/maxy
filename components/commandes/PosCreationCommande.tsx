@@ -150,6 +150,16 @@ export default function PosCreationCommande() {
     return () => clearTimeout(timer);
   }, [rechercheClient, ongetClient, modalClient]);
 
+  useEffect(() => {
+    if (modalClient || modalPaiement) {
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
+    }
+  }, [modalClient, modalPaiement]);
+
   // Ajouter un produit physique sérialisé au panier
   const ajouterProduitAuPanier = (p: any, mode_ajout: "scan" | "manuel" = "manuel") => {
     // Vérifier si le produit est déjà dans le panier
@@ -568,7 +578,7 @@ export default function PosCreationCommande() {
 
       {/* ===================== MODALE D'ASSOCIATION / CRÉATION CLIENT ===================== */}
       {modalClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-sm animate-entree">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree">
           <div className="w-full max-w-[95vw] sm:max-w-lg max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
             
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
@@ -689,7 +699,7 @@ export default function PosCreationCommande() {
 
       {/* ===================== MODALE DE PAIEMENT & VALIDATION ===================== */}
       {modalPaiement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-sm animate-entree">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree">
           <div className="w-full max-w-[95vw] sm:max-w-lg max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
             
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">

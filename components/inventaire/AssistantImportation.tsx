@@ -137,6 +137,12 @@ export default function AssistantImportation({
       setLignesPrevisu([]);
       setPageCourante(1);
       setValeurPrixAchatMasse("");
+
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
     }
   }, [ouvert]);
 
@@ -518,7 +524,7 @@ export default function AssistantImportation({
   if (!ouvert) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
       <div className="relative w-full max-w-[95vw] sm:max-w-5xl max-h-[90dvh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
         
         {/* Header de l'Assistant */}

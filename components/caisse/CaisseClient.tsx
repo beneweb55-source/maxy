@@ -470,6 +470,12 @@ export default function CaisseClient({ role }: { role: Role }) {
 
       // Produit normal déjà en vente
       const produit = data.produit;
+      setCartes((prev) => {
+        if (!prev) return [produit];
+        if (prev.some((c) => c.id === produit.id)) return prev;
+        return [produit, ...prev];
+      });
+
       const cle = `${produit.reference.toLowerCase().trim()}|${produit.categorie.toLowerCase().trim()}`;
       setSelection((prev) => {
         const suivant = new Map(prev);

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { type StatutProduit } from "@prisma/client";
@@ -42,6 +44,8 @@ interface CarteProduitProps {
   estSocial: boolean;
   peutModifier: boolean;
   envoi: boolean;
+  estSelectionne?: boolean;
+  onToggleSelection?: (id: number) => void;
   basculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
   ouvrirEdition: (unites: LigneProduit[], titre: string) => void;
   ouvrirSuppressionUnites: (unites: LigneProduit[]) => void;
@@ -56,13 +60,15 @@ export default function CarteProduit({
   estSocial,
   peutModifier,
   envoi,
+  estSelectionne = false,
+  onToggleSelection,
   basculerVitrineIds,
   ouvrirEdition,
   ouvrirSuppressionUnites,
   ouvrirClassification,
   ouvrirAjout,
   ouvrirVente,
-  t
+  t,
 }: CarteProduitProps) {
   // Prix de vente affiché
   let prixVente = produit.prix_vente_fixe;
@@ -74,29 +80,40 @@ export default function CarteProduit({
     ? [
         produit.categorie_rel.parent?.parent?.nom,
         produit.categorie_rel.parent?.nom,
-        produit.categorie_rel.nom
+        produit.categorie_rel.nom,
       ].filter(Boolean).join(" › ")
     : produit.categorie;
 
   return (
-    <div className="group flex flex-col rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm transition-all hover:border-brand-smooth hover:shadow-md overflow-hidden h-full">
+    <div
+      className={`group flex flex-col rounded-xl border bg-white dark:bg-brand-paper shadow-sm transition-all hover:border-brand-smooth hover:shadow-md overflow-hidden h-full ${
+        estSelectionne
+          ? "border-brand-orange ring-2 ring-brand-orange/30"
+          : "border-brand-light-grey dark:border-white/10"
+      }`}
+    >
       {/* Zone Image Clickable -> Fiche Produit */}
-      <Link href={`/produits/${produit.id}`} className="block relative aspect-video sm:aspect-square bg-brand-light-grey/20 dark:bg-black/20 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-inset">
-        {produit.image_url ? (
-          <img 
-            src={produit.image_url} 
-            alt={produit.reference} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full text-brand-warm-grey opacity-50 uppercase text-xs font-bold font-outfit tracking-wider">
-            {t("inventaire.sansPhoto")}
-          </div>
-        )}
-        
+      <div className="relative aspect-video sm:aspect-square bg-brand-light-grey/20 dark:bg-black/20 overflow-hidden">
+        <Link
+          href={`/produits/${produit.id}`}
+          className="block w-full h-full outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-inset"
+        >
+          {produit.image_url ? (
+            <img
+              src={produit.image_url}
+              alt={produit.reference}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full text-brand-warm-grey opacity-50 uppercase text-xs font-bold font-outfit tracking-wider">
+              {t("inventaire.sansPhoto")}
+            </div>
+          )}
+        </Link>
+
         {/* Badges Overlay */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1.5 items-start">
+        <div className="absolute top-2 left-2 flex flex-col gap-1.5 items-start pointer-events-none">
           <BadgeStatut statut={produit.statut} aJeter={produit.a_jeter} />
           {produit.en_vitrine && (
             <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
@@ -105,7 +122,19 @@ export default function CarteProduit({
           )}
         </div>
 
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+          {onToggleSelection && (
+            <input
+              type="checkbox"
+              checked={estSelectionne}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleSelection(produit.id);
+              }}
+              className="accent-brand-orange w-4 h-4 rounded cursor-pointer shadow-md bg-white border border-slate-300"
+              title="Sélectionner pour actions groupées"
+            />
+          )}
           <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur-md">
             {produit.code_interne}
           </span>
@@ -115,17 +144,24 @@ export default function CarteProduit({
             </span>
           )}
         </div>
-      </Link>
+      </div>
 
       {/* Contenu Carte */}
       <div className="flex flex-col flex-1 p-3">
         {/* Catégorie */}
-        <div className="text-[11px] font-medium text-brand-warm-grey dark:text-brand-grey truncate mb-1" title={cheminArbo}>
+        <div
+          className="text-[11px] font-medium text-brand-warm-grey dark:text-brand-grey truncate mb-1"
+          title={cheminArbo}
+        >
           {cheminArbo}
         </div>
 
         {/* Référence */}
-        <Link href={`/produits/${produit.id}`} className="font-bold text-sm text-brand-black dark:text-white line-clamp-2 hover:text-brand-orange transition-colors leading-snug mb-2" title={produit.reference}>
+        <Link
+          href={`/produits/${produit.id}`}
+          className="font-bold text-sm text-brand-black dark:text-white line-clamp-2 hover:text-brand-orange transition-colors leading-snug mb-2"
+          title={produit.reference}
+        >
           {produit.reference}
         </Link>
 
@@ -134,7 +170,10 @@ export default function CarteProduit({
           <div>
             {!estSocial && (
               <div className="text-[10px] text-brand-warm-grey font-medium">
-                Achat: <span className="font-bold text-brand-black dark:text-brand-warm-grey">{formaterDA(produit.prix_achat)}</span>
+                Achat:{" "}
+                <span className="font-bold text-brand-black dark:text-brand-warm-grey">
+                  {formaterDA(produit.prix_achat)}
+                </span>
               </div>
             )}
             <div className="text-xs text-brand-warm-grey">
@@ -166,8 +205,8 @@ export default function CarteProduit({
               }}
               title={produit.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
               className={`p-2 rounded-md transition-colors disabled:opacity-40 ${
-                produit.en_vitrine 
-                  ? "text-brand-orange bg-brand-orange/10" 
+                produit.en_vitrine
+                  ? "text-brand-orange bg-brand-orange/10"
                   : "text-brand-warm-grey hover:bg-brand-light-grey/40 hover:text-brand-orange dark:hover:bg-white/10"
               }`}
             >
@@ -175,10 +214,10 @@ export default function CarteProduit({
             </button>
           )}
 
-          <BoutonImpression 
-            ids={[produit.id]} 
-            dejaImprimee={produit.etiquette_imprimee} 
-            className="p-2 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors" 
+          <BoutonImpression
+            ids={[produit.id]}
+            dejaImprimee={produit.etiquette_imprimee}
+            className="p-2 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors"
           />
 
           {produit.statut !== "vendu" && ouvrirVente && (

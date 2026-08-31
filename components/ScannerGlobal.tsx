@@ -12,9 +12,9 @@ export default function ScannerGlobal() {
   const t = useT();
 
   useBarcodeScanner((code) => {
-    // Ne pas rediriger si on est déjà au POS, dans l'inventaire ou sur une fiche produit
-    // (ces pages gèrent leur propre logique de scan).
-    if (pathname === "/pos" || pathname === "/inventaire" || pathname?.startsWith("/produits")) {
+    // Ne pas rediriger si on est déjà au POS ou dans l'inventaire
+    // (ces pages gèrent leur propre logique de scan dédiée).
+    if (pathname === "/pos" || pathname === "/inventaire") {
       return;
     }
     afficher(t("scannerGlobal.redirection", { code }));

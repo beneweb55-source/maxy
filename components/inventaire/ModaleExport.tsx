@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Download, 
   X, 
@@ -72,6 +72,16 @@ export default function ModaleExport({
   const [formatFichier, setFormatFichier] = useState<"csv_excel" | "csv_standard" | "xlsx">("csv_excel");
   const [scopeExport, setScopeExport] = useState<"filtres" | "tous">("filtres");
   const [telechargementEnCours, setTelechargementEnCours] = useState(false);
+
+  useEffect(() => {
+    if (ouverte) {
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
+    }
+  }, [ouverte]);
 
   if (!ouverte) return null;
 
@@ -151,7 +161,7 @@ export default function ModaleExport({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
       <div className="relative w-11/12 max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
         
         {/* Header */}

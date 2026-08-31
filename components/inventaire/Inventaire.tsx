@@ -1826,6 +1826,12 @@ export default function Inventaire({ role }: { role: Role }) {
                 estSocial={estSocial}
                 peutModifier={peutModifier}
                 envoi={envoi}
+                estSelectionne={selection.includes(p.id)}
+                onToggleSelection={(id) => {
+                  setSelection((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                  );
+                }}
                 basculerVitrineIds={basculerVitrineIds}
                 ouvrirEdition={ouvrirEdition}
                 ouvrirClassification={setModalClassification}

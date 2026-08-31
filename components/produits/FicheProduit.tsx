@@ -204,6 +204,17 @@ export default function FicheProduit({
   const [descReparation, setDescReparation] = useState("");
   const [envoiReparation, setEnvoiReparation] = useState(false);
 
+  // Verrouiller le scroll du body lorsqu'une sous-modale est ouverte
+  useEffect(() => {
+    if (modalEditUnite || modalReparation) {
+      const orig = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = orig;
+      };
+    }
+  }, [modalEditUnite, modalReparation]);
+
   // Onglet secondaire actif (Exemplaires, Atelier SAV, Historique, Ventes)
   const [ongletActif, setOngletActif] = useState<"exemplaires" | "atelier" | "historique" | "ventes">("exemplaires");
 
@@ -1099,7 +1110,7 @@ export default function FicheProduit({
 
       {/* MODALE : Modification d'une unité spécifique */}
       {modalEditUnite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-entree">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
           <div className="w-full max-w-lg bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-4 text-slate-900">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1213,7 +1224,7 @@ export default function FicheProduit({
 
       {/* MODALE : Nouvelle réparation SAV */}
       {modalReparation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-entree">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
           <form onSubmit={ajouterReparation} className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-4 text-slate-900">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-black font-outfit text-slate-900 flex items-center gap-2">
