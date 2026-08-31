@@ -19,6 +19,7 @@ import { useSuiviNavigation } from "@/hooks/useHistoriqueNavigation";
 import { useRaccourcis } from "@/hooks/useRaccourcis";
 import RechercheGlobale from "./RechercheGlobale";
 import Modale from "./Modale";
+import BottomNav from "./BottomNav";
 import {
   IconeArchive,
   IconeBillet,
@@ -167,8 +168,8 @@ export default function AppShell({
   }
 
   const contenuSidebar = (
-    <div className="flex h-full flex-col">
-      <div className="px-5 pb-7 pt-7">
+    <div className="flex h-full flex-col safe-top safe-bottom">
+      <div className="px-5 pb-5 pt-6 sm:pb-7 sm:pt-7">
         <img
           src="/brand/solutionmaxi-logo-fonce.svg"
           alt="SolutionMaxi"
@@ -176,7 +177,7 @@ export default function AppShell({
         />
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 touch-pan-y">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 touch-pan-y no-scrollbar">
         <p className="libelle px-4 pb-3 text-brand-grey/60">{t("nav.navigation")}</p>
         {navigation.map((item) => {
           const actif =
@@ -193,13 +194,13 @@ export default function AppShell({
                 setMenuOuvert(false);
               }}
               aria-current={actif ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 active-scale ${
                 actif
-                  ? "bg-gradient-to-r from-brand-orange to-[#EA580C] text-white shadow-md shadow-brand-orange/20 translate-x-1"
+                  ? "bg-gradient-to-r from-brand-orange to-[#EA580C] text-white shadow-md shadow-brand-orange/20 translate-x-1 font-bold"
                   : "text-brand-grey hover:bg-white/5 hover:text-white hover:translate-x-1"
               }`}
             >
-              <Icone taille={18} className={actif ? "opacity-100" : "opacity-70"} />
+              <Icone taille={19} className={actif ? "opacity-100" : "opacity-70"} />
               {t(item.cle)}
             </Link>
           );
@@ -222,9 +223,9 @@ export default function AppShell({
             onClick={() => void deconnexion()}
             title={t("entete.deconnexion")}
             aria-label={t("entete.deconnexion")}
-            className="rounded-lg p-2 text-brand-grey transition hover:bg-white/10 hover:text-white"
+            className="touch-target rounded-lg p-2 text-brand-grey transition hover:bg-white/10 hover:text-white active-scale"
           >
-            <IconeDeconnexion taille={17} />
+            <IconeDeconnexion taille={18} />
           </button>
         </div>
       </div>
@@ -249,7 +250,7 @@ export default function AppShell({
           {/* Overlay */}
           <div
             ref={overlayRef}
-            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+            className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
               menuOuvert ? "opacity-100" : "opacity-0"
             }`}
             onClick={() => setMenuOuvert(false)}
@@ -258,7 +259,7 @@ export default function AppShell({
           {/* Sidebar */}
           <div
             ref={sidebarRef}
-            className={`absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl transition-transform duration-300 cubic-bezier-out ${
+            className={`absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-[var(--color-sidebar-bg)] shadow-2xl transition-transform duration-300 cubic-bezier-out safe-left ${
               menuOuvert ? "translate-x-0" : "-translate-x-full"
             }`}
           >
@@ -266,32 +267,35 @@ export default function AppShell({
               type="button"
               onClick={() => setMenuOuvert(false)}
               aria-label={t("entete.fermerMenu")}
-              className="absolute right-3 top-5 rounded-lg p-2 text-brand-grey hover:text-white z-50"
+              className="absolute right-3 top-5 touch-target rounded-xl p-2 text-brand-grey hover:text-white active-scale z-50"
             >
-              <IconeFermer taille={18} />
+              <IconeFermer taille={20} />
             </button>
             {contenuSidebar}
           </div>
         </div>
 
         <div className="lg:pl-64">
-          <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-brand-light-grey/60 bg-brand-white/80 px-4 backdrop-blur-xl lg:px-8 print:hidden">
-            <button
-              type="button"
-              onClick={() => setMenuOuvert(true)}
-              className="rounded-lg border border-brand-light-grey p-2 text-brand-smooth lg:hidden"
-              aria-label={t("entete.ouvrirMenu")}
-            >
-              <IconeMenu taille={18} />
-            </button>
-            <span className="hidden text-sm font-semibold text-brand-smooth lg:block font-outfit tracking-wide">
-              {t("entete.titrePlateforme")}
-            </span>
-            <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-brand-light-grey/60 bg-brand-white/80 px-3 sm:px-4 backdrop-blur-xl lg:px-8 print:hidden safe-top">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMenuOuvert(true)}
+                className="touch-target rounded-xl border border-brand-light-grey/80 p-2 text-brand-smooth lg:hidden active-scale"
+                aria-label={t("entete.ouvrirMenu")}
+              >
+                <IconeMenu taille={20} />
+              </button>
+              <span className="text-sm font-bold text-brand-smooth font-outfit tracking-wide truncate max-w-[150px] sm:max-w-none">
+                {t("entete.titrePlateforme")}
+              </span>
+            </div>
+            
+            <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
               <button
                 type="button"
                 onClick={() => setRechercheOuverte(true)}
-                className="hidden lg:flex items-center gap-2 rounded-lg border border-brand-light-grey px-3 py-1.5 text-sm text-brand-warm-grey transition hover:bg-brand-light-grey/40"
+                className="hidden lg:flex items-center gap-2 rounded-xl border border-brand-light-grey px-3 py-1.5 text-sm text-brand-warm-grey transition hover:bg-brand-light-grey/40 active-scale"
                 aria-label={t("rechercheGlobale.placeholder") || "Rechercher..."}
               >
                 <IconeRecherche taille={16} />
@@ -301,10 +305,10 @@ export default function AppShell({
               <button
                 type="button"
                 onClick={() => setRechercheOuverte(true)}
-                className="lg:hidden rounded-lg border border-brand-light-grey p-2 text-brand-smooth transition hover:bg-brand-light-grey/40"
+                className="lg:hidden touch-target rounded-xl border border-brand-light-grey/80 p-2 text-brand-smooth transition hover:bg-brand-light-grey/40 active-scale"
                 aria-label={t("rechercheGlobale.placeholder") || "Rechercher..."}
               >
-                <IconeRecherche taille={18} />
+                <IconeRecherche taille={19} />
               </button>
               <IndicateurConnexion />
               <ThemeToggle />
@@ -313,9 +317,20 @@ export default function AppShell({
             </div>
           </header>
 
-          <main className="min-w-0 p-4 lg:p-8 print:p-0">{children}</main>
+          {/* Main content avec padding-bottom pour la barre de navigation mobile */}
+          <main className="min-w-0 p-3 sm:p-4 lg:p-8 pb-28 sm:pb-24 lg:pb-8 print:p-0">
+            {children}
+          </main>
         </div>
       </div>
+
+      {/* Barre de navigation inférieure sur mobile et petite tablette */}
+      <BottomNav
+        role={user.role}
+        onOuvrirMenu={() => setMenuOuvert(true)}
+        menuOuvert={menuOuvert}
+      />
+
       <RechercheGlobale
         role={user.role}
         ouverte={rechercheOuverte}

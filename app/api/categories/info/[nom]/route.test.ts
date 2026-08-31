@@ -25,7 +25,11 @@ describe("PATCH /api/categories/[nom]", () => {
 
   it("devrait retourner 403 si l'utilisateur n'est ni gérant ni dev", async () => {
     (exigerUtilisateur as any).mockResolvedValue({
-      user: { role: "technicien" },
+      user: null,
+      reponse: NextResponse.json(
+        { error: "Seul un gérant ou développeur peut modifier l'image d'une catégorie." },
+        { status: 403 }
+      ),
     });
 
     const req = new Request("http://localhost/api/categories/Test", {
@@ -43,6 +47,7 @@ describe("PATCH /api/categories/[nom]", () => {
   it("devrait mettre à jour et retourner 200 pour un gérant", async () => {
     (exigerUtilisateur as any).mockResolvedValue({
       user: { role: "gerant" },
+      reponse: null,
     });
     
     const mockDbResult = { nom: "Test", image_url: "http://test.com/img.jpg" };
@@ -61,7 +66,7 @@ describe("PATCH /api/categories/[nom]", () => {
     expect(prisma.categorieInfo.upsert).toHaveBeenCalledWith({
       where: { nom: "Test" },
       update: { image_url: "http://test.com/img.jpg" },
-      create: { nom: "Test", image_url: "http://test.com/img.jpg" },
+      create: { nom: "Test", image_url: "http://test.com/img.jpg", description: null },
     });
   });
 });

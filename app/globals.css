@@ -434,26 +434,128 @@
     );
   }
 
-  /* Utilitaires Tactiles & Mobile */
+  /* ========================================= */
+  /* UTILITAIRES MOBILES, TABLETTES & TACTILES */
+  /* ========================================= */
+  
+  /* Safe area insets (iPhone notch, Dynamic Island, barre de gestes Android) */
   .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
   .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
-  
-  /* Active state feedback for touch */
-  .active-scale:active {
-    transform: scale(0.97);
-    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
   }
   
-  /* Masquer les scrollbars sur les éléments scrollables horizontaux (ex: filtres) */
+  /* Micro-animation de retour haptique/visuel sur toucher */
+  .active-scale:active {
+    transform: scale(0.96);
+    transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .active-scale-sm:active {
+    transform: scale(0.98);
+    transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Cible tactile garantie (44px minimum recommandé par Apple/Google) */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .touch-target-sm {
+    min-width: 38px;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Défilement fluide tactile avec momentum */
+  .touch-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+  }
+  .touch-scroll-y {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+  }
+
+  /* Masquer les scrollbars sur les éléments scrollables horizontaux (ex: filtres, tags, onglets) */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Scrollbar discrète et élégante */
+  .scrollbar-fine::-webkit-scrollbar {
+    height: 5px;
+    width: 5px;
+  }
+  .scrollbar-fine::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-fine::-webkit-scrollbar-thumb {
+    background: var(--color-brand-light-grey);
+    border-radius: 9999px;
+  }
+  .scrollbar-fine::-webkit-scrollbar-thumb:hover {
+    background: var(--color-brand-grey);
+  }
+
+  /* Conteneur de tableau responsive avec défilement horizontal fluide */
+  .table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    border-radius: 0.875rem;
+    position: relative;
+  }
+}
+
+/* Optimisations d'accessibilité tactile globales */
+@layer base {
+  /* Élimine le délai de 300ms au toucher et le double-tap zoom non souhaité */
+  button, 
+  a, 
+  input, 
+  select, 
+  textarea, 
+  [role="button"],
+  [role="tab"],
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Empêche le zoom automatique forcé de Safari iOS sur focus des champs de formulaire */
+  @media (max-width: 640px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
   }
 }

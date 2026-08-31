@@ -152,7 +152,7 @@ export function EditeurCarnet({ id, contenuInitial, lectureSeule }: EditeurCarne
     <div className="flex flex-col bg-[var(--color-bg-primary)] border border-brand-light-grey/30 rounded-xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none transition-shadow focus-within:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-within:border-brand-grey/30 group">
       
       {!lectureSeule && (
-        <div className="flex items-center gap-1 p-2 border-b border-brand-light-grey/30 bg-brand-light-grey/5 dark:bg-black/20 overflow-x-auto scrollbar-hide sticky top-0 z-10">
+        <div className="flex items-center gap-1 p-2 border-b border-brand-light-grey/30 bg-brand-light-grey/5 dark:bg-black/20 overflow-x-auto touch-scroll-x no-scrollbar sticky top-0 z-10">
           
           {/* Groupe 1 : Texte */}
           <div className="flex items-center gap-0.5 shrink-0">

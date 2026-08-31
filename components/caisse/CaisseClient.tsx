@@ -1240,38 +1240,48 @@ export default function CaisseClient({ role }: { role: Role }) {
               </div>
             </div>
 
-              {/* Mobile Bottom Bar for Panier summary */}
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-light-grey shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 pb-[max(env(safe-area-inset-bottom),12px)] px-4 pt-3 rounded-t-2xl">
-                 <div className="flex items-center justify-between mb-3">
-                   <button onClick={() => setPanierMobileOuvert(true)} className="flex items-center gap-3">
-                     <div className="relative">
-                       <IconePaquet taille={28} className="text-brand-orange" />
-                       <span className="absolute -top-2 -right-2 bg-danger text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">{cartItems.length}</span>
-                     </div>
-                     <span className="font-bold text-sm text-brand-black underline decoration-brand-light-grey underline-offset-4">Voir le panier</span>
-                   </button>
-                   <div className="text-right">
-                     <span className="block text-[10px] font-semibold text-brand-grey uppercase">{t("caisse.totalNet")}</span>
-                     <span className="font-black text-xl text-brand-orange leading-none">{formaterDA(totalApresRemise)}</span>
-                   </div>
-                 </div>
-                 <button
-                   type="button"
-                   disabled={cartItems.length === 0}
-                   onClick={() => {
-                     if (panierMobileOuvert) setPanierMobileOuvert(false);
-                     if (cartItems.length === 1 && cartItems[0]) {
-                       setModalVente(cartItems[0].groupe);
-                       setQuantiteVente(cartItems[0].qty);
-                     } else {
-                       ouvrirBundle();
-                     }
-                   }}
-                   className="btn btn-primaire w-full justify-center py-3.5 text-base shadow-md disabled:opacity-50 min-h-[56px] rounded-xl"
-                 >
-                   <IconeBillet taille={20} /> Encaisser {cartItems.length > 0 && `(${totalSelectionnees})`}
-                 </button>
-              </div>
+              {/* Mobile Floating Bar for Panier summary */}
+              {cartItems.length > 0 && (
+                <div className="lg:hidden fixed bottom-[72px] left-3 right-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-2xl z-30 p-3 rounded-2xl animate-entree mb-safe">
+                  <div className="flex items-center justify-between mb-2">
+                    <button 
+                      type="button"
+                      onClick={() => setPanierMobileOuvert(true)} 
+                      className="flex items-center gap-2.5 active-scale"
+                    >
+                      <div className="relative">
+                        <IconePaquet taille={24} className="text-brand-orange" />
+                        <span className="absolute -top-1.5 -right-2 bg-danger text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                          {cartItems.length}
+                        </span>
+                      </div>
+                      <span className="font-bold text-xs text-brand-black dark:text-white underline decoration-brand-orange underline-offset-4">
+                        Voir le panier ({totalSelectionnees})
+                      </span>
+                    </button>
+                    <div className="text-right">
+                      <span className="block text-[9px] font-bold text-brand-grey uppercase tracking-wider">{t("caisse.totalNet")}</span>
+                      <span className="font-black text-lg text-brand-orange leading-none font-mono">{formaterDA(totalApresRemise)}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={cartItems.length === 0}
+                    onClick={() => {
+                      if (panierMobileOuvert) setPanierMobileOuvert(false);
+                      if (cartItems.length === 1 && cartItems[0]) {
+                        setModalVente(cartItems[0].groupe);
+                        setQuantiteVente(cartItems[0].qty);
+                      } else {
+                        ouvrirBundle();
+                      }
+                    }}
+                    className="btn btn-primaire w-full justify-center py-3 text-sm font-bold shadow-lg disabled:opacity-50 min-h-[48px] rounded-xl active-scale"
+                  >
+                    <IconeBillet taille={18} /> Encaisser {cartItems.length > 0 && `(${totalSelectionnees})`}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
