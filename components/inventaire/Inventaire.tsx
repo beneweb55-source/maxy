@@ -45,11 +45,12 @@ import CarteProduit from "./CarteProduit";
 import ModalClassification from "./ModalClassification";
 import ModalSuppression from "./ModalSuppression";
 import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
+import AssistantImportation from "./AssistantImportation";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import RechercheMultiModal from "./RechercheMultiModal";
 import FilterDrawer from "./FilterDrawer";
 import ActiveFilterBadges from "./ActiveFilterBadges";
-import { Filter as IconFilter } from "lucide-react";
+import { Filter as IconFilter, UploadCloud } from "lucide-react";
 
 interface LigneProduit {
   id: number;
@@ -248,8 +249,15 @@ export default function Inventaire({ role }: { role: Role }) {
   const nomCategorieActif = sousCategorieActive?.nom || categorieActive?.nom || "";
 
   const [modalAjoutTerrain, setModalAjoutTerrain] = useState(false);
+  const [modalImportation, setModalImportation] = useState(searchParams?.get("import") === "1");
   const [tiroirFiltresOuvert, setTiroirFiltresOuvert] = useState(false);
   const [produitSourceDuplication, setProduitSourceDuplication] = useState<LigneProduit | null>(null);
+
+  useEffect(() => {
+    if (searchParams?.get("import") === "1") {
+      setModalImportation(true);
+    }
+  }, [searchParams]);
 
   const [modalEdition, setModalEdition] = useState<{
     unites: LigneProduit[];
@@ -898,101 +906,186 @@ export default function Inventaire({ role }: { role: Role }) {
   const page = donnees?.page ?? 1;
 
   const champsProduit = (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div className="sm:col-span-2">
-        <label className="libelle mb-1.5" htmlFor="ref-produit">
-          Référence *
-        </label>
-        <input
-          id="ref-produit"
-          type="text"
-          value={formulaire.reference}
-          onChange={(e) => setFormulaire({ ...formulaire, reference: e.target.value })}
-          placeholder="Ex. Dell Latitude 5480 i5 8Go/256Go"
-          className="champ"
-        />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      {/* COLONNE GAUCHE : IDENTIFICATION */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white mb-1.5" htmlFor="ref-produit">
+            Désignation / Référence Commerciale *
+          </label>
+          <input
+            id="ref-produit"
+            type="text"
+            value={formulaire.reference}
+            onChange={(e) => setFormulaire({ ...formulaire, reference: e.target.value })}
+            placeholder="Ex. Lenovo ThinkPad T480 i5 8Go 256Go SSD"
+            className="input w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white mb-1.5" htmlFor="cat-produit">
+            Catégorie du Produit *
+          </label>
+          <input
+            id="cat-produit"
+            type="text"
+            list="categories-inventaire"
+            value={formulaire.categorie}
+            onChange={(e) => setFormulaire({ ...formulaire, categorie: e.target.value })}
+            placeholder="Sélectionner ou saisir une catégorie..."
+            className="input w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
+          />
+          <datalist id="categories-inventaire">
+            {(donnees?.categories ?? []).map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </div>
+
+        <div>
+          <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-warm-grey mb-1.5" htmlFor="lot-produit">
+            {t("inventaire.lotRattachement")}
+          </label>
+          <select
+            id="lot-produit"
+            value={formulaire.lot_id}
+            onChange={(e) => setFormulaire({ ...formulaire, lot_id: e.target.value })}
+            className="select w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+          >
+            <option value="">{t("inventaire.stockIndependant")}</option>
+            {(donnees?.lots ?? []).map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.libelle}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      <div className="sm:col-span-2">
-        <label className="libelle mb-1.5" htmlFor="cat-produit">
-          Catégorie *
-        </label>
-        <input
-          id="cat-produit"
-          type="text"
-          list="categories-inventaire"
-          value={formulaire.categorie}
-          onChange={(e) => setFormulaire({ ...formulaire, categorie: e.target.value })}
-          placeholder="Laptop, Écran…"
-          className="champ"
-        />
-        <datalist id="categories-inventaire">
-          {(donnees?.categories ?? []).map((c) => (
-            <option key={c} value={c} />
-          ))}
-        </datalist>
-      </div>
-      <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
-        <label className="libelle mb-1.5" htmlFor="prix-produit">
-          Prix achat (DA) *
-        </label>
-        <input
-          id="prix-produit"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          step={1}
-          value={formulaire.prix_achat}
-          onChange={(e) =>
-            setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
-          }
-          className="champ text-right"
-        />
-      </div>
-      <div className="rounded-lg border border-brand-light-grey bg-brand-paper/60 p-2.5">
-        <label className="libelle mb-1.5" htmlFor="quantite-produit">
-          Quantité *
-        </label>
-        <input
-          id="quantite-produit"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          step={1}
-          value={formulaire.quantite}
-          onChange={(e) =>
-            setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
-          }
-          className="champ text-right"
-        />
-        {modalEdition !== null && Number(formulaire.quantite) !== modalEdition.unites.length && (
-          <div className="mt-2 text-[11px] font-medium leading-tight text-brand-orange bg-brand-orange/10 p-2 rounded-md flex items-center gap-1.5">
-            <span className="font-bold">Attention :</span> Modifier la quantité entraînera la création ou la suppression physique d'exemplaires dans l'inventaire.
+
+      {/* COLONNE DROITE : FINANCES & STOCK */}
+      <div className="space-y-4">
+        
+        <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/3 border border-slate-200/80 dark:border-white/10 space-y-4">
+          <span className="text-[11px] font-black uppercase tracking-wider text-brand-orange block">
+            Finances & Exemplaires Physiques
+          </span>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-brand-warm-grey uppercase mb-1.5" htmlFor="prix-produit">
+                Prix Achat (DA) *
+              </label>
+              <input
+                id="prix-produit"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={formulaire.prix_achat}
+                onChange={(e) =>
+                  setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
+                }
+                className="input w-full h-12 rounded-xl bg-white dark:bg-brand-black border border-slate-200 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-brand-orange uppercase mb-1.5" htmlFor="prix-vente-produit">
+                Prix Vente (DA)
+              </label>
+              <input
+                id="prix-vente-produit"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={formulaire.prix_vente_fixe}
+                onChange={(e) =>
+                  setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
+                }
+                className="input w-full h-12 rounded-xl bg-white dark:bg-brand-black border border-brand-orange/40 text-right font-black text-sm sm:text-base text-brand-orange"
+                placeholder="Non fixé"
+              />
+            </div>
           </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-brand-warm-grey uppercase mb-1.5" htmlFor="quantite-produit">
+              Quantité en Stock *
+            </label>
+            <input
+              id="quantite-produit"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              step={1}
+              value={formulaire.quantite}
+              onChange={(e) =>
+                setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
+              }
+              className="input w-full h-12 rounded-xl bg-white dark:bg-brand-black border border-slate-200 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
+            />
+            {modalEdition !== null && Number(formulaire.quantite) !== modalEdition.unites.length && (
+              <div className="mt-2 text-[11px] font-bold leading-tight text-brand-orange bg-brand-orange/10 p-2.5 rounded-xl border border-brand-orange/20 flex items-center gap-1.5">
+                <span>Attention : Modifier la quantité ajustera le nombre d'exemplaires réels.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Toggles Tactiles Larges */}
+        {modalEdition === null && (
+          <label className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 cursor-pointer transition-all hover:bg-slate-100/80">
+            <div className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={formVitrine}
+                onChange={(e) => setFormVitrine(e.target.checked)}
+                className="w-5 h-5 rounded-lg accent-brand-orange cursor-pointer"
+              />
+              <div>
+                <span className="font-extrabold text-xs sm:text-sm text-brand-black dark:text-white block">
+                  Exposer en vitrine
+                </span>
+                <span className="text-[11px] text-brand-warm-grey">
+                  Visible physiquement au comptoir magasin
+                </span>
+              </div>
+            </div>
+            <IconeVitrine taille={18} className="text-brand-orange" />
+          </label>
         )}
+
+        {modalEdition !== null && (
+          <label className="flex items-center justify-between p-3.5 rounded-2xl border border-brand-orange/30 bg-brand-orange/5 cursor-pointer transition-all hover:bg-brand-orange/10">
+            <div className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={formMettreEnVente}
+                onChange={(e) => setFormMettreEnVente(e.target.checked)}
+                className="w-5 h-5 rounded-lg accent-brand-orange cursor-pointer"
+              />
+              <div>
+                <span className="font-extrabold text-xs sm:text-sm text-brand-orange block">
+                  Mettre en vente immédiatement
+                </span>
+                <span className="text-[11px] text-brand-warm-grey">
+                  Passe le statut à « En vente » pour les exemplaires avec prix
+                </span>
+              </div>
+            </div>
+          </label>
+        )}
+
       </div>
-      <div className="rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-2.5">
-        <label
-          className="libelle mb-1.5 text-brand-orange"
-          htmlFor="prix-vente-produit"
-        >
-          Prix vente (DA)
+
+      {/* PLEINE LARGEUR EN BAS : PHOTOS */}
+      <div className="md:col-span-2 pt-2 border-t border-slate-200/80 dark:border-white/10 space-y-2">
+        <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-warm-grey">
+          {t("inventaire.photos")}
         </label>
-        <input
-          id="prix-vente-produit"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          step={1}
-          value={formulaire.prix_vente_fixe}
-          onChange={(e) =>
-            setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
-          }
-          className="champ text-right font-semibold"
-          placeholder="—"
-        />
-      </div>
-      <div className="sm:col-span-2 mt-2">
-        <label className="libelle mb-1.5">{t("inventaire.photos")}</label>
         <ChampPhotos
           photos={formPhotos}
           onChange={(p) => {
@@ -1002,42 +1095,7 @@ export default function Inventaire({ role }: { role: Role }) {
           disabled={envoi}
         />
       </div>
-      {modalEdition === null && (
-        <label className="sm:col-span-2 flex items-start gap-2.5 rounded-lg border border-brand-light-grey bg-brand-paper p-3 text-sm">
-          <input
-            type="checkbox"
-            checked={formVitrine}
-            onChange={(e) => setFormVitrine(e.target.checked)}
-            className="mt-0.5 accent-brand-orange"
-          />
-          <span>
-            <span className="inline-flex items-center gap-1.5 font-semibold text-brand-black">
-              <IconeVitrine taille={14} /> {t("inventaire.mettreEnVitrine")}
-            </span>
-            <span className="block text-xs text-brand-warm-grey">
-              Exposé physiquement en vitrine — indépendant de la mise en vente en ligne.
-            </span>
-          </span>
-        </label>
-      )}
-      {modalEdition !== null && (
-        <label className="sm:col-span-2 flex items-start gap-2.5 rounded-lg border border-brand-orange/40 bg-brand-glow/15 p-3 text-sm">
-          <input
-            type="checkbox"
-            checked={formMettreEnVente}
-            onChange={(e) => setFormMettreEnVente(e.target.checked)}
-            className="mt-0.5 accent-brand-orange"
-          />
-          <span>
-            <span className="inline-flex items-center gap-1.5 font-semibold text-brand-orange">
-              Mettre en vente
-            </span>
-            <span className="block text-xs text-brand-warm-grey mt-0.5">
-              Applique immédiatement le statut « En vente » à tous les exemplaires modifiés (si un prix de vente est fixé).
-            </span>
-          </span>
-        </label>
-      )}
+
     </div>
   );
 
@@ -1058,6 +1116,16 @@ export default function Inventaire({ role }: { role: Role }) {
           />
             
           <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 shrink-0">
+            {peutModifier && (
+              <button
+                type="button"
+                onClick={() => setModalImportation(true)}
+                className="btn bg-brand-orange/15 hover:bg-brand-orange/25 text-brand-orange border border-brand-orange/30 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+              >
+                <UploadCloud className="w-4 h-4 text-brand-orange shrink-0" />
+                <span>Importer Excel / CSV</span>
+              </button>
+            )}
             {estGerant && (
               <a
                 href={`/api/produits/export?${searchParams?.toString() || ""}`}
@@ -2010,6 +2078,7 @@ export default function Inventaire({ role }: { role: Role }) {
       <Modale
         titre={produitSourceDuplication ? "Ajouter un exemplaire" : t("inventaire.ajouterProduitTitre")}
         ouverte={modalAjout}
+        large="4xl"
         modificationsNonEnregistrees={formulaireModifie || formPhotosModifiees}
         onFermer={() => {
           setModalAjout(false);
@@ -2017,19 +2086,35 @@ export default function Inventaire({ role }: { role: Role }) {
         }}
       >
         {brouillonDisponible && (
-          <div className="mb-4 rounded-lg bg-brand-orange/10 p-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-brand-orange/20 animate-entree">
+          <div className="mb-4 rounded-2xl bg-brand-orange/10 p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-brand-orange/20 animate-entree">
             <div className="text-sm">
-              <p className="font-semibold text-brand-orange">Un brouillon non enregistré est disponible.</p>
+              <p className="font-bold text-brand-orange">Un brouillon non enregistré est disponible.</p>
               <p className="text-xs text-brand-orange/80">Sauvegardé {new Date(brouillonDisponible.timestamp).toLocaleTimeString()}</p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <button type="button" onClick={supprimerBrouillon} className="btn btn-secondaire flex-1 sm:flex-none">Supprimer</button>
-              <button type="button" onClick={restaurerBrouillon} className="btn bg-brand-orange text-white hover:bg-brand-orange/90 flex-1 sm:flex-none">Reprendre</button>
+              <button type="button" onClick={supprimerBrouillon} className="btn btn-secondaire text-xs flex-1 sm:flex-none">Supprimer</button>
+              <button type="button" onClick={restaurerBrouillon} className="btn bg-brand-orange text-white hover:bg-brand-orange/90 text-xs font-bold flex-1 sm:flex-none">Reprendre</button>
             </div>
           </div>
         )}
+        <div className="mb-4 p-3.5 rounded-2xl bg-brand-orange/10 border border-brand-orange/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-entree">
+          <div className="flex items-center gap-2.5 text-xs font-bold text-brand-orange">
+            <UploadCloud className="w-4 h-4 shrink-0" />
+            <span>Vous possédez un fichier fournisseur (Excel / CSV) ?</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setModalAjout(false);
+              setModalImportation(true);
+            }}
+            className="btn btn-sm bg-brand-orange text-white hover:bg-brand-orange/90 font-black text-xs px-3.5 py-1.5 rounded-xl shadow-xs shrink-0 w-full sm:w-auto justify-center"
+          >
+            Ouvrir l'Assistant d'Importation ➔
+          </button>
+        </div>
         <form
-          className="space-y-3"
+          className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (!envoi && formulaireValide) {
@@ -2037,33 +2122,15 @@ export default function Inventaire({ role }: { role: Role }) {
             }
           }}
         >
-          <div>
-            <label className="libelle mb-1.5" htmlFor="lot-produit">
-              {t("inventaire.lotRattachement")}
-            </label>
-            <select
-              id="lot-produit"
-              value={formulaire.lot_id}
-              onChange={(e) => setFormulaire({ ...formulaire, lot_id: e.target.value })}
-              className="champ"
-            >
-              <option value="">{t("inventaire.stockIndependant")}</option>
-              {(donnees?.lots ?? []).map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.libelle}
-                </option>
-              ))}
-            </select>
-          </div>
           {champsProduit}
-          <div className="pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2">
+          <div className="pt-4 border-t border-slate-200/80 dark:border-white/10 flex flex-col-reverse sm:flex-row justify-end gap-3">
             <button
               type="button"
               onClick={() => {
                 setModalAjout(false);
                 setProduitSourceDuplication(null);
               }}
-              className="btn btn-secondaire w-full sm:w-auto justify-center"
+              className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center"
             >
               Annuler
             </button>
@@ -2071,16 +2138,16 @@ export default function Inventaire({ role }: { role: Role }) {
               type="button"
               disabled={envoi || !formulaireValide}
               onClick={() => void ajouterProduit(true)}
-              className="btn btn-secondaire w-full sm:w-auto justify-center text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 font-bold"
+              className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10"
             >
               Enregistrer & Suivant
             </button>
             <button
               type="submit"
               disabled={envoi || !formulaireValide}
-              className="btn btn-primaire w-full sm:w-auto justify-center"
+              className="btn btn-primaire h-12 px-6 rounded-xl font-black text-sm w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20"
             >
-              <IconePlus taille={15} />
+              <IconePlus taille={16} />
               {t("inventaire.ajouterAction")}
             </button>
           </div>
@@ -2092,6 +2159,7 @@ export default function Inventaire({ role }: { role: Role }) {
             ? t("inventaire.editerProduitTitre", { code: modalEdition.unites[0]!.code_interne })
             : t("inventaire.editionMasseTitre", { n: modalEdition.unites.length })) : ""}
         ouverte={modalEdition !== null}
+        large="4xl"
         modificationsNonEnregistrees={formulaireModifie || formPhotosModifiees}
         onFermer={() => setModalEdition(null)}
       >
@@ -2135,20 +2203,22 @@ export default function Inventaire({ role }: { role: Role }) {
           {champsProduit}
 
           {modalEdition && peutStatut && (
-            <div className="space-y-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
+            <div className="space-y-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-white/3 p-4">
               <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-2">
-                <span className="libelle">{t("inventaire.statut")}</span>
+                <span className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white">
+                  {t("inventaire.statut")}
+                </span>
                 {(() => {
                   const tousMemeStatut = modalEdition.unites.every(u => u.statut === modalEdition.unites[0]!.statut);
                   if (tousMemeStatut) {
                     return <BadgeStatut statut={modalEdition.unites[0]!.statut} aJeter={modalEdition.unites[0]!.a_jeter} />;
                   } else {
-                    return <span className="text-sm font-semibold text-brand-warm-grey">Statuts multiples</span>;
+                    return <span className="text-xs font-black uppercase tracking-wider text-brand-warm-grey">Statuts multiples</span>;
                   }
                 })()}
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={cibleStatut || ""}
                   onChange={(e) => {
@@ -2158,7 +2228,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     }
                   }}
                   disabled={envoi || cibleStatut !== null}
-                  className="champ text-sm py-1.5"
+                  className="select w-full sm:w-auto h-11 rounded-xl bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
                 >
                   <option value="">{t("inventaire.changerStatut")}</option>
                   {STATUTS_PRODUIT.filter((s) => {
@@ -2173,8 +2243,8 @@ export default function Inventaire({ role }: { role: Role }) {
               </div>
 
               {cibleStatut && (
-                <div className="space-y-2 rounded-lg bg-brand-white p-2.5">
-                  <label className="libelle" htmlFor="note-statut-inv">
+                <div className="space-y-2 rounded-2xl bg-white dark:bg-brand-black p-3.5 border border-slate-200 dark:border-white/10 animate-entree">
+                  <label className="block text-xs font-bold text-brand-black dark:text-white" htmlFor="note-statut-inv">
                     {t("inventaire.noteObligatoire", { statut: INFOS_STATUT[cibleStatut].libelle })}
                   </label>
                   <textarea
@@ -2184,16 +2254,16 @@ export default function Inventaire({ role }: { role: Role }) {
                     rows={2}
                     autoFocus
                     placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? t("inventaire.precisezRaison")}
-                    className="champ"
+                    className="textarea w-full rounded-xl bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-xs font-medium"
                   />
-                  <div className="flex flex-col sm:flex-row justify-end gap-2 mt-3">
+                  <div className="flex flex-col sm:flex-row justify-end gap-2 mt-2">
                     <button
                       type="button"
                       onClick={() => {
                         setCibleStatut(null);
                         setNoteStatut("");
                       }}
-                      className="btn btn-secondaire"
+                      className="btn btn-secondaire text-xs h-10 px-4 rounded-xl font-bold"
                     >
                       {t("inventaire.annuler")}
                     </button>
@@ -2201,7 +2271,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       type="button"
                       disabled={envoi || !noteStatut.trim()}
                       onClick={() => void changerStatut(cibleStatut)}
-                      className="btn btn-primaire"
+                      className="btn btn-primaire text-xs h-10 px-5 rounded-xl font-black"
                     >
                       {t("inventaire.confirmerStatut")}
                     </button>
@@ -2210,13 +2280,13 @@ export default function Inventaire({ role }: { role: Role }) {
               )}
 
               {modalEdition.unites[0]!.statut === "hs" && (
-                <label className="flex items-start gap-2 pt-1 text-sm">
+                <label className="flex items-start gap-2.5 pt-1 text-xs font-bold text-danger cursor-pointer">
                   <input
                     type="checkbox"
                     checked={modalEdition.unites[0]!.a_jeter}
                     disabled={envoi}
                     onChange={(e) => void basculerAJeter(e.target.checked)}
-                    className="mt-0.5 accent-danger shrink-0"
+                    className="mt-0.5 w-4 h-4 accent-danger shrink-0 rounded"
                   />
                   <span>{t("inventaire.aJeterNonRecuperable")}</span>
                 </label>
@@ -2225,12 +2295,12 @@ export default function Inventaire({ role }: { role: Role }) {
           )}
 
           {modalEdition && peutModifier && modalEdition.unites[0]!.statut !== "vendu" && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand-light-grey bg-brand-paper p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-white/3 p-4">
               <div className="min-w-0">
-                <span className="libelle inline-flex items-center gap-1.5">
-                  <IconeVitrine taille={14} /> {t("inventaire.vitrine")}
+                <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white inline-flex items-center gap-1.5">
+                  <IconeVitrine taille={16} className="text-brand-orange" /> {t("inventaire.vitrine")}
                 </span>
-                <p className="text-xs text-brand-warm-grey">
+                <p className="text-xs text-brand-warm-grey mt-0.5">
                   {t("inventaire.vitrineDescription")}
                 </p>
               </div>
@@ -2240,8 +2310,8 @@ export default function Inventaire({ role }: { role: Role }) {
                 onClick={() => void basculerVitrine()}
                 className={
                   modalEdition.unites[0]!.en_vitrine
-                    ? "btn bg-brand-orange text-white hover:bg-brand-orange/90"
-                    : "btn btn-secondaire"
+                    ? "btn bg-brand-orange text-white hover:bg-brand-orange/90 h-11 px-5 rounded-xl text-xs font-bold"
+                    : "btn btn-secondaire h-11 px-5 rounded-xl text-xs font-bold"
                 }
               >
                 {modalEdition.unites[0]!.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
@@ -2249,7 +2319,7 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          <div className="pt-2 flex flex-col-reverse sm:flex-row justify-between items-center gap-4 border-t border-brand-light-grey/50 pt-4 mt-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 border-t border-slate-200/80 dark:border-white/10 pt-5 mt-5">
             {contexteNavigation && modalEdition?.unites.length === 1 ? (
               <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-start">
                 <button
@@ -2260,9 +2330,9 @@ export default function Inventaire({ role }: { role: Role }) {
                     const prevProduct = contexteNavigation.produits[prevIndex];
                     if (prevProduct) ouvrirEdition([prevProduct], prevProduct.code_interne, contexteNavigation.produits);
                   }}
-                  className="btn btn-secondaire flex-1 sm:flex-none justify-center"
+                  className="btn btn-secondaire h-12 px-4 rounded-xl text-xs font-bold flex-1 sm:flex-none justify-center"
                 >
-                  <IconeChevronGauche taille={15} /> Précédent
+                  <IconeChevronGauche taille={16} /> Précédent
                 </button>
                 <button
                   type="button"
@@ -2272,9 +2342,9 @@ export default function Inventaire({ role }: { role: Role }) {
                     const nextProduct = contexteNavigation.produits[nextIndex];
                     if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, contexteNavigation.produits);
                   }}
-                  className="btn btn-secondaire flex-1 sm:flex-none justify-center"
+                  className="btn btn-secondaire h-12 px-4 rounded-xl text-xs font-bold flex-1 sm:flex-none justify-center"
                 >
-                  Suivant <IconeChevronDroite taille={15} />
+                  Suivant <IconeChevronDroite taille={16} />
                 </button>
               </div>
             ) : (
@@ -2282,18 +2352,18 @@ export default function Inventaire({ role }: { role: Role }) {
                 <button
                   type="button"
                   onClick={() => setModalEdition(null)}
-                  className="btn btn-secondaire w-full sm:w-auto justify-center"
+                  className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center"
                 >
                   Annuler
                 </button>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               {contexteNavigation && modalEdition?.unites.length === 1 && (
                 <button
                   type="button"
                   onClick={() => setModalEdition(null)}
-                  className="btn btn-secondaire w-full sm:w-auto justify-center sm:hidden"
+                  className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center sm:hidden"
                 >
                   Annuler
                 </button>
@@ -2302,7 +2372,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 <button
                   type="button"
                   onClick={() => setModalEdition(null)}
-                  className="btn btn-secondaire w-full sm:w-auto justify-center hidden sm:flex"
+                  className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center hidden sm:flex"
                 >
                   Annuler
                 </button>
@@ -2310,7 +2380,7 @@ export default function Inventaire({ role }: { role: Role }) {
               <button
                 type="submit"
                 disabled={envoi || !formulaireValide}
-                className="btn btn-primaire w-full sm:w-auto justify-center"
+                className="btn btn-primaire h-12 px-6 rounded-xl font-black text-sm w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20"
                 title="Maj + Entrée pour Enregistrer & Suivant"
               >
                 {t("inventaire.enregistrerModifications")}
@@ -2327,7 +2397,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     }
                   }}
                   title="Raccourci: Maj + Entrée"
-                  className="btn bg-brand-black hover:bg-brand-black/90 text-white w-full sm:w-auto justify-center shadow-md"
+                  className="btn bg-brand-black hover:bg-brand-black/90 text-white h-12 px-5 rounded-xl text-xs font-black w-full sm:w-auto justify-center shadow-md"
                 >
                   Enregistrer & Suivant
                 </button>
@@ -2377,6 +2447,16 @@ export default function Inventaire({ role }: { role: Role }) {
         categorieDefautId={sousCategorieActive?.id || categorieActive?.id || (categorieIdActif ? Number(categorieIdActif) : null)}
         onSucces={({ codes, ajoutes }) => {
           afficher(`${ajoutes} exemplaire(s) généré(s) avec succès.`);
+          void charger();
+        }}
+      />
+
+      <AssistantImportation
+        ouvert={modalImportation}
+        onFermer={() => setModalImportation(false)}
+        lots={donnees?.lots || []}
+        onSucces={(resume) => {
+          afficher(`Importation réussie : ${resume.totalExemplairesCrees} unités créées.`);
           void charger();
         }}
       />

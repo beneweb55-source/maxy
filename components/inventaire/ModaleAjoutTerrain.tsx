@@ -372,8 +372,8 @@ export default function ModaleAjoutTerrain({
   if (!ouverte) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-entree-rapide overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-white dark:bg-brand-paper rounded-3xl shadow-2xl border border-brand-light-grey/60 dark:border-white/10 flex flex-col overflow-hidden my-auto max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree overflow-y-auto">
+      <div className="relative w-11/12 max-w-4xl bg-white dark:bg-brand-paper rounded-3xl shadow-2xl border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden my-auto max-h-[92vh]">
         
         {/* HEADER MODALE POS */}
         <div className="px-6 py-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/5 flex items-center justify-between">

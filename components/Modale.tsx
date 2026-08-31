@@ -16,7 +16,7 @@ export default function Modale({
   titre: string;
   ouverte: boolean;
   onFermer: () => void;
-  large?: boolean;
+  large?: boolean | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "full";
   modificationsNonEnregistrees?: boolean;
   children: React.ReactNode;
 }) {
@@ -154,9 +154,21 @@ export default function Modale({
       <div
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 flex max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
-          large ? "max-w-2xl" : "max-w-md"
-        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 bg-brand-white shadow-2xl safe-bottom`}
+        className={`relative z-10 flex max-h-[92dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
+          large === "5xl"
+            ? "w-11/12 max-w-5xl"
+            : large === "4xl" || large === true
+            ? "w-11/12 max-w-4xl"
+            : large === "3xl"
+            ? "w-11/12 max-w-3xl"
+            : large === "2xl"
+            ? "max-w-2xl"
+            : large === "xl"
+            ? "max-w-xl"
+            : large === "sm"
+            ? "max-w-sm"
+            : "max-w-lg"
+        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-brand-paper shadow-2xl safe-bottom`}
         style={{
           // On garde l'animation d'entrée si pas de drag
           animation: !isDragging && currentY.current === 0 ? 'entree-douce 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
