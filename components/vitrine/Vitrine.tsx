@@ -201,15 +201,17 @@ export default function Vitrine({ role }: { role: Role }) {
             const prix = p.prix_vente_fixe ?? (dispo[0]?.prix_vente_fixe ?? null);
 
             return (
-              <div
+              <Link
                 key={p.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-light-grey/80 bg-brand-white shadow-sm transition hover:shadow-md hover:border-brand-orange/40"
+                href={`/produits/${p.id}`}
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition hover:shadow-md hover:border-brand-orange/40 text-left block"
               >
                 {/* Image du produit avec Galerie intégrée */}
-                <button
-                  type="button"
-                  onClick={() => {
+                <div
+                  onClick={(e) => {
                     if (p.images.length > 0) {
+                      e.preventDefault();
+                      e.stopPropagation();
                       setApercuPhotos({
                         photos: p.images,
                         index: 0,
@@ -217,7 +219,7 @@ export default function Vitrine({ role }: { role: Role }) {
                       });
                     }
                   }}
-                  className="relative block h-44 w-full overflow-hidden bg-brand-light-grey/20 text-left focus:outline-none"
+                  className="relative block h-44 w-full overflow-hidden bg-slate-50 text-left focus:outline-none cursor-pointer"
                 >
                   <GalerieCarte images={p.images} reference={p.reference} />
 
@@ -231,7 +233,7 @@ export default function Vitrine({ role }: { role: Role }) {
                       {p.images.length}
                     </span>
                   )}
-                </button>
+                </div>
 
                 <div className="flex flex-1 flex-col gap-2 p-3.5">
                   <div className="flex items-center justify-between gap-2">
@@ -239,44 +241,58 @@ export default function Vitrine({ role }: { role: Role }) {
                       {p.code_interne}
                     </span>
                     {p.categorie && (
-                      <span className="text-[11px] font-semibold text-brand-grey truncate max-w-[120px]">
+                      <span className="text-[11px] font-semibold text-slate-500 truncate max-w-[120px]">
                         {p.categorie}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="line-clamp-2 text-sm font-bold text-brand-black leading-snug">
+                  <h3 className="line-clamp-2 text-sm font-bold text-slate-900 leading-snug group-hover:text-brand-orange transition-colors">
                     {p.reference}
                   </h3>
 
-                  <div className="mt-auto flex items-baseline justify-between pt-2 border-t border-brand-light-grey/40">
-                    <span className="text-base font-black text-brand-black">
+                  <div className="mt-auto flex items-baseline justify-between pt-2 border-t border-slate-100">
+                    <span className="text-base font-black text-slate-900 font-mono">
                       {prix !== null ? formaterDA(prix) : "—"}
                     </span>
-                    <span className="text-xs font-medium text-brand-grey">
+                    <span className="text-xs font-medium text-slate-500">
                       {dispo.length} vendable{dispo.length > 1 ? "s" : ""}
                     </span>
                   </div>
 
                   {/* Actions Métier : Vendre & Facturer directement / Mettre en vente */}
                   {peutVendre && (
-                    <div className="space-y-1.5 pt-1">
+                    <div 
+                      className="space-y-1.5 pt-1"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
                       {vendable ? (
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             disabled={envoi}
-                            onClick={() => ouvrirVenteDirecte(p)}
-                            className="btn btn-primaire flex-1 justify-center min-h-[42px] text-xs font-bold gap-1.5 shadow-sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              ouvrirVenteDirecte(p);
+                            }}
+                            className="btn btn-primaire flex-1 justify-center min-h-[42px] text-xs font-bold gap-1.5 shadow-sm rounded-md"
                           >
                             <IconeBillet taille={15} />
                             <span>{t("vitrine.vendre")}</span>
                           </button>
                           <button
                             type="button"
-                            onClick={() => ouvrirMiseEnVente(p)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              ouvrirMiseEnVente(p);
+                            }}
                             title="Modifier le prix ou mettre en vente"
-                            className="btn btn-secondaire px-2.5 min-h-[42px] text-xs"
+                            className="btn btn-secondaire px-2.5 min-h-[42px] text-xs rounded-md"
                           >
                             <IconeEtiquette taille={14} />
                           </button>
@@ -284,8 +300,12 @@ export default function Vitrine({ role }: { role: Role }) {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => ouvrirMiseEnVente(p)}
-                          className="btn btn-secondaire w-full justify-center min-h-[42px] text-xs font-bold text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 gap-1.5"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            ouvrirMiseEnVente(p);
+                          }}
+                          className="btn btn-secondaire w-full justify-center min-h-[42px] text-xs font-bold text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 gap-1.5 rounded-md"
                         >
                           <IconeEtiquette taille={14} />
                           Mettre en vente
@@ -295,12 +315,18 @@ export default function Vitrine({ role }: { role: Role }) {
                   )}
 
                   {/* Barre d'outils secondaire : Impression & Retrait */}
-                  <div className="flex items-center justify-between pt-2 border-t border-brand-light-grey/40 text-xs">
+                  <div 
+                    className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
                     {dispo.length > 0 ? (
                       <BoutonImpression 
                         ids={dispo.map((v) => v.id)} 
                         dejaImprimee={dispo.every((v) => v.etiquette_imprimee)} 
-                        className="flex items-center gap-1 text-[11px] font-semibold text-brand-warm-grey hover:text-brand-black"
+                        className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
                         texte={t("vitrine.imprimer")}
                       />
                     ) : (
@@ -311,8 +337,12 @@ export default function Vitrine({ role }: { role: Role }) {
                       <button
                         type="button"
                         disabled={envoi}
-                        onClick={() => void retirer(p)}
-                        className="text-[11px] font-semibold text-brand-warm-grey hover:text-danger transition"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void retirer(p);
+                        }}
+                        className="text-[11px] font-semibold text-slate-400 hover:text-red-600 transition"
                         title="Retirer ce modèle de la vitrine"
                       >
                         {t("vitrine.retirerVitrine")}
@@ -320,7 +350,7 @@ export default function Vitrine({ role }: { role: Role }) {
                     )}
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

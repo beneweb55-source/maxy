@@ -693,22 +693,6 @@ export default function ModaleVente({
           </div>
         </details>
 
-        {/* Garantie Matériel */}
-        <div className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs">
-          <span className="font-bold text-slate-900">Garantie Pièces & Main d&apos;Œuvre :</span>
-          <select
-            value={garantieMois}
-            onChange={(e) => setGarantieMois(Number(e.target.value))}
-            className="select select-sm rounded-xl font-bold bg-white border-slate-200 text-xs"
-          >
-            <option value={1}>1 Mois</option>
-            <option value={3}>3 Mois</option>
-            <option value={6}>6 Mois (Standard)</option>
-            <option value={12}>12 Mois (1 An)</option>
-            <option value={24}>24 Mois (2 Ans)</option>
-          </select>
-        </div>
-
         {avertissement && (
           <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 px-3.5 py-3 text-xs text-amber-900">
             <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />

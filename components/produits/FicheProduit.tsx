@@ -50,6 +50,8 @@ import ModalClassification from "@/components/inventaire/ModalClassification";
 import ModaleArrivageRapide from "@/components/produits/ModaleArrivageRapide";
 import FormulaireModele from "@/components/produits/FormulaireModele";
 import BoutonImpression from "@/components/BoutonImpression";
+import SelecteurStatutProduit from "@/components/produits/SelecteurStatutProduit";
+import ModaleVente from "@/components/ventes/ModaleVente";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
@@ -185,6 +187,7 @@ export default function FicheProduit({
 
   // Modales
   const [modalArrivage, setModalArrivage] = useState(false);
+  const [modalVenteDirecte, setModalVenteDirecte] = useState(false);
   const [modalEditModele, setModalEditModele] = useState(false);
   const [modalClassification, setModalClassification] = useState(false);
   const [indexVisionneuse, setIndexVisionneuse] = useState<number | null>(null);
@@ -427,33 +430,38 @@ export default function FicheProduit({
   }
 
   const nomCommercial = produit.modele?.nom || produit.reference;
-  const cheminHierarchie = [
+  const cheminHierarchie: string[] = [
     produit.modele?.categorie?.parent?.parent?.nom || produit.categorie_rel?.parent?.parent?.nom,
     produit.modele?.categorie?.parent?.nom || produit.categorie_rel?.parent?.nom,
     produit.modele?.categorie?.nom || produit.categorie_rel?.nom || produit.categorie,
-  ].filter(Boolean);
+  ].filter((n): n is string => Boolean(n));
 
   return (
     <div className="space-y-6 animate-entree max-w-7xl mx-auto pb-12">
       
       {/* 1. Breadcrumb de Navigation & Bouton Retour */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-bold text-brand-warm-grey overflow-x-auto py-1">
-          <Link href="/inventaire" className="hover:text-brand-orange transition-colors flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 overflow-x-auto py-1">
+          <Link href="/inventaire" className="hover:text-brand-orange transition-colors flex items-center gap-1 shrink-0 text-slate-600">
             <ArrowLeft className="w-3.5 h-3.5" /> Inventaire
           </Link>
           {cheminHierarchie.map((niveau, idx) => (
             <React.Fragment key={niveau}>
-              <ChevronRight className="w-3.5 h-3.5 text-brand-warm-grey/50 shrink-0" />
-              <span className={`shrink-0 ${idx === cheminHierarchie.length - 1 ? "text-brand-black dark:text-white font-extrabold" : ""}`}>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <Link
+                href={`/inventaire?categorie=${encodeURIComponent(niveau)}`}
+                className={`shrink-0 hover:text-brand-orange transition-colors ${
+                  idx === cheminHierarchie.length - 1 ? "text-slate-900 font-extrabold" : "text-slate-500"
+                }`}
+              >
                 {niveau}
-              </span>
+              </Link>
             </React.Fragment>
           ))}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="font-mono text-xs font-bold text-brand-warm-grey bg-brand-light-grey/30 dark:bg-white/5 px-2.5 py-1 rounded-xl border border-brand-light-grey/80 dark:border-white/10">
+          <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-300">
             SKU #{produit.code_interne}
           </span>
         </div>
@@ -507,15 +515,27 @@ export default function FicheProduit({
           {/* Boutons d'Action Rapide B2B */}
           <div className="flex flex-wrap items-center gap-2.5 lg:self-center shrink-0">
             
+            {/* Vente Directe & Facturation (POS) */}
+            {peutModifier && stockDisponible > 0 && (
+              <button
+                type="button"
+                onClick={() => setModalVenteDirecte(true)}
+                className="btn bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2.5 px-4 rounded-md font-black shadow-md flex items-center gap-2"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                Vendre / Facturer
+              </button>
+            )}
+
             {/* Ajouter du Stock (Scanner-First) */}
             {peutModifier && (
               <button
                 type="button"
                 onClick={() => setModalArrivage(true)}
-                className="btn btn-primaire text-xs py-2.5 px-4 rounded-xl font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
+                className="btn btn-primaire text-xs py-2.5 px-4 rounded-md font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
               >
                 <PackagePlus className="w-4 h-4" />
-                Ajouter du Stock (Arrivage)
+                Ajouter Stock
               </button>
             )}
 
@@ -523,8 +543,8 @@ export default function FicheProduit({
             <BoutonImpression
               ids={produit.exemplaires?.map((e) => e.id) || [produit.id]}
               dejaImprimee={produit.etiquette_imprimee}
-              texte="Imprimer Étiquettes"
-              className="btn btn-secondaire text-xs py-2.5 px-4 rounded-xl font-bold flex items-center gap-2"
+              texte="Étiquettes"
+              className="btn btn-secondaire text-xs py-2.5 px-3.5 rounded-md font-bold flex items-center gap-1.5"
             />
 
             {/* Modifier le Modèle */}
@@ -532,10 +552,10 @@ export default function FicheProduit({
               <button
                 type="button"
                 onClick={() => setModalEditModele(true)}
-                className="btn btn-secondaire text-xs py-2.5 px-4 rounded-xl font-bold flex items-center gap-2"
+                className="btn btn-secondaire text-xs py-2.5 px-3.5 rounded-md font-bold flex items-center gap-1.5"
               >
                 <Edit3 className="w-4 h-4" />
-                Modifier Modèle
+                Modèle
               </button>
             )}
 
@@ -544,7 +564,7 @@ export default function FicheProduit({
               <button
                 type="button"
                 onClick={() => setModalClassification(true)}
-                className="btn btn-secondaire text-xs py-2.5 px-3 rounded-xl font-bold"
+                className="btn btn-secondaire text-xs py-2.5 px-3 rounded-md font-bold"
                 title="Modifier la classification"
               >
                 <Archive className="w-4 h-4" />
@@ -847,9 +867,15 @@ export default function FicheProduit({
                                 {unite.prix_vente_fixe !== null ? formaterDA(unite.prix_vente_fixe) : "—"}
                               </td>
 
-                              {/* Statut */}
+                              {/* Statut avec State Machine Interactive */}
                               <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                                <BadgeStatut statut={unite.statut} aJeter={unite.a_jeter} />
+                                <SelecteurStatutProduit
+                                  produitId={unite.id}
+                                  statutActuel={unite.statut}
+                                  peutModifier={peutModifier}
+                                  onStatutChange={() => void chargerProduit()}
+                                  taille="sm"
+                                />
                               </td>
 
                               {/* Actions Unitaires */}
@@ -1274,6 +1300,32 @@ export default function FicheProduit({
           onFermer={() => setIndexVisionneuse(null)}
           onNaviguer={(nouvelIndex) => setIndexVisionneuse(nouvelIndex)}
           titre={nomCommercial}
+        />
+      )}
+
+      {/* MODALE : Vente Directe & Facturation */}
+      {modalVenteDirecte && produit && (
+        <ModaleVente
+          ouverte={modalVenteDirecte}
+          unites={(produit.exemplaires || [produit as any])
+            .filter((e) => e.statut !== "vendu" && e.statut !== "hs")
+            .map((e) => ({
+              id: e.id,
+              code_interne: e.code_interne,
+              reference: nomCommercial,
+              numero_serie: e.numero_serie,
+              grade: e.grade,
+              prix_achat: e.prix_achat,
+              prix_vente_fixe: e.prix_vente_fixe,
+              prix_vente_reel: e.prix_vente_reel,
+              etiquette_imprimee: e.etiquette_imprimee,
+              statut: e.statut,
+            }))}
+          onFermer={() => setModalVenteDirecte(false)}
+          onSucces={() => {
+            setModalVenteDirecte(false);
+            void chargerProduit();
+          }}
         />
       )}
 

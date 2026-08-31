@@ -262,27 +262,23 @@
   /* Champs de formulaire plus doux, cible tactile 48px et font-size 16px anti-zoom */
   .champ {
     width: 100%;
-    min-height: 48px;
-    border-radius: 0.75rem;
-    border: 1px solid var(--color-brand-light-grey);
-    background-color: var(--color-brand-paper);
-    padding: 0.625rem 0.875rem;
-    font-size: 16px;
+    min-height: 44px;
+    border-radius: 0.5rem;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    padding: 0.5rem 0.875rem;
+    font-size: 14px;
     outline: none;
-    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-                border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-                color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     color: var(--color-brand-black);
   }
   .champ:focus {
     border-color: var(--color-brand-orange);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, var(--ring-opacity));
-    background-color: var(--color-brand-white);
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+    background-color: #ffffff;
   }
   .champ::placeholder {
-    color: var(--color-brand-grey);
+    color: #94a3b8;
   }
 
   /* Typographie utilitaire */

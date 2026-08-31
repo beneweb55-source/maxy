@@ -8,6 +8,7 @@ import { rechercheTolérante } from "@/lib/recherche";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Role, StatutProduit } from "@prisma/client";
 import { INFOS_STATUT } from "@/lib/statuts";
+import { REGLES_MACHINE_ETATS } from "@/lib/state-machine";
 import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
@@ -396,51 +397,99 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   const [lastScanCodeProcessed, setLastScanCodeProcessed] = useState<string | null>(null);
 
-  const gererScan = useCallback((code: string) => {
-    if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
-    if (!cartes) return;
-    const produit = cartes.find((c) => c.code_interne === code);
-    if (produit) {
-      const groupe = grouperDoublonsVente(cartes).find((g) => g.unites.some((u) => u.id === produit.id));
-      if (groupe) {
-        setSelection((prev) => {
-          const suivant = new Map(prev);
-          const s = suivant.get(groupe.cle) ? new Set(suivant.get(groupe.cle)) : new Set<number>();
-          if (!s.has(produit.id)) {
-            s.add(produit.id);
-            suivant.set(groupe.cle, s);
-            playBeep(true);
-            afficher(`Produit scanné : ${produit.reference}`);
-          } else {
-            // L'utilisateur a scanné EXACTEMENT le même code-barres physique.
-            // On bloque l'ajout automatique d'un autre exemplaire pour éviter les erreurs.
-            playBeep(false);
-            afficher("Cet exemplaire a déjà été ajouté à la vente.", "erreur");
-          }
-          return suivant;
-        });
+  // Modal d'Action Rapide : Auto-Correction / Override POS
+  const [modalOverride, setModalOverride] = useState<{
+    produit: any;
+    statutActuel: string;
+    prix: number;
+  } | null>(null);
+  const [prixOverride, setPrixOverride] = useState("");
+  const [envoiOverride, setEnvoiOverride] = useState(false);
+
+  const validerOverride = async () => {
+    if (!modalOverride) return;
+    setEnvoiOverride(true);
+    try {
+      const res = await fetch("/api/scan/override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          produit_id: modalOverride.produit.id,
+          prix_vente_fixe: Number(prixOverride) || 0,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors du forçage de mise en vente");
       }
-    } else {
-      // Le produit n'est pas "en_vente" (ou n'existe pas du tout).
-      // On interroge l'API pour donner la raison précise.
-      fetch(`/api/produits?q=${code}&statuts=recu,en_test,ok,a_reparer,manque_piece,hs,en_vente,vendu`)
-        .then(res => res.json())
-        .then((data: any) => {
-          const p = data.produits?.find((prod: any) => prod.code_interne === code);
-          if (p) {
-            playBeep(false);
-            afficher(`Le produit ${code} ne peut pas être ajouté car il est ${INFOS_STATUT[p.statut as StatutProduit]?.libelle.toLowerCase() || p.statut}.`, "erreur");
-          } else {
-            playBeep(false);
-            afficher(`Code non reconnu : ${code}`, "erreur");
-          }
-        })
-        .catch(() => {
-          playBeep(false);
-          afficher(`Code non reconnu ou produit indisponible : ${code}`, "erreur");
-        });
+      afficher(data.message || "Article forcé en vente avec succès", "succes");
+      setModalOverride(null);
+      // Recharger le catalogue pour inclure le produit
+      await chargerCartes();
+      // Ajouter au panier
+      const prod = data.produit;
+      const cle = `${prod.reference.toLowerCase().trim()}|${prod.categorie.toLowerCase().trim()}`;
+      setSelection((prev) => {
+        const suivant = new Map(prev);
+        const s = suivant.get(cle) ? new Set(suivant.get(cle)) : new Set<number>();
+        s.add(prod.id);
+        suivant.set(cle, s);
+        return suivant;
+      });
+      playBeep(true);
+    } catch (err: any) {
+      playBeep(false);
+      afficher(err.message || "Erreur de forçage", "erreur");
+    } finally {
+      setEnvoiOverride(false);
     }
-  }, [cartes, afficher, modalBundle, modalRetrait, modalVente, modalAnnulation]);
+  };
+
+  const gererScan = useCallback(async (code: string) => {
+    if (modalBundle || modalRetrait || modalVente || modalAnnulation || modalOverride) return;
+    try {
+      const res = await fetch(`/api/scan?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        playBeep(false);
+        afficher(data.error || `Code non reconnu ou indisponible : ${code}`, "erreur");
+        return;
+      }
+
+      if (data.requiresOverride) {
+        playBeep(false);
+        setModalOverride({
+          produit: data.produit,
+          statutActuel: data.statutActuel,
+          prix: data.prix || 0,
+        });
+        setPrixOverride(data.prix ? String(data.prix) : "");
+        return;
+      }
+
+      // Produit normal déjà en vente
+      const produit = data.produit;
+      const cle = `${produit.reference.toLowerCase().trim()}|${produit.categorie.toLowerCase().trim()}`;
+      setSelection((prev) => {
+        const suivant = new Map(prev);
+        const s = suivant.get(cle) ? new Set(suivant.get(cle)) : new Set<number>();
+        if (!s.has(produit.id)) {
+          s.add(produit.id);
+          suivant.set(cle, s);
+          playBeep(true);
+          afficher(`Produit scanné : ${produit.reference}`);
+        } else {
+          playBeep(false);
+          afficher("Cet exemplaire a déjà été ajouté à la vente.", "erreur");
+        }
+        return suivant;
+      });
+    } catch {
+      playBeep(false);
+      afficher(`Code non reconnu ou indisponible : ${code}`, "erreur");
+    }
+  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, modalOverride, afficher]);
 
   useBarcodeScanner((code) => {
     gererScan(code);
@@ -2303,6 +2352,93 @@ export default function CaisseClient({ role }: { role: Role }) {
           </div>
         )}
       </Modale>
+
+      {/* MODALE D'ACTION RAPIDE : AUTO-CORRECTION / OVERRIDE POS */}
+      {modalOverride && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-300 shadow-2xl p-6 space-y-4 text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600">
+                  <IconeAlerte taille={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black font-outfit text-slate-900">
+                    Mise en Vente Immédiate (Override)
+                  </h3>
+                  <span className="text-xs text-slate-500">
+                    Auto-Correction au Comptoir
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalOverride(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <IconeFermer taille={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <div className="font-extrabold text-sm text-slate-900">
+                  {modalOverride.produit.reference}
+                </div>
+                <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px]">
+                  <span>#{modalOverride.produit.code_interne}</span>
+                  {modalOverride.produit.numero_serie && (
+                    <span className="text-emerald-700 font-bold">
+                      S/N: {modalOverride.produit.numero_serie}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-slate-600">
+                L&apos;article est actuellement au statut{" "}
+                <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  {REGLES_MACHINE_ETATS[modalOverride.statutActuel as StatutProduit]?.libelle || modalOverride.statutActuel}
+                </span>
+                . Voulez-vous forcer sa mise en vente et l&apos;ajouter au panier ?
+              </p>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Prix de Vente Fixe (DA TTC) *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={prixOverride}
+                  onChange={(e) => setPrixOverride(e.target.value)}
+                  placeholder="Ex: 45000"
+                  className="w-full h-11 px-3 bg-white border border-slate-300 rounded-md font-mono font-black text-sm text-slate-900 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/30 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setModalOverride(null)}
+                className="btn btn-secondaire text-xs py-2.5 px-4 rounded-md font-bold"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={envoiOverride || !prixOverride || Number(prixOverride) < 0}
+                onClick={validerOverride}
+                className="btn btn-primaire text-xs py-2.5 px-5 rounded-md font-black flex items-center gap-1.5"
+              >
+                {envoiOverride ? "Forçage en cours..." : "Forcer en Vente & Ajouter"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </div>
   );

@@ -148,7 +148,7 @@ export default function Modale({
     >
       {/* Fond sombre semi-transparent pour isoler la modale du contenu. */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-entree"
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm animate-entree"
         style={{ animationDuration: '0.3s' }}
       />
       <div

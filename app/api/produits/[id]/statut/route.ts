@@ -3,6 +3,7 @@ import type { StatutProduit } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { STATUTS_PRODUIT } from "@/lib/statuts";
+import { verifierTransition } from "@/lib/state-machine";
 import { STATUTS_NOTE_OBLIGATOIRE } from "@/lib/transitions";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
@@ -10,7 +11,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur(["technicien", "gerant"]);
+  const acces = await exigerUtilisateur(["technicien", "gerant", "dev"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 
@@ -24,7 +25,12 @@ export async function POST(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { statut, note } = (corps ?? {}) as { statut?: unknown; note?: unknown };
+  const { statut, note, cout_reparation, description_reparation } = (corps ?? {}) as {
+    statut?: unknown;
+    note?: unknown;
+    cout_reparation?: unknown;
+    description_reparation?: unknown;
+  };
   if (
     typeof statut !== "string" ||
     !(STATUTS_PRODUIT as readonly string[]).includes(statut)
@@ -38,9 +44,12 @@ export async function POST(
     const produit = await prisma.produit.findUnique({ where: { id: produitId } });
     if (!produit) return erreur(404, "Produit introuvable.");
 
-    // Changement de statut libre depuis l'inventaire : toute transition est
-    // acceptée et tracée dans l'historique. Seule contrainte conservée : une
-    // note obligatoire pour les statuts de défaut.
+    // Validation stricte via la State Machine
+    const resTransition = verifierTransition(produit.statut, cible);
+    if (!resTransition.valide) {
+      return erreur(400, resTransition.erreur || "Transition non autorisée par le cycle de vie atelier.");
+    }
+
     if (produit.statut === cible) {
       return erreur(400, "Le produit est déjà dans ce statut.");
     }
@@ -60,6 +69,21 @@ export async function POST(
         where: { id: produit.id },
         data: { statut: cible },
       });
+
+      // Si un coût de réparation est fourni lors de la validation ou de la réparation
+      if (typeof cout_reparation === "number" && cout_reparation > 0) {
+        await tx.reparation.create({
+          data: {
+            produit_id: produit.id,
+            user_id: user.id,
+            cout: Math.round(cout_reparation),
+            description: typeof description_reparation === "string" && description_reparation.trim()
+              ? description_reparation.trim()
+              : noteTexte || `Intervention transition ${produit.statut} -> ${cible}`,
+          },
+        });
+      }
+
       await tx.historiqueStatut.create({
         data: {
           produit_id: produit.id,
@@ -73,15 +97,17 @@ export async function POST(
       // Audit Log
       await enregistrerActivite(tx, user.id, ACTIONS_JOURNAL.PRODUIT_STATUT, "produit", produit.id, { 
         statut_avant: produit.statut, 
-        statut_apres: cible 
+        statut_apres: cible,
+        cout_reparation: cout_reparation || undefined
       });
 
       return maj;
     });
 
     return NextResponse.json({ ok: true, statut: misAJour.statut });
-  } catch (e) {
+  } catch (e: any) {
     console.error("POST /api/produits/[id]/statut", e);
-    return erreur(500, "Erreur lors du changement de statut.");
+    return erreur(500, e?.message || "Erreur lors du changement de statut.");
   }
 }
+
