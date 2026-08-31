@@ -80,18 +80,18 @@ export default function ClocheNotifications() {
         type="button"
         onClick={() => setOuvert(!ouvert)}
         aria-label={t("notifications.clocheAria", { n: nonLues })}
-        className="relative rounded-lg border border-brand-light-grey p-2 text-brand-smooth transition hover:bg-brand-light-grey/40"
+        className="relative h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl border border-brand-light-grey text-brand-smooth transition hover:bg-brand-light-grey/40"
       >
-        <IconeCloche taille={17} />
+        <IconeCloche taille={18} />
         {nonLues > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[11px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[11px] font-bold text-white">
             {nonLues > 9 ? "9+" : nonLues}
           </span>
         )}
       </button>
 
       {ouvert && (
-        <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white shadow-xl">
+        <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-80 max-w-[calc(100vw-1.5rem)] z-50 overflow-hidden rounded-2xl border border-brand-light-grey bg-brand-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-brand-light-grey/70 px-4 py-2.5">
             <span className="text-sm font-bold">{t("notifications.titre")}</span>
             <button type="button" onClick={() => void toutMarquerLu()} className="lien text-xs">

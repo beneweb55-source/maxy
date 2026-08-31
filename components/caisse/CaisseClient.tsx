@@ -817,21 +817,21 @@ export default function CaisseClient({ role }: { role: Role }) {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] max-h-[100dvh] bg-brand-light-grey/10">
-      <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex items-center justify-between shadow-md z-10">
-        <div className="flex items-center gap-4">
-          <Link href="/caisse" className="btn py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
+    <div className="flex flex-col min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-light-grey/10">
+      <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-10">
+        <div className="flex items-center gap-3">
+          <Link href="/caisse" className="btn min-h-[44px] py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
             ← Retour au Tableau de Bord
           </Link>
-          <div className="font-black text-lg tracking-wide uppercase flex items-center gap-2">
+          <div className="font-black text-base sm:text-lg tracking-wide uppercase flex items-center gap-2">
             <IconeStore taille={20} className="text-brand-orange" />
             Mode Caisse
           </div>
         </div>
         
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
           {(statsJour || statsJourErreur) && (
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6">
               {statsJourErreur ? (
                 <div className="text-right">
                   <span className="text-sm text-red-500 font-medium">{statsJourErreur}</span>
@@ -840,11 +840,11 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <>
                   <div className="text-right">
                     <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">{t("caisse.ventesAujourdhui")}</span>
-                    <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
+                    <span className="font-bold text-base sm:text-lg leading-none">{statsJour.nombre}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">{t("caisse.chiffreAffaires")}</span>
-                    <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
+                    <span className="font-black text-brand-orange text-base sm:text-lg leading-none">{formaterDA(statsJour.total)}</span>
                   </div>
                 </>
               ) : null}
@@ -857,7 +857,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                         .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
                     }
                   }}
-                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded shadow-sm transition"
+                  className="min-h-[44px] px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-xl shadow-sm transition flex items-center"
                 >
                   Vider la Caisse
                 </button>
@@ -869,12 +869,12 @@ export default function CaisseClient({ role }: { role: Role }) {
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden flex flex-col p-4">
+      <div className="flex-1 overflow-hidden flex flex-col p-2 sm:p-4">
         {onglet === "en_vente" && (
         <div className="flex flex-col lg:flex-row gap-4 items-start h-full overflow-hidden">
-          <div className="flex-1 flex flex-col space-y-3 w-full min-w-0 h-full overflow-y-auto pr-2 pb-24">
-          <div className="carte flex flex-wrap items-center gap-3 bg-brand-white/95 backdrop-blur-xl shadow-lg border-brand-light-grey/30 sticky top-0 z-20 rounded-2xl p-3 mb-4">
-            <div className="relative min-w-64 flex-1">
+          <div className="flex-1 flex flex-col space-y-3 w-full min-w-0 h-full overflow-y-auto pr-1 sm:pr-2 pb-24">
+          <div className="carte flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 bg-brand-white/95 backdrop-blur-xl shadow-lg border-brand-light-grey/30 sticky top-0 z-20 rounded-2xl p-3 mb-4">
+            <div className="relative min-w-0 sm:min-w-64 flex-1">
               <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-orange">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="2" height="8" x="7" y="8"/><rect width="2" height="8" x="11" y="8"/><rect width="2" height="8" x="15" y="8"/></svg>
               </span>
@@ -883,7 +883,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 type="text"
                 autoFocus
                 placeholder="Scanner code-barres..."
-                className="champ pl-10 h-11 rounded-xl border-brand-orange ring-1 ring-brand-orange focus:ring-4 focus:ring-brand-orange/20 focus:border-brand-orange font-mono transition-all duration-300 hover:shadow-md bg-brand-orange/5"
+                className="champ pl-10 h-12 min-h-[48px] text-base rounded-xl border-brand-orange ring-1 ring-brand-orange focus:ring-4 focus:ring-brand-orange/20 focus:border-brand-orange font-mono transition-all duration-300 hover:shadow-md bg-brand-orange/5"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -899,13 +899,13 @@ export default function CaisseClient({ role }: { role: Role }) {
               valeur={rechercheEnVente}
               onChange={setRechercheEnVente}
               placeholder="Rechercher code, ref ou catégorie..."
-              className="w-full sm:max-w-md h-11"
+              className="w-full sm:max-w-md h-12 min-h-[48px]"
             />
             <div className="h-8 w-px bg-brand-light-grey/50 mx-1 hidden sm:block"></div>
             <select
               value={filtreCategorie}
               onChange={(e) => setFiltreCategorie(e.target.value)}
-              className="champ w-auto h-11 rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
+              className="champ w-full sm:w-auto h-12 min-h-[48px] text-base rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
             >
               <option value="">{t("caisse.toutesCategories")}</option>
               {categoriesEnVente.map((c) => (
@@ -917,7 +917,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             <select
               value={triCartes}
               onChange={(e) => setTriCartes(e.target.value)}
-              className="champ w-auto h-11 rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
+              className="champ w-full sm:w-auto h-12 min-h-[48px] text-base rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
               aria-label="Trier les produits en vente"
             >
               <option value="">{t("caisse.triDefaut")}</option>
@@ -927,8 +927,8 @@ export default function CaisseClient({ role }: { role: Role }) {
               <option value="anciennete">{t("caisse.anciennete")}</option>
             </select>
             {peutVendre && (
-              <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire h-11 px-4 rounded-xl hover:bg-brand-light-grey/50 hover:text-brand-black border-transparent shadow-sm">
-                <IconeCorbeille taille={16} /> <span className="hidden sm:inline">{t("caisse.viderPanier")}</span>
+              <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire h-12 min-h-[48px] px-4 rounded-xl hover:bg-brand-light-grey/50 hover:text-brand-black border-transparent shadow-sm">
+                <IconeCorbeille taille={16} /> <span className="inline">{t("caisse.viderPanier")}</span>
               </button>
             )}
           </div>

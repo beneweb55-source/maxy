@@ -85,7 +85,7 @@ export default function ImprimerEtiquettes() {
           @page { margin: 0; size: 58mm 43mm; } /* Format standard pour étiquettes */
         }
         @media screen {
-          .print-container { padding: 2rem; background: #f0f0f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+          .print-container { padding: 2rem; background: #f0f0f0; min-height: 100dvh; max-width: 100%; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
           .etiquette { border: 1px dashed #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         }
       `}} />

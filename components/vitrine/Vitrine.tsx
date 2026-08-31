@@ -330,7 +330,7 @@ export default function Vitrine({ role }: { role: Role }) {
       )}
 
       {produits.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {produits.map((p) => {
             const prix = p.prix_vente_reel ?? p.prix_vente_fixe;
             const dispo = unitesVendables(p);
@@ -388,52 +388,18 @@ export default function Vitrine({ role }: { role: Role }) {
                 </button>
                 <div className="flex flex-1 flex-col gap-1.5 p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs text-brand-warm-grey">{p.code_interne}</span>
-                    <BadgeStatut statut={p.statut} />
-                  </div>
-                  <Link
-                    href={`/produits/${p.id}`}
-                    className="line-clamp-2 text-sm font-semibold leading-snug transition hover:text-brand-crystal"
-                    title={p.reference}
-                  >
-                    {p.reference}
-                  </Link>
-                  <p className="text-xs text-brand-warm-grey">
-                    {p.categorie}
-                    {p.quantite > 1 && (
-                      <span className="font-semibold text-brand-orange">
-                        {" "}
-                        · {p.quantite} {t("vitrine.totalPanier")}
-                      </span>
+                    <span className="font-mono text-xs font-bold text-brand-orange">{p.code_interne}</span>
+                    {p.categorie && (
+                      <span className="text-[11px] font-medium text-brand-grey">{p.categorie}</span>
                     )}
-                  </p>
-                  <div className="mt-auto flex items-center justify-between gap-2 pt-1.5">
-                    <span className="font-bold text-brand-orange">
+                  </div>
+                  <h3 className="line-clamp-2 text-sm font-semibold text-brand-black">{p.reference}</h3>
+                  <div className="mt-auto flex items-baseline justify-between pt-2">
+                    <span className="text-base font-extrabold text-brand-black">
                       {prix !== null ? formaterDA(prix) : "—"}
                     </span>
-                    <span className="flex items-center gap-1">
-                      {p.images.length > 0 && (
-                        <a
-                          href={`/api/produits/${p.id}/images/export`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
-                          title={`Télécharger les photos de ${p.code_interne} (ZIP)`}
-                          aria-label={`Télécharger les photos de ${p.code_interne}`}
-                        >
-                          <IconeTelechargement taille={14} />
-                        </a>
-                      )}
-                      {peutVendre && nbAuPanier > 0 && (
-                        <button
-                          type="button"
-                          disabled={envoi || nbAuPanier >= dispo.length}
-                          onClick={() => ajouterUnite(p)}
-                          title="Ajouter un exemplaire supplémentaire"
-                          aria-label={`Ajouter un exemplaire de ${p.reference}`}
-                          className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-orange disabled:opacity-40"
-                        >
-                          <IconePlus taille={14} />
-                        </button>
-                      )}
+                    <span className="text-xs text-brand-grey">
+                      {dispo.length} {t("vitrine.enVitrine")}
                       {peutRetirer && (
                         <button
                           type="button"
@@ -455,18 +421,18 @@ export default function Vitrine({ role }: { role: Role }) {
                           disabled={envoi || !vendable}
                           onClick={() => ajouterUnite(p)}
                           title={vendable ? "Vendre ce produit" : "Aucun exemplaire « En vente »"}
-                          className="btn btn-primaire w-full justify-center disabled:opacity-45"
+                          className="btn btn-primaire w-full justify-center disabled:opacity-45 min-h-[44px]"
                         >
                           <IconeBillet taille={14} />
                           {t("vitrine.vendre")}
                         </button>
                       ) : (
-                        <div className="flex w-full items-center justify-between rounded-md border border-brand-orange/40 bg-brand-orange/5 p-1">
+                        <div className="flex w-full items-center justify-between rounded-xl border border-brand-orange/40 bg-brand-orange/5 p-1 min-h-[44px]">
                           <button
                             type="button"
                             disabled={envoi}
                             onClick={() => definirQuantitePanier(p, nbAuPanier - 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded text-brand-orange hover:bg-brand-orange/20"
+                            className="flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-brand-orange hover:bg-brand-orange/20 font-bold"
                           >
                             -
                           </button>
@@ -476,13 +442,13 @@ export default function Vitrine({ role }: { role: Role }) {
                             max={dispo.length}
                             value={nbAuPanier}
                             onChange={(e) => definirQuantitePanier(p, parseInt(e.target.value) || 0)}
-                            className="w-16 bg-transparent text-center text-sm font-bold text-brand-orange outline-none"
+                            className="w-16 bg-transparent text-center text-base font-bold text-brand-orange outline-none"
                           />
                           <button
                             type="button"
                             disabled={envoi || nbAuPanier >= dispo.length}
                             onClick={() => definirQuantitePanier(p, nbAuPanier + 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded text-brand-orange hover:bg-brand-orange/20 disabled:opacity-40"
+                            className="flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-brand-orange hover:bg-brand-orange/20 disabled:opacity-40 font-bold"
                           >
                             +
                           </button>
@@ -509,7 +475,7 @@ export default function Vitrine({ role }: { role: Role }) {
 
       {/* Barre de vente : récapitulatif du panier, toujours visible */}
       {peutVendre && lignesPanier.length > 0 && (
-        <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-light-grey bg-brand-white/95 p-3 shadow-lg backdrop-blur">
+        <div className="sticky bottom-0 z-20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-brand-light-grey bg-brand-white/95 p-3 sm:p-4 shadow-lg backdrop-blur">
           <span className="text-sm text-brand-warm-grey">
             <strong className="text-brand-black">{lignesPanier.length}</strong> {t("vitrine.produitsPanier", { n: lignesPanier.length })} · {t("vitrine.totalPanier")} {" "}
             <strong className="text-brand-orange">{formaterDA(totalPanier)}</strong>
@@ -518,11 +484,11 @@ export default function Vitrine({ role }: { role: Role }) {
             <button
               type="button"
               onClick={() => setPanier(new Map())}
-              className="btn btn-secondaire"
+              className="btn btn-secondaire flex-1 sm:flex-initial min-h-[48px]"
             >
               {t("vitrine.viderPanier")}
             </button>
-            <button type="button" onClick={ouvrirVente} className="btn btn-primaire">
+            <button type="button" onClick={ouvrirVente} className="btn btn-primaire flex-1 sm:flex-initial min-h-[48px]">
               <IconeBillet taille={15} />
               {t("vitrine.vendreFacturer")}
             </button>

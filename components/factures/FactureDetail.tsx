@@ -213,7 +213,7 @@ export default function FactureDetail({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-screen p-4 sm:p-6 rounded-2xl">
+    <div className="mx-auto max-w-3xl w-full space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-[100dvh] p-4 sm:p-6 rounded-2xl">
       {/* Barre d'actions — masquée à l'impression */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50 print:hidden">
         <a
@@ -411,7 +411,7 @@ export default function FactureDetail({
         </div>
 
         {/* Informations du client */}
-        <div className="mb-6 w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
+        <div className="mb-6 w-full sm:w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
           <p className="mb-2"><span className="font-bold">{t("factures.doit")}</span> {facture.client_nom || "Particulier"}</p>
           <p><span className="font-bold">Adresse:</span> {facture.client_adresse || ""}</p>
           <p><span className="font-bold">RC:</span> {facture.client_rc || ""}</p>
@@ -421,8 +421,8 @@ export default function FactureDetail({
         </div>
 
         {/* Tableau des articles */}
-        <div className="mb-6">
-          <table className="w-full border-collapse border border-black text-xs text-center">
+        <div className="mb-6 w-full overflow-x-auto">
+          <table className="w-full min-w-[500px] border-collapse border border-black text-xs text-center">
             <thead>
               <tr className="bg-[#d1d5db]">
                 <th className="border border-black py-1.5 px-2 font-bold w-12">Art N°</th>

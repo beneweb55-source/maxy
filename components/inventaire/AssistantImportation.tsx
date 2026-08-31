@@ -518,13 +518,13 @@ export default function AssistantImportation({
   if (!ouvert) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree">
-      <div className="relative w-11/12 max-w-5xl max-h-[94vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree">
+      <div className="relative w-full max-w-[95vw] sm:max-w-5xl max-h-[90dvh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
         
         {/* Header de l'Assistant */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/2">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/2">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-brand-orange/15 text-brand-orange">
+            <div className="p-3 rounded-2xl bg-brand-orange/15 text-brand-orange shrink-0">
               <FileSpreadsheet className="w-7 h-7" />
             </div>
             <div>
@@ -532,7 +532,7 @@ export default function AssistantImportation({
                 <span className="text-[10px] font-black uppercase tracking-wider text-brand-orange bg-brand-orange/10 px-2.5 py-0.5 rounded-full">
                   Assistant Intelligent (Wizard)
                 </span>
-                <h2 className="text-lg font-black font-outfit text-brand-black dark:text-white">
+                <h2 className="text-base sm:text-lg font-black font-outfit text-brand-black dark:text-white">
                   Importation Massive de Produits
                 </h2>
               </div>
@@ -545,7 +545,7 @@ export default function AssistantImportation({
           <button
             type="button"
             onClick={onFermer}
-            className="p-2 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -967,8 +967,8 @@ export default function AssistantImportation({
 
               {/* Data Grid Interactif de Prévisualisation */}
               <div className="border border-slate-200/80 dark:border-white/10 rounded-2xl overflow-hidden shadow-xs bg-white dark:bg-brand-paper">
-                <div className="overflow-x-auto max-h-[380px]">
-                  <table className="w-full text-left text-xs border-collapse">
+                <div className="w-full overflow-x-auto max-h-[380px]">
+                  <table className="w-full min-w-[750px] text-left text-xs border-collapse">
                     <thead className="sticky top-0 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 z-10">
                       <tr className="text-brand-warm-grey font-black uppercase text-[10px] tracking-wider">
                         <th className="py-3 px-3.5">#</th>

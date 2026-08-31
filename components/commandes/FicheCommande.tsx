@@ -200,8 +200,8 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
         </div>
 
         {/* Tableau des Articles avec Numéros de Série (S/N) */}
-        <div className="py-6 overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="w-full overflow-x-auto py-6">
+          <table className="w-full min-w-[550px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b-2 border-slate-900 text-slate-700 font-black uppercase text-[10px] tracking-wider">
                 <th className="py-3 px-2">#</th>
@@ -278,14 +278,14 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
 
       {/* ======================= MODALE D'ACTION ======================= */}
       {modalAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-entree print:hidden">
-          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-sm animate-entree print:hidden">
+          <div className="w-full max-w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4">
             
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
                 {modalAction === "remboursement" ? "Confirmer le Remboursement" : "Modifier le Statut"}
               </h3>
-              <button onClick={() => setModalAction(null)} className="p-1 text-slate-400">
+              <button onClick={() => setModalAction(null)} className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl p-1 text-slate-400">
                 <X className="w-5 h-5" />
               </button>
             </div>

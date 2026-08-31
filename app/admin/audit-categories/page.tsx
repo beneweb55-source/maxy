@@ -85,7 +85,7 @@ export default function PageAuditCategories() {
   });
 
   return (
-    <div className="min-h-screen bg-brand-bg dark:bg-brand-black text-brand-black dark:text-white p-4 sm:p-8 space-y-6">
+    <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-bg dark:bg-brand-black text-brand-black dark:text-white p-4 sm:p-8 space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-brand-light-grey/60 dark:border-white/10">
@@ -203,22 +203,22 @@ export default function PageAuditCategories() {
       <div className="flex flex-col sm:flex-row items-center gap-3 p-4 bg-white dark:bg-brand-paper rounded-2xl border border-brand-light-grey/60 dark:border-white/10">
         
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-brand-warm-grey absolute left-3.5 top-3" />
+          <Search className="w-4 h-4 text-brand-warm-grey absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Rechercher par nom, chemin ou ID..."
-            className="input w-full pl-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 font-bold text-xs h-10"
+            className="input w-full pl-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 font-bold text-base h-12 min-h-[48px]"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
           
           <select
             value={filtreNiveau}
             onChange={(e) => setFiltreNiveau(e.target.value === "tous" ? "tous" : Number(e.target.value))}
-            className="select select-sm rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 font-bold text-xs h-10"
+            className="select w-full sm:w-auto rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 font-bold text-base h-12 min-h-[48px]"
           >
             <option value="tous">Tous les niveaux</option>
             <option value={1}>Niveau 1 (Familles)</option>
@@ -229,7 +229,7 @@ export default function PageAuditCategories() {
           <select
             value={filtreStatut}
             onChange={(e) => setFiltreStatut(e.target.value)}
-            className="select select-sm rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 font-bold text-xs h-10"
+            className="select w-full sm:w-auto rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 font-bold text-base h-12 min-h-[48px]"
           >
             <option value="tous">Tous les statuts</option>
             <option value="vide">Vides (0)</option>
@@ -258,8 +258,8 @@ export default function PageAuditCategories() {
             Aucune catégorie ne correspond aux filtres actuels.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[700px] text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/20 dark:bg-white/5 text-brand-warm-grey font-black uppercase text-[10px] tracking-wider">
                   <th className="py-3 px-4">ID</th>

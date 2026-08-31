@@ -558,8 +558,8 @@ export default function GestionCategories() {
 
       {/* MODALE D'AJOUT / ÉDITION CONTEXTUELLE */}
       {modalOuverte && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-entree-rapide">
-          <div className="bg-white dark:bg-brand-paper w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-brand-light-grey/60 dark:border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 animate-entree-rapide">
+          <div className="bg-white dark:bg-brand-paper w-full max-w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl shadow-2xl border border-brand-light-grey/60 dark:border-white/10">
             <div className="flex items-center justify-between p-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/5">
               <h3 className="font-bold text-base text-brand-black dark:text-white font-outfit">
                 {entiteEditee 
@@ -570,13 +570,13 @@ export default function GestionCategories() {
               <button
                 type="button"
                 onClick={() => setModalOuverte(false)}
-                className="p-1.5 text-brand-warm-grey hover:text-brand-black dark:hover:text-white rounded-lg hover:bg-brand-light-grey/30"
+                className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center text-brand-warm-grey hover:text-brand-black dark:hover:text-white rounded-lg hover:bg-brand-light-grey/30"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={sauvegarder} className="p-6 space-y-4">
+            <form onSubmit={sauvegarder} className="p-4 sm:p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-brand-black dark:text-white mb-1">
                   Nom *

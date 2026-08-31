@@ -154,20 +154,20 @@ export default function Modale({
       <div
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 flex max-h-[92dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
+        className={`relative z-10 flex max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
           large === "5xl"
-            ? "w-11/12 max-w-5xl"
+            ? "w-full max-w-[95vw] sm:max-w-5xl"
             : large === "4xl" || large === true
-            ? "w-11/12 max-w-4xl"
+            ? "w-full max-w-[95vw] sm:max-w-4xl"
             : large === "3xl"
-            ? "w-11/12 max-w-3xl"
+            ? "w-full max-w-[95vw] sm:max-w-3xl"
             : large === "2xl"
-            ? "max-w-2xl"
+            ? "w-full max-w-[95vw] sm:max-w-2xl"
             : large === "xl"
-            ? "max-w-xl"
+            ? "w-full max-w-[95vw] sm:max-w-xl"
             : large === "sm"
-            ? "max-w-sm"
-            : "max-w-lg"
+            ? "w-full max-w-[95vw] sm:max-w-sm"
+            : "w-full max-w-[95vw] sm:max-w-lg"
         } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-brand-paper shadow-2xl safe-bottom`}
         style={{
           // On garde l'animation d'entrée si pas de drag
@@ -187,15 +187,15 @@ export default function Modale({
             <div className="h-1.5 w-12 rounded-full bg-brand-grey/30" />
           </div>
           
-          <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-1 sm:px-6 sm:py-5">
+          <div className="flex items-center justify-between gap-4 px-5 pb-3 pt-1 sm:px-6 sm:py-5">
             <h2 className="text-lg font-bold tracking-tight font-outfit text-brand-smooth">{titre}</h2>
             <button
               type="button"
               onClick={tenterFermeture}
               aria-label="Fermer"
-              className="rounded-lg p-3 sm:p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale"
+              className="h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale"
             >
-              <IconeFermer taille={18} />
+              <IconeFermer taille={20} />
             </button>
           </div>
         </div>

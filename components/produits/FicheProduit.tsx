@@ -774,8 +774,8 @@ export default function FicheProduit({
               <div className="space-y-3 animate-entree">
                 
                 <div className="border border-brand-light-grey/80 dark:border-white/10 rounded-2xl overflow-hidden shadow-xs">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
+                  <div className="w-full overflow-x-auto">
+                    <table className="w-full min-w-[700px] text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-brand-light-grey/30 dark:bg-white/5 border-b border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey font-black uppercase text-[10px] tracking-wider">
                           <th className="py-3 px-3.5">Code SKU</th>

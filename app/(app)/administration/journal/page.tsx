@@ -105,9 +105,9 @@ export default async function JournalActivitePage(
 
       <JournalFiltres utilisateurs={allUsers} actions={availableActions} />
 
-      <div className="overflow-hidden rounded-xl border border-brand-light-grey/50 bg-brand-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+      <div className="w-full overflow-hidden rounded-xl border border-brand-light-grey/50 bg-brand-white shadow-sm">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-brand-paper/50">
                 <th className="px-4 py-3 font-medium text-brand-warm-grey text-xs uppercase tracking-wider">Date</th>

@@ -128,7 +128,7 @@ export default function FilterDrawer({
       <div className="absolute inset-0" onClick={onFermer} />
 
       {/* Panneau latéral coulissant (Drawer) */}
-      <div className="relative w-full max-w-md bg-white dark:bg-brand-paper shadow-2xl h-full flex flex-col border-l border-brand-light-grey/60 dark:border-white/10 z-10">
+      <div className="relative w-full max-w-[90vw] sm:max-w-md bg-white dark:bg-brand-paper shadow-2xl h-full flex flex-col border-l border-brand-light-grey/60 dark:border-white/10 z-10">
         
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/5 flex items-center justify-between">
@@ -150,7 +150,7 @@ export default function FilterDrawer({
             <button
               type="button"
               onClick={reinitialiserTout}
-              className="text-xs font-bold text-brand-warm-grey hover:text-danger flex items-center gap-1 p-1.5 rounded-lg hover:bg-brand-light-grey/30 transition-colors"
+              className="text-xs font-bold text-brand-warm-grey hover:text-danger flex items-center gap-1 p-2 rounded-lg hover:bg-brand-light-grey/30 transition-colors"
               title="Réinitialiser tous les filtres"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ export default function FilterDrawer({
             <button
               type="button"
               onClick={onFermer}
-              className="p-1.5 text-brand-warm-grey hover:text-brand-black dark:hover:text-white rounded-lg hover:bg-brand-light-grey/30"
+              className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30"
             >
               <X className="w-5 h-5" />
             </button>
@@ -430,7 +430,7 @@ export default function FilterDrawer({
               <select
                 value={lotActif}
                 onChange={(e) => majUrl({ lot: e.target.value || null, page: "1" })}
-                className="select select-sm w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 font-bold text-xs"
+                className="select select-sm w-full h-12 min-h-[48px] rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 font-bold text-base"
               >
                 <option value="">Tous les lots</option>
                 {lotsDisponibles.map((l) => (
@@ -449,14 +449,14 @@ export default function FilterDrawer({
           <button
             type="button"
             onClick={reinitialiserTout}
-            className="btn btn-secondaire flex-1 py-3 text-xs font-bold rounded-xl"
+            className="btn btn-secondaire flex-1 py-3 min-h-[48px] text-xs font-bold rounded-xl"
           >
             Réinitialiser
           </button>
           <button
             type="button"
             onClick={onFermer}
-            className="btn btn-primaire flex-1 py-3 text-xs font-bold rounded-xl shadow-xs"
+            className="btn btn-primaire flex-1 py-3 min-h-[48px] text-xs font-bold rounded-xl shadow-xs"
           >
             Voir les résultats
           </button>

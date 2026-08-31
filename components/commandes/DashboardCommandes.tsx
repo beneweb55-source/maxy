@@ -217,14 +217,14 @@ export default function DashboardCommandes() {
             majUrl({ q: e.target.value || null, page: "1" });
           }}
           placeholder="Rechercher par N° de commande, client, modèle ou numéro de série..."
-          className="w-full h-12 pl-12 pr-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs sm:text-sm font-bold text-slate-900 dark:text-white shadow-xs focus:border-brand-orange"
+          className="w-full h-12 min-h-[48px] pl-12 pr-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-base font-bold text-slate-900 dark:text-white shadow-xs focus:border-brand-orange"
         />
       </div>
 
       {/* Data Table des Commandes */}
       <div className="border border-slate-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs bg-white dark:bg-zinc-900">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50/80 dark:bg-zinc-800/40 border-b border-slate-200 dark:border-zinc-800 text-slate-400 font-black uppercase text-[10px] tracking-wider">
                 <th className="py-4 px-4">N° Commande</th>

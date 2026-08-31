@@ -162,7 +162,7 @@ export default function RechercheGlobale({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] animate-entree"
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-3 sm:pt-[12vh] p-3 sm:p-0 animate-entree"
       onClick={onFermer}
     >
       {/* Overlay */}
@@ -170,12 +170,12 @@ export default function RechercheGlobale({
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-xl mx-4 overflow-hidden rounded-2xl border border-brand-light-grey bg-brand-white shadow-2xl"
+        className="relative w-full max-w-[95vw] sm:max-w-xl max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border border-brand-light-grey bg-brand-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={gererClavier}
       >
         {/* Champ de recherche */}
-        <div className="flex items-center gap-3 border-b border-brand-light-grey px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-brand-light-grey px-4 py-3 shrink-0">
           <IconeRecherche taille={20} className="shrink-0 text-brand-warm-grey" />
           <input
             ref={champRef}
@@ -191,14 +191,14 @@ export default function RechercheGlobale({
           <button
             type="button"
             onClick={onFermer}
-            className="rounded-lg p-1 text-brand-warm-grey hover:bg-brand-light-grey/50 sm:hidden"
+            className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-brand-warm-grey hover:bg-brand-light-grey/50 sm:hidden"
           >
-            <IconeFermer taille={18} />
+            <IconeFermer taille={20} />
           </button>
         </div>
 
         {/* Résultats */}
-        <div className="max-h-[50vh] overflow-y-auto overscroll-contain">
+        <div className="max-h-[60vh] flex-1 overflow-y-auto overscroll-contain">
           {chargement && (
             <div className="px-4 py-6 text-center text-sm text-brand-warm-grey">
               {t("rechercheGlobale.chargement")}

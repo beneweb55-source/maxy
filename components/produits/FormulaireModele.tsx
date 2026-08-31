@@ -222,17 +222,17 @@ export default function FormulaireModele({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-brand-black/70 backdrop-blur-xs animate-entree">
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey/80 dark:border-white/10 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-brand-black/70 backdrop-blur-xs animate-entree">
+      <div className="relative w-full max-w-[95vw] sm:max-w-3xl max-h-[90dvh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey/80 dark:border-white/10 shadow-2xl overflow-hidden">
         
         {/* Header de la Modale */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/2">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/2">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-brand-orange/15 text-brand-orange">
+            <div className="p-2.5 rounded-2xl bg-brand-orange/15 text-brand-orange shrink-0">
               <Laptop className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-black font-outfit text-brand-black dark:text-white">
+              <h2 className="text-base sm:text-lg font-black font-outfit text-brand-black dark:text-white">
                 {modeleId ? "Modifier le Modèle Commercial" : "Nouveau Modèle de Catalogue"}
               </h2>
               <p className="text-xs text-brand-warm-grey font-medium">
@@ -244,14 +244,14 @@ export default function FormulaireModele({
           <button
             type="button"
             onClick={onFermer}
-            className="p-2 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/40 dark:hover:bg-white/5 transition-colors"
+            className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/40 dark:hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Stepper / Onglets interactifs */}
-        <div className="flex border-b border-brand-light-grey/60 dark:border-white/10 px-6 bg-brand-light-grey/5 dark:bg-white/1">
+        <div className="flex border-b border-brand-light-grey/60 dark:border-white/10 px-4 sm:px-6 bg-brand-light-grey/5 dark:bg-white/1 overflow-x-auto">
           <button
             type="button"
             onClick={() => setEtape(1)}

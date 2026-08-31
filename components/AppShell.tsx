@@ -235,7 +235,7 @@ export default function AppShell({
     <FournisseurToasts>
         <GestionnaireRetourShell />
         <ScannerGlobal />
-        <div className="min-h-screen bg-brand-paper font-inter text-brand-black">
+        <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-paper font-inter text-brand-black">
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 bg-[var(--color-sidebar-bg)] shadow-2xl shadow-black/10 lg:block print:hidden">
           {contenuSidebar}
         </aside>
@@ -266,28 +266,28 @@ export default function AppShell({
               type="button"
               onClick={() => setMenuOuvert(false)}
               aria-label={t("entete.fermerMenu")}
-              className="absolute right-3 top-5 rounded-lg p-2 text-brand-grey hover:text-white z-50"
+              className="absolute right-3 top-3 h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-brand-grey hover:text-white z-50"
             >
-              <IconeFermer taille={18} />
+              <IconeFermer taille={20} />
             </button>
             {contenuSidebar}
           </div>
         </div>
 
-        <div className="lg:pl-64">
+        <div className="lg:pl-64 min-w-0 w-full max-w-full overflow-x-hidden">
           <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-brand-light-grey/60 bg-brand-white/80 px-4 backdrop-blur-xl lg:px-8 print:hidden">
             <button
               type="button"
               onClick={() => setMenuOuvert(true)}
-              className="rounded-lg border border-brand-light-grey p-2 text-brand-smooth lg:hidden"
+              className="h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl border border-brand-light-grey text-brand-smooth lg:hidden"
               aria-label={t("entete.ouvrirMenu")}
             >
-              <IconeMenu taille={18} />
+              <IconeMenu taille={20} />
             </button>
             <span className="hidden text-sm font-semibold text-brand-smooth lg:block font-outfit tracking-wide">
               {t("entete.titrePlateforme")}
             </span>
-            <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setRechercheOuverte(true)}
@@ -301,10 +301,10 @@ export default function AppShell({
               <button
                 type="button"
                 onClick={() => setRechercheOuverte(true)}
-                className="lg:hidden rounded-lg border border-brand-light-grey p-2 text-brand-smooth transition hover:bg-brand-light-grey/40"
+                className="lg:hidden h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl border border-brand-light-grey text-brand-smooth transition hover:bg-brand-light-grey/40"
                 aria-label={t("rechercheGlobale.placeholder") || "Rechercher..."}
               >
-                <IconeRecherche taille={18} />
+                <IconeRecherche taille={20} />
               </button>
               <IndicateurConnexion />
               <ThemeToggle />
@@ -313,7 +313,7 @@ export default function AppShell({
             </div>
           </header>
 
-          <main className="min-w-0 p-4 lg:p-8 print:p-0">{children}</main>
+          <main className="min-w-0 w-full max-w-full overflow-x-hidden p-4 lg:p-8 print:p-0">{children}</main>
         </div>
       </div>
       <RechercheGlobale

@@ -45,7 +45,7 @@ export default function FormulaireConnexion() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-brand-paper p-4">
+    <main className="flex min-h-[100dvh] w-full max-w-full overflow-x-hidden items-center justify-center bg-brand-paper p-4">
       <div className="w-full max-w-sm">
         <div className="mb-7 flex flex-col items-center gap-4">
           <img
@@ -91,16 +91,16 @@ export default function FormulaireConnexion() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="champ pr-10"
+                className="champ pr-12"
                 required
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-warm-grey hover:text-brand-black focus:outline-none"
+                className="absolute inset-y-0 right-0 flex items-center justify-center w-12 h-full text-brand-warm-grey hover:text-brand-black focus:outline-none"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
               >
-                {showPassword ? <IconeOeilBarre taille={16} /> : <IconeOeil taille={16} />}
+                {showPassword ? <IconeOeilBarre taille={18} /> : <IconeOeil taille={18} />}
               </button>
             </div>
           </div>

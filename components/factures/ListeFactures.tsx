@@ -330,7 +330,7 @@ export default function ListeFactures({ role }: { role?: string }) {
           </div>
 
           {/* Vue Bureau: Tableau */}
-          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+          <div className="hidden w-full overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-brand-light-grey/25">
                 <tr>
