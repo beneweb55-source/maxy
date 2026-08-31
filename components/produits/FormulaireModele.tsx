@@ -222,11 +222,11 @@ export default function FormulaireModele({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-brand-black/70 backdrop-blur-xs animate-entree">
-      <div className="relative w-full max-w-[95vw] sm:max-w-3xl max-h-[90dvh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey/80 dark:border-white/10 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree">
+      <div className="relative w-full max-w-[95vw] sm:max-w-3xl max-h-[90dvh] flex flex-col bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden text-slate-900">
         
         {/* Header de la Modale */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/2">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-brand-orange/15 text-brand-orange shrink-0">
               <Laptop className="w-6 h-6" />

@@ -1073,17 +1073,17 @@ export default function FicheProduit({
 
       {/* MODALE : Modification d'une unité spécifique */}
       {modalEditUnite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/70 backdrop-blur-xs animate-entree">
-          <div className="w-full max-w-lg bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-entree">
+          <div className="w-full max-w-lg bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-4 text-slate-900">
             
-            <div className="flex items-center justify-between border-b border-brand-light-grey/60 dark:border-white/10 pb-3">
-              <h3 className="text-base font-black font-outfit text-brand-black dark:text-white">
-                Modifier l'Exemplaire #{modalEditUnite.code_interne}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black font-outfit text-slate-900">
+                Modifier l&apos;Exemplaire #{modalEditUnite.code_interne}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalEditUnite(null)}
-                className="p-1 rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1091,7 +1091,7 @@ export default function FicheProduit({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-brand-warm-grey mb-1">
+                <label className="block font-bold text-slate-600 mb-1">
                   Numéro de Série (S/N)
                 </label>
                 <input
@@ -1099,18 +1099,18 @@ export default function FicheProduit({
                   value={editSn}
                   onChange={(e) => setEditSn(e.target.value)}
                   placeholder="Numéro de série fabricant..."
-                  className="input w-full font-mono font-bold h-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10"
+                  className="input w-full font-mono font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900 focus:border-brand-orange"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-brand-warm-grey mb-1">
+                <label className="block font-bold text-slate-600 mb-1">
                   Grade / État cosmétique
                 </label>
                 <select
                   value={editGrade}
                   onChange={(e) => setEditGrade(e.target.value)}
-                  className="select w-full font-bold h-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10"
+                  className="select w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
                 >
                   {Object.keys(GRADES_LABELS).map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -1119,7 +1119,7 @@ export default function FicheProduit({
               </div>
 
               <div>
-                <label className="block font-bold text-brand-warm-grey mb-1">
+                <label className="block font-bold text-slate-600 mb-1">
                   Emplacement physique
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1128,8 +1128,8 @@ export default function FicheProduit({
                     onClick={() => setEditEmplacement("reserve")}
                     className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all ${
                       editEmplacement === "reserve"
-                        ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-transparent shadow-xs"
-                        : "border-brand-light-grey dark:border-white/10 text-brand-warm-grey"
+                        ? "bg-slate-900 text-white border-transparent shadow-xs"
+                        : "border-slate-200 text-slate-600 bg-white"
                     }`}
                   >
                     <Warehouse className="w-3.5 h-3.5" /> Réserve
@@ -1140,7 +1140,7 @@ export default function FicheProduit({
                     className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all ${
                       editEmplacement === "vitrine"
                         ? "bg-brand-orange text-white border-brand-orange shadow-xs"
-                        : "border-brand-light-grey dark:border-white/10 text-brand-warm-grey"
+                        : "border-slate-200 text-slate-600 bg-white"
                     }`}
                   >
                     <Store className="w-3.5 h-3.5" /> Vitrine
@@ -1149,7 +1149,7 @@ export default function FicheProduit({
               </div>
 
               <div>
-                <label className="block font-bold text-brand-warm-grey mb-1">
+                <label className="block font-bold text-slate-600 mb-1">
                   Prix de vente spécifique (DA)
                 </label>
                 <input
@@ -1158,12 +1158,12 @@ export default function FicheProduit({
                   value={editPrixVente}
                   onChange={(e) => setEditPrixVente(e.target.value)}
                   placeholder="Laisser vide pour utiliser le prix standard"
-                  className="input w-full font-bold h-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10"
+                  className="input w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-brand-light-grey/60 dark:border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setModalEditUnite(null)}
@@ -1187,17 +1187,17 @@ export default function FicheProduit({
 
       {/* MODALE : Nouvelle réparation SAV */}
       {modalReparation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/70 backdrop-blur-xs animate-entree">
-          <form onSubmit={ajouterReparation} className="w-full max-w-md bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-brand-light-grey/60 dark:border-white/10 pb-3">
-              <h3 className="text-base font-black font-outfit text-brand-black dark:text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-entree">
+          <form onSubmit={ajouterReparation} className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-4 text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black font-outfit text-slate-900 flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-brand-orange" />
                 Intervention Atelier & SAV
               </h3>
               <button
                 type="button"
                 onClick={() => setModalReparation(false)}
-                className="p-1 rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1205,8 +1205,8 @@ export default function FicheProduit({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-brand-warm-grey mb-1">
-                  Description de l'intervention / Pièce changée *
+                <label className="block font-bold text-slate-600 mb-1">
+                  Description de l&apos;intervention / Pièce changée *
                 </label>
                 <input
                   type="text"
@@ -1214,13 +1214,13 @@ export default function FicheProduit({
                   value={descReparation}
                   onChange={(e) => setDescReparation(e.target.value)}
                   placeholder="Ex: Remplacement pâte thermique + ventilateur..."
-                  className="input w-full font-bold h-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10"
+                  className="input w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-brand-warm-grey mb-1">
-                  Coût de l'intervention (DA)
+                <label className="block font-bold text-slate-600 mb-1">
+                  Coût de l&apos;intervention (DA)
                 </label>
                 <input
                   type="number"
@@ -1228,12 +1228,12 @@ export default function FicheProduit({
                   value={coutReparation}
                   onChange={(e) => setCoutReparation(e.target.value)}
                   placeholder="0 DA"
-                  className="input w-full font-bold h-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10"
+                  className="input w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-brand-light-grey/60 dark:border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setModalReparation(false)}
