@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
       client_nis?: unknown;
       type_facture?: unknown;
       mode_paiement?: unknown;
+      etiquette_imprimee?: unknown;
     };
   const produitId = Number(produit_id);
   if (!Number.isInteger(produitId)) return erreur(400, "Produit invalide.");
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
   if (erreurPrix) return erreur(400, erreurPrix);
   const prix = prix_vente_reel as number;
   const canalTexte = typeof canal === "string" && canal.trim() ? canal.trim() : null;
+  const estEtiquetteImprimee = Boolean(etiquette_imprimee);
 
   let quand = new Date();
   if (typeof date_vente === "string" && date_vente.trim()) {
@@ -171,9 +173,19 @@ export async function POST(request: NextRequest) {
           date_vente: quand,
         },
       });
+      const updateData: any = {
+        statut: "vendu",
+        prix_vente_reel: prix,
+        date_vente: quand,
+        en_vitrine: false,
+      };
+      if (estEtiquetteImprimee) {
+        updateData.etiquette_imprimee = true;
+        updateData.etiquette_imprimee_le = quand;
+      }
       await tx.produit.update({
         where: { id: produit.id },
-        data: { statut: "vendu", prix_vente_reel: prix, date_vente: quand, en_vitrine: false },
+        data: updateData,
       });
       // Vitrine par modèle : si l'unité vendue représentait le modèle en
       // vitrine, transférer le drapeau à un autre exemplaire identique en

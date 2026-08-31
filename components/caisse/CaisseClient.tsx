@@ -41,6 +41,8 @@ interface CarteEnVente {
   jours_en_vente: number;
   image_url: string | null;
   images: string[];
+  numero_serie?: string | null;
+  etiquette_imprimee?: boolean;
 }
 
 interface GroupeEnVente {
@@ -265,6 +267,8 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [especesRecues, setEspecesRecues] = useState("");
   const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
   const [remiseBundle, setRemiseBundle] = useState("");
+  const [etiquetteVenteValidee, setEtiquetteVenteValidee] = useState(false);
+  const [etiquetteBundleValidee, setEtiquetteBundleValidee] = useState(false);
   const [impressionAuto, setImpressionAuto] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem("impressionAuto");
@@ -635,6 +639,7 @@ export default function CaisseClient({ role }: { role: Role }) {
           client_nis: clientNisBundle.trim() || undefined,
           type_facture: typeFactureBundle,
           mode_paiement: modePaiementBundle,
+          etiquette_imprimee: etiquetteBundleValidee || undefined,
         }),
       });
       const corps = (await res.json().catch(() => null)) as
@@ -693,6 +698,7 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
         mode_paiement: modePaiement,
+        etiquette_imprimee: etiquetteVenteValidee || undefined,
       } : {
         produit_id: unitesConcernees[0]!.id,
         prix_vente_reel: Number(prixReel),
@@ -708,6 +714,7 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
         mode_paiement: modePaiement,
+        etiquette_imprimee: etiquetteVenteValidee || undefined,
       };
 
       const res = await fetch(url, {
@@ -1862,6 +1869,40 @@ export default function CaisseClient({ role }: { role: Role }) {
               </div>
             </details>
 
+            {/* RÈGLE 2 : Contrôle Étiquette pour l'article */}
+            {modalVente && modalVente.unites.some((u) => !u.etiquette_imprimee) && (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-500/5 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="toggle-etiquette-vente" className="text-xs font-bold text-amber-900 dark:text-amber-200 cursor-pointer select-none">
+                    Avez-vous imprimé et collé l&apos;étiquette sur ce produit ?
+                  </label>
+                  <input
+                    id="toggle-etiquette-vente"
+                    type="checkbox"
+                    checked={etiquetteVenteValidee}
+                    onChange={(e) => setEtiquetteVenteValidee(e.target.checked)}
+                    className="toggle toggle-warning h-6 w-11"
+                  />
+                </div>
+                {!etiquetteVenteValidee && (
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
+                    <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">Étiquette non confirmée</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ids = modalVente.unites.slice(0, quantiteVente).map((u) => u.id);
+                        window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
+                        setEtiquetteVenteValidee(true);
+                      }}
+                      className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
+                    >
+                      Imprimer l&apos;étiquette
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {avertissement && (
               <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
                 <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
@@ -2116,7 +2157,44 @@ export default function CaisseClient({ role }: { role: Role }) {
                 </div>
               </div>
             </details>
-          {avertissementBundle && (
+
+            {/* RÈGLE 2 : Contrôle Étiquette pour les articles du panier */}
+            {selectionnees.some((u) => !u.etiquette_imprimee) && (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-500/5 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="toggle-etiquette-bundle" className="text-xs font-bold text-amber-900 dark:text-amber-200 cursor-pointer select-none">
+                    Avez-vous imprimé et collé l&apos;étiquette sur ces produits ?
+                  </label>
+                  <input
+                    id="toggle-etiquette-bundle"
+                    type="checkbox"
+                    checked={etiquetteBundleValidee}
+                    onChange={(e) => setEtiquetteBundleValidee(e.target.checked)}
+                    className="toggle toggle-warning h-6 w-11"
+                  />
+                </div>
+                {!etiquetteBundleValidee && (
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
+                    <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+                      {selectionnees.filter((u) => !u.etiquette_imprimee).length} article(s) sans étiquette
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ids = selectionnees.map((u) => u.id);
+                        window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
+                        setEtiquetteBundleValidee(true);
+                      }}
+                      className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
+                    >
+                      Imprimer les étiquettes
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {avertissementBundle && (
             <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
               <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
               {avertissementBundle}

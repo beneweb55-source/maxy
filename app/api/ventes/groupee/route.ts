@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
       client_nis?: unknown;
       type_facture?: unknown;
       mode_paiement?: unknown;
+      etiquette_imprimee?: unknown;
     };
+
+  const estEtiquetteImprimee = Boolean(etiquette_imprimee);
 
   if (!Array.isArray(produit_ids) || produit_ids.length < 1) {
     return erreur(400, "Sélectionnez au moins un produit pour une vente groupée.");
@@ -145,9 +148,19 @@ export async function POST(request: NextRequest) {
             groupe_vente: groupeVente,
           },
         });
+        const updateProduitData: any = {
+          statut: "vendu",
+          prix_vente_reel: part,
+          date_vente: quand,
+          en_vitrine: false,
+        };
+        if (estEtiquetteImprimee) {
+          updateProduitData.etiquette_imprimee = true;
+          updateProduitData.etiquette_imprimee_le = quand;
+        }
         await tx.produit.update({
           where: { id: produit.id },
-          data: { statut: "vendu", prix_vente_reel: part, date_vente: quand, en_vitrine: false },
+          data: updateProduitData,
         });
         // Vitrine par modèle : transférer le drapeau à un exemplaire identique
         // restant si l'unité vendue était celle qui représentait le modèle.
