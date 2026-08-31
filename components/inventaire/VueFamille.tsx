@@ -139,19 +139,21 @@ export default function VueFamille({
 
   return (
     <div className="space-y-6 animate-entree">
-      {/* Fil d'Ariane & En-tête Tactile */}
+      {/* En-tête de section Famille */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-light-grey/40 dark:border-white/5">
-        <BreadcrumbNavigation
-          vue="famille"
-          familleId={familleId}
-          totalArticles={totalProduitsFamille}
-          majUrl={majUrl}
-        />
+        <div>
+          <h2 className="text-lg sm:text-xl font-black font-outfit text-brand-black dark:text-white">
+            {famille.nom}
+          </h2>
+          <p className="text-xs text-brand-warm-grey">
+            Sélectionnez une catégorie pour explorer ses sous-types de matériels
+          </p>
+        </div>
 
         <button
           type="button"
           onClick={() => majUrl({ vue: "tableau", famille_id: String(familleId), categorie_id: null, sous_categorie_id: null })}
-          className="btn btn-primaire text-xs py-2.5 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+          className="btn btn-primaire text-xs py-2 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2 shrink-0"
         >
           <IconeArchive taille={15} /> Voir tous les {totalProduitsFamille} produits de la famille
         </button>
@@ -160,12 +162,9 @@ export default function VueFamille({
       {/* Grille des Catégories (Niveau 2) */}
       <div>
         <div className="mb-4">
-          <h2 className="text-base font-bold text-brand-black dark:text-white font-outfit">
+          <h3 className="text-base font-bold text-brand-black dark:text-white font-outfit">
             Catégories disponibles ({categoriesFiltrees.length})
-          </h2>
-          <p className="text-xs text-brand-warm-grey">
-            Touchez une catégorie pour voir ses sous-types de matériels
-          </p>
+          </h3>
         </div>
 
         {categoriesFiltrees.length === 0 ? (

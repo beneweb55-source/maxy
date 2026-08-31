@@ -122,20 +122,21 @@ export default function VueCategorie({
 
   return (
     <div className="space-y-6 animate-entree">
-      {/* Fil d'Ariane & En-tête Tactile (Niveau 3) */}
+      {/* En-tête de section Catégorie */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-light-grey/40 dark:border-white/5">
-        <BreadcrumbNavigation
-          vue="categorie"
-          categorieId={categorieId}
-          familleId={categorie.parent?.id}
-          totalArticles={totalProduitsCat}
-          majUrl={majUrl}
-        />
+        <div>
+          <h2 className="text-lg sm:text-xl font-black font-outfit text-brand-black dark:text-white">
+            {categorie.nom}
+          </h2>
+          <p className="text-xs text-brand-warm-grey">
+            Touchez un sous-type pour afficher immédiatement sa grille de produits
+          </p>
+        </div>
 
         <button
           type="button"
           onClick={() => majUrl({ vue: "tableau", categorie_id: String(categorieId), sous_categorie_id: null })}
-          className="btn btn-primaire text-xs py-2.5 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+          className="btn btn-primaire text-xs py-2 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2 shrink-0"
         >
           <IconeArchive taille={15} /> Voir toute la catégorie ({totalProduitsCat})
         </button>
@@ -144,12 +145,9 @@ export default function VueCategorie({
       {/* Grille des Sous-Catégories (Niveau 3) */}
       <div>
         <div className="mb-4">
-          <h2 className="text-base font-bold text-brand-black dark:text-white font-outfit">
+          <h3 className="text-base font-bold text-brand-black dark:text-white font-outfit">
             Sous-types de matériels ({sousCatsFiltrees.length})
-          </h2>
-          <p className="text-xs text-brand-warm-grey">
-            Touchez un sous-type pour afficher immédiatement sa grille de produits
-          </p>
+          </h3>
         </div>
 
         {sousCatsFiltrees.length === 0 ? (

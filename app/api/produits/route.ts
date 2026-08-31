@@ -86,9 +86,9 @@ export async function GET(request: NextRequest) {
         : { id: -1 }; // Force empty if no groups
 
       const [totalCount, sommeAchat, sommeReparations, fetchedProduits, categories, lots] = await Promise.all([
-        prisma.produit.count({ where }),
-        prisma.produit.aggregate({ where, _sum: { prix_achat: true } }),
-        prisma.reparation.aggregate({ where: { produit: where }, _sum: { cout: true } }),
+        prisma.produit.count({ where }).catch(() => 0),
+        prisma.produit.aggregate({ where, _sum: { prix_achat: true } }).catch(() => ({ _sum: { prix_achat: 0 } })),
+        prisma.reparation.aggregate({ where: { produit: where }, _sum: { cout: true } }).catch(() => ({ _sum: { cout: 0 } })),
         prisma.produit.findMany({
           where: { AND: [where, refFilter] },
           orderBy,
@@ -103,8 +103,8 @@ export async function GET(request: NextRequest) {
             reparations: { select: { cout: true } }, _count: { select: { images: true } },
           },
         }),
-        prisma.categorie.findMany({ where: { parent_id: null }, select: { nom: true } }),
-        prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }),
+        prisma.categorie.findMany({ where: { parent_id: null }, select: { nom: true } }).catch(() => []),
+        prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }).catch(() => []),
       ]);
       totalProduits = totalCount;
       sommeAchatResult = sommeAchat;
@@ -115,9 +115,9 @@ export async function GET(request: NextRequest) {
     } else {
       // Pagination standard par item
       const [totalCount, sommeAchat, sommeReparations, fetchedProduits, categories, lots] = await Promise.all([
-        prisma.produit.count({ where }),
-        prisma.produit.aggregate({ where, _sum: { prix_achat: true } }),
-        prisma.reparation.aggregate({ where: { produit: where }, _sum: { cout: true } }),
+        prisma.produit.count({ where }).catch(() => 0),
+        prisma.produit.aggregate({ where, _sum: { prix_achat: true } }).catch(() => ({ _sum: { prix_achat: 0 } })),
+        prisma.reparation.aggregate({ where: { produit: where }, _sum: { cout: true } }).catch(() => ({ _sum: { cout: 0 } })),
         prisma.produit.findMany({
           where,
           orderBy,
@@ -134,8 +134,8 @@ export async function GET(request: NextRequest) {
             reparations: { select: { cout: true } }, _count: { select: { images: true } },
           },
         }),
-        prisma.categorie.findMany({ where: { parent_id: null }, select: { nom: true } }),
-        prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }),
+        prisma.categorie.findMany({ where: { parent_id: null }, select: { nom: true } }).catch(() => []),
+        prisma.lot.findMany({ orderBy: { id: "desc" }, select: { id: true, fournisseur: true, date_entree: true } }).catch(() => []),
       ]);
       totalProduits = totalCount;
       totalPages = Math.max(1, Math.ceil(totalCount / PAR_PAGE));
@@ -147,50 +147,51 @@ export async function GET(request: NextRequest) {
     }
 
     // Présence d'une photo de couverture : booléen seul, aucune image transférée.
-    const avecCouverture = await couverturesProduits(produits.map((p) => p.id));
+    const avecCouverture = await couverturesProduits(produits.map((p) => p.id)).catch(() => new Map());
 
     const maintenant = Date.now();
     return NextResponse.json({
       total: totalProduits,
       pages: totalPages,
       page,
-      valeur: (sommeAchatResult._sum.prix_achat ?? 0) + (sommeReparationsResult._sum.cout ?? 0),
-      categories: categoriesResult.map((c: any) => c.nom || c.categorie).sort(),
-      lots: lotsResult.map((l) => ({
+      valeur: (sommeAchatResult?._sum?.prix_achat ?? 0) + (sommeReparationsResult?._sum?.cout ?? 0),
+      categories: (categoriesResult || []).map((c: any) => c.nom || c.categorie).filter(Boolean).sort(),
+      lots: (lotsResult || []).map((l) => ({
         id: l.id,
-        libelle: `n°${l.id} — ${l.fournisseur} (${l.date_entree.toLocaleDateString("fr-FR")})`,
+        libelle: `n°${l.id} — ${l.fournisseur || "Fournisseur"} (${l.date_entree ? new Date(l.date_entree).toLocaleDateString("fr-FR") : "-"})`,
       })),
-      produits: produits.map((p: any) => ({
-        id: p.id,
-        code_interne: p.code_interne,
-        reference: p.reference,
-        categorie: p.categorie,
-        categorie_id: p.categorie_id,
-        categorie_rel: p.categorie_rel,
-        modele_id: p.modele_id,
-        modele: p.modele,
-        statut: p.statut,
-        a_jeter: p.a_jeter,
-        en_vitrine: p.en_vitrine,
-        prix_achat: p.prix_achat,
-        image_url: urlCouverture(avecCouverture.get(p.id), p.id),
-        nb_images: (avecCouverture.has(p.id) ? 1 : 0) + p._count.images,
-        cout_reparations: p.reparations.reduce((s: number, r: { cout: number }) => s + r.cout, 0),
-        prix_vente_fixe: p.prix_vente_fixe,
-        prix_vente_reel: p.prix_vente_reel,
-        etiquette_imprimee: p.etiquette_imprimee,
-        lot_id: p.lot?.id ?? null,
-        fournisseur: p.lot?.fournisseur ?? null,
-        // Sans lot, la date d'entrée est celle de création du produit.
-        date_entree: (p.lot?.date_entree ?? p.created_at).toISOString(),
-        jours_stock: Math.floor(
-          (maintenant - (p.lot?.date_entree ?? p.created_at).getTime()) / JOUR_MS
-        ),
-      })),
+      produits: (produits || []).map((p: any) => {
+        const dateRef = p.lot?.date_entree ? new Date(p.lot.date_entree) : (p.created_at ? new Date(p.created_at) : new Date());
+        return {
+          id: p.id,
+          code_interne: p.code_interne,
+          reference: p.reference,
+          categorie: p.categorie,
+          categorie_id: p.categorie_id,
+          categorie_rel: p.categorie_rel,
+          modele_id: p.modele_id,
+          modele: p.modele,
+          statut: p.statut,
+          a_jeter: p.a_jeter,
+          en_vitrine: p.en_vitrine,
+          prix_achat: p.prix_achat ?? 0,
+          image_url: urlCouverture(avecCouverture.get(p.id), p.id),
+          nb_images: (avecCouverture.has(p.id) ? 1 : 0) + (p._count?.images ?? 0),
+          cout_reparations: (p.reparations || []).reduce((s: number, r: { cout: number }) => s + (r.cout || 0), 0),
+          prix_vente_fixe: p.prix_vente_fixe,
+          prix_vente_reel: p.prix_vente_reel,
+          etiquette_imprimee: p.etiquette_imprimee,
+          lot_id: p.lot?.id ?? null,
+          fournisseur: p.lot?.fournisseur ?? null,
+          // Sans lot, la date d'entrée est celle de création du produit.
+          date_entree: dateRef.toISOString(),
+          jours_stock: Math.max(0, Math.floor((maintenant - dateRef.getTime()) / JOUR_MS)),
+        };
+      }),
     });
-  } catch (e) {
-    console.error("GET /api/produits", e);
-    return erreur(500, "Erreur lors du chargement de l'inventaire.");
+  } catch (e: any) {
+    console.error("GET /api/produits error:", e?.message || e);
+    return erreur(500, e?.message || "Erreur lors du chargement de l'inventaire.");
   }
 }
 

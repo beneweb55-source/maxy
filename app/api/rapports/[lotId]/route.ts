@@ -42,19 +42,20 @@ export async function GET(
     for (const p of lot.produits) {
       const s = parStatut.get(p.statut) ?? { nombre: 0, valeur_achat: 0 };
       s.nombre += 1;
-      s.valeur_achat += p.prix_achat;
+      s.valeur_achat += p.prix_achat ?? 0;
       parStatut.set(p.statut, s);
-      const c = parCategorie.get(p.categorie) ?? { nombre: 0, valeur_achat: 0 };
+      const catNom = p.categorie || "Non classé";
+      const c = parCategorie.get(catNom) ?? { nombre: 0, valeur_achat: 0 };
       c.nombre += 1;
-      c.valeur_achat += p.prix_achat;
-      parCategorie.set(p.categorie, c);
+      c.valeur_achat += p.prix_achat ?? 0;
+      parCategorie.set(catNom, c);
     }
 
     return NextResponse.json({
       lot: {
         id: lot.id,
-        fournisseur: lot.fournisseur,
-        date_entree: lot.date_entree.toISOString(),
+        fournisseur: lot.fournisseur || "Fournisseur",
+        date_entree: lot.date_entree ? new Date(lot.date_entree).toISOString() : new Date().toISOString(),
         statut_lot: lot.statut_lot,
         description: lot.description,
         cout_global_declare: lot.cout_global_declare,
@@ -73,15 +74,15 @@ export async function GET(
         reference: p.reference,
         categorie: p.categorie,
         statut: p.statut,
-        prix_achat: p.prix_achat,
+        prix_achat: p.prix_achat ?? 0,
         prix_vente_fixe: p.prix_vente_fixe,
-        cout_reparations: p.reparations.reduce((s, r) => s + r.cout, 0),
+        cout_reparations: (p.reparations || []).reduce((s, r) => s + (r.cout ?? 0), 0),
         decision_rapport: p.decision_rapport,
-        derniere_note: p.historique.at(0)?.note ?? null,
+        derniere_note: p.historique?.at(0)?.note ?? null,
       })),
     });
-  } catch (e) {
-    console.error("GET /api/rapports/[lotId]", e);
-    return erreur(500, "Erreur lors du chargement du rapport.");
+  } catch (e: any) {
+    console.error("GET /api/rapports/[lotId] error:", e?.message || e);
+    return erreur(500, e?.message || "Erreur lors du chargement du rapport.");
   }
 }

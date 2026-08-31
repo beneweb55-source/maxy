@@ -1,0 +1,152 @@
+[
+  {
+    "id": 2077,
+    "code_interne": "P-1829",
+    "reference": "AISENS Monitor Desk Mount/POS Full Motion, 10\" à 24\" (Modèle : DT24TSR-371)",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "AISENS Monitor Desk Mount/POS Full Motion, 10\" à 24\" (Modèle : DT24TSR-371)"
+    }
+  },
+  {
+    "id": 1303,
+    "code_interne": "P-1071",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1304,
+    "code_interne": "P-1072",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1311,
+    "code_interne": "P-1079",
+    "reference": "Blocs/modules de ventilation complets pour serveur Lot de ventilateurs SUNON - Modèle PF92381BX-D110-Q99-- et Nidec UltraFlo  Lot de dissipateurs thermiques (Heatsinks) pour processeurs Lot de cages et fonds de panier (Backplanes) SAS/SATA pour disques durs  Divers: pâte thermique, supports de montage CPU et caddies pour disques durs  RÉCAPITULATIF COMPLET",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs/modules de ventilation complets pour serveur Lot de ventilateurs SUNON - Modèle PF92381BX-D110-Q99-- et Nidec UltraFlo  Lot de dissipateurs thermiques (Heatsinks) pour processeurs Lot de cages et fonds de panier (Backplanes) SAS/SATA pour disques durs  Divers: pâte thermique, supports de montage CPU et caddies pour disques durs  RÉCAPITULATIF COMPLET"
+    }
+  },
+  {
+    "id": 2112,
+    "code_interne": "P-1864",
+    "reference": "AURES YUNO TXE15J19 Touchscreen POS Terminal",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "AURES YUNO TXE15J19 Touchscreen POS Terminal"
+    }
+  },
+  {
+    "id": 2113,
+    "code_interne": "P-1865",
+    "reference": "Lenovo ThinkSmart Hub 500  (10V5)",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Lenovo ThinkSmart Hub 500  (10V5)"
+    }
+  },
+  {
+    "id": 2075,
+    "code_interne": "P-1827",
+    "reference": "AISENS Monitor Desk Mount/POS Full Motion, 17\" à 32\" (Modèle : DT32TSR-373)",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "AISENS Monitor Desk Mount/POS Full Motion, 17\" à 32\" (Modèle : DT32TSR-373)"
+    }
+  },
+  {
+    "id": 2076,
+    "code_interne": "P-1828",
+    "reference": "AISENS Monitor Desk Mount/POS Full Motion, 17\" à 32\" (Modèle : DT32TSR-373)",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "AISENS Monitor Desk Mount/POS Full Motion, 17\" à 32\" (Modèle : DT32TSR-373)"
+    }
+  },
+  {
+    "id": 1305,
+    "code_interne": "P-1073",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1306,
+    "code_interne": "P-1074",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1307,
+    "code_interne": "P-1075",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1308,
+    "code_interne": "P-1076",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1309,
+    "code_interne": "P-1077",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1310,
+    "code_interne": "P-1078",
+    "reference": "Blocs d'alimentation (PSU) serveur 800W",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs d'alimentation (PSU) serveur 800W"
+    }
+  },
+  {
+    "id": 1312,
+    "code_interne": "P-1080",
+    "reference": "Blocs/modules de ventilation complets pour serveur Lot de ventilateurs SUNON - Modèle PF92381BX-D110-Q99-- et Nidec UltraFlo  Lot de dissipateurs thermiques (Heatsinks) pour processeurs Lot de cages et fonds de panier (Backplanes) SAS/SATA pour disques durs  Divers: pâte thermique, supports de montage CPU et caddies pour disques durs  RÉCAPITULATIF COMPLET",
+    "categorie": "Terminaux & Caisses",
+    "categorie_id": 88,
+    "modele": {
+      "nom": "Blocs/modules de ventilation complets pour serveur Lot de ventilateurs SUNON - Modèle PF92381BX-D110-Q99-- et Nidec UltraFlo  Lot de dissipateurs thermiques (Heatsinks) pour processeurs Lot de cages et fonds de panier (Backplanes) SAS/SATA pour disques durs  Divers: pâte thermique, supports de montage CPU et caddies pour disques durs  RÉCAPITULATIF COMPLET"
+    }
+  }
+]

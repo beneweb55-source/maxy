@@ -371,12 +371,25 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const [chargement, setChargement] = useState(false);
+
   const charger = useCallback(async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
 
+    const vueActuelle = searchParams?.get("vue") || "cockpit";
+    const qActuel = searchParams?.get("q")?.trim() || "";
+
+    // Ne pas charger la liste complète si l'utilisateur est sur la vue famille ou catégorie (qui ont leurs propres chargements dédiés)
+    if ((vueActuelle === "famille" && !qActuel) || (vueActuelle === "categorie" && !qActuel)) {
+      setChargement(false);
+      setErreur(null);
+      return;
+    }
+
+    setChargement(true);
     setErreur(null);
     try {
       const params = new URLSearchParams(searchParams?.toString() || "");
@@ -395,7 +408,10 @@ export default function Inventaire({ role }: { role: Role }) {
       setDonnees(data);
     } catch (e: any) {
       if (e.name === "AbortError") return; // Ignorer les requêtes annulées
+      console.error("Inventaire charger error:", e);
       setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
+    } finally {
+      setChargement(false);
     }
   }, [searchParams, vueGroupee]);
 
