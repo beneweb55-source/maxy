@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { IconeAlerte, IconeCocheCercle } from "./icons";
 
-type TypeToast = "succes" | "erreur";
+type TypeToast = "succes" | "erreur" | "info" | "avertissement";
 
 interface Toast {
   id: number;
@@ -42,11 +42,19 @@ export function FournisseurToasts({ children }: { children: React.ReactNode }) {
             key={t.id}
             role="status"
             className={`pointer-events-auto flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg ${
-              t.type === "succes" ? "bg-succes" : "bg-danger"
+              t.type === "succes"
+                ? "bg-succes"
+                : t.type === "erreur"
+                ? "bg-danger"
+                : "bg-brand-orange"
             }`}
           >
             <span className="mt-0.5 shrink-0" aria-hidden>
-              {t.type === "succes" ? <IconeCocheCercle taille={16} /> : <IconeAlerte taille={16} />}
+              {t.type === "succes" ? (
+                <IconeCocheCercle taille={16} />
+              ) : (
+                <IconeAlerte taille={16} />
+              )}
             </span>
             {t.message}
           </div>
