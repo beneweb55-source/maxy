@@ -63,8 +63,8 @@ export function RenduWidget({
 
 function CadreTableau({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-3 table-responsive-wrapper touch-scroll-x">
-      <table className="w-full min-w-[440px] text-sm">{children}</table>
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full min-w-[480px] text-sm">{children}</table>
     </div>
   );
 }

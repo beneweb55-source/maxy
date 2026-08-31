@@ -693,11 +693,11 @@ export default function FicheProduit({
             {/* Onglets de la colonne droite */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-light-grey/60 dark:border-white/10 pb-3">
               
-              <div className="flex items-center gap-1 bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-2xl border border-brand-light-grey/60 dark:border-white/10 touch-scroll-x no-scrollbar max-w-full">
+              <div className="flex items-center gap-1 bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-2xl border border-brand-light-grey/60 dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setOngletActif("exemplaires")}
-                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all shrink-0 active-scale ${
+                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all ${
                     ongletActif === "exemplaires"
                       ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
                       : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
@@ -710,7 +710,7 @@ export default function FicheProduit({
                 <button
                   type="button"
                   onClick={() => setOngletActif("atelier")}
-                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all shrink-0 active-scale ${
+                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all ${
                     ongletActif === "atelier"
                       ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
                       : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
@@ -723,7 +723,7 @@ export default function FicheProduit({
                 <button
                   type="button"
                   onClick={() => setOngletActif("historique")}
-                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all shrink-0 active-scale ${
+                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all ${
                     ongletActif === "historique"
                       ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
                       : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
@@ -736,7 +736,7 @@ export default function FicheProduit({
                 <button
                   type="button"
                   onClick={() => setOngletActif("ventes")}
-                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all shrink-0 active-scale ${
+                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all ${
                     ongletActif === "ventes"
                       ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
                       : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"

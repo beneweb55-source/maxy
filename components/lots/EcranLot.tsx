@@ -409,7 +409,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const categoriesExistantes = Array.from(new Set(lot.produits.map((p) => p.categorie))).sort();
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 animate-entree pb-24">
+    <div className="mx-auto max-w-2xl space-y-6 animate-entree pb-24">
       <a
         href="/arrivages"
         onClick={(e) => {

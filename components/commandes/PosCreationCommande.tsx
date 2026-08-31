@@ -290,10 +290,10 @@ export default function PosCreationCommande() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100dvh-5rem)] lg:h-[calc(100dvh-5rem)] gap-4 p-2 sm:p-4 bg-slate-100 dark:bg-zinc-950 font-sans pb-24 lg:pb-4 safe-bottom">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] gap-4 p-4 bg-slate-100 dark:bg-zinc-950 font-sans">
       
       {/* ===================== PANNEAU GAUCHE : RECHERCHE SCANNER & QUICK PICKS ===================== */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-sm overflow-hidden min-h-[360px]">
+      <div className="flex-1 flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm overflow-hidden">
         
         {/* Scanner-First Input */}
         <div className="relative mb-4">
@@ -306,7 +306,7 @@ export default function PosCreationCommande() {
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
             placeholder="Scannez un Code-Barres, S/N ou saisissez une désignation..."
-            className="w-full h-14 sm:h-16 pl-14 sm:pl-16 pr-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border-2 border-slate-200 dark:border-zinc-700 text-sm sm:text-base font-bold text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none transition-all shadow-inner"
+            className="w-full h-16 pl-16 pr-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border-2 border-slate-200 dark:border-zinc-700 text-base font-bold text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none transition-all shadow-inner"
           />
         </div>
 
@@ -324,7 +324,7 @@ export default function PosCreationCommande() {
                   setRecherche("");
                   setResultatsRecherche([]);
                 }}
-                className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 hover:border-brand-orange cursor-pointer flex items-center justify-between transition-all active-scale"
+                className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 hover:border-brand-orange cursor-pointer flex items-center justify-between transition-all"
               >
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -344,7 +344,7 @@ export default function PosCreationCommande() {
         )}
 
         {/* Quick Picks / Prestations & Accessoires Fréquents */}
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1 no-scrollbar">
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-slate-500">
               Services & Accessoires Rapides
@@ -354,7 +354,7 @@ export default function PosCreationCommande() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               { nom: "Installation Windows & Pilotes", prix: 2000, cat: "Atelier", icon: Laptop },
               { nom: "Nettoyage & Pâte Thermique", prix: 2500, cat: "Atelier", icon: Wrench },
@@ -369,7 +369,7 @@ export default function PosCreationCommande() {
                   key={idx}
                   type="button"
                   onClick={() => ajouterQuickPick(qp.nom, qp.prix, qp.cat)}
-                  className="p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 hover:border-brand-orange hover:bg-brand-orange/5 text-left transition-all flex flex-col justify-between min-h-[95px] sm:min-h-[105px] active-scale shadow-xs"
+                  className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 hover:border-brand-orange hover:bg-brand-orange/5 text-left transition-all flex flex-col justify-between min-h-[105px] active:scale-98 shadow-xs"
                 >
                   <div className="flex items-start justify-between">
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{qp.cat}</span>
@@ -397,14 +397,14 @@ export default function PosCreationCommande() {
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-brand-orange" />
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
-              Ticket de Vente ({panier.length})
+              Ticket de Vente
             </h2>
           </div>
 
           <button
             type="button"
             onClick={() => setModalClient(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-brand-orange shadow-xs active-scale"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-brand-orange shadow-xs"
           >
             {clientSelectionne ? <UserCheck className="w-4 h-4 text-emerald-500" /> : <UserPlus className="w-4 h-4 text-brand-orange" />}
             <span className="truncate max-w-[130px]">{clientSelectionne ? clientSelectionne.nom : "Associer Client"}</span>
@@ -412,9 +412,9 @@ export default function PosCreationCommande() {
         </div>
 
         {/* Liste des Lignes du Panier */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[160px] max-h-[380px] lg:max-h-none">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {panier.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-8 sm:py-12">
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-12">
               <Barcode className="w-12 h-12 stroke-1 text-slate-300 dark:text-zinc-700" />
               <p className="text-xs font-bold text-center">Panier vide. Scannez un article pour commencer la vente.</p>
             </div>
@@ -441,8 +441,7 @@ export default function PosCreationCommande() {
                   <button
                     type="button"
                     onClick={() => supprimerLigne(idx)}
-                    aria-label="Supprimer la ligne"
-                    className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors active-scale"
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -454,7 +453,7 @@ export default function PosCreationCommande() {
                     <button
                       type="button"
                       onClick={() => modifierQuantite(idx, -1)}
-                      className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-zinc-700 active-scale"
+                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-zinc-700"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
@@ -462,7 +461,7 @@ export default function PosCreationCommande() {
                     <button
                       type="button"
                       onClick={() => modifierQuantite(idx, 1)}
-                      className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-zinc-700 active-scale"
+                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-zinc-700"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -475,7 +474,7 @@ export default function PosCreationCommande() {
                       min="0"
                       value={ligne.prix_unitaire}
                       onChange={(e) => modifierPrixLigne(idx, Number(e.target.value))}
-                      className="champ w-24 py-1 text-right font-mono font-black text-xs rounded-xl"
+                      className="input input-xs w-24 text-right font-mono font-black text-xs rounded-xl border-slate-200 dark:border-zinc-700"
                     />
                     <span className="font-mono font-black text-sm text-slate-900 dark:text-white">
                       {formaterDA(ligne.prix_unitaire * ligne.quantite - ligne.remise_ligne)}
@@ -488,14 +487,14 @@ export default function PosCreationCommande() {
         </div>
 
         {/* Footer Sticky Totaux & Bouton d'Encaissement */}
-        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-800/40 space-y-3">
+        <div className="p-5 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-800/40 space-y-3.5">
           <div className="space-y-1.5 text-xs font-semibold text-slate-500">
             <div className="flex justify-between">
               <span>Sous-total Brut</span>
               <span className="font-mono font-bold text-slate-900 dark:text-white">{formaterDA(sousTotal)}</span>
             </div>
 
-            {/* Remise commerciale globale avec raccourcis tactiles */}
+            {/* Remise commerciale globale */}
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1 text-slate-500">
                 <Percent className="w-3.5 h-3.5 text-brand-orange" /> Remise commerciale
@@ -506,45 +505,9 @@ export default function PosCreationCommande() {
                 value={remiseGlobale || ""}
                 onChange={(e) => setRemiseGlobale(Number(e.target.value) || 0)}
                 placeholder="0 DA"
-                className="champ w-24 py-1 text-right font-mono font-bold text-xs rounded-lg text-red-600"
+                className="input input-xs w-24 text-right font-mono font-bold text-xs rounded-lg border-slate-200 dark:border-zinc-700 text-red-600"
               />
             </div>
-
-            {/* Raccourcis tactiles de remise en 1 clic */}
-            {sousTotal > 0 && (
-              <div className="flex justify-end gap-1.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setRemiseGlobale(Math.floor(sousTotal * 0.05))}
-                  className="px-2 py-1 text-[10px] bg-slate-200/80 dark:bg-zinc-700/60 rounded-lg font-bold hover:bg-brand-orange/20 text-slate-800 dark:text-slate-200 active-scale"
-                >
-                  -5%
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRemiseGlobale(Math.floor(sousTotal * 0.10))}
-                  className="px-2 py-1 text-[10px] bg-slate-200/80 dark:bg-zinc-700/60 rounded-lg font-bold hover:bg-brand-orange/20 text-slate-800 dark:text-slate-200 active-scale"
-                >
-                  -10%
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRemiseGlobale(Math.floor(sousTotal * 0.15))}
-                  className="px-2 py-1 text-[10px] bg-slate-200/80 dark:bg-zinc-700/60 rounded-lg font-bold hover:bg-brand-orange/20 text-slate-800 dark:text-slate-200 active-scale"
-                >
-                  -15%
-                </button>
-                {remiseGlobale > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setRemiseGlobale(0)}
-                    className="px-2 py-1 text-[10px] bg-red-100 dark:bg-red-950/40 text-red-600 rounded-lg font-bold active-scale"
-                  >
-                    Effacer
-                  </button>
-                )}
-              </div>
-            )}
 
             <div className="flex justify-between items-baseline pt-2 border-t border-slate-200 dark:border-zinc-700">
               <span className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider">Net à Payer</span>
@@ -556,7 +519,7 @@ export default function PosCreationCommande() {
             type="button"
             disabled={panier.length === 0}
             onClick={() => setModalPaiement(true)}
-            className="w-full h-14 sm:h-16 rounded-2xl bg-brand-orange hover:bg-brand-orange/90 text-white font-black text-sm sm:text-base uppercase tracking-wider shadow-lg shadow-brand-orange/25 flex items-center justify-center gap-2 active-scale transition-all disabled:opacity-40"
+            className="w-full h-16 rounded-2xl bg-brand-orange hover:bg-brand-orange/90 text-white font-black text-base uppercase tracking-wider shadow-lg shadow-brand-orange/25 flex items-center justify-center gap-2 active:scale-98 transition-all disabled:opacity-40"
           >
             <CreditCard className="w-5 h-5" />
             Encaisser ({formaterDA(totalFinal)})
@@ -764,29 +727,8 @@ export default function PosCreationCommande() {
                     value={montantRecu}
                     onChange={(e) => setMontantRecu(e.target.value)}
                     placeholder={String(totalFinal)}
-                    className="champ w-full h-12 rounded-xl text-right font-mono font-black text-lg"
+                    className="input w-full h-12 rounded-xl text-right font-mono font-black text-lg"
                   />
-                  
-                  {/* Raccourcis tactiles de billets */}
-                  <div className="grid grid-cols-5 gap-1.5 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setMontantRecu(String(totalFinal))}
-                      className="py-1.5 px-1 text-[11px] font-black bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 rounded-lg active-scale truncate text-center"
-                    >
-                      Exact
-                    </button>
-                    {[1000, 2000, 5000, 10000].map((b) => (
-                      <button
-                        key={b}
-                        type="button"
-                        onClick={() => setMontantRecu(String(b))}
-                        className="py-1.5 px-1 text-[11px] font-bold bg-slate-200/80 dark:bg-zinc-700/60 hover:bg-slate-300 dark:hover:bg-zinc-600 rounded-lg active-scale text-slate-800 dark:text-slate-200 text-center font-mono"
-                      >
-                        {b}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 {monnaieARendre > 0 && (
