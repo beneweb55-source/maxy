@@ -23,7 +23,9 @@ import {
   CheckCircle2,
   Wrench,
   Monitor,
-  Laptop
+  Laptop,
+  Tag,
+  AlertTriangle
 } from "lucide-react";
 import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
@@ -38,6 +40,8 @@ interface LignePanier {
   prix_unitaire: number;
   quantite: number;
   remise_ligne: number;
+  mode_ajout: "scan" | "manuel";
+  etiquette_imprimee: boolean;
 }
 
 interface ClientOption {
@@ -76,6 +80,7 @@ export default function PosCreationCommande() {
   const [typePaiement, setTypePaiement] = useState<"especes" | "carte" | "virement" | "cheque">("especes");
   const [montantRecu, setMontantRecu] = useState<string>("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  const [etiquetteManuelleValidee, setEtiquetteManuelleValidee] = useState(false);
 
   const inputScannerRef = useRef<HTMLInputElement>(null);
 
@@ -103,7 +108,7 @@ export default function PosCreationCommande() {
             data.produits[0].code_interne.toLowerCase() === q.toLowerCase() ||
             (data.produits[0].numero_serie && data.produits[0].numero_serie.toLowerCase() === q.toLowerCase())
           )) {
-            ajouterProduitAuPanier(data.produits[0]);
+            ajouterProduitAuPanier(data.produits[0], "scan");
             setRecherche("");
             setResultatsRecherche([]);
           } else {
@@ -140,12 +145,14 @@ export default function PosCreationCommande() {
   }, [rechercheClient, ongetClient, modalClient]);
 
   // Ajouter un produit physique sérialisé au panier
-  const ajouterProduitAuPanier = (p: any) => {
+  const ajouterProduitAuPanier = (p: any, mode_ajout: "scan" | "manuel" = "manuel") => {
     // Vérifier si le produit est déjà dans le panier
     if (panier.some((l) => l.produit_id === p.id)) {
       afficher(`L'exemplaire ${p.code_interne} est déjà dans le panier.`, "erreur");
       return;
     }
+
+    const etiquetteInitiale = mode_ajout === "scan" ? true : Boolean(p.etiquette_imprimee);
 
     const nouvelleLigne: LignePanier = {
       produit_id: p.id,
@@ -156,10 +163,12 @@ export default function PosCreationCommande() {
       prix_unitaire: p.prix_vente_fixe || p.prix_vente_conseille || 0,
       quantite: 1,
       remise_ligne: 0,
+      mode_ajout,
+      etiquette_imprimee: etiquetteInitiale,
     };
 
     setPanier((prev) => [nouvelleLigne, ...prev]);
-    afficher(`Ajouté : ${p.reference} (${p.code_interne})`, "succes");
+    afficher(`Ajouté (${mode_ajout === "scan" ? "Scan ⚡" : "Manuel 📝"}) : ${p.reference} (${p.code_interne})`, "succes");
     inputScannerRef.current?.focus();
   };
 
@@ -172,6 +181,8 @@ export default function PosCreationCommande() {
       prix_unitaire: prix,
       quantite: 1,
       remise_ligne: 0,
+      mode_ajout: "manuel",
+      etiquette_imprimee: true,
     };
     setPanier((prev) => [nouvelleLigne, ...prev]);
     afficher(`Ajouté : ${designation}`, "succes");
@@ -264,6 +275,8 @@ export default function PosCreationCommande() {
           quantite: l.quantite,
           prix_unitaire: l.prix_unitaire,
           remise_ligne: l.remise_ligne,
+          mode_ajout: l.mode_ajout,
+          etiquette_imprimee: l.mode_ajout === "scan" ? true : (etiquetteManuelleValidee || l.etiquette_imprimee),
         })),
       };
 
@@ -320,7 +333,7 @@ export default function PosCreationCommande() {
               <div
                 key={p.id}
                 onClick={() => {
-                  ajouterProduitAuPanier(p);
+                  ajouterProduitAuPanier(p, "manuel");
                   setRecherche("");
                   setResultatsRecherche([]);
                 }}
@@ -426,9 +439,20 @@ export default function PosCreationCommande() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-mono font-black text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
-                      {ligne.code_interne}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono font-black text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
+                        {ligne.code_interne}
+                      </span>
+                      {ligne.mode_ajout === "scan" ? (
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                          Scan ⚡
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100/60 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                          Manuel 📝
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 leading-snug">
                       {ligne.designation}
                     </div>
@@ -739,6 +763,72 @@ export default function PosCreationCommande() {
                 )}
               </div>
             )}
+
+            {/* RÈGLE 2 : Contrôle Étiquetage pour les articles ajoutés manuellement */}
+            {(() => {
+              const articlesManuels = panier.filter((l) => l.produit_id && (l.mode_ajout === "manuel" || !l.etiquette_imprimee));
+              if (articlesManuels.length === 0) return null;
+
+              return (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-500/5 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
+                      <Tag className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span>Contrôle Étiquette Produit ({articlesManuels.length} article{articlesManuels.length > 1 ? "s" : ""} manuel{articlesManuels.length > 1 ? "s" : ""})</span>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-full">
+                      Vérification Requise
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-amber-900/80 dark:text-amber-200/80 leading-relaxed">
+                    Ce panier contient des équipements physiques ajoutés par recherche sans scan d&apos;étiquette code-barres.
+                  </p>
+
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-800/80 border border-amber-500/20 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <label htmlFor="toggle-etiquette" className="text-xs font-black text-slate-900 dark:text-white cursor-pointer select-none">
+                        Avez-vous imprimé et collé l&apos;étiquette sur ce produit ?
+                      </label>
+                      <input
+                        id="toggle-etiquette"
+                        type="checkbox"
+                        checked={etiquetteManuelleValidee}
+                        onChange={(e) => setEtiquetteManuelleValidee(e.target.checked)}
+                        className="toggle toggle-warning h-7 w-12 cursor-pointer"
+                      />
+                    </div>
+
+                    {etiquetteManuelleValidee ? (
+                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-lg">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>Étiquette confirmée : l&apos;exemplaire passera en statut <strong>Vendu</strong>.</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+                        <div className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+                          Sans étiquette, l&apos;exemplaire passera en statut <strong>Produit Commandé</strong> (Réservé).
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ids = articlesManuels.map((a) => a.produit_id).filter(Boolean);
+                            if (ids.length > 0) {
+                              window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
+                              setEtiquetteManuelleValidee(true);
+                            }
+                          }}
+                          className="btn btn-xs min-h-[36px] bg-brand-orange text-white hover:bg-brand-orange/90 font-bold flex items-center gap-1.5 px-3 rounded-lg shrink-0"
+                        >
+                          <Barcode className="w-3.5 h-3.5" />
+                          Imprimer l&apos;étiquette
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Durée de garantie */}
             <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/20">

@@ -78,6 +78,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import { createOrder } from "@/lib/commandes";
+
 export async function POST(request: NextRequest) {
   const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
   if (acces.reponse) return acces.reponse;
@@ -85,144 +87,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const {
-      client_id,
-      client_nom,
-      client_tel,
-      client_adresse,
-      statut = "payee",
-      type_paiement = "especes",
-      lignes = [],
-      remise_globale = 0,
-      garantie_mois = 6,
-      notes,
-    } = body;
-
-    if (!Array.isArray(lignes) || lignes.length === 0) {
-      return erreur(400, "Le panier ne contient aucun article.");
-    }
-
-    // Calculs financiers
-    let totalHT = 0;
-    const lignesTraitees = lignes.map((l: any) => {
-      const pu = Number(l.prix_unitaire) || 0;
-      const qte = Math.max(1, Number(l.quantite) || 1);
-      const remiseLigne = Number(l.remise_ligne) || 0;
-      const totalLigne = Math.max(0, pu * qte - remiseLigne);
-      totalHT += totalLigne;
-
-      return {
-        produit_id: l.produit_id ? Number(l.produit_id) : null,
-        modele_id: l.modele_id ? Number(l.modele_id) : null,
-        code_interne: l.code_interne || "P-0000",
-        designation: l.designation || "Article",
-        numero_serie: l.numero_serie || null,
-        categorie: l.categorie || null,
-        quantite: qte,
-        prix_unitaire: pu,
-        remise_ligne: remiseLigne,
-        total_ligne: totalLigne,
-      };
-    });
-
-    const totalFinalTTC = Math.max(0, totalHT - Number(remise_globale || 0));
-
-    // Calcul de la date de fin de garantie
-    const garantieFin = new Date();
-    garantieFin.setMonth(garantieFin.getMonth() + Number(garantie_mois || 6));
-
-    // Transaction atomique
-    const commandeCreee = await prisma.$transaction(async (tx) => {
-      // 1. Génération du numéro séquentiel CMD-YYYY-XXXX
-      const anneeCourante = new Date().getFullYear();
-      const prefixe = `CMD-${anneeCourante}-`;
-      
-      const derniereCmd = await tx.commande.findFirst({
-        where: { numero: { startsWith: prefixe } },
-        orderBy: { id: "desc" },
-        select: { numero: true },
-      });
-
-      let compteur = 1;
-      if (derniereCmd) {
-        const numPart = Number(derniereCmd.numero.split("-")[2]);
-        if (!isNaN(numPart)) compteur = numPart + 1;
-      }
-
-      const numeroCommande = `${prefixe}${String(compteur).padStart(4, "0")}`;
-
-      // 2. Création de la commande
-      const cmd = await tx.commande.create({
-        data: {
-          numero: numeroCommande,
-          statut: statut as StatutCommande,
-          type_paiement: type_paiement as TypePaiement,
-          client_id: client_id ? Number(client_id) : null,
-          client_nom: client_nom || (client_id ? null : "Client Particulier"),
-          client_tel: client_tel || null,
-          client_adresse: client_adresse || null,
-          total_ht: totalHT,
-          total_tva: 0,
-          total_ttc: totalFinalTTC,
-          remise_globale: Number(remise_globale || 0),
-          garantie_mois: Number(garantie_mois || 6),
-          garantie_fin: garantieFin,
-          notes: notes || null,
-          cree_par: user.id,
-          lignes: {
-            create: lignesTraitees,
-          },
-        },
-        include: {
-          client: true,
-          lignes: true,
-          vendeur: { select: { id: true, username: true } },
-        },
-      });
-
-      // 3. Déstockage des exemplaires physiques si statut payee ou en_attente
-      if (statut === "payee" || statut === "en_attente") {
-        for (const l of lignesTraitees) {
-          if (l.produit_id) {
-            await tx.produit.update({
-              where: { id: l.produit_id },
-              data: {
-                statut: "vendu",
-                date_vente: new Date(),
-                prix_vente_reel: l.prix_unitaire,
-              },
-            });
-
-            await tx.historiqueStatut.create({
-              data: {
-                produit_id: l.produit_id,
-                user_id: user.id,
-                statut_avant: "en_vente",
-                statut_apres: "vendu",
-                note: `Vente effectuée sur la commande ${numeroCommande}`,
-              },
-            });
-          }
-        }
-      }
-
-      return cmd;
-    });
-
-    // Journal d'audit
-    await enregistrerActivite(
-      prisma,
-      user.id,
-      ACTIONS_JOURNAL.VENTE_ENREGISTRER,
-      "commande",
-      commandeCreee.id,
-      {
-        numero: commandeCreee.numero,
-        total_ttc: commandeCreee.total_ttc,
-        nb_lignes: lignesTraitees.length,
-      }
-    );
-
+    const commandeCreee = await createOrder(body, user.id);
     return NextResponse.json(commandeCreee, { status: 201 });
   } catch (e: any) {
     console.error("POST /api/commandes:", e);

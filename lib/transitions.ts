@@ -31,6 +31,9 @@ export function messageTransitionInvalide(avant: StatutProduit, apres: StatutPro
   if (apres === "en_vente") {
     return "Le passage en vente se fait uniquement en fixant un prix (gérant).";
   }
+  if (apres === "produit_commande") {
+    return "Le passage en produit commandé se fait automatiquement via une commande ou réservation.";
+  }
   if (apres === "vendu") {
     return "Le passage en vendu se fait uniquement en enregistrant une vente.";
   }

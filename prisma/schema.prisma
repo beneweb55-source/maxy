@@ -39,6 +39,7 @@ enum StatutProduit {
   manque_piece
   hs
   en_vente
+  produit_commande
   vendu
 }
 
@@ -599,6 +600,8 @@ model LigneCommande {
   prix_unitaire   Int
   remise_ligne    Int       @default(0)
   total_ligne     Int
+  mode_ajout      String?   @default("scan") // "scan" | "manuel"
+  etiquette_imprimee Boolean @default(false)
 
   @@index([commande_id])
   @@index([produit_id])
