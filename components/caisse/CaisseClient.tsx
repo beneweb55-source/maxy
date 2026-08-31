@@ -612,6 +612,24 @@ export default function CaisseClient({ role }: { role: Role }) {
     });
   }
 
+  function definirQuantiteSelection(cle: string, qte: number) {
+    setSelection((prev) => {
+      const suivant = new Map(prev);
+      if (!cartes) return suivant;
+      const groupes = grouperDoublonsVente(cartes);
+      const g = groupes.find((x) => x.cle === cle);
+      if (!g) return suivant;
+      const targetQty = Math.max(0, Math.min(g.unites.length, qte));
+      if (targetQty <= 0) {
+        suivant.delete(cle);
+      } else {
+        const ids = g.unites.slice(0, targetQty).map((u) => u.id);
+        suivant.set(cle, new Set(ids));
+      }
+      return suivant;
+    });
+  }
+
   function quitterModeBundle() {
     setSelection(new Map());
     setRemiseBundle("");
@@ -1242,11 +1260,22 @@ export default function CaisseClient({ role }: { role: Role }) {
                          </div>
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
-                           <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
-                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={18} /></button>
-                             <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
-                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
-                           </div>
+                           <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-lg p-1">
+                              <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={16} /></button>
+                              <input
+                                type="number"
+                                min={1}
+                                max={item.groupe.unites.length}
+                                value={item.qty}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10);
+                                  definirQuantiteSelection(item.groupe.cle, isNaN(val) ? 0 : val);
+                                }}
+                                className="w-12 h-9 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                title={`Quantité (Max: ${item.groupe.unites.length})`}
+                              />
+                              <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={16} /></button>
+                            </div>
                          </div>
                        </div>
                      ))}
@@ -1398,11 +1427,22 @@ export default function CaisseClient({ role }: { role: Role }) {
                    </div>
                    <div className="text-right flex flex-col items-end shrink-0">
                      <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
-                     <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
-                       <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={18} /></button>
-                       <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
-                       <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
-                     </div>
+                     <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-lg p-1">
+                        <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={16} /></button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={item.groupe.unites.length}
+                          value={item.qty}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            definirQuantiteSelection(item.groupe.cle, isNaN(val) ? 0 : val);
+                          }}
+                          className="w-12 h-9 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          title={`Quantité (Max: ${item.groupe.unites.length})`}
+                        />
+                        <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={16} /></button>
+                      </div>
                    </div>
                  </div>
                ))}

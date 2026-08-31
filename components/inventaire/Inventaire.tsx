@@ -572,7 +572,13 @@ export default function Inventaire({ role }: { role: Role }) {
 
   function ouvrirAjout(source?: LigneProduit) {
     if (source) {
-      void creerExemplaireRapide(source);
+      setModalArrivageRapideModele({
+        modeleId: source.modele_id,
+        modeleNom: source.reference,
+        categorieId: source.categorie_id,
+        prixAchatDefaut: source.prix_achat,
+        prixVenteDefaut: source.prix_vente_fixe,
+      });
     } else {
       setModalAjoutTerrain(true);
     }
@@ -1738,14 +1744,21 @@ export default function Inventaire({ role }: { role: Role }) {
 
                         {/* Actions Rapides */}
                         <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-1">
-                          {/* Bouton (+) Création Immédiate d'un Exemplaire */}
+                          {/* Bouton (+) Arrivage Rapide / Scanner Douchette */}
                           {peutModifier && (
                             <button
                               type="button"
-                              disabled={envoi}
-                              onClick={() => void creerExemplaireRapide(g)}
-                              className="p-2 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition font-bold disabled:opacity-50"
-                              title="Créer 1 exemplaire immédiatement (+1 au stock)"
+                              onClick={() => {
+                                setModalArrivageRapideModele({
+                                  modeleId: g.modele_id,
+                                  modeleNom: g.reference,
+                                  categorieId: g.categorie_id,
+                                  prixAchatDefaut: g.prixMin,
+                                  prixVenteDefaut: g.venteMin,
+                                });
+                              }}
+                              className="p-2 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition font-bold"
+                              title="Arrivage Rapide / Scanner des codes-barres à la volée"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -1984,14 +1997,21 @@ export default function Inventaire({ role }: { role: Role }) {
                             {/* Actions Rapides Modèle */}
                             <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                               <div className="inline-flex items-center gap-1 justify-end">
-                                {/* Bouton (+) Création Immédiate d'un Exemplaire */}
+                                {/* Bouton (+) Arrivage Rapide / Scanner Douchette */}
                                 {peutModifier && (
                                   <button
                                     type="button"
-                                    disabled={envoi}
-                                    onClick={() => void creerExemplaireRapide(g)}
-                                    className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-2xs font-bold disabled:opacity-50"
-                                    title="Créer 1 exemplaire immédiatement (+1 au stock)"
+                                    onClick={() => {
+                                      setModalArrivageRapideModele({
+                                        modeleId: g.modele_id,
+                                        modeleNom: g.reference,
+                                        categorieId: g.categorie_id,
+                                        prixAchatDefaut: g.prixMin,
+                                        prixVenteDefaut: g.venteMin,
+                                      });
+                                    }}
+                                    className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 transition shadow-2xs font-bold"
+                                    title="Arrivage Rapide / Scanner des codes-barres à la volée"
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
@@ -2159,13 +2179,20 @@ export default function Inventaire({ role }: { role: Role }) {
 
                                             {peutModifier && (
                                               <div className="flex items-center gap-1">
-                                                {/* Bouton (+) Créer 1 exemplaire identique */}
+                                                {/* Bouton (+) Scanner Arrivage */}
                                                 <button
                                                   type="button"
-                                                  disabled={envoi}
-                                                  onClick={() => void creerExemplaireRapide(p)}
-                                                  className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold disabled:opacity-50"
-                                                  title="Créer 1 exemplaire identique (+1 au stock)"
+                                                  onClick={() => {
+                                                    setModalArrivageRapideModele({
+                                                      modeleId: p.modele_id,
+                                                      modeleNom: p.reference,
+                                                      categorieId: p.categorie_id,
+                                                      prixAchatDefaut: p.prix_achat,
+                                                      prixVenteDefaut: p.prix_vente_fixe,
+                                                    });
+                                                  }}
+                                                  className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold"
+                                                  title="Arrivage Rapide / Scanner des codes-barres"
                                                 >
                                                   <Plus className="w-3.5 h-3.5" />
                                                 </button>

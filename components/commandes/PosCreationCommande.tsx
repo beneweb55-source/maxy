@@ -224,6 +224,24 @@ export default function PosCreationCommande() {
     );
   };
 
+  const definirQuantiteLigne = (index: number, qte: number) => {
+    setPanier((prev) =>
+      prev
+        .map((ligne, idx) => {
+          if (idx === index) {
+            if (ligne.produit_id && qte > 1) {
+              afficher("Les ordinateurs sérialisés sont gérés à l'unité (1 exemplaire = 1 S/N unique).", "info");
+              return { ...ligne, quantite: 1 };
+            }
+            const nvQte = Math.max(1, qte);
+            return { ...ligne, quantite: nvQte };
+          }
+          return ligne;
+        })
+        .filter(Boolean) as LignePanier[]
+    );
+  };
+
   const modifierPrixLigne = (index: number, nouveauPrix: number) => {
     setPanier((prev) =>
       prev.map((ligne, idx) => (idx === index ? { ...ligne, prix_unitaire: Math.max(0, nouveauPrix) } : ligne))
@@ -501,15 +519,28 @@ export default function PosCreationCommande() {
                     <button
                       type="button"
                       onClick={() => modifierQuantite(idx, -1)}
-                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-zinc-700"
+                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 active:bg-slate-200 transition"
+                      title="Diminuer la quantité (-1)"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-9 text-center text-xs font-black font-mono">{ligne.quantite}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={ligne.quantite}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        definirQuantiteLigne(idx, isNaN(val) ? 1 : val);
+                      }}
+                      disabled={Boolean(ligne.produit_id)}
+                      className="w-12 h-9 text-center text-xs font-black font-mono bg-transparent border-0 focus:ring-1 focus:ring-brand-orange text-slate-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      title="Saisir la quantité directement"
+                    />
                     <button
                       type="button"
                       onClick={() => modifierQuantite(idx, 1)}
-                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-zinc-700"
+                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 active:bg-slate-200 transition"
+                      title="Augmenter la quantité (+1)"
                     >
                       <Plus className="w-4 h-4" />
                     </button>

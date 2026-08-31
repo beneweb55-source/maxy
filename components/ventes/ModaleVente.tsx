@@ -90,11 +90,12 @@ export default function ModaleVente({
   const [etiquetteValidee, setEtiquetteValidee] = useState(false);
   const [avertissement, setAvertissement] = useState<string | null>(null);
 
-  // Initialisation à l'ouverture
+  // Initialisation à l'ouverture : Quantité par défaut TOUJOURS égale à 1 par référence (Jamais tout le stock)
   useEffect(() => {
     if (unitesDisponibles.length > 0) {
       const map: { [id: number]: number } = {};
       const initialSelection = new Set<number>();
+      const referencesVues = new Set<string>();
 
       for (const u of unitesDisponibles) {
         map[u.id] =
@@ -104,7 +105,12 @@ export default function ModaleVente({
               ? u.prix_vente_reel
               : (u.prix_achat && u.prix_achat > 0 ? Math.round(u.prix_achat * 1.25) : 0);
         
-        initialSelection.add(u.id);
+        // Règle absolue UX POS : pré-sélectionner exactement 1 unité par modèle/référence
+        const cleRef = u.reference || `prod-${u.id}`;
+        if (!referencesVues.has(cleRef)) {
+          initialSelection.add(u.id);
+          referencesVues.add(cleRef);
+        }
       }
 
       setPrixMap(map);
@@ -342,28 +348,40 @@ export default function ModaleVente({
                       </button>
                     </div>
                   ) : (
-                    /* Sélecteur de quantité pour produits génériques sans S/N */
-                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
+                    /* Sélecteur de quantité éditable pour produits génériques sans S/N */
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl p-1 shadow-2xs">
                       <button
                         type="button"
                         disabled={nbSelectionnes <= 0}
                         onClick={() => definirQuantiteGenerique(items, nbSelectionnes - 1)}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-30 font-black text-sm"
-                        title="Diminuer la quantité"
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-30 font-black transition active:scale-95 cursor-pointer"
+                        title="Diminuer la quantité (-1)"
                       >
-                        <Minus className="w-3.5 h-3.5" />
+                        <Minus className="w-4 h-4" />
                       </button>
-                      <span className="font-mono font-black text-xs px-2 text-brand-orange">
-                        {nbSelectionnes} / {items.length}
-                      </span>
+                      <div className="flex items-center gap-1 px-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={items.length}
+                          value={nbSelectionnes}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            definirQuantiteGenerique(items, isNaN(val) ? 0 : val);
+                          }}
+                          className="w-14 h-8 text-center font-mono font-black text-sm text-brand-orange bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          title={`Quantité à facturer (Max disponible: ${items.length})`}
+                        />
+                        <span className="text-xs font-bold text-slate-400 font-mono">/ {items.length}</span>
+                      </div>
                       <button
                         type="button"
                         disabled={nbSelectionnes >= items.length}
                         onClick={() => definirQuantiteGenerique(items, nbSelectionnes + 1)}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-30 font-black text-sm"
-                        title="Augmenter la quantité"
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-30 font-black transition active:scale-95 cursor-pointer"
+                        title="Augmenter la quantité (+1)"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
                   )}

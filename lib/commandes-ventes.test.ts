@@ -195,6 +195,7 @@ describe("Système de Commande, Vente & Facturation", () => {
         modePaiement: "virement",
         lignes: [
           {
+            produit_id: 10,
             code_interne: "PC-002",
             designation: "HP ZBook Fury G8",
             prix: 120000,
@@ -233,6 +234,7 @@ describe("Système de Commande, Vente & Facturation", () => {
         typeFacture: "normale",
         lignes: [
           {
+            produit_id: 11,
             code_interne: "PC-SAV-01",
             designation: "Dell Latitude 5420 (S/N: 8XYZ999)",
             prix: 0, // Vente / Remplacement à 0 DA

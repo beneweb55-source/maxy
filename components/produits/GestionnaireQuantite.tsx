@@ -134,10 +134,34 @@ export default function GestionnaireQuantite({
         </button>
       )}
 
-      {/* Affichage Quantité */}
-      <div className="flex items-center gap-1 px-1.5 font-black text-slate-900 dark:text-white">
+      {/* Affichage & Saisie Directe Quantité */}
+      <div className="flex items-center gap-0.5 px-1 font-black text-slate-900 dark:text-white">
         <Package className="w-3.5 h-3.5 text-brand-orange shrink-0" />
-        <span className="font-mono tracking-tight">{quantiteLocale}</span>
+        <input
+          type="number"
+          min={1}
+          value={quantiteLocale}
+          disabled={enCours || !peutModifier}
+          onChange={(e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 1) {
+              setQuantiteLocale(val);
+            }
+          }}
+          onBlur={() => {
+            const delta = quantiteLocale - quantiteActuelle;
+            if (delta !== 0) {
+              void modifierQuantite(delta);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          className="w-10 h-6 text-center font-mono font-black text-xs bg-transparent border-0 focus:ring-1 focus:ring-brand-orange text-slate-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          title="Saisir la quantité directement (Entrée pour valider)"
+        />
         <span className="text-[10px] font-bold text-slate-400 uppercase">u.</span>
       </div>
 
