@@ -82,11 +82,11 @@ export async function POST(request: NextRequest) {
     if (produits.length !== idsUniques.length) {
       return erreur(404, "Un des produits sélectionnés est introuvable.");
     }
-    const nonEnVente = produits.filter((p) => p.statut !== "en_vente");
-    if (nonEnVente.length > 0) {
+    const nonDispo = produits.filter((p) => p.statut === "vendu" || p.statut === "hs");
+    if (nonDispo.length > 0) {
       return erreur(
         400,
-        `Produit non disponible à la vente : ${nonEnVente.map((p) => p.code_interne).join(", ")}.`
+        `Produit indisponible à la vente (déjà vendu ou HS) : ${nonDispo.map((p) => p.code_interne).join(", ")}.`
       );
     }
 
@@ -150,17 +150,21 @@ export async function POST(request: NextRequest) {
         where: { id: { in: idsUniques } },
         select: { id: true, statut: true, code_interne: true, numero_serie: true },
       });
-      const nonDispos = pVerifs.filter((p) => p.statut !== "en_vente");
+      const nonDispos = pVerifs.filter((p) => p.statut === "vendu" || p.statut === "hs");
       if (pVerifs.length !== idsUniques.length || nonDispos.length > 0) {
         const codes = nonDispos.map((p) => p.code_interne).join(", ");
         throw new Error(`Conflit de vente concurrente : certains exemplaires ne sont plus disponibles (${codes || "introuvables"}).`);
       }
+
+      const statutParId = new Map(pVerifs.map((p) => [p.id, p.statut]));
 
       const cree: number[] = [];
       const lignesFacture: LigneFacture[] = [];
       for (let i = 0; i < ordonnes.length; i++) {
         const produit = ordonnes[i]!;
         const part = parts[i]!;
+        const statutOrigine = statutParId.get(produit.id) || "en_vente";
+
         const vente = await tx.vente.create({
           data: {
             produit_id: produit.id,
@@ -208,6 +212,17 @@ export async function POST(request: NextRequest) {
               });
             }
           }
+        }
+        if (statutOrigine !== "en_vente") {
+          await tx.historiqueStatut.create({
+            data: {
+              produit_id: produit.id,
+              user_id: user.id,
+              statut_avant: statutOrigine,
+              statut_apres: "en_vente",
+              note: "Mise en vente automatique au comptoir (Auto-Override)",
+            },
+          });
         }
         await tx.historiqueStatut.create({
           data: {

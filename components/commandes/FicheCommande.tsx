@@ -7,13 +7,15 @@ import {
   Printer, 
   ArrowLeft, 
   RotateCcw, 
-  X,
-  Edit3,
+  X, 
+  Edit3, 
   Trash2,
+  Download,
 } from "lucide-react";
 import { formaterDA } from "@/lib/caisse";
 import { montantEnLettres } from "@/lib/nombres";
 import { useToast } from "@/components/toast";
+import { genererFacturePdf } from "@/lib/facture-pdf";
 
 interface FicheCommandeProps {
   commandeId: number;
@@ -174,6 +176,48 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
               <span>Rembourser</span>
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!commande) return;
+              genererFacturePdf({
+                numero: commande.numero,
+                date: commande.created_at,
+                vendeur: commande.vendeur?.username,
+                type_paiement: commande.type_paiement,
+                garantie_mois: commande.garantie_mois,
+                garantie_fin: commande.garantie_fin,
+                client: {
+                  nom: commande.client?.nom || commande.client_nom,
+                  telephone: commande.client?.telephone || commande.client_tel,
+                  adresse: commande.client?.adresse || commande.client_adresse,
+                  rc: commande.client?.rc,
+                  nif: commande.client?.nif,
+                  nis: commande.client?.nis,
+                  ai: commande.client?.ai,
+                },
+                lignes: (commande.lignes || []).map((l: any) => ({
+                  code_interne: l.code_interne,
+                  designation: l.designation,
+                  numero_serie: l.numero_serie,
+                  quantite: l.quantite,
+                  prix_unitaire: l.prix_unitaire,
+                  total_ligne: l.total_ligne,
+                })),
+                total_ht: commande.total_ht,
+                remise_globale: commande.remise_globale,
+                total_ttc: commande.total_ttc,
+                notes: commande.notes,
+              });
+              afficher("Téléchargement du PDF lancé avec succès.", "succes");
+            }}
+            className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold"
+            title="Télécharger la facture officielle en PDF"
+          >
+            <Download className="w-4 h-4" />
+            <span>Télécharger la Facture (PDF)</span>
+          </button>
 
           <button
             type="button"

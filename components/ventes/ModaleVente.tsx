@@ -20,7 +20,9 @@ import {
   Minus,
   Sparkles,
   Layers,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  Download
 } from "lucide-react";
 
 export interface ArticleAVendre {
@@ -372,89 +374,129 @@ export default function ModaleVente({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                     {items.map((u) => {
                       const estCoche = selectionnes.has(u.id);
+                      const prixActuel = prixMap[u.id];
+                      const prixNulOuManquant = prixActuel === undefined || prixActuel <= 0;
 
                       return (
                         <div
                           key={u.id}
                           onClick={() => basculerUnite(u.id)}
-                          className={`flex items-center justify-between gap-2 p-3 rounded-xl border cursor-pointer transition-all ${
+                          className={`flex flex-col gap-2 p-3 rounded-xl border cursor-pointer transition-all ${
                             estCoche
-                              ? "bg-white border-brand-orange shadow-xs ring-1 ring-brand-orange/30"
-                              : "bg-white/60 border-slate-200 hover:border-slate-300 opacity-60"
+                              ? "bg-white dark:bg-zinc-900 border-brand-orange shadow-xs ring-1 ring-brand-orange/30"
+                              : "bg-white/60 dark:bg-zinc-900/60 border-slate-200 dark:border-zinc-800 hover:border-slate-300 opacity-60"
                           }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={estCoche}
-                              onChange={() => {}} // géré par le conteneur onClick
-                              className="checkbox checkbox-xs checkbox-primary rounded"
-                            />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-mono font-bold text-slate-900 text-xs">
-                                  {u.code_interne}
-                                </span>
-                                {u.grade && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
-                                    {u.grade}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={estCoche}
+                                onChange={() => {}} // géré par le conteneur onClick
+                                className="checkbox checkbox-xs checkbox-primary rounded"
+                              />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
+                                    {u.code_interne}
                                   </span>
+                                  {u.grade && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                                      {u.grade}
+                                    </span>
+                                  )}
+                                </div>
+                                {u.numero_serie ? (
+                                  <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 mt-0.5 truncate">
+                                    <ShieldCheck className="w-3 h-3 shrink-0" />
+                                    <span>S/N : {u.numero_serie}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Sans S/N</span>
                                 )}
                               </div>
-                              {u.numero_serie ? (
-                                <span className="font-mono text-[11px] font-bold text-emerald-700 flex items-center gap-1 mt-0.5 truncate">
-                                  <ShieldCheck className="w-3 h-3 shrink-0" />
-                                  <span>S/N : {u.numero_serie}</span>
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-slate-400 italic">Sans S/N</span>
-                              )}
+                            </div>
+
+                            {/* Ajustement de prix unitaire */}
+                            <div 
+                              className="flex items-center gap-1 shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="number"
+                                min="0"
+                                value={prixMap[u.id] !== undefined ? prixMap[u.id] : ""}
+                                onChange={(e) =>
+                                  setPrixMap({ ...prixMap, [u.id]: Number(e.target.value) || 0 })
+                                }
+                                className={`input input-xs h-7 w-24 text-right font-mono font-bold text-xs rounded-lg ${
+                                  estCoche && prixNulOuManquant
+                                    ? "bg-red-50 dark:bg-red-950/40 border-red-400 text-red-700 dark:text-red-300 ring-2 ring-red-400/30"
+                                    : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 focus:bg-white dark:focus:bg-zinc-900"
+                                }`}
+                                placeholder="Prix obligatoire"
+                              />
+                              <span className="text-[10px] font-bold text-slate-500">DA</span>
                             </div>
                           </div>
 
-                          {/* Ajustement de prix unitaire */}
-                          <div 
-                            className="flex items-center gap-1 shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <input
-                              type="number"
-                              min="0"
-                              value={prixMap[u.id] !== undefined ? prixMap[u.id] : ""}
-                              onChange={(e) =>
-                                setPrixMap({ ...prixMap, [u.id]: Number(e.target.value) || 0 })
-                              }
-                              className="input input-xs h-7 w-24 text-right font-mono font-bold text-xs bg-slate-50 border-slate-200 rounded-lg focus:bg-white"
-                              placeholder="0"
-                            />
-                            <span className="text-[10px] font-bold text-slate-500">DA</span>
-                          </div>
+                          {/* Avertissement Auto-Override si le statut n'est pas en_vente */}
+                          {u.statut && u.statut !== "en_vente" && (
+                            <div className="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-[10px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5 animate-entree">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              <span>
+                                Ce produit est en statut <strong>{u.statut.toUpperCase()}</strong>. Il sera automatiquement mis en vente et facturé.
+                              </span>
+                            </div>
+                          )}
+
+                          {estCoche && prixNulOuManquant && (
+                            <span className="text-[10px] text-red-600 dark:text-red-400 font-bold">
+                              * Saisie du prix de vente obligatoire avant encaissement
+                            </span>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 ) : (
                   /* CAS B : Ajustement de prix unitaire pour le lot générique */
-                  <div className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200 text-xs">
-                    <span className="text-slate-600 font-medium">Prix unitaire appliqué :</span>
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="number"
-                        min="0"
-                        value={items[0] && prixMap[items[0].id] !== undefined ? prixMap[items[0].id] : ""}
-                        onChange={(e) => {
-                          const val = Number(e.target.value) || 0;
-                          const newMap = { ...prixMap };
-                          for (const item of items) {
-                            newMap[item.id] = val;
-                          }
-                          setPrixMap(newMap);
-                        }}
-                        className="input input-xs h-8 w-28 text-right font-mono font-bold text-xs bg-slate-50 border-slate-200 rounded-lg focus:bg-white"
-                        placeholder="0"
-                      />
-                      <span className="font-bold text-brand-orange">DA</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs">
+                      <span className="text-slate-600 dark:text-slate-300 font-medium">Prix unitaire appliqué :</span>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min="0"
+                          value={items[0] && prixMap[items[0].id] !== undefined ? prixMap[items[0].id] : ""}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0;
+                            const newMap = { ...prixMap };
+                            for (const item of items) {
+                              newMap[item.id] = val;
+                            }
+                            setPrixMap(newMap);
+                          }}
+                          className={`input input-xs h-8 w-28 text-right font-mono font-bold text-xs rounded-lg ${
+                            (prixMap[items[0]?.id ?? 0] ?? 0) <= 0
+                              ? "bg-red-50 dark:bg-red-950/40 border-red-400 text-red-700 dark:text-red-300 ring-2 ring-red-400/30"
+                              : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 focus:bg-white dark:focus:bg-zinc-900"
+                          }`}
+                          placeholder="Prix obligatoire"
+                        />
+                        <span className="font-bold text-brand-orange">DA</span>
+                      </div>
                     </div>
+
+                    {/* Avertissement Auto-Override pour lot générique */}
+                    {items.some((i) => i.statut && i.statut !== "en_vente") && (
+                      <div className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-[10px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5 animate-entree">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>
+                          Certains exemplaires sont en statut non-vente (ex: REÇU/OK). Ils seront automatiquement régularisés en vente et facturés.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -145,8 +145,8 @@ export async function POST(request: NextRequest) {
       include: { reparations: { select: { cout: true } } },
     });
     if (!produit) return erreur(404, "Produit introuvable.");
-    if (produit.statut !== "en_vente") {
-      return erreur(400, `Seul un produit « En vente » peut être vendu (Statut actuel: ${produit.statut}).`);
+    if (produit.statut === "vendu" || produit.statut === "hs") {
+      return erreur(400, `Ce produit est ${produit.statut === "vendu" ? "déjà vendu" : "hors service (HS)"} et ne peut être facturé.`);
     }
 
     const parametres = await prisma.parametres.findUnique({ where: { id: 1 } });
@@ -169,9 +169,11 @@ export async function POST(request: NextRequest) {
         where: { id: produitId },
         select: { id: true, statut: true, code_interne: true, numero_serie: true },
       });
-      if (!pVerif || pVerif.statut !== "en_vente") {
-        throw new Error(`Conflit : L'exemplaire ${pVerif?.code_interne || produitId} n'est plus disponible (déjà vendu ou réservé par un autre utilisateur).`);
+      if (!pVerif || pVerif.statut === "vendu" || pVerif.statut === "hs") {
+        throw new Error(`Conflit : L'exemplaire ${pVerif?.code_interne || produitId} n'est plus disponible (déjà vendu ou hors service).`);
       }
+
+      const statutOrigine = pVerif.statut;
 
       const vente = await tx.vente.create({
         data: {
@@ -221,6 +223,17 @@ export async function POST(request: NextRequest) {
             });
           }
         }
+      }
+      if (statutOrigine !== "en_vente") {
+        await tx.historiqueStatut.create({
+          data: {
+            produit_id: produit.id,
+            user_id: user.id,
+            statut_avant: statutOrigine,
+            statut_apres: "en_vente",
+            note: "Mise en vente automatique au comptoir (Auto-Override)",
+          },
+        });
       }
       await tx.historiqueStatut.create({
         data: {

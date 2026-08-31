@@ -18,6 +18,8 @@ import { useLangue } from "@/lib/i18n/contexte";
 import GarantieCertificat from "@/components/factures/GarantieCertificat";
 import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
+import { Download } from "lucide-react";
+import { genererFacturePdf } from "@/lib/facture-pdf";
 
 interface LigneFactureDto {
   id: number;
@@ -249,6 +251,43 @@ export default function FactureDetail({
             <IconeBouclier taille={15} />
             Créer garantie
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!facture) return;
+              genererFacturePdf({
+                numero: facture.numero,
+                date: facture.date_emission,
+                vendeur: facture.vendeur,
+                type_paiement: facture.mode_paiement,
+                garantie_mois: 6,
+                client: {
+                  nom: facture.client_nom,
+                  telephone: facture.client_tel,
+                  adresse: facture.client_adresse,
+                  rc: facture.client_rc,
+                  nif: facture.client_nif,
+                  nis: facture.client_nis,
+                  ai: facture.client_ai,
+                },
+                lignes: (facture.lignes || []).map((l) => ({
+                  code_interne: l.code_interne,
+                  designation: l.designation,
+                  quantite: 1,
+                  prix_unitaire: l.prix,
+                  total_ligne: l.prix,
+                })),
+                total_ttc: facture.total,
+              });
+              afficher("Téléchargement du PDF de facture lancé.", "succes");
+            }}
+            className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold"
+            title="Télécharger la Facture (PDF)"
+          >
+            <Download className="w-4 h-4" />
+            <span>Télécharger la Facture (PDF)</span>
+          </button>
+
           <button type="button" onClick={() => window.print()} className="btn btn-primaire">
             <IconeImprimante taille={15} />
             Imprimer

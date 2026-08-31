@@ -13,6 +13,8 @@ import {
   IconeImprimante,
 } from "@/components/icons";
 import { useToast } from "@/components/toast";
+import { Download } from "lucide-react";
+import { genererFacturePdf } from "@/lib/facture-pdf";
 
 interface LigneFactureListe {
   id: number;
@@ -430,19 +432,63 @@ export default function ListeFactures({ role }: { role?: string }) {
                         )}
                         <span className="font-bold">{formaterDA(f.total_net)}</span>
                       </td>
-                      {peutSupprimer && (
-                        <td className="px-3 py-2.5 text-right">
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <div className="inline-flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={(e) => supprimerFacture(f.id, e)}
-                            disabled={envoi}
-                            className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-                            title="Supprimer la facture"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/factures/${f.id}`);
+                                if (!res.ok) throw new Error();
+                                const fullFacture = await res.json();
+                                genererFacturePdf({
+                                  numero: fullFacture.numero,
+                                  date: fullFacture.date_emission,
+                                  vendeur: fullFacture.vendeur,
+                                  type_paiement: fullFacture.mode_paiement,
+                                  garantie_mois: 6,
+                                  client: {
+                                    nom: fullFacture.client_nom,
+                                    telephone: fullFacture.client_tel,
+                                    adresse: fullFacture.client_adresse,
+                                    rc: fullFacture.client_rc,
+                                    nif: fullFacture.client_nif,
+                                    nis: fullFacture.client_nis,
+                                    ai: fullFacture.client_ai,
+                                  },
+                                  lignes: (fullFacture.lignes || []).map((l: any) => ({
+                                    code_interne: l.code_interne,
+                                    designation: l.designation,
+                                    quantite: 1,
+                                    prix_unitaire: l.prix,
+                                    total_ligne: l.prix,
+                                  })),
+                                  total_ttc: fullFacture.total,
+                                });
+                                afficher("Téléchargement du PDF lancé.", "succes");
+                              } catch {
+                                afficher("Erreur génération PDF.", "erreur");
+                              }
+                            }}
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-orange/10 hover:text-brand-orange"
+                            title="Télécharger la Facture (PDF)"
                           >
-                            <IconeCorbeille taille={15} />
+                            <Download className="w-4 h-4" />
                           </button>
-                        </td>
-                      )}
+
+                          {peutSupprimer && (
+                            <button
+                              type="button"
+                              onClick={(e) => supprimerFacture(f.id, e)}
+                              disabled={envoi}
+                              className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                              title="Supprimer la facture"
+                            >
+                              <IconeCorbeille taille={15} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}

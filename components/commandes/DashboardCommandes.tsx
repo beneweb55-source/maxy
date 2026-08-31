@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
+import { genererFacturePdf } from "@/lib/facture-pdf";
 
 interface LigneCommandeDashboard {
   id: number;
@@ -441,6 +442,53 @@ export default function DashboardCommandes() {
 
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/commandes/${cmd.id}`);
+                                if (!res.ok) throw new Error();
+                                const fullCmd = await res.json();
+                                genererFacturePdf({
+                                  numero: fullCmd.numero,
+                                  date: fullCmd.created_at,
+                                  vendeur: fullCmd.vendeur?.username,
+                                  type_paiement: fullCmd.type_paiement,
+                                  garantie_mois: fullCmd.garantie_mois,
+                                  garantie_fin: fullCmd.garantie_fin,
+                                  client: {
+                                    nom: fullCmd.client?.nom || fullCmd.client_nom,
+                                    telephone: fullCmd.client?.telephone || fullCmd.client_tel,
+                                    adresse: fullCmd.client?.adresse || fullCmd.client_adresse,
+                                    rc: fullCmd.client?.rc,
+                                    nif: fullCmd.client?.nif,
+                                    nis: fullCmd.client?.nis,
+                                    ai: fullCmd.client?.ai,
+                                  },
+                                  lignes: (fullCmd.lignes || []).map((l: any) => ({
+                                    code_interne: l.code_interne,
+                                    designation: l.designation,
+                                    numero_serie: l.numero_serie,
+                                    quantite: l.quantite,
+                                    prix_unitaire: l.prix_unitaire,
+                                    total_ligne: l.total_ligne,
+                                  })),
+                                  total_ht: fullCmd.total_ht,
+                                  remise_globale: fullCmd.remise_globale,
+                                  total_ttc: fullCmd.total_ttc,
+                                  notes: fullCmd.notes,
+                                });
+                                afficher("Téléchargement de la facture PDF lancé.", "succes");
+                              } catch {
+                                afficher("Erreur lors de la génération du PDF.", "erreur");
+                              }
+                            }}
+                            className="inline-flex items-center justify-center p-1.5 rounded-xl text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10 transition"
+                            title="Télécharger la Facture (PDF)"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+
                           <Link
                             href={`/commandes/${cmd.id}`}
                             className="inline-flex items-center gap-1 btn btn-secondaire text-xs py-1.5 px-2.5 rounded-xl font-bold hover:text-brand-orange shadow-xs"

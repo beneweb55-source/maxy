@@ -137,6 +137,12 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
     if (statut === "payee" || statut === "en_attente") {
       for (const l of lignesTraitees) {
         if (l.produit_id) {
+          const prodExistant = await tx.produit.findUnique({
+            where: { id: l.produit_id },
+            select: { id: true, statut: true, code_interne: true },
+          });
+          const statutActuel = prodExistant?.statut || "en_vente";
+
           let statutCible: StatutProduit = "vendu";
           let noteHistorique = "";
 
@@ -191,7 +197,7 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
             data: {
               produit_id: l.produit_id,
               user_id: userId,
-              statut_avant: "en_vente",
+              statut_avant: statutActuel,
               statut_apres: statutCible,
               note: noteHistorique,
             },

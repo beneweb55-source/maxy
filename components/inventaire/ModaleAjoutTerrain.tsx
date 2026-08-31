@@ -37,6 +37,7 @@ import {
   genererDesignationAutomatique,
   type ProfilEquipement 
 } from "@/lib/matrice-specifications";
+import { devinerCategorie, type SuggestionCategorie } from "@/lib/category-guesser";
 
 interface SousCategorieOption {
   id: number;
@@ -115,12 +116,52 @@ export default function ModaleAjoutTerrain({
   const [enSoumission, setEnSoumission] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  // Auto-Catégorisation Intelligente
+  const [suggestionAuto, setSuggestionAuto] = useState<SuggestionCategorie | null>(null);
+  const [categorieModifieeManuellement, setCategorieModifieeManuellement] = useState(false);
+
   // Profil d'équipement dynamique déterminé selon la sous-catégorie sélectionnée
   const sousCatSelectionnee = sousCategories.find((sc) => sc.id === sousCatId);
   const profilActif = determinerProfilEquipement(
     sousCatSelectionnee?.nom || "",
     sousCatSelectionnee?.parent_nom || sousCatSelectionnee?.famille_nom || ""
   );
+
+  // Auto-Catégorisation Intelligente automatique sur la saisie Marque & Modèle
+  useEffect(() => {
+    if (onglet !== "nouveau_modele" || categorieModifieeManuellement) return;
+    const texteAAnalyser = `${marque} ${nomBase}`.trim();
+    if (texteAAnalyser.length < 3) {
+      setSuggestionAuto(null);
+      return;
+    }
+
+    const suggestion = devinerCategorie(texteAAnalyser);
+    if (suggestion && sousCategories.length > 0) {
+      setSuggestionAuto(suggestion);
+      const nomCible = suggestion.categorieNom.toLowerCase();
+      const sousCatCible = suggestion.sousCategorieNom?.toLowerCase();
+      const familleCible = suggestion.familleNom.toLowerCase();
+
+      const match = sousCategories.find((sc) => {
+        const scNom = sc.nom.toLowerCase();
+        const scParent = (sc.parent_nom || "").toLowerCase();
+        const scFamille = (sc.famille_nom || "").toLowerCase();
+
+        return (
+          (sousCatCible && (scNom.includes(sousCatCible) || sousCatCible.includes(scNom))) ||
+          scNom.includes(nomCible) ||
+          nomCible.includes(scNom) ||
+          scParent.includes(nomCible) ||
+          (scFamille.includes(familleCible) && scNom.includes(nomCible))
+        );
+      });
+
+      if (match && match.id !== sousCatId) {
+        setSousCatId(match.id);
+      }
+    }
+  }, [marque, nomBase, sousCategories, onglet, categorieModifieeManuellement, sousCatId]);
 
   // 1. Charger les catégories au montage
   useEffect(() => {
@@ -543,6 +584,7 @@ export default function ModaleAjoutTerrain({
                   onChange={(e) => {
                     const id = Number(e.target.value);
                     setSousCatId(id);
+                    setCategorieModifieeManuellement(true);
                     setModeleSelectionne(null);
                   }}
                   className="select w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-bold text-sm h-12"
@@ -554,6 +596,14 @@ export default function ModaleAjoutTerrain({
                     </option>
                   ))}
                 </select>
+
+                {suggestionAuto && (
+                  <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 font-black flex items-center gap-1.5 animate-entree">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>✨ Catégorie suggérée automatiquement : <strong>{suggestionAuto.categorieNom}</strong> ({suggestionAuto.familleNom})</span>
+                  </p>
+                )}
+
                 {profilActif && (
                   <p className="mt-1.5 text-xs text-brand-orange font-bold flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" /> Profil détecté : {profilActif.description}

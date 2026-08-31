@@ -28,6 +28,7 @@ import {
   MATRICE_EQUIPEMENTS,
   type ProfilEquipement 
 } from "@/lib/matrice-specifications";
+import { devinerCategorie, type SuggestionCategorie } from "@/lib/category-guesser";
 
 interface FormulaireModeleProps {
   ouvert: boolean;
@@ -74,6 +75,10 @@ export default function FormulaireModele({
   const [imageUrl, setImageUrl] = useState("");
   const [description, setDescription] = useState("");
 
+  // Auto-Catégorisation Intelligente
+  const [suggestionAuto, setSuggestionAuto] = useState<SuggestionCategorie | null>(null);
+  const [classificationManuelle, setClassificationManuelle] = useState(false);
+
   // Form State - Étape 2 : Spécifications dynamiques
   const [specs, setSpecs] = useState<Record<string, any>>({});
   const [chargement, setChargement] = useState(false);
@@ -104,6 +109,7 @@ export default function FormulaireModele({
     if (ouvert) {
       setErreur(null);
       setEtape(1);
+      setClassificationManuelle(false);
       if (modeleInitial) {
         setNom(modeleInitial.nom || "");
         setPrixConseille(modeleInitial.prix_vente_conseille ? String(modeleInitial.prix_vente_conseille) : "");
@@ -134,6 +140,37 @@ export default function FormulaireModele({
       }
     }
   }, [ouvert, modeleInitial, categorieIdDefaut]);
+
+  useEffect(() => {
+    if (modeleInitial || classificationManuelle) return;
+    const texte = `${marque} ${nom}`.trim();
+    if (texte.length < 3) {
+      setSuggestionAuto(null);
+      return;
+    }
+
+    const sugg = devinerCategorie(texte);
+    if (sugg && categoriesArbre.length > 0) {
+      setSuggestionAuto(sugg);
+      const catCible = sugg.categorieNom.toLowerCase();
+      const famCible = sugg.familleNom.toLowerCase();
+
+      for (const f of categoriesArbre) {
+        const matchFamille = f.nom.toLowerCase().includes(famCible) || famCible.includes(f.nom.toLowerCase());
+        for (const c of f.enfants || []) {
+          const matchCat = c.nom.toLowerCase().includes(catCible) || catCible.includes(c.nom.toLowerCase());
+          if (matchCat || (matchFamille && c.nom.toLowerCase().includes(catCible))) {
+            setFamilleId(f.id);
+            setCategorieId(c.id);
+            if (c.enfants && c.enfants.length > 0) {
+              setSousCategorieId(c.enfants[0].id);
+            }
+            return;
+          }
+        }
+      }
+    }
+  }, [marque, nom, categoriesArbre, modeleInitial, classificationManuelle]);
 
   // Déterminer la catégorie finale sélectionnée
   const categorieFinaleId = sousCategorieId || categorieId || familleId;
@@ -382,6 +419,13 @@ export default function FormulaireModele({
                     </select>
                   </div>
                 </div>
+
+                {suggestionAuto && (
+                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-black flex items-center gap-1.5 animate-entree">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>✨ Catégorie suggérée automatiquement : <strong>{suggestionAuto.categorieNom}</strong> ({suggestionAuto.familleNom})</span>
+                  </p>
+                )}
               </div>
 
               {/* Sélection Rapide de la Marque */}
