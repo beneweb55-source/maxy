@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
     await enregistrerActivite(
       prisma,
       user.id,
-      ACTIONS_JOURNAL.VENTE_EFFECTUER,
+      ACTIONS_JOURNAL.VENTE_ENREGISTRER,
       "commande",
       commandeCreee.id,
       {
