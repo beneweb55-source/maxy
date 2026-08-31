@@ -159,8 +159,6 @@ export default function AssistantImportation({
     return list;
   }, [categoriesArbre]);
 
-  if (!ouvert) return null;
-
   // Téléchargement d'un modèle CSV / Excel exemple
   const telechargerModeleExemple = () => {
     const entetes = "Désignation,Quantité,Prix Achat (DA),Prix Vente (DA),Numéro de Série (S/N),Grade\n";
@@ -516,6 +514,8 @@ export default function AssistantImportation({
       setEnvoiImport(false);
     }
   };
+
+  if (!ouvert) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-sm animate-entree">

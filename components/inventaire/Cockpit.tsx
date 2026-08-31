@@ -280,19 +280,19 @@ export default function Cockpit({
           </div>
 
           <div 
-            className="carte relative overflow-hidden group cursor-pointer border border-emerald-200/80 bg-emerald-50/50 dark:from-emerald-950/30 dark:to-brand-paper dark:border-emerald-900/40 !p-5 rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-[0.99]"
+            className="carte relative overflow-hidden group cursor-pointer border border-emerald-300/60 bg-emerald-50/60 dark:bg-brand-paper dark:border-emerald-500/30 !p-5 rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-[0.99]"
             onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu,en_test,en_vente", famille_id: null, categorie_id: null, sous_categorie_id: null })}
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1">
                   Disponibles
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-emerald-900 dark:text-emerald-400 font-outfit">
+                <div className="text-3xl sm:text-4xl font-extrabold text-emerald-800 dark:text-emerald-400 font-outfit">
                   {stats.summary.disponibles}
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <IconeCocheCercle taille={24} />
               </div>
             </div>

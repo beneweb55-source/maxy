@@ -225,7 +225,7 @@ export default function BreadcrumbNavigation({
 
         {/* Badge du nombre d'articles */}
         {totalArticles !== undefined && (
-          <span className="bg-brand-black text-white dark:bg-white dark:text-brand-black text-[11px] font-black px-2 py-0.5 rounded-full ml-1 shrink-0">
+          <span className="bg-brand-black/10 text-brand-black dark:bg-white/10 dark:text-brand-orange dark:border dark:border-brand-orange/30 text-[11px] font-black px-2.5 py-0.5 rounded-full ml-1 shrink-0">
             {totalArticles}
           </span>
         )}
