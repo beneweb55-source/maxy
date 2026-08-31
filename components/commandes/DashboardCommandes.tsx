@@ -20,7 +20,9 @@ import {
   Download,
   Building2,
   User,
-  ArrowRight
+  ArrowRight,
+  Trash2,
+  X,
 } from "lucide-react";
 import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
@@ -29,13 +31,20 @@ interface LigneCommandeDashboard {
   id: number;
   numero: string;
   date_commande: string;
-  statut: "payee" | "en_attente" | "devis" | "annulee" | "remboursee";
-  type_paiement: "especes" | "virement" | "carte" | "cheque";
+  statut: string;
+  type_paiement: string;
+  client_nom: string | null;
+  client_tel: string | null;
+  total_ht: number;
   total_ttc: number;
-  client_nom?: string;
-  client?: { nom: string };
-  vendeur?: { username: string };
-  lignes?: any[];
+  nb_articles: number;
+  client?: {
+    nom: string;
+    telephone: string | null;
+  } | null;
+  vendeur?: {
+    username: string;
+  } | null;
 }
 
 export default function DashboardCommandes() {
@@ -44,68 +53,75 @@ export default function DashboardCommandes() {
   const { afficher } = useToast();
 
   const [commandes, setCommandes] = useState<LigneCommandeDashboard[]>([]);
-  const [chargement, setChargement] = useState(true);
   const [totalCommandes, setTotalCommandes] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pagesTotales, setPagesTotales] = useState(1);
+  const [chargement, setChargement] = useState(true);
+  const [recherche, setRecherche] = useState(searchParams.get("q") || "");
+
+  // Multi-sélection pour actions de masse
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [envoiMasse, setEnvoiMasse] = useState(false);
 
-  // Filtres URL
+  // Modale de confirmation suppression (individuelle ou en masse)
+  const [modalSuppression, setModalSuppression] = useState<{
+    type: "unique" | "selection";
+    id?: number;
+    numero?: string;
+    nb?: number;
+  } | null>(null);
+
+  // Filtres
   const statutActuel = searchParams.get("statut") || "tous";
   const periodeActuelle = searchParams.get("periode") || "tous";
-  const qActuel = searchParams.get("q") || "";
-  const pageActuelle = Number(searchParams.get("page")) || 1;
-
-  const [rechercheLocale, setRechercheLocale] = useState(qActuel);
 
   const majUrl = useCallback(
-    (modifs: Record<string, string | null>) => {
+    (nouveauxParams: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
-      Object.entries(modifs).forEach(([k, v]) => {
-        if (v === null || v === "" || v === "tous") params.delete(k);
-        else params.set(k, v);
+      Object.entries(nouveauxParams).forEach(([cle, valeur]) => {
+        if (valeur === null || valeur === "" || valeur === "tous") {
+          params.delete(cle);
+        } else {
+          params.set(cle, valeur);
+        }
       });
       router.push(`/commandes?${params.toString()}`);
     },
     [searchParams, router]
   );
 
-  // Charger les commandes
   const chargerCommandes = useCallback(async () => {
     setChargement(true);
     try {
-      const params = new URLSearchParams();
-      if (statutActuel !== "tous") params.set("statut", statutActuel);
-      if (periodeActuelle !== "tous") params.set("periode", periodeActuelle);
-      if (qActuel) params.set("q", qActuel);
-      params.set("page", String(pageActuelle));
-
-      const res = await fetch(`/api/commandes?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCommandes(data.commandes || []);
-        setTotalCommandes(data.pagination?.total || 0);
-      }
-    } catch (err) {
-      console.error("Erreur chargement commandes:", err);
+      const query = searchParams.toString();
+      const res = await fetch(`/api/commandes?${query}`);
+      if (!res.ok) throw new Error("Erreur chargement des commandes.");
+      const data = await res.json();
+      setCommandes(data.commandes || []);
+      setTotalCommandes(data.total || 0);
+      setPagesTotales(data.pagesTotales || 1);
+    } catch (err: any) {
+      afficher(err.message || "Erreur réseau.", "erreur");
     } finally {
       setChargement(false);
     }
-  }, [statutActuel, periodeActuelle, qActuel, pageActuelle]);
+  }, [searchParams, afficher]);
 
   useEffect(() => {
-    chargerCommandes();
+    void chargerCommandes();
   }, [chargerCommandes]);
 
-  const toggleSelection = (id: number) => {
+  // Gestion de la sélection multiple
+  const basculerSelection = (id: number) => {
     setSelection((prev) => {
-      const s = new Set(prev);
-      if (s.has(id)) s.delete(id);
-      else s.add(id);
-      return s;
+      const suivant = new Set(prev);
+      if (suivant.has(id)) suivant.delete(id);
+      else suivant.add(id);
+      return suivant;
     });
   };
 
-  const toggleTout = () => {
+  const selectionnerTout = () => {
     if (selection.size === commandes.length) {
       setSelection(new Set());
     } else {
@@ -113,9 +129,9 @@ export default function DashboardCommandes() {
     }
   };
 
-  const changerStatutRapide = async (commandeId: number, nouveauStatut: string) => {
+  const changerStatutRapide = async (id: number, nouveauStatut: string) => {
     try {
-      const res = await fetch(`/api/commandes/${commandeId}`, {
+      const res = await fetch(`/api/commandes/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ statut: nouveauStatut }),
@@ -147,6 +163,44 @@ export default function DashboardCommandes() {
       void chargerCommandes();
     } catch (err: any) {
       afficher(err.message || "Erreur action.", "erreur");
+    } finally {
+      setEnvoiMasse(false);
+    }
+  };
+
+  const executerSuppression = async () => {
+    if (!modalSuppression) return;
+    setEnvoiMasse(true);
+
+    try {
+      if (modalSuppression.type === "unique" && modalSuppression.id) {
+        const res = await fetch(`/api/commandes/${modalSuppression.id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const corps = await res.json().catch(() => null);
+          throw new Error(corps?.error || "Erreur lors de la suppression.");
+        }
+        afficher(`Commande ${modalSuppression.numero} supprimée et stock réajusté.`, "succes");
+      } else if (modalSuppression.type === "selection") {
+        const res = await fetch(`/api/commandes/masse/suppression`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: Array.from(selection) }),
+        });
+        if (!res.ok) {
+          const corps = await res.json().catch(() => null);
+          throw new Error(corps?.error || "Erreur lors de la suppression en masse.");
+        }
+        const data = await res.json();
+        afficher(`${data.supprimes} commande(s) supprimée(s) et stocks réajustés.`, "succes");
+        setSelection(new Set());
+      }
+
+      setModalSuppression(null);
+      void chargerCommandes();
+    } catch (err: any) {
+      afficher(err.message || "Erreur lors de la suppression.", "erreur");
     } finally {
       setEnvoiMasse(false);
     }
@@ -198,7 +252,7 @@ export default function DashboardCommandes() {
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 periodeActuelle === p.id
                   ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs font-black"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
             >
               {p.label}
@@ -206,125 +260,124 @@ export default function DashboardCommandes() {
           ))}
         </div>
 
-        {/* Statuts */}
+        {/* Statut */}
         <div className="flex bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-2xl border border-slate-200 dark:border-zinc-700">
           {[
             { id: "tous", label: "Tous statuts" },
             { id: "payee", label: "Payées" },
-            { id: "en_attente", label: "Impayées / En attente" },
+            { id: "en_attente", label: "En attente" },
             { id: "devis", label: "Devis" },
-          ].map((st) => (
+            { id: "annulee", label: "Annulées" },
+            { id: "remboursee", label: "Remboursées" },
+          ].map((s) => (
             <button
-              key={st.id}
+              key={s.id}
               type="button"
-              onClick={() => majUrl({ statut: st.id, page: "1" })}
+              onClick={() => majUrl({ statut: s.id, page: "1" })}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                statutActuel === st.id
+                statutActuel === s.id
                   ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs font-black"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
             >
-              {st.label}
+              {s.label}
             </button>
           ))}
         </div>
 
+        {/* Barre de Recherche */}
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Rechercher par N° commande, client, téléphone..."
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") majUrl({ q: recherche, page: "1" });
+            }}
+            className="input input-sm h-10 w-full pl-10 pr-4 rounded-xl text-xs bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 focus:border-brand-orange"
+          />
+        </div>
+
       </div>
 
-      {/* Barre de Recherche */}
-      <div className="relative">
-        <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
-        <input
-          type="text"
-          value={rechercheLocale}
-          onChange={(e) => {
-            setRechercheLocale(e.target.value);
-            majUrl({ q: e.target.value || null, page: "1" });
-          }}
-          placeholder="Rechercher par N° de commande, client, modèle ou numéro de série..."
-          className="w-full h-12 min-h-[48px] pl-12 pr-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-base font-bold text-slate-900 dark:text-white shadow-xs focus:border-brand-orange"
-        />
-      </div>
-
-      {/* Data Table des Commandes */}
-      <div className="border border-slate-200/80 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-xs bg-white dark:bg-zinc-900">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full min-w-[750px] text-left text-xs border-collapse">
+      {/* Tableau des Commandes */}
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 dark:bg-zinc-800/40 border-b border-slate-200 dark:border-zinc-800 text-slate-400 font-black uppercase text-[10px] tracking-wider">
-                <th className="py-4 px-4 w-10 text-center">
+              <tr className="border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
+                <th className="py-3.5 px-4 w-10 text-center">
                   <input
                     type="checkbox"
-                    checked={selection.size > 0 && selection.size === commandes.length}
-                    ref={(input) => {
-                      if (input) {
-                        input.indeterminate = selection.size > 0 && selection.size < commandes.length;
-                      }
-                    }}
-                    onChange={toggleTout}
-                    className="h-4 w-4 rounded border-slate-300 dark:border-zinc-700 text-brand-orange focus:ring-brand-orange cursor-pointer"
+                    checked={commandes.length > 0 && selection.size === commandes.length}
+                    onChange={selectionnerTout}
+                    className="checkbox checkbox-xs rounded"
+                    title="Tout sélectionner sur cette page"
                   />
                 </th>
-                <th className="py-4 px-4">N° Commande</th>
-                <th className="py-4 px-4">Date & Heure</th>
-                <th className="py-4 px-4">Client</th>
-                <th className="py-4 px-4">Règlement</th>
-                <th className="py-4 px-4 text-center">Statut</th>
-                <th className="py-4 px-4 text-right">Total TTC</th>
-                <th className="py-4 px-4 text-right">Actions</th>
+                <th className="py-3.5 px-4">Commande</th>
+                <th className="py-3.5 px-4">Date</th>
+                <th className="py-3.5 px-4">Client</th>
+                <th className="py-3.5 px-4">Paiement</th>
+                <th className="py-3.5 px-4 text-center">Statut</th>
+                <th className="py-3.5 px-4 text-right">Montant TTC</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium">
+            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
               {chargement ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-bold">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
                     Chargement des commandes...
                   </td>
                 </tr>
               ) : commandes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-bold space-y-2">
-                    <Receipt className="w-10 h-10 mx-auto text-slate-300 stroke-1" />
-                    <div>Aucune commande trouvée pour ces critères.</div>
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                    Aucune commande trouvée pour ces critères.
                   </td>
                 </tr>
               ) : (
                 commandes.map((cmd) => {
-                  const nomClient = cmd.client?.nom || cmd.client_nom || "Client Particulier";
-                  const estSelectionne = selection.has(cmd.id);
+                  const estCoche = selection.has(cmd.id);
+                  const dateStr = new Date(cmd.date_commande).toLocaleDateString("fr-FR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  const nomClient = cmd.client?.nom || cmd.client_nom || "Client Comptoir";
 
                   return (
-                    <tr
-                      key={cmd.id}
-                      className={`transition-colors ${
-                        estSelectionne
-                          ? "bg-brand-orange/5 dark:bg-brand-orange/10"
-                          : "hover:bg-slate-50/80 dark:hover:bg-zinc-800/20"
+                    <tr 
+                      key={cmd.id} 
+                      className={`hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 transition-colors ${
+                        estCoche ? "bg-brand-orange/5 dark:bg-brand-orange/10" : ""
                       }`}
                     >
-                      <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3.5 px-4 text-center">
                         <input
                           type="checkbox"
-                          checked={estSelectionne}
-                          onChange={() => toggleSelection(cmd.id)}
-                          className="h-4 w-4 rounded border-slate-300 dark:border-zinc-700 text-brand-orange focus:ring-brand-orange cursor-pointer"
+                          checked={estCoche}
+                          onChange={() => basculerSelection(cmd.id)}
+                          className="checkbox checkbox-xs rounded"
                         />
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono font-black text-xs text-brand-orange">
-                        <Link href={`/commandes/${cmd.id}`} className="hover:underline flex items-center gap-1.5">
-                          <span>{cmd.numero}</span>
-                        </Link>
+                      <td className="py-3.5 px-4">
+                        <div className="font-black font-mono text-slate-900 dark:text-white">
+                          {cmd.numero}
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          {cmd.nb_articles} article{cmd.nb_articles > 1 ? "s" : ""}
+                        </span>
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-500 font-bold">
-                        {new Date(cmd.date_commande).toLocaleDateString("fr-FR", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 text-[11px] whitespace-nowrap">
+                        {dateStr}
                       </td>
 
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
@@ -367,13 +420,25 @@ export default function DashboardCommandes() {
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/commandes/${cmd.id}`}
-                          className="inline-flex items-center gap-1 btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold hover:text-brand-orange shadow-xs"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Détails</span>
-                        </Link>
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <Link
+                            href={`/commandes/${cmd.id}`}
+                            className="inline-flex items-center gap-1 btn btn-secondaire text-xs py-1.5 px-2.5 rounded-xl font-bold hover:text-brand-orange shadow-xs"
+                            title="Voir la commande"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Détails</span>
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => setModalSuppression({ type: "unique", id: cmd.id, numero: cmd.numero })}
+                            className="inline-flex items-center justify-center p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                            title="Supprimer la commande"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -391,7 +456,7 @@ export default function DashboardCommandes() {
             {selection.size} commande(s) sélectionnée(s)
           </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => {
@@ -416,7 +481,7 @@ export default function DashboardCommandes() {
               defaultValue=""
               className="select select-sm h-9 bg-slate-800 text-white border-slate-700 text-xs font-bold rounded-xl"
             >
-              <option value="" disabled>Changer statut en masse...</option>
+              <option value="" disabled>Changer statut...</option>
               <option value="payee">Passer en Payée</option>
               <option value="en_attente">Passer en En attente</option>
               <option value="devis">Passer en Devis</option>
@@ -426,12 +491,73 @@ export default function DashboardCommandes() {
 
             <button
               type="button"
+              disabled={envoiMasse}
+              onClick={() => setModalSuppression({ type: "selection", nb: selection.size })}
+              className="btn bg-red-600/80 hover:bg-red-600 text-white border-0 text-xs font-bold gap-1.5 h-9 rounded-xl px-3"
+              title="Supprimer les commandes sélectionnées"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Supprimer ({selection.size})</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setSelection(new Set())}
               disabled={envoiMasse}
               className="text-xs font-bold text-slate-400 hover:text-white transition px-2"
             >
               Annuler
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODALE DE CONFIRMATION DE SUPPRESSION ================= */}
+      {modalSuppression && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-entree">
+          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                {modalSuppression.type === "unique"
+                  ? `Supprimer la commande ${modalSuppression.numero}`
+                  : `Supprimer ${modalSuppression.nb} commandes`}
+              </h3>
+              <button
+                onClick={() => setModalSuppression(null)}
+                className="h-9 w-9 flex items-center justify-center rounded-xl p-1 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+              <p>
+                {modalSuppression.type === "unique"
+                  ? `Êtes-vous certain de vouloir supprimer la commande ${modalSuppression.numero} ?`
+                  : `Êtes-vous certain de vouloir supprimer les ${modalSuppression.nb} commandes sélectionnées ?`}
+              </p>
+              <p className="font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 p-3 rounded-xl border border-red-200 dark:border-red-900/40">
+                ⚠️ Les exemplaires physiques associés seront automatiquement remis en stock (statut &quot;En vente&quot;).
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalSuppression(null)}
+                className="btn btn-secondaire flex-1 text-xs"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={envoiMasse}
+                onClick={executerSuppression}
+                className="btn bg-red-600 text-white hover:bg-red-700 flex-1 text-xs font-bold"
+              >
+                {envoiMasse ? "Suppression..." : "Confirmer la Suppression"}
+              </button>
+            </div>
           </div>
         </div>
       )}

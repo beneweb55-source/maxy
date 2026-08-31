@@ -8,8 +8,6 @@ import { montantEnLettres } from "@/lib/nombres";
 import {
   IconeImprimante,
   IconeFlecheGauche,
-  IconeBouclier,
-  IconeBillet,
 } from "@/components/icons";
 
 interface LigneCommandeDto {
@@ -35,6 +33,7 @@ interface CommandeDto {
   client_adresse: string | null;
   total_ht: number;
   total_ttc: number;
+  total_tva: number;
   remise_globale: number;
   garantie_mois: number;
   notes: string | null;
@@ -42,6 +41,10 @@ interface CommandeDto {
     nom: string;
     telephone: string | null;
     adresse: string | null;
+    registre_commerce?: string | null;
+    nif?: string | null;
+    article_imposition?: string | null;
+    nis?: string | null;
   } | null;
   vendeur?: {
     username: string;
@@ -100,206 +103,196 @@ export default function ImpressionMasseCommandes() {
       const t = setTimeout(() => window.print(), 500);
       return () => clearTimeout(t);
     }
-  }, [chargement, commandes, autoPrint]);
-
-  const totalGlobal = commandes.reduce((s, c) => s + c.total_ttc, 0);
+  }, [chargement, commandes.length, autoPrint]);
 
   if (chargement) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-slate-50 font-sans">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-3 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-sm font-bold text-slate-600">Chargement et préparation des commandes...</p>
-        </div>
+      <div className="p-12 text-center text-slate-400 font-bold">
+        Chargement des factures de commandes en lot...
       </div>
     );
   }
 
   if (erreur || commandes.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 font-sans">
-        <div className="carte max-w-md w-full text-center space-y-4 p-6">
-          <div className="text-danger font-black text-lg">Impression Impossible</div>
-          <p className="text-xs text-slate-600 font-medium">{erreur || "Aucune commande trouvée pour ces identifiants."}</p>
-          <Link href="/commandes" className="btn btn-primaire w-full justify-center">
-            Retour aux Commandes
-          </Link>
-        </div>
+      <div className="max-w-xl mx-auto mt-12 p-6 rounded-3xl bg-white border border-slate-200 text-center space-y-4">
+        <div className="text-red-500 font-black text-lg">Impression Impossible</div>
+        <p className="text-slate-600 text-sm">{erreur || "Aucune commande trouvée."}</p>
+        <Link href="/commandes" className="btn btn-secondaire text-xs">
+          Retour aux Commandes
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-zinc-950 p-4 sm:p-8 font-sans">
+    <div className="min-h-screen bg-brand-paper p-4 sm:p-8 force-light-mode text-brand-black">
       
-      {/* ================= BARRE DE CONTROLE FLOTTANTE (Masquée à l'impression) ================= */}
-      <div className="print:hidden sticky top-4 z-40 max-w-5xl mx-auto mb-8 p-4 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        
+      {/* Barre d'outils (masquée à l'impression) */}
+      <div className="print:hidden max-w-4xl mx-auto mb-8 p-4 rounded-2xl bg-white border border-slate-200 shadow-md flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/commandes"
-            className="btn btn-secondaire text-xs h-11 px-3 rounded-xl font-bold flex items-center gap-1.5 shrink-0"
+            className="btn btn-secondaire text-xs h-10 px-3 rounded-xl font-bold flex items-center gap-1.5"
           >
             <IconeFlecheGauche taille={14} />
             <span>Commandes</span>
           </Link>
-
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-black text-slate-900 dark:text-white">
-                Impression Factures Commandes ({commandes.length})
-              </span>
-            </div>
-            <div className="text-xs font-bold text-brand-orange font-mono">
-              Total du lot : {formaterDA(totalGlobal)}
-            </div>
+          <div className="text-xs font-bold text-slate-600">
+            Lot de <strong className="text-slate-900">{commandes.length}</strong> facture(s)
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Format Toggle */}
-          <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+        <div className="flex items-center gap-2">
+          <div className="flex bg-slate-100 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setFormatTicket(false)}
-              className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${
-                !formatTicket
-                  ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                !formatTicket ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
               }`}
             >
-              Format A4
+              A4 Standard
             </button>
             <button
               type="button"
               onClick={() => setFormatTicket(true)}
-              className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${
-                formatTicket
-                  ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                formatTicket ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
               }`}
             >
-              Ticket POS (80mm)
+              Ticket (80mm)
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="btn btn-primaire h-11 px-5 rounded-xl font-black text-xs shadow-lg shadow-brand-orange/20 flex items-center gap-2"
+            className="btn btn-primaire text-xs h-10 px-5 rounded-xl font-black flex items-center gap-2 shadow-md shadow-brand-orange/20"
           >
-            <IconeImprimante taille={16} />
-            <span>Imprimer tout ({commandes.length})</span>
+            <IconeImprimante taille={15} />
+            <span>Imprimer tout le lot</span>
           </button>
         </div>
-
       </div>
 
-      {/* ================= CONTENU IMPRIMABLE (Multi-Pages avec Sauts de Page) ================= */}
+      {/* Conteneur des Factures */}
       <div className="max-w-4xl mx-auto space-y-12 print:space-y-0 print:m-0 print:p-0 print:max-w-none">
         {commandes.map((cmd, index) => {
-          const nomClient = cmd.client?.nom || cmd.client_nom || "Client Particulier";
-          const telClient = cmd.client?.telephone || cmd.client_tel || null;
-          const adrClient = cmd.client?.adresse || cmd.client_adresse || null;
-          const vendeurNom = cmd.vendeur?.username || "Commercial";
           const estDerniere = index === commandes.length - 1;
+          const nomClient = cmd.client?.nom || cmd.client_nom || "Particulier";
+          const telClient = cmd.client?.telephone || cmd.client_tel || "";
+          const adrClient = cmd.client?.adresse || cmd.client_adresse || "";
+          const rcClient = cmd.client?.registre_commerce || "";
+          const nifClient = cmd.client?.nif || "";
+          const aiClient = cmd.client?.article_imposition || "";
+          const nisClient = cmd.client?.nis || "";
 
           if (formatTicket) {
             return (
               <div
                 key={cmd.id}
-                className={`facture-feuille mx-auto max-w-[80mm] w-full bg-white text-black p-4 text-[11px] font-mono leading-tight shadow-md print:shadow-none print:p-0 print:border-none ${
+                className={`facture-feuille carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-xs leading-tight mx-auto max-w-[80mm] w-full p-4 mb-8 bg-white ${
                   !estDerniere ? "page-break-after-always" : ""
                 }`}
               >
-                <div className="text-center pb-3 border-b border-dashed border-black mb-3">
-                  <h1 className="text-sm font-black uppercase">{entreprise?.nom || "SOLUTION MAXI"}</h1>
-                  <p className="text-[10px]">{entreprise?.adresse || "Alger, Algérie"}</p>
-                  <p className="text-[10px]">Tél: {entreprise?.tel || "0000 00 00 00"}</p>
-                  <div className="mt-2 text-xs font-black">
-                    {cmd.statut === "devis" ? "DEVIS PROFORMA" : "FACTURE COMMANDE"}
+                <div className="text-center mb-4 border-b border-black border-dashed pb-4">
+                  <h1 className="text-lg font-black uppercase mb-1">{entreprise?.nom || "SOLUTION MAXI"}</h1>
+                  <p className="font-semibold">{entreprise?.tel || "0000 00 00 00"}</p>
+                  <p className="mb-2">{entreprise?.adresse || "Alger, Algérie"}</p>
+                  <div className="grid grid-cols-2 text-[10px] text-left gap-x-2">
+                    <span>RC: {entreprise?.rc || "RC XXXXXXXXX"}</span>
+                    <span>NIF: {entreprise?.nif || "NIF XXXXXXXXX"}</span>
+                    <span>NIS: {entreprise?.nis || "NIS XXXXXXXXX"}</span>
+                    <span>Art: {entreprise?.art || "ART XXXXXXXXX"}</span>
                   </div>
-                  <div className="text-[10px]">N° {cmd.numero} - {dateFr(cmd.date_commande)}</div>
                 </div>
 
-                <div className="mb-3 text-[10px] space-y-0.5">
-                  <div>Client: <strong>{nomClient}</strong></div>
-                  {telClient && <div>Tél: {telClient}</div>}
-                  <div>Vendeur: {vendeurNom}</div>
+                <div className="mb-4 text-center">
+                  <h2 className="font-bold text-sm">Ticket de Caisse</h2>
+                  <p className="font-bold">N° {cmd.numero}</p>
+                  <p>Le : {dateFr(cmd.date_commande)}</p>
                 </div>
 
-                <table className="w-full border-collapse text-[10px] mb-3">
+                {nomClient && nomClient !== "Particulier" && (
+                  <div className="mb-4 border-b border-black border-dashed pb-4">
+                    <p><span className="font-bold">Client:</span> {nomClient}</p>
+                    {telClient && <p><span className="font-bold">Tel:</span> {telClient}</p>}
+                  </div>
+                )}
+
+                <table className="w-full text-left mb-4">
                   <thead>
-                    <tr className="border-b border-black text-left">
+                    <tr className="border-b border-black border-dashed">
                       <th className="py-1">Art.</th>
                       <th className="py-1 text-center">Qté</th>
                       <th className="py-1 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-dotted divide-black">
-                    {cmd.lignes.map((ligne) => (
-                      <tr key={ligne.id}>
-                        <td className="py-1 pr-1 font-sans">
-                          <div className="font-bold">{ligne.code_interne}</div>
-                          <div className="text-[9px] text-slate-700 truncate max-w-[140px]">{ligne.designation}</div>
+                  <tbody className="divide-y divide-black divide-dashed">
+                    {cmd.lignes?.map((l, idx) => (
+                      <tr key={l.id || idx}>
+                        <td className="py-1 pr-1">
+                          <div className="font-bold">{l.code_interne}</div>
+                          <div className="text-[10px] text-slate-700">{l.designation}</div>
                         </td>
-                        <td className="py-1 text-center font-bold">{ligne.quantite}</td>
-                        <td className="py-1 text-right font-black font-mono">{formaterDA(ligne.total_ligne)}</td>
+                        <td className="py-1 text-center">{l.quantite}</td>
+                        <td className="py-1 text-right font-mono font-bold">{formaterDA(l.total_ligne)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div className="pt-2 border-t border-dashed border-black space-y-1 mb-4">
-                  <div className="flex justify-between font-black text-xs">
+                <div className="border-t border-black border-dashed pt-2 mb-4 space-y-1">
+                  <div className="flex justify-between font-black text-sm">
                     <span>TOTAL TTC :</span>
-                    <span className="font-mono">{formaterDA(cmd.total_ttc)}</span>
+                    <span>{formaterDA(cmd.total_ttc)}</span>
                   </div>
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-[11px]">
                     <span>Règlement :</span>
                     <span className="uppercase">{cmd.type_paiement || "Espèces"}</span>
                   </div>
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-[11px]">
                     <span>Garantie :</span>
                     <span>{cmd.garantie_mois} Mois</span>
                   </div>
                 </div>
 
-                <div className="text-center text-[9px] pt-3 border-t border-black font-sans space-y-0.5">
-                  <p className="font-bold">Merci de votre commande !</p>
+                <div className="text-center text-[10px] pt-4 border-t border-black">
+                  <p className="font-bold">Merci de votre confiance !</p>
                   <p className="italic">Conservez ce ticket pour la garantie.</p>
                 </div>
               </div>
             );
           }
 
-          // Format A4
+          // Format A4 Standard (Exactement identique à FactureDetail.tsx)
           return (
             <div
               key={cmd.id}
-              className={`facture-feuille bg-white text-black p-8 sm:p-12 rounded-3xl border border-slate-200 shadow-xl print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none text-[13px] leading-tight ${
+              className={`facture-feuille carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight bg-white p-8 sm:p-12 rounded-3xl border border-slate-200 shadow-xl ${
                 !estDerniere ? "page-break-after-always" : ""
               }`}
             >
-              {/* En-tête Entreprise */}
+              {/* En-tête : Info entreprise à gauche, Logo à droite */}
               <div className="flex justify-between items-start gap-4 mb-6">
                 <div className="bg-[#e5e7eb] p-4 rounded-xl rounded-tl-none w-[45%] text-xs border border-[#d1d5db] relative">
                   <h2 className="text-sm font-bold uppercase tracking-wide text-brand-black mb-1.5">
                     {entreprise?.nom || "Solution Maxi"}
                   </h2>
                   <p className="mb-2 font-medium">{entreprise?.adresse || "Alger, Algérie"}</p>
-                  <div className="grid grid-cols-[30px_1fr] gap-x-2 gap-y-0.5 text-[11px]">
-                    <span className="font-semibold">RC:</span> <span>{entreprise?.rc || "16/00-XXXXXXX"}</span>
-                    <span className="font-semibold">NIF:</span> <span>{entreprise?.nif || "0019XXXXXXXXXX"}</span>
-                    <span className="font-semibold">NIS:</span> <span>{entreprise?.nis || "0019XXXXXXXXXX"}</span>
-                    <span className="font-semibold">Art:</span> <span>{entreprise?.art || "16XXXXXXXXX"}</span>
+                  <div className="grid grid-cols-[30px_1fr] gap-x-2 gap-y-0.5">
+                    <span className="font-semibold">RC:</span> <span>{entreprise?.rc || "RC XXXXXXXXX"}</span>
+                    <span className="font-semibold">NIF:</span> <span>{entreprise?.nif || "NIF XXXXXXXXX"}</span>
+                    <span className="font-semibold">NIS:</span> <span>{entreprise?.nis || "NIS XXXXXXXXX"}</span>
+                    <span className="font-semibold">ART:</span> <span>{entreprise?.art || "ART XXXXXXXXX"}</span>
                     <span className="font-semibold">RIB:</span> <span>{entreprise?.rib || "0000 00 00 00 00"}</span>
                   </div>
                   <div className="absolute top-0 left-0 -mt-[1px] -ml-[1px] w-4 h-4 bg-white rounded-br-xl"></div>
                 </div>
 
                 <div className="flex flex-col items-end shrink-0">
-                  <div className="flex items-center gap-1.5 mb-6 whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 mb-8 whitespace-nowrap">
                     <img
                       src="/brand/solutionmaxi-icone.svg"
                       alt="Logo"
@@ -314,99 +307,127 @@ export default function ImpressionMasseCommandes() {
                   </div>
 
                   <div className="bg-[#e5e7eb] px-4 py-1.5 rounded-lg border border-[#d1d5db] text-xs font-bold w-fit">
-                    Date : {dateFr(cmd.date_commande)}
+                    Le : {dateFr(cmd.date_commande)}
                   </div>
                 </div>
               </div>
 
-              {/* Titre Document */}
+              {/* Titre facture */}
               <div className="text-center mb-6">
-                <h2 className="text-lg font-black uppercase">
-                  {cmd.statut === "devis" ? "DEVIS PROFORMA" : "FACTURE COMMANDE"} N°: {cmd.numero}
+                <h2 className="text-lg font-bold">
+                  {cmd.statut === "devis" ? "Facture proforma" : "Facture"} n°: {cmd.numero}
                 </h2>
-                <div className="text-xs font-bold text-slate-500 uppercase mt-0.5">
-                  Statut : {cmd.statut}
-                </div>
               </div>
 
-              {/* Coordonnées Client */}
-              <div className="mb-6 w-full sm:w-[48%] border border-black rounded-xl p-3.5 text-xs leading-relaxed font-medium">
-                <p className="mb-1.5"><span className="font-bold">Client:</span> {nomClient}</p>
-                {telClient && <p><span className="font-bold">Tél:</span> {telClient}</p>}
+              {/* Informations du client */}
+              <div className="mb-6 w-full sm:w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
+                <p className="mb-2"><span className="font-bold">Doit:</span> {nomClient}</p>
                 {adrClient && <p><span className="font-bold">Adresse:</span> {adrClient}</p>}
+                {rcClient && <p><span className="font-bold">RC:</span> {rcClient}</p>}
+                {nifClient && <p><span className="font-bold">NIF:</span> {nifClient}</p>}
+                {aiClient && <p><span className="font-bold">AI:</span> {aiClient}</p>}
+                {nisClient && <p><span className="font-bold">NIS:</span> {nisClient}</p>}
+                {telClient && <p><span className="font-bold">Tél:</span> {telClient}</p>}
               </div>
 
-              {/* Tableau Articles */}
+              {/* Tableau des articles */}
               <div className="mb-6 w-full overflow-x-auto">
                 <table className="w-full min-w-[500px] border-collapse border border-black text-xs text-center">
                   <thead>
                     <tr className="bg-[#d1d5db]">
-                      <th className="border border-black py-1.5 px-2 font-bold w-12">N°</th>
+                      <th className="border border-black py-1.5 px-2 font-bold w-12">Art N°</th>
                       <th className="border border-black py-1.5 px-2 font-bold text-left">Désignation</th>
-                      <th className="border border-black py-1.5 px-2 font-bold w-12">Qté</th>
-                      <th className="border border-black py-1.5 px-2 font-bold w-24">Prix Unit.</th>
-                      <th className="border border-black py-1.5 px-2 font-bold w-28">Total Ligne</th>
+                      <th className="border border-black py-1.5 px-2 font-bold w-12">UM</th>
+                      <th className="border border-black py-1.5 px-2 font-bold w-16">Qtt</th>
+                      <th className="border border-black py-1.5 px-2 font-bold w-24">Prix UHT</th>
+                      <th className="border border-black py-1.5 px-2 font-bold w-28">Montant HT</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {cmd.lignes.map((ligne, idx) => (
-                      <tr key={ligne.id} className="border-b border-black">
-                        <td className="border-r border-black py-2 px-2">{idx + 1}</td>
-                        <td className="border-r border-black py-2 px-2 text-left font-medium">
-                          <span className="font-mono font-bold mr-1 text-slate-800">[{ligne.code_interne}]</span>
-                          <span>{ligne.designation}</span>
-                          {ligne.numero_serie && (
-                            <span className="text-[10px] text-slate-500 block">S/N: {ligne.numero_serie}</span>
-                          )}
+                    {cmd.lignes?.map((l, idx) => (
+                      <tr key={l.id || idx} className="h-8">
+                        <td className="border border-black px-2">{idx + 1}</td>
+                        <td className="border border-black px-2 text-left font-bold">
+                          <span>{l.designation}</span>
+                          {l.numero_serie && <span className="block text-[10px] font-mono text-slate-600 font-normal">S/N: {l.numero_serie}</span>}
                         </td>
-                        <td className="border-r border-black py-2 px-2 font-bold">{ligne.quantite}</td>
-                        <td className="border-r border-black py-2 px-2 font-mono">{formaterDA(ligne.prix_unitaire)}</td>
-                        <td className="border-r border-black py-2 px-2 font-bold font-mono">{formaterDA(ligne.total_ligne)}</td>
+                        <td className="border border-black px-2">U</td>
+                        <td className="border border-black px-2">{Number(l.quantite).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                        <td className="border border-black px-2 text-right">{Number(l.prix_unitaire).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                        <td className="border border-black px-2 text-right">{(Number(l.prix_unitaire) * Number(l.quantite)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    {cmd.total_tva > 0 ? (
+                      <>
+                        <tr className="font-bold">
+                          <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
+                          <td className="border border-black px-2 py-1.5 text-right">Total HT</td>
+                          <td className="border border-black px-2 py-1.5 text-right bg-white">{cmd.total_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                        <tr className="font-bold">
+                          <td colSpan={4} className="border-r border-transparent"></td>
+                          <td className="border border-black px-2 py-1.5 text-right">TVA 19%</td>
+                          <td className="border border-black px-2 py-1.5 text-right bg-white">{cmd.total_tva.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                        <tr className="font-bold">
+                          <td colSpan={4} className="border-r border-transparent"></td>
+                          <td className="border border-black px-2 py-1.5 text-right">Total TTC</td>
+                          <td className="border border-black px-2 py-1.5 text-right bg-white">
+                            {cmd.total_ttc.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      </>
+                    ) : (
+                      <tr className="font-bold">
+                        <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
+                        <td className="border border-black px-2 py-1.5 text-right">Total HT</td>
+                        <td className="border border-black px-2 py-1.5 text-right bg-white">{cmd.total_ttc.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                    )}
+                  </tfoot>
                 </table>
               </div>
 
-              {/* Totaux & Arrêté */}
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
-                <div className="w-full sm:w-1/2 p-3 bg-slate-50 border border-black rounded-xl text-xs space-y-1">
-                  <div className="font-bold">Arrêté à la somme de :</div>
-                  <div className="italic font-medium text-slate-800">{montantEnLettres(cmd.total_ttc)} Dinars Algériens</div>
-                  <div className="pt-2 text-[11px] text-slate-600">
-                    Mode de règlement : <strong className="uppercase">{cmd.type_paiement || "Espèces"}</strong> · Garantie : <strong>{cmd.garantie_mois} Mois</strong>
-                  </div>
-                </div>
-
-                <div className="w-full sm:w-[40%] space-y-1 text-xs">
-                  <div className="flex justify-between border-b border-black py-1">
-                    <span>Total HT :</span>
-                    <span className="font-mono font-bold">{formaterDA(cmd.total_ht)}</span>
-                  </div>
-                  {cmd.remise_globale > 0 && (
-                    <div className="flex justify-between border-b border-black py-1 text-red-600">
-                      <span>Remise Globale :</span>
-                      <span className="font-mono font-bold">-{formaterDA(cmd.remise_globale)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between bg-[#d1d5db] p-2 border border-black font-black text-sm">
-                    <span>TOTAL TTC :</span>
-                    <span className="font-mono">{formaterDA(cmd.total_ttc)}</span>
-                  </div>
+              {/* Arrêté de facture */}
+              <div className="p-3 bg-slate-50 border border-black rounded-xl text-xs space-y-1 mb-8">
+                <div className="font-bold">Arrêtée la présente facture à la somme de :</div>
+                <div className="italic font-medium text-slate-800">{montantEnLettres(cmd.total_ttc)} Dinars Algériens</div>
+                <div className="pt-1 text-[11px] text-slate-600">
+                  Mode de règlement : <strong className="uppercase">{cmd.type_paiement || "Espèces"}</strong> · Garantie : <strong>{cmd.garantie_mois} Mois</strong>
                 </div>
               </div>
 
-              {/* Cachet */}
-              <div className="flex justify-between items-end pt-4 border-t border-slate-300 text-xs">
-                <div>
-                  <div>Émis par : <strong>{vendeurNom}</strong></div>
-                  <div className="text-[10px] text-slate-500">Document généré par Gestion Maxy</div>
+              {/* Cachet et signature */}
+              <div className="flex justify-end mr-12 mt-8 mb-16">
+                <div className="relative w-64 h-32">
+                  <img 
+                    src={entreprise?.cachet || "/brand/cachet.png"} 
+                    alt="Cachet" 
+                    className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
+                  />
                 </div>
-                <div className="text-center pr-8">
-                  <div className="font-bold mb-8">Cachet & Signature</div>
-                  {entreprise?.cachet && (
-                    <img src={entreprise.cachet} alt="Cachet" className="h-16 w-auto object-contain mx-auto" />
-                  )}
+              </div>
+
+              {/* Pied de page */}
+              <div className="bg-[#e5e7eb] py-3 px-6 text-xs text-brand-black mt-16">
+                <div className="text-center font-semibold mb-2 underline underline-offset-2">
+                  Pour toutes informations, n&apos;hésitez pas de nous contacter
+                </div>
+                <div className="flex justify-between font-bold">
+                  <div>
+                    <p>Mobile :</p>
+                    <p className="font-normal mt-0.5">{entreprise?.tel || "0000 00 00 00"}</p>
+                  </div>
+                  <div>
+                    <p>Courriel :</p>
+                    <p className="font-normal mt-0.5">contact@{entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
+                  </div>
+                  <div className="text-right">
+                    <p>Site :</p>
+                    <p className="font-normal mt-0.5">www.{entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
+                  </div>
                 </div>
               </div>
 
