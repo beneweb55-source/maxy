@@ -23,6 +23,9 @@ import ModaleMiseEnVente from "@/components/ventes/ModaleMiseEnVente";
 interface UniteVendable {
   id: number;
   code_interne: string;
+  numero_serie?: string | null;
+  grade?: string | null;
+  prix_achat?: number;
   prix_vente_fixe: number | null;
   etiquette_imprimee: boolean;
 }
@@ -30,7 +33,10 @@ interface UniteVendable {
 interface UniteStock {
   id: number;
   code_interne: string;
+  numero_serie?: string | null;
+  grade?: string | null;
   statut: StatutProduit;
+  prix_achat?: number;
   prix_vente_fixe: number | null;
   etiquette_imprimee: boolean;
 }
@@ -137,9 +143,13 @@ export default function Vitrine({ role }: { role: Role }) {
       id: v.id,
       code_interne: v.code_interne,
       reference: carte.reference,
+      numero_serie: v.numero_serie,
+      grade: v.grade,
+      prix_achat: v.prix_achat,
       prix_vente_fixe: v.prix_vente_fixe ?? carte.prix_vente_fixe,
       prix_vente_reel: v.prix_vente_fixe ?? carte.prix_vente_fixe,
       etiquette_imprimee: v.etiquette_imprimee,
+      statut: "en_vente",
     }));
     setArticlesPourVente(articles);
     setModalVente(true);

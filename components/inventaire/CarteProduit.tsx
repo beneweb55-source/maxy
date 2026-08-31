@@ -25,6 +25,9 @@ export interface LigneProduit {
   cout_reparations: number;
   prix_vente_fixe: number | null;
   prix_vente_reel: number | null;
+  numero_serie?: string | null;
+  grade?: string | null;
+  emplacement?: string | null;
   lot_id: number | null;
   fournisseur: string | null;
   date_entree: string;

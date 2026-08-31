@@ -102,3 +102,11 @@ export function entierPositif(valeur: unknown, champ: string): string | null {
   }
   return null;
 }
+
+export function entierPositifOuNul(valeur: unknown, champ: string): string | null {
+  if (typeof valeur !== "number" || !Number.isInteger(valeur) || valeur < 0) {
+    return `${champ} doit être un entier positif ou nul en DA.`;
+  }
+  return null;
+}
+

@@ -217,4 +217,50 @@ describe("Système de Commande, Vente & Facturation", () => {
       })
     );
   });
+
+  it("QA Test 4 : Facturation à 0 DA et traçabilité S/N garantie", async () => {
+    (prisma.facture.create as any).mockResolvedValue({
+      id: 105,
+      numero: "FA-2026-0005",
+    });
+
+    const facture = await creerFacture(
+      prisma as any,
+      {
+        userId: 1,
+        quand: new Date(),
+        clientNom: "Remplacement SAV Client",
+        typeFacture: "normale",
+        lignes: [
+          {
+            code_interne: "PC-SAV-01",
+            designation: "Dell Latitude 5420 (S/N: 8XYZ999)",
+            prix: 0, // Vente / Remplacement à 0 DA
+          },
+        ],
+      }
+    );
+
+    expect(facture.id).toBe(105);
+    expect(prisma.facture.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          total: 0,
+          client_nom: "Remplacement SAV Client",
+        }),
+      })
+    );
+    expect(prisma.factureLigne.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            code_interne: "PC-SAV-01",
+            designation: "Dell Latitude 5420 (S/N: 8XYZ999)",
+            prix: 0,
+          }),
+        ],
+      })
+    );
+  });
 });
+

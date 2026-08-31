@@ -6,15 +6,13 @@ import { ajouterMouvement } from "@/lib/caisse-db";
 import { formaterDA } from "@/lib/caisse";
 import { margeVente, seuilMargeMinimum } from "@/lib/finances";
 import { idsParRole, notifier } from "@/lib/notifs";
-import { entierPositif } from "@/lib/validation";
+import { entierPositif, entierPositifOuNul } from "@/lib/validation";
 import { creerFacture, type LigneFacture } from "@/lib/factures";
 
 /**
- * Vente groupée (bundle) : un prix total unique réparti au prorata du prix de
- * vente fixé de chaque produit. Chaque produit conserve sa propre ligne de
- * vente / marge / mouvement de caisse, toutes taguées avec le même
- * `groupe_vente` — la mécanique unitaire (inventaire, marges, répartition) reste
- * cohérente.
+ * Vente groupée (bundle / multi-sélection) : prix total ou prix par produit.
+ * Chaque produit conserve sa propre ligne de vente / marge / mouvement de caisse,
+ * toutes taguées avec le même `groupe_vente`.
  */
 export async function POST(request: NextRequest) {
   const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
@@ -27,10 +25,11 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_ids, prix_total, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement, etiquette_imprimee } =
+  const { produit_ids, prix_total, prix_par_produit, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement, etiquette_imprimee } =
     (corps ?? {}) as {
       produit_ids?: unknown;
       prix_total?: unknown;
+      prix_par_produit?: unknown;
       canal?: unknown;
       date_vente?: unknown;
       confirmer?: unknown;
@@ -60,7 +59,7 @@ export async function POST(request: NextRequest) {
     return erreur(400, "Un produit est présent en double dans la sélection.");
   }
 
-  const erreurPrix = entierPositif(prix_total, "Le prix total");
+  const erreurPrix = entierPositifOuNul(prix_total, "Le prix total");
   if (erreurPrix) return erreur(400, erreurPrix);
   const prixTotal = prix_total as number;
   const canalTexte = typeof canal === "string" && canal.trim() ? canal.trim() : null;
@@ -96,19 +95,32 @@ export async function POST(request: NextRequest) {
     const coutRep = (p: (typeof produits)[number]) =>
       p.reparations.reduce((s, r) => s + r.cout, 0);
 
-    // Répartition du prix total au prorata du prix de vente fixé (sinon équirépartition).
-    const poids = ordonnes.map((p) => p.prix_vente_fixe ?? 0);
-    const sommePoids = poids.reduce((s, v) => s + v, 0);
-    const parts = ordonnes.map((_, i) =>
-      sommePoids > 0
-        ? Math.floor((prixTotal * poids[i]!) / sommePoids)
-        : Math.floor(prixTotal / ordonnes.length)
-    );
-    // Affecte le reste d'arrondi aux premiers produits pour que Σ parts = prix_total.
-    let reste = prixTotal - parts.reduce((s, v) => s + v, 0);
-    for (let i = 0; i < parts.length && reste > 0; i++) {
-      parts[i]! += 1;
-      reste -= 1;
+    // Si une map de prix unitaires personnalisés est fournie, l'utiliser en priorité
+    const mapPrix = typeof prix_par_produit === "object" && prix_par_produit !== null
+      ? (prix_par_produit as Record<number, number>)
+      : null;
+
+    let parts: number[];
+    if (mapPrix) {
+      parts = ordonnes.map((p) => {
+        const val = mapPrix[p.id];
+        return typeof val === "number" && val >= 0 ? val : (p.prix_vente_fixe ?? 0);
+      });
+    } else {
+      // Répartition du prix total au prorata du prix de vente fixé (sinon équirépartition).
+      const poids = ordonnes.map((p) => p.prix_vente_fixe ?? 0);
+      const sommePoids = poids.reduce((s, v) => s + v, 0);
+      parts = ordonnes.map((_, i) =>
+        sommePoids > 0
+          ? Math.floor((prixTotal * poids[i]!) / sommePoids)
+          : Math.floor(prixTotal / ordonnes.length)
+      );
+      // Affecte le reste d'arrondi aux premiers produits pour que Σ parts = prix_total.
+      let reste = prixTotal - parts.reduce((s, v) => s + v, 0);
+      for (let i = 0; i < parts.length && reste > 0; i++) {
+        parts[i]! += 1;
+        reste -= 1;
+      }
     }
 
     const parametres = await prisma.parametres.findUnique({ where: { id: 1 } });
@@ -133,6 +145,17 @@ export async function POST(request: NextRequest) {
 
     const groupeVente = randomUUID();
     const venteIds = await prisma.$transaction(async (tx) => {
+      // Double vérification atomique sous transaction (Protection contre Race Conditions)
+      const pVerifs = await tx.produit.findMany({
+        where: { id: { in: idsUniques } },
+        select: { id: true, statut: true, code_interne: true, numero_serie: true },
+      });
+      const nonDispos = pVerifs.filter((p) => p.statut !== "en_vente");
+      if (pVerifs.length !== idsUniques.length || nonDispos.length > 0) {
+        const codes = nonDispos.map((p) => p.code_interne).join(", ");
+        throw new Error(`Conflit de vente concurrente : certains exemplaires ne sont plus disponibles (${codes || "introuvables"}).`);
+      }
+
       const cree: number[] = [];
       const lignesFacture: LigneFacture[] = [];
       for (let i = 0; i < ordonnes.length; i++) {
@@ -162,12 +185,8 @@ export async function POST(request: NextRequest) {
           where: { id: produit.id },
           data: updateProduitData,
         });
-        // Vitrine par modèle : transférer le drapeau à un exemplaire identique
-        // restant si l'unité vendue était celle qui représentait le modèle.
-        // On exclut TOUT le bundle (idsUniques), pas seulement l'unité courante :
-        // une autre unité du bundle encore « en_vente » à cet instant de la
-        // transaction sera vendue quelques itérations plus loin — lui donner le
-        // drapeau le ferait disparaître avec elle.
+
+        // Vitrine par modèle : transférer le drapeau à un exemplaire identique restant
         if (produit.en_vitrine) {
           const modele = {
             reference: { equals: produit.reference.trim(), mode: "insensitive" as const },
@@ -208,11 +227,16 @@ export async function POST(request: NextRequest) {
           description: `Vente groupée ${produit.reference}${canalTexte ? ` — ${canalTexte}` : ""}`,
         });
         cree.push(vente.id);
+
+        const designationLigne = produit.numero_serie 
+          ? `${produit.reference} (S/N: ${produit.numero_serie})` 
+          : produit.reference;
+
         lignesFacture.push({
           produit_id: produit.id,
           vente_id: vente.id,
           code_interne: produit.code_interne,
-          designation: produit.reference,
+          designation: designationLigne,
           categorie: produit.categorie,
           prix: part,
         });
@@ -254,8 +278,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (e) {
+  } catch (e: any) {
     console.error("POST /api/ventes/groupee", e);
-    return erreur(500, "Erreur lors de l'enregistrement de la vente groupée.");
+    return erreur(500, e?.message || "Erreur lors de l'enregistrement de la vente groupée.");
   }
 }

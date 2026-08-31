@@ -21,10 +21,13 @@ export default function ModaleVenteInventaire({
     id: u.id,
     code_interne: u.code_interne,
     reference: u.reference,
+    numero_serie: u.numero_serie,
+    grade: u.grade,
     prix_achat: u.prix_achat,
     prix_vente_fixe: u.prix_vente_fixe,
     prix_vente_reel: u.prix_vente_reel,
     etiquette_imprimee: u.etiquette_imprimee,
+    statut: u.statut,
   }));
 
   return (

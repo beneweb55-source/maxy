@@ -8,7 +8,7 @@ import { urlPhotoProduit } from "@/lib/images";
 import { idsParRole, notifier } from "@/lib/notifs";
 import { creerFacture } from "@/lib/factures";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
-import { entierPositif } from "@/lib/validation";
+import { entierPositif, entierPositifOuNul } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   const acces = await exigerUtilisateur();
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     };
   const produitId = Number(produit_id);
   if (!Number.isInteger(produitId)) return erreur(400, "Produit invalide.");
-  const erreurPrix = entierPositif(prix_vente_reel, "Le prix de vente réel");
+  const erreurPrix = entierPositifOuNul(prix_vente_reel, "Le prix de vente réel");
   if (erreurPrix) return erreur(400, erreurPrix);
   const prix = prix_vente_reel as number;
   const canalTexte = typeof canal === "string" && canal.trim() ? canal.trim() : null;
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     });
     if (!produit) return erreur(404, "Produit introuvable.");
     if (produit.statut !== "en_vente") {
-      return erreur(400, "Seul un produit « En vente » peut être vendu.");
+      return erreur(400, `Seul un produit « En vente » peut être vendu (Statut actuel: ${produit.statut}).`);
     }
 
     const parametres = await prisma.parametres.findUnique({ where: { id: 1 } });
@@ -164,6 +164,15 @@ export async function POST(request: NextRequest) {
     }
 
     const venteId = await prisma.$transaction(async (tx) => {
+      // 1. Double vérification atomique sous transaction (Protection contre Race Conditions)
+      const pVerif = await tx.produit.findUnique({
+        where: { id: produitId },
+        select: { id: true, statut: true, code_interne: true, numero_serie: true },
+      });
+      if (!pVerif || pVerif.statut !== "en_vente") {
+        throw new Error(`Conflit : L'exemplaire ${pVerif?.code_interne || produitId} n'est plus disponible (déjà vendu ou réservé par un autre utilisateur).`);
+      }
+
       const vente = await tx.vente.create({
         data: {
           produit_id: produit.id,
@@ -187,6 +196,7 @@ export async function POST(request: NextRequest) {
         where: { id: produit.id },
         data: updateData,
       });
+
       // Vitrine par modèle : si l'unité vendue représentait le modèle en
       // vitrine, transférer le drapeau à un autre exemplaire identique en
       // stock pour que le modèle reste exposé (avec sa quantité décrémentée).
@@ -236,6 +246,12 @@ export async function POST(request: NextRequest) {
         `Vente enregistrée : ${produit.reference} — ${formaterDA(prix)} (${user.username})`,
         `/produits/${produit.id}`
       );
+
+      // Traçabilité immuable du S/N sur la ligne de facture
+      const designationLigne = produit.numero_serie 
+        ? `${produit.reference} (S/N: ${produit.numero_serie})` 
+        : produit.reference;
+
       // Toute vente génère automatiquement sa facture (garantie incluse).
       const facture = await creerFacture(tx, {
         lignes: [
@@ -243,7 +259,7 @@ export async function POST(request: NextRequest) {
             produit_id: produit.id,
             vente_id: vente.id,
             code_interne: produit.code_interne,
-            designation: produit.reference,
+            designation: designationLigne,
             categorie: produit.categorie,
             prix,
           },
@@ -277,8 +293,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (e) {
+  } catch (e: any) {
     console.error("POST /api/ventes", e);
-    return erreur(500, "Erreur lors de l'enregistrement de la vente.");
+    return erreur(500, e?.message || "Erreur lors de l'enregistrement de la vente.");
   }
 }
