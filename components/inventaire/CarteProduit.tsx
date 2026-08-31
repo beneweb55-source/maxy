@@ -117,9 +117,9 @@ export default function CarteProduit({
           <h4 className="font-semibold text-brand-black dark:text-white leading-tight line-clamp-2" title={produit.reference}>
             {produit.reference}
           </h4>
-          <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-1 line-clamp-1" title={cheminArbo}>
+          <div className="text-[11px] text-brand-warm-grey dark:text-zinc-400 mt-1 line-clamp-1" title={cheminArbo}>
             {produit.categorie_rel ? (
-              <span className="bg-brand-light-grey/40 dark:bg-white/5 px-1.5 py-0.5 rounded text-[10px] font-semibold text-brand-black dark:text-brand-warm-grey">
+              <span className="bg-brand-light-grey/40 dark:bg-white/10 px-1.5 py-0.5 rounded text-[10px] font-semibold text-brand-black dark:text-zinc-200">
                 {cheminArbo}
               </span>
             ) : (
@@ -131,24 +131,24 @@ export default function CarteProduit({
         <div className="mt-auto grid grid-cols-2 gap-2 bg-brand-light-grey/10 dark:bg-white/5 rounded-lg p-2 border border-brand-light-grey/30 dark:border-white/5">
           {!estSocial && (
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-zinc-400">
                 {t("inventaire.achat")}
               </span>
               <span className="font-bold text-brand-black dark:text-white text-xs whitespace-nowrap">
                 {formaterDA(produit.prix_achat)}
               </span>
               {produit.cout_reparations > 0 && (
-                <span className="text-[9px] text-brand-warm-grey mt-0.5 whitespace-nowrap">
+                <span className="text-[9px] text-brand-warm-grey dark:text-zinc-400 mt-0.5 whitespace-nowrap">
                   +{formaterDA(produit.cout_reparations)}
                 </span>
               )}
             </div>
           )}
           <div className={`flex flex-col ${estSocial ? "col-span-2 text-center items-center" : "text-right"}`}>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange/80">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange dark:text-orange-400">
               {t("inventaire.colPrixVente")}
             </span>
-            <span className="font-extrabold text-brand-orange text-sm whitespace-nowrap">
+            <span className="font-extrabold text-brand-orange dark:text-orange-400 text-sm whitespace-nowrap">
               {prixVente !== null ? formaterDA(prixVente) : "—"}
             </span>
           </div>

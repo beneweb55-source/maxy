@@ -112,8 +112,11 @@ export default function VueCategorie({
     );
   }
 
-  // Filtrer les sous-catégories selon le terme de recherche
+  // Filtrer les sous-catégories : Masquage strict des impasses (0 produit) et filtre de recherche
   const sousCatsFiltrees = (categorie.sousCategories || []).filter((sc) => {
+    // Règle stricte anti-impasse : Ne jamais afficher un sous-type avec 0 produit
+    if ((sc._count?.produits || 0) === 0) return false;
+
     if (!q.trim()) return true;
     return sc.nom.toLowerCase().includes(q.toLowerCase());
   });
@@ -146,13 +149,13 @@ export default function VueCategorie({
       <div>
         <div className="mb-4">
           <h3 className="text-base font-bold text-brand-black dark:text-white font-outfit">
-            Sous-types de matériels ({sousCatsFiltrees.length})
+            Sous-types de matériels disponibles ({sousCatsFiltrees.length})
           </h3>
         </div>
 
         {sousCatsFiltrees.length === 0 ? (
           <div className="carte p-8 text-center text-brand-warm-grey rounded-2xl bg-white/50 dark:bg-white/5 border border-dashed border-brand-light-grey dark:border-white/10">
-            Aucun sous-type correspondant disponible.
+            Aucun sous-type avec du stock disponible dans cette catégorie.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

@@ -121,8 +121,13 @@ export default function VueFamille({
     );
   }
 
-  // Filtrer les catégories selon le terme de recherche
+  // Filtrer les catégories : Masquage strict des impasses (0 produit) et filtre de recherche
   const categoriesFiltrees = (famille.categories || []).filter((cat) => {
+    const totalDirect = cat._count?.produits || 0;
+    const totalEnfants = (cat.enfants || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
+    const totalCat = totalDirect + totalEnfants;
+    if (totalCat === 0) return false;
+
     if (!q.trim()) return true;
     const qLower = q.toLowerCase();
     return (
@@ -169,7 +174,7 @@ export default function VueFamille({
 
         {categoriesFiltrees.length === 0 ? (
           <div className="carte p-8 text-center text-brand-warm-grey rounded-2xl bg-white/50 dark:bg-white/5 border border-dashed border-brand-light-grey dark:border-white/10">
-            Aucune catégorie correspondante dans cette famille.
+            Aucune catégorie avec du stock disponible dans cette famille.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -197,13 +202,13 @@ export default function VueFamille({
                     </div>
 
                     <div className="text-xs text-brand-warm-grey">
-                      {(cat.enfants || []).length} sous-catégorie{(cat.enfants || []).length > 1 ? "s" : ""} · {totalModeles} modèle{totalModeles > 1 ? "s" : ""}
+                      {sousCatsNonZero.length} sous-catégorie{sousCatsNonZero.length > 1 ? "s" : ""} · {totalModeles} modèle{totalModeles > 1 ? "s" : ""}
                     </div>
 
-                    {/* Chips d'aperçu des sous-catégories */}
-                    {(cat.enfants || []).length > 0 && (
+                    {/* Chips d'aperçu des sous-catégories STRICTEMENT NON-VIDES */}
+                    {sousCatsNonZero.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-brand-light-grey/30 dark:border-white/5">
-                        {(cat.enfants || []).slice(0, 4).map((sc) => (
+                        {sousCatsNonZero.slice(0, 4).map((sc) => (
                           <span 
                             key={sc.id}
                             className="text-[11px] px-2 py-0.5 rounded-md bg-brand-light-grey/25 dark:bg-white/5 text-brand-warm-grey dark:text-brand-grey font-medium"
@@ -211,9 +216,9 @@ export default function VueFamille({
                             {sc.nom} {sc._count?.produits ? `(${sc._count.produits})` : ""}
                           </span>
                         ))}
-                        {(cat.enfants || []).length > 4 && (
+                        {sousCatsNonZero.length > 4 && (
                           <span className="text-[11px] px-1.5 py-0.5 text-brand-warm-grey font-semibold">
-                            +{(cat.enfants || []).length - 4}
+                            +{sousCatsNonZero.length - 4}
                           </span>
                         )}
                       </div>

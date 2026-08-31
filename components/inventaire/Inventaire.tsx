@@ -1434,7 +1434,7 @@ export default function Inventaire({ role }: { role: Role }) {
             return (
               <div
                 key={g.cle}
-                className="overflow-hidden rounded-xl border border-brand-light-grey bg-brand-white"
+                className="overflow-hidden rounded-2xl border border-brand-light-grey/80 dark:border-white/10 bg-white dark:bg-brand-paper shadow-2xs transition-all"
               >
                 <div className="flex items-center gap-3 px-4 py-3">
                   {g.image_url ? (
@@ -1442,26 +1442,26 @@ export default function Inventaire({ role }: { role: Role }) {
                       src={g.image_url}
                       alt={`Photo de ${g.reference}`}
                       loading="lazy"
-                      className="h-11 w-11 shrink-0 rounded-lg border border-brand-light-grey object-cover"
+                      className="h-11 w-11 shrink-0 rounded-xl border border-brand-light-grey/60 dark:border-white/10 object-cover"
                     />
                   ) : (
-                    <div className="h-11 w-11 shrink-0 rounded-lg border border-dashed border-brand-light-grey" />
+                    <div className="h-11 w-11 shrink-0 rounded-xl border border-dashed border-brand-light-grey dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/2" />
                   )}
                   <span
-                    className={`inline-flex h-7 shrink-0 items-center justify-center rounded-full px-2.5 text-sm font-bold ${
+                    className={`inline-flex h-7 shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-black ${
                       multiple
                         ? "bg-brand-orange text-white"
-                        : "bg-brand-light-grey/60 text-brand-warm-grey"
+                        : "bg-brand-light-grey/40 dark:bg-white/10 text-brand-warm-grey dark:text-brand-grey"
                     }`}
                   >
                     {g.unites.length}×
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold" title={g.reference}>
+                    <p className="truncate text-sm font-extrabold text-brand-black dark:text-white" title={g.reference}>
                       {g.reference}
                     </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-brand-warm-grey">
-                      <span>{g.categorie}</span>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-brand-warm-grey dark:text-brand-grey">
+                      <span className="font-semibold">{g.categorie}</span>
                       {g.resumeStatuts.map((r) => (
                         <span
                           key={r.statut}
@@ -1471,13 +1471,13 @@ export default function Inventaire({ role }: { role: Role }) {
                         </span>
                       ))}
                       {g.enVitrine > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/15 px-1.5 py-0.5 text-[11px] font-semibold text-brand-orange">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/15 text-[11px] font-bold text-brand-orange px-2 py-0.5">
                           <IconeVitrine taille={11} />
                           {g.enVitrine > 1 ? `${g.enVitrine}× vitrine` : "Vitrine"}
                         </span>
                       )}
                       {g.nbImages > 1 && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-light-grey/60 px-1.5 py-0.5 text-[11px] font-semibold text-brand-warm-grey">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-light-grey/40 dark:bg-white/10 px-1.5 py-0.5 text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey">
                           <IconeImage taille={11} />
                           {g.nbImages}
                         </span>
@@ -1486,23 +1486,23 @@ export default function Inventaire({ role }: { role: Role }) {
                   </div>
                   {!estSocial && (
                     <div className="hidden shrink-0 text-right text-sm sm:block">
-                      <span className="font-semibold text-brand-smooth">
+                      <span className="font-bold text-brand-black dark:text-white">
                         {g.prixMin === g.prixMax
                           ? formaterDA(g.prixMin)
                           : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
                       </span>
-                      <span className="block text-[10px] font-semibold uppercase text-brand-grey mt-0.5">{t("inventaire.achatUnitaire")}</span>
+                      <span className="block text-[10px] font-semibold uppercase text-brand-warm-grey dark:text-brand-grey mt-0.5">{t("inventaire.achatUnitaire")}</span>
                     </div>
                   )}
-                  <div className="hidden shrink-0 rounded-lg bg-brand-glow/25 px-2.5 py-1 text-right text-sm sm:block">
-                    <span className="font-bold text-brand-orange">
+                  <div className="hidden shrink-0 rounded-xl bg-brand-glow/30 dark:bg-white/5 border border-brand-orange/20 px-3 py-1 text-right text-sm sm:block">
+                    <span className="font-extrabold text-brand-orange">
                       {g.venteMin === null
                         ? "—"
                         : g.venteMin === g.venteMax
                           ? formaterDA(g.venteMin)
                           : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
                     </span>
-                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/70 mt-0.5">
+                    <span className="block text-[10px] font-semibold uppercase text-brand-orange/80 mt-0.5">
                       {t("inventaire.vente")}
                     </span>
                   </div>
@@ -1543,10 +1543,10 @@ export default function Inventaire({ role }: { role: Role }) {
                               ? t("inventaire.retirerReferenceVitrine", { ref: g.reference })
                               : t("inventaire.mettreReferenceVitrine", { ref: g.reference })
                           }
-                          className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+                          className={`rounded-xl p-2 transition disabled:opacity-40 ${
                             enVitrine
-                              ? "text-brand-orange hover:bg-brand-orange/10"
-                              : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
+                              ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
+                              : "text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-orange"
                           }`}
                         >
                           <IconeVitrine taille={15} />
@@ -1556,7 +1556,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     <BoutonImpression 
                       ids={g.unites.map(u => u.id)} 
                       dejaImprimee={g.unites.every(u => u.etiquette_imprimee)} 
-                      className="rounded-md p-1.5 hover:bg-brand-light-grey/50 hover:text-brand-black" 
+                      className="rounded-xl p-2 text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors" 
                     />
                     {peutModifier && (
                       <button
@@ -1564,7 +1564,7 @@ export default function Inventaire({ role }: { role: Role }) {
                         onClick={() => ouvrirEdition(g.unites, g.reference)}
                         title={t("inventaire.editerTout")}
                         aria-label={t("inventaire.editerGroupe", { ref: g.reference })}
-                        className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                        className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
                       >
                         <IconeCrayon taille={15} />
                       </button>
@@ -1579,7 +1579,7 @@ export default function Inventaire({ role }: { role: Role }) {
                           : t("inventaire.supprimerProduit")
                       }
                       aria-label={t("inventaire.supprimerGroupe", { ref: g.reference })}
-                      className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                      className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
                     >
                       <IconeCorbeille taille={15} />
                     </button>
@@ -1589,7 +1589,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     type="button"
                     onClick={() => basculerGroupe(g.cle)}
                     aria-label={ouvert ? t("inventaire.reduire") : t("inventaire.developper")}
-                    className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                    className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
                   >
                     <IconeChevronBas
                       taille={16}
@@ -1598,7 +1598,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   </button>
                 </div>
                 {peutModifier && (
-                  <div className="flex sm:hidden items-center justify-between border-t border-brand-light-grey/50 px-4 py-2 bg-brand-light-grey/10">
+                  <div className="flex sm:hidden items-center justify-between border-t border-brand-light-grey/40 dark:border-white/5 px-4 py-2 bg-brand-light-grey/10 dark:bg-white/2">
                     {(() => {
                       const nonVendu = g.unites.filter((u) => u.statut !== "vendu");
                       const exposeIds = g.unites.filter((u) => u.en_vitrine).map((u) => u.id);
@@ -1613,7 +1613,7 @@ export default function Inventaire({ role }: { role: Role }) {
                               ? void basculerVitrineIds(exposeIds, false, g.reference)
                               : void basculerVitrineIds([nonVendu[0]!.id], true, g.reference)
                           }
-                          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
+                          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
                             enVitrine
                               ? "bg-brand-orange/10 text-brand-orange"
                               : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
@@ -1627,20 +1627,20 @@ export default function Inventaire({ role }: { role: Role }) {
                       <BoutonImpression 
                         ids={g.unites.map(u => u.id)} 
                         dejaImprimee={g.unites.every(u => u.etiquette_imprimee)} 
-                        className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey" 
+                        className="flex items-center gap-1.5 rounded-xl bg-brand-light-grey/30 dark:bg-white/5 px-3 py-1.5 text-xs font-semibold text-brand-black dark:text-white transition hover:bg-brand-light-grey" 
                         texte={t("inventaire.imprimer")}
                       />
                       <button
                         type="button"
                         onClick={() => ouvrirEdition(g.unites, g.reference)}
-                        className="flex items-center gap-1.5 rounded-md bg-brand-light-grey/30 px-3 py-1.5 text-xs font-semibold text-brand-black transition hover:bg-brand-light-grey"
+                        className="flex items-center gap-1.5 rounded-xl bg-brand-light-grey/30 dark:bg-white/5 px-3 py-1.5 text-xs font-semibold text-brand-black dark:text-white transition hover:bg-brand-light-grey"
                       >
                         <IconeCrayon taille={14} /> <span className="hidden sm:inline">{t("inventaire.editer")}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => ouvrirSuppressionModele(g)}
-                        className="flex items-center gap-1.5 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
+                        className="flex items-center gap-1.5 rounded-xl bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20"
                       >
                         <IconeCorbeille taille={14} /> <span className="hidden sm:inline">{t("inventaire.supprimer")}</span>
                       </button>
@@ -1649,23 +1649,23 @@ export default function Inventaire({ role }: { role: Role }) {
                 )}
 
                 {ouvert && (
-                  <ul className="divide-y divide-brand-light-grey/60 border-t border-brand-light-grey">
+                  <ul className="divide-y divide-brand-light-grey/40 dark:divide-white/5 border-t border-brand-light-grey/60 dark:border-white/5">
                     {g.unites.map((p) => (
-                      <li key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-2 text-sm">
+                      <li key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-2.5 text-sm hover:bg-brand-light-grey/15 dark:hover:bg-white/2 transition-colors">
                         <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto sm:flex-1">
                           <button
                             type="button"
                             onClick={() => router.push(`/produits/${p.id}`)}
-                            className="min-w-0 flex-1 text-left transition hover:text-brand-crystal"
+                            className="min-w-0 flex-1 text-left transition hover:text-brand-orange"
                           >
-                          <span className="font-mono text-xs text-brand-warm-grey">
+                          <span className="font-mono text-xs font-bold text-brand-warm-grey dark:text-brand-grey bg-brand-light-grey/20 dark:bg-white/5 px-1.5 py-0.5 rounded">
                             {p.code_interne}
                           </span>{" "}
-                          <span className="text-xs text-brand-grey">
+                          <span className="text-xs text-brand-warm-grey dark:text-brand-grey">
                             {p.lot_id ? t("inventaire.lotNumero", { n: p.lot_id }) : t("inventaire.sansArrivage")}
                             {` · ${t("inventaire.achat")} ${formaterDA(p.prix_achat)}`} · {t("inventaire.joursNb", { n: p.jours_stock })}
                           </span>{" "}
-                          <span className="text-xs font-bold text-brand-orange">
+                          <span className="text-xs font-extrabold text-brand-orange">
                             {prixVenteAffiche(p) !== null
                               ? `${t("inventaire.vente")} ${formaterDA(prixVenteAffiche(p)!)}`
                               : ""}
@@ -1693,10 +1693,10 @@ export default function Inventaire({ role }: { role: Role }) {
                                 }
                                 title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
                                 aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
-                                className={`rounded-md p-1.5 transition disabled:opacity-40 ${
+                                className={`rounded-xl p-2 transition disabled:opacity-40 ${
                                   p.en_vitrine
-                                    ? "text-brand-orange hover:bg-brand-orange/10"
-                                    : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-orange"
+                                    ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
+                                    : "text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-orange"
                                 }`}
                               >
                                 <IconeVitrine taille={14} />
@@ -1705,14 +1705,14 @@ export default function Inventaire({ role }: { role: Role }) {
                             <BoutonImpression 
                               ids={[p.id]} 
                               dejaImprimee={p.etiquette_imprimee} 
-                              className="rounded-md p-1.5 hover:bg-brand-light-grey/50 hover:text-brand-black" 
+                              className="rounded-xl p-2 text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors" 
                             />
                             <button
                               type="button"
                               onClick={() => ouvrirEdition([p], p.code_interne, g.unites)}
                               title={t("inventaire.editer")}
                               aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
-                              className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                              className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
                             >
                               <IconeCrayon taille={14} />
                             </button>
@@ -1721,7 +1721,7 @@ export default function Inventaire({ role }: { role: Role }) {
                               onClick={() => ouvrirSuppressionUnites([p])}
                               title={t("inventaire.supprimer")}
                               aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
-                              className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
+                              className="rounded-xl p-2 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger"
                             >
                               <IconeCorbeille taille={14} />
                             </button>
