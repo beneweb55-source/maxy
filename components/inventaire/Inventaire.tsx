@@ -31,6 +31,8 @@ import {
   IconeOeil,
   IconeOeilBarre,
   IconeArchive,
+  IconeBillet,
+  IconeEtiquette,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
@@ -47,6 +49,7 @@ import ModalSuppression from "./ModalSuppression";
 import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
 import AssistantImportation from "./AssistantImportation";
 import ModaleExport from "./ModaleExport";
+import ModaleVenteInventaire from "./ModaleVenteInventaire";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import RechercheMultiModal from "./RechercheMultiModal";
 import FilterDrawer from "./FilterDrawer";
@@ -268,6 +271,11 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const [modalClassification, setModalClassification] = useState<LigneProduit[] | null>(null);
   const [selection, setSelection] = useState<number[]>([]);
+  const [modalVenteUnites, setModalVenteUnites] = useState<LigneProduit[] | null>(null);
+
+  function ouvrirVenteInventaire(unites: LigneProduit[]) {
+    setModalVenteUnites(unites);
+  }
 
   // Suppression : soit des unités précises (« unites »), soit tout un modèle
   // (« modele ») = tous les exemplaires en stock d'une référence, au-delà de la
@@ -1823,6 +1831,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 ouvrirClassification={setModalClassification}
                 ouvrirSuppressionUnites={ouvrirSuppressionUnites}
                 ouvrirAjout={ouvrirAjout}
+                ouvrirVente={(prod) => ouvrirVenteInventaire([prod])}
                 t={t}
               />
             ))}
@@ -1952,6 +1961,20 @@ export default function Inventaire({ role }: { role: Role }) {
                               <IconeVitrine taille={15} />
                             </button>
                           )}
+                          {p.statut !== "vendu" && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                ouvrirVenteInventaire([p]);
+                              }}
+                              title="Vendre & créer la facture"
+                              aria-label={`Vendre ${p.code_interne}`}
+                              className="rounded-lg p-2 text-brand-orange hover:bg-brand-orange/10 transition-colors"
+                            >
+                              <IconeBillet taille={15} />
+                            </button>
+                          )}
                           <BoutonImpression 
                             ids={[p.id]} 
                             dejaImprimee={p.etiquette_imprimee} 
@@ -2073,6 +2096,61 @@ export default function Inventaire({ role }: { role: Role }) {
             {t("inventaire.suivant")}
             <IconeChevronDroite taille={15} />
           </button>
+        </div>
+      )}
+
+      {/* Barre d'actions groupées flottante si sélection active */}
+      {selection.length > 0 && (
+        <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-orange/30 bg-brand-white/95 dark:bg-zinc-900/95 p-3.5 sm:p-4 shadow-2xl backdrop-blur-md animate-entree">
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 rounded-xl bg-brand-orange text-white font-black text-sm items-center justify-center">
+              {selection.length}
+            </span>
+            <div className="text-xs sm:text-sm text-brand-warm-grey dark:text-brand-grey">
+              <strong className="text-brand-black dark:text-white font-bold">{selection.length}</strong> article{selection.length > 1 ? "s" : ""} sélectionné{selection.length > 1 ? "s" : ""}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelection([])}
+              className="btn btn-secondaire min-h-[42px] text-xs font-bold"
+            >
+              Désélectionner
+            </button>
+            <BoutonImpression
+              ids={selection}
+              dejaImprimee={selection.every(id => donneesFiltrees?.produits.find(p => p.id === id)?.etiquette_imprimee)}
+              className="btn btn-secondaire min-h-[42px] text-xs font-bold"
+              texte="Imprimer étiquettes"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
+                if (selectedProds.length > 0) {
+                  setModalClassification(selectedProds);
+                }
+              }}
+              className="btn btn-secondaire min-h-[42px] text-xs font-bold text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 gap-1.5"
+            >
+              <IconeArchive taille={15} />
+              Classifier
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
+                if (selectedProds.length > 0) {
+                  ouvrirVenteInventaire(selectedProds);
+                }
+              }}
+              className="btn btn-primaire min-h-[42px] text-xs font-bold gap-1.5 shadow-md"
+            >
+              <IconeBillet taille={16} />
+              Vendre & Créer Facture
+            </button>
+          </div>
         </div>
       )}
       </div>
@@ -2471,6 +2549,19 @@ export default function Inventaire({ role }: { role: Role }) {
         searchParamsString={searchParams?.toString() || ""}
         nbArticlesFiltres={donnees?.total || donnees?.produits?.length || 0}
       />
+
+      {modalVenteUnites && (
+        <ModaleVenteInventaire
+          ouverte={modalVenteUnites !== null}
+          unites={modalVenteUnites}
+          onFermer={() => setModalVenteUnites(null)}
+          onSucces={() => {
+            setModalVenteUnites(null);
+            setSelection([]);
+            void charger();
+          }}
+        />
+      )}
     </>
   );
 }

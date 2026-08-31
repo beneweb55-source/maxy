@@ -4,7 +4,7 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 
 // Met (ou retire) plusieurs produits en vitrine en une seule opération.
 export async function POST(request: NextRequest) {
-  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev", "social_media"]);
   if (acces.reponse) return acces.reponse;
 
   let corps: unknown;

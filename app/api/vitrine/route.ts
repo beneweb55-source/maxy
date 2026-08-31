@@ -101,6 +101,13 @@ export async function GET() {
             prix_vente_fixe: v.prix_vente_fixe,
             etiquette_imprimee: v.etiquette_imprimee,
           })),
+          unites_stock: memeModele.map((v) => ({
+            id: v.id,
+            code_interne: v.code_interne,
+            statut: v.statut,
+            prix_vente_fixe: v.prix_vente_fixe,
+            etiquette_imprimee: v.etiquette_imprimee,
+          })),
         };
     });
 

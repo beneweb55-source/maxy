@@ -3,7 +3,7 @@ import Link from "next/link";
 import { type StatutProduit } from "@prisma/client";
 import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
-import { IconeCorbeille, IconeCrayon, IconePlus, IconeVitrine, IconeArchive } from "@/components/icons";
+import { IconeCorbeille, IconeCrayon, IconePlus, IconeVitrine, IconeArchive, IconeBillet } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 
 export interface LigneProduit {
@@ -44,6 +44,7 @@ interface CarteProduitProps {
   ouvrirSuppressionUnites: (unites: LigneProduit[]) => void;
   ouvrirClassification: (unites: LigneProduit[]) => void;
   ouvrirAjout?: (source?: LigneProduit) => void;
+  ouvrirVente?: (produit: LigneProduit) => void;
   t: (key: string, args?: any) => string;
 }
 
@@ -57,6 +58,7 @@ export default function CarteProduit({
   ouvrirSuppressionUnites,
   ouvrirClassification,
   ouvrirAjout,
+  ouvrirVente,
   t
 }: CarteProduitProps) {
   // Prix de vente affiché
@@ -99,72 +101,65 @@ export default function CarteProduit({
             </span>
           )}
         </div>
-      </Link>
 
-      {/* Contenu principal */}
-      <Link href={`/produits/${produit.id}`} className="flex-1 flex flex-col p-4 outline-none focus-visible:bg-brand-light-grey/10">
-        <div className="mb-3">
-          <div className="flex items-center justify-between gap-1 mb-1">
-            <div className="font-mono text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey bg-brand-light-grey/30 dark:bg-white/5 inline-block px-1.5 py-0.5 rounded">
-              {produit.code_interne}
-            </div>
-            {produit.modele?.nom && (
-              <span className="text-[10px] font-bold text-brand-warm-grey px-1.5 py-0.5 rounded bg-brand-light-grey/20 dark:bg-white/5 truncate max-w-[120px]">
-                {produit.modele.nom}
-              </span>
-            )}
-          </div>
-          <h4 className="font-semibold text-brand-black dark:text-white leading-tight line-clamp-2" title={produit.reference}>
-            {produit.reference}
-          </h4>
-          <div className="text-[11px] text-brand-warm-grey dark:text-zinc-400 mt-1 line-clamp-1" title={cheminArbo}>
-            {produit.categorie_rel ? (
-              <span className="bg-brand-light-grey/40 dark:bg-white/10 px-1.5 py-0.5 rounded text-[10px] font-semibold text-brand-black dark:text-zinc-200">
-                {cheminArbo}
-              </span>
-            ) : (
-              <span>{produit.categorie}</span>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-auto grid grid-cols-2 gap-2 bg-brand-light-grey/10 dark:bg-white/5 rounded-lg p-2 border border-brand-light-grey/30 dark:border-white/5">
-          {!estSocial && (
-            <div className="flex flex-col">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-zinc-400">
-                {t("inventaire.achat")}
-              </span>
-              <span className="font-bold text-brand-black dark:text-white text-xs whitespace-nowrap">
-                {formaterDA(produit.prix_achat)}
-              </span>
-              {produit.cout_reparations > 0 && (
-                <span className="text-[9px] text-brand-warm-grey dark:text-zinc-400 mt-0.5 whitespace-nowrap">
-                  +{formaterDA(produit.cout_reparations)}
-                </span>
-              )}
-            </div>
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur-md">
+            {produit.code_interne}
+          </span>
+          {produit.jours_stock > 30 && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/90 text-white backdrop-blur-sm">
+              {produit.jours_stock}j
+            </span>
           )}
-          <div className={`flex flex-col ${estSocial ? "col-span-2 text-center items-center" : "text-right"}`}>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange dark:text-orange-400">
-              {t("inventaire.colPrixVente")}
-            </span>
-            <span className="font-extrabold text-brand-orange dark:text-orange-400 text-sm whitespace-nowrap">
-              {prixVente !== null ? formaterDA(prixVente) : "—"}
-            </span>
-          </div>
         </div>
       </Link>
 
-      {/* Footer d'actions */}
+      {/* Contenu Carte */}
+      <div className="flex flex-col flex-1 p-3">
+        {/* Catégorie */}
+        <div className="text-[11px] font-medium text-brand-warm-grey dark:text-brand-grey truncate mb-1" title={cheminArbo}>
+          {cheminArbo}
+        </div>
+
+        {/* Référence */}
+        <Link href={`/produits/${produit.id}`} className="font-bold text-sm text-brand-black dark:text-white line-clamp-2 hover:text-brand-orange transition-colors leading-snug mb-2" title={produit.reference}>
+          {produit.reference}
+        </Link>
+
+        {/* Prix & Info Lot */}
+        <div className="mt-auto pt-2 border-t border-brand-light-grey/40 dark:border-white/5 flex items-end justify-between">
+          <div>
+            {!estSocial && (
+              <div className="text-[10px] text-brand-warm-grey font-medium">
+                Achat: <span className="font-bold text-brand-black dark:text-brand-warm-grey">{formaterDA(produit.prix_achat)}</span>
+              </div>
+            )}
+            <div className="text-xs text-brand-warm-grey">
+              {produit.lot_id ? `Lot #${produit.lot_id}` : "Sans arrivage"}
+            </div>
+          </div>
+
+          <div className="text-right">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-brand-orange">
+              Vente
+            </div>
+            <div className="font-black text-sm text-brand-orange">
+              {prixVente !== null ? formaterDA(prixVente) : "—"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions Barre */}
       {peutModifier && (
-        <div className="flex items-center gap-1 p-2 bg-brand-light-grey/20 dark:bg-black/20 border-t border-brand-light-grey/50 dark:border-white/5">
+        <div className="px-2 py-1.5 bg-brand-light-grey/20 dark:bg-white/5 border-t border-brand-light-grey/40 dark:border-white/5 flex items-center gap-1">
           {produit.statut !== "vendu" && (
             <button
               type="button"
               disabled={envoi}
               onClick={(e) => {
                 e.preventDefault();
-                void basculerVitrineIds([produit.id], !produit.en_vitrine, produit.code_interne);
+                basculerVitrineIds([produit.id], !produit.en_vitrine, produit.code_interne);
               }}
               title={produit.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
               className={`p-2 rounded-md transition-colors disabled:opacity-40 ${
@@ -182,6 +177,20 @@ export default function CarteProduit({
             dejaImprimee={produit.etiquette_imprimee} 
             className="p-2 rounded-md text-brand-warm-grey hover:bg-brand-light-grey/40 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors" 
           />
+
+          {produit.statut !== "vendu" && ouvrirVente && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                ouvrirVente(produit);
+              }}
+              title="Vendre & créer la facture"
+              className="p-2 rounded-md text-brand-orange hover:bg-brand-orange/10 transition-colors"
+            >
+              <IconeBillet taille={16} />
+            </button>
+          )}
 
           <button
             type="button"
