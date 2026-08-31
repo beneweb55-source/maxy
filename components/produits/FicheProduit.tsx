@@ -51,6 +51,7 @@ import ModaleArrivageRapide from "@/components/produits/ModaleArrivageRapide";
 import FormulaireModele from "@/components/produits/FormulaireModele";
 import BoutonImpression from "@/components/BoutonImpression";
 import SelecteurStatutProduit from "@/components/produits/SelecteurStatutProduit";
+import GestionnaireQuantite from "@/components/produits/GestionnaireQuantite";
 import ModaleVente from "@/components/ventes/ModaleVente";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
@@ -450,11 +451,21 @@ export default function FicheProduit({
   return (
     <div className="space-y-6 animate-entree max-w-7xl mx-auto pb-12">
       
-      {/* 1. Breadcrumb de Navigation & Bouton Retour */}
+      {/* 1. Bouton Retour & Breadcrumb de Navigation */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-xs font-bold text-slate-500 overflow-x-auto py-1">
-          <Link href="/inventaire" className="hover:text-brand-orange transition-colors flex items-center gap-1 shrink-0 text-slate-600">
-            <ArrowLeft className="w-3.5 h-3.5" /> Inventaire
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200 hover:text-brand-orange shrink-0 cursor-pointer shadow-2xs"
+            title="Page précédente"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Retour</span>
+          </button>
+          <span className="text-slate-300 dark:text-zinc-700">|</span>
+          <Link href="/inventaire" className="hover:text-brand-orange transition-colors flex items-center gap-1 shrink-0 text-slate-600 dark:text-slate-400">
+            Inventaire
           </Link>
           {cheminHierarchie.map((niveau, idx) => (
             <React.Fragment key={niveau}>
@@ -462,7 +473,7 @@ export default function FicheProduit({
               <Link
                 href={`/inventaire?categorie=${encodeURIComponent(niveau)}`}
                 className={`shrink-0 hover:text-brand-orange transition-colors ${
-                  idx === cheminHierarchie.length - 1 ? "text-slate-900 font-extrabold" : "text-slate-500"
+                  idx === cheminHierarchie.length - 1 ? "text-slate-900 dark:text-white font-extrabold" : "text-slate-500"
                 }`}
               >
                 {niveau}
@@ -472,7 +483,7 @@ export default function FicheProduit({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-300">
+          <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-300 dark:border-zinc-700">
             SKU #{produit.code_interne}
           </span>
         </div>
@@ -502,10 +513,17 @@ export default function FicheProduit({
             </h1>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              {/* Badge Stock Global Disponible */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 font-extrabold text-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>{stockDisponible} unité{stockDisponible > 1 ? "s" : ""} en stock</span>
+              {/* Badge Stock Global Disponible & Gestionnaire de Quantité Réactif */}
+              <div className="flex items-center gap-2">
+                <GestionnaireQuantite
+                  produitId={produit.id}
+                  modeleId={produit.modele_id}
+                  quantiteActuelle={stockDisponible}
+                  unitesIds={produit.exemplaires?.map(e => e.id) || [produit.id]}
+                  peutModifier={peutModifier}
+                  onChangement={() => void chargerProduit()}
+                  taille="sm"
+                />
               </div>
 
               {stockEnVitrine > 0 && (
@@ -1110,25 +1128,27 @@ export default function FicheProduit({
 
       {/* MODALE : Modification d'une unité spécifique */}
       {modalEditUnite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
-          <div className="w-full max-w-lg bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-4 text-slate-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree">
+          <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
             
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-black font-outfit text-slate-900">
+            {/* Header fixe */}
+            <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-white/5">
+              <h3 className="text-base font-black font-outfit text-slate-900 dark:text-white">
                 Modifier l&apos;Exemplaire #{modalEditUnite.code_interne}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalEditUnite(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            {/* Corps défilable */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-600 mb-1">
+                <label className="block font-bold text-slate-600 dark:text-slate-300 mb-1">
                   Numéro de Série (S/N)
                 </label>
                 <input
@@ -1136,18 +1156,18 @@ export default function FicheProduit({
                   value={editSn}
                   onChange={(e) => setEditSn(e.target.value)}
                   placeholder="Numéro de série fabricant..."
-                  className="input w-full font-mono font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900 focus:border-brand-orange"
+                  className="input w-full font-mono font-bold h-10 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100 focus:border-brand-orange"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-600 mb-1">
+                <label className="block font-bold text-slate-600 dark:text-slate-300 mb-1">
                   Grade / État cosmétique
                 </label>
                 <select
                   value={editGrade}
                   onChange={(e) => setEditGrade(e.target.value)}
-                  className="select w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
+                  className="select w-full font-bold h-10 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100"
                 >
                   {Object.keys(GRADES_LABELS).map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -1156,7 +1176,7 @@ export default function FicheProduit({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-600 mb-1">
+                <label className="block font-bold text-slate-600 dark:text-slate-300 mb-1">
                   Emplacement physique
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1166,7 +1186,7 @@ export default function FicheProduit({
                     className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all ${
                       editEmplacement === "reserve"
                         ? "bg-slate-900 text-white border-transparent shadow-xs"
-                        : "border-slate-200 text-slate-600 bg-white"
+                        : "border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-zinc-800"
                     }`}
                   >
                     <Warehouse className="w-3.5 h-3.5" /> Réserve
@@ -1177,7 +1197,7 @@ export default function FicheProduit({
                     className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all ${
                       editEmplacement === "vitrine"
                         ? "bg-brand-orange text-white border-brand-orange shadow-xs"
-                        : "border-slate-200 text-slate-600 bg-white"
+                        : "border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-zinc-800"
                     }`}
                   >
                     <Store className="w-3.5 h-3.5" /> Vitrine
@@ -1186,7 +1206,7 @@ export default function FicheProduit({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-600 mb-1">
+                <label className="block font-bold text-slate-600 dark:text-slate-300 mb-1">
                   Prix de vente spécifique (DA)
                 </label>
                 <input
@@ -1195,12 +1215,13 @@ export default function FicheProduit({
                   value={editPrixVente}
                   onChange={(e) => setEditPrixVente(e.target.value)}
                   placeholder="Laisser vide pour utiliser le prix standard"
-                  className="input w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
+                  className="input w-full font-bold h-10 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            {/* Footer fixe */}
+            <div className="flex-shrink-0 flex items-center justify-end gap-2 p-4 sm:p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-white/5">
               <button
                 type="button"
                 onClick={() => setModalEditUnite(null)}
@@ -1212,7 +1233,7 @@ export default function FicheProduit({
                 type="button"
                 onClick={sauvegarderEditUnite}
                 disabled={envoiUnite}
-                className="btn btn-primaire text-xs py-2 px-5 rounded-xl font-black"
+                className="btn btn-primaire text-xs py-2 px-5 rounded-xl font-black shadow-md"
               >
                 {envoiUnite ? "Enregistrement..." : "Enregistrer"}
               </button>
@@ -1224,25 +1245,30 @@ export default function FicheProduit({
 
       {/* MODALE : Nouvelle réparation SAV */}
       {modalReparation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
-          <form onSubmit={ajouterReparation} className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-4 text-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-black font-outfit text-slate-900 flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree">
+          <form 
+            onSubmit={ajouterReparation} 
+            className="w-full max-w-md max-h-[85vh] flex flex-col bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100"
+          >
+            {/* Header fixe */}
+            <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-white/5">
+              <h3 className="text-base font-black font-outfit text-slate-900 dark:text-white flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-brand-orange" />
                 Intervention Atelier & SAV
               </h3>
               <button
                 type="button"
                 onClick={() => setModalReparation(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            {/* Corps défilable */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-600 mb-1">
+                <label className="block font-bold text-slate-600 dark:text-slate-300 mb-1">
                   Description de l&apos;intervention / Pièce changée *
                 </label>
                 <input
@@ -1251,12 +1277,12 @@ export default function FicheProduit({
                   value={descReparation}
                   onChange={(e) => setDescReparation(e.target.value)}
                   placeholder="Ex: Remplacement pâte thermique + ventilateur..."
-                  className="input w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
+                  className="input w-full font-bold h-10 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-600 mb-1">
+                <label className="block font-bold text-slate-600 dark:text-slate-300 mb-1">
                   Coût de l&apos;intervention (DA)
                 </label>
                 <input
@@ -1265,12 +1291,13 @@ export default function FicheProduit({
                   value={coutReparation}
                   onChange={(e) => setCoutReparation(e.target.value)}
                   placeholder="0 DA"
-                  className="input w-full font-bold h-10 rounded-xl bg-white border border-slate-200 text-slate-900"
+                  className="input w-full font-bold h-10 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            {/* Footer fixe */}
+            <div className="flex-shrink-0 flex items-center justify-end gap-2 p-4 sm:p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-white/5">
               <button
                 type="button"
                 onClick={() => setModalReparation(false)}
@@ -1281,7 +1308,7 @@ export default function FicheProduit({
               <button
                 type="submit"
                 disabled={envoiReparation}
-                className="btn btn-primaire text-xs py-2 px-5 rounded-xl font-black"
+                className="btn btn-primaire text-xs py-2 px-5 rounded-xl font-black shadow-md"
               >
                 {envoiReparation ? "Enregistrement..." : "Ajouter à l'atelier"}
               </button>

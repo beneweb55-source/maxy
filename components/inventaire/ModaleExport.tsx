@@ -162,7 +162,7 @@ export default function ModaleExport({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-11/12 max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
+      <div className="relative w-11/12 max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/2">

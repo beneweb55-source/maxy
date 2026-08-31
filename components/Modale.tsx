@@ -154,7 +154,7 @@ export default function Modale({
       <div
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 flex max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
+        className={`relative z-10 flex max-h-[85vh] sm:max-h-[85vh] w-full ${
           large === "5xl"
             ? "w-full max-w-[95vw] sm:max-w-5xl"
             : large === "4xl" || large === true
@@ -193,15 +193,15 @@ export default function Modale({
               type="button"
               onClick={tenterFermeture}
               aria-label="Fermer"
-              className="h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale"
+              className="h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale cursor-pointer"
             >
               <IconeFermer taille={20} />
             </button>
           </div>
         </div>
         
-        {/* Contenu */}
-        <div className="overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+        {/* Contenu Défilable */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 space-y-4">
           {children}
         </div>
       </div>

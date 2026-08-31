@@ -569,7 +569,7 @@ export default function GestionCategories() {
       {/* MODALE D'AJOUT / ÉDITION CONTEXTUELLE */}
       {modalOuverte && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-3 sm:p-4 animate-entree-rapide">
-          <div className="bg-white dark:bg-brand-paper w-full max-w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl shadow-2xl border border-brand-light-grey/60 dark:border-white/10">
+          <div className="bg-white dark:bg-brand-paper w-full max-w-[95vw] sm:max-w-md max-h-[85vh] flex flex-col overflow-hidden rounded-2xl shadow-2xl border border-brand-light-grey/60 dark:border-white/10">
             <div className="flex items-center justify-between p-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/5">
               <h3 className="font-bold text-base text-brand-black dark:text-white font-outfit">
                 {entiteEditee 
@@ -586,36 +586,38 @@ export default function GestionCategories() {
               </button>
             </div>
 
-            <form onSubmit={sauvegarder} className="p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-brand-black dark:text-white mb-1">
-                  Nom *
-                </label>
-                <input
-                  type="text"
-                  value={formNom}
-                  onChange={(e) => setFormNom(e.target.value)}
-                  placeholder="Ex: PC Portables, Disques NVMe..."
-                  required
-                  autoFocus
-                  className="w-full px-3.5 py-2.5 text-sm bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange"
-                />
+            <form onSubmit={sauvegarder} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-brand-black dark:text-white mb-1">
+                    Nom *
+                  </label>
+                  <input
+                    type="text"
+                    value={formNom}
+                    onChange={(e) => setFormNom(e.target.value)}
+                    placeholder="Ex: PC Portables, Disques NVMe..."
+                    required
+                    autoFocus
+                    className="w-full px-3.5 py-2.5 text-sm bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-brand-black dark:text-white mb-1">
+                    Description (optionnel)
+                  </label>
+                  <textarea
+                    value={formDesc}
+                    onChange={(e) => setFormDesc(e.target.value)}
+                    placeholder="Description technique ou usage..."
+                    rows={3}
+                    className="w-full px-3.5 py-2 text-sm bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange resize-none"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-brand-black dark:text-white mb-1">
-                  Description (optionnel)
-                </label>
-                <textarea
-                  value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
-                  placeholder="Description technique ou usage..."
-                  rows={3}
-                  className="w-full px-3.5 py-2 text-sm bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange resize-none"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-brand-light-grey/30 dark:border-white/5">
+              <div className="flex-shrink-0 p-4 border-t border-brand-light-grey/30 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setModalOuverte(false)}

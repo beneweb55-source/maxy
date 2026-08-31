@@ -535,7 +535,7 @@ export default function DashboardCommandes() {
       {/* ================= MODALE DE CONFIRMATION DE SUPPRESSION ================= */}
       {modalSuppression && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
-          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-6 space-y-4">
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
                 {modalSuppression.type === "unique"

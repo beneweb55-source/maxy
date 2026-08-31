@@ -298,7 +298,7 @@ export default function ModaleArrivageRapide({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-full max-w-[95vw] sm:max-w-5xl max-h-[90dvh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-[95vw] sm:max-w-5xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
         
         {/* Header de la Modale */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/2">

@@ -19,6 +19,7 @@ import {
 import BoutonImpression from "@/components/BoutonImpression";
 import ModaleVente, { ArticleAVendre } from "@/components/ventes/ModaleVente";
 import ModaleMiseEnVente from "@/components/ventes/ModaleMiseEnVente";
+import GestionnaireQuantite from "@/components/produits/GestionnaireQuantite";
 
 interface UniteVendable {
   id: number;
@@ -251,13 +252,20 @@ export default function Vitrine({ role }: { role: Role }) {
                     {p.reference}
                   </h3>
 
-                  <div className="mt-auto flex items-baseline justify-between pt-2 border-t border-slate-100">
+                  <div className="mt-auto flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
                     <span className="text-base font-black text-slate-900 font-mono">
                       {prix !== null ? formaterDA(prix) : "—"}
                     </span>
-                    <span className="text-xs font-medium text-slate-500">
-                      {dispo.length} vendable{dispo.length > 1 ? "s" : ""}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <GestionnaireQuantite
+                        produitId={p.id}
+                        quantiteActuelle={p.quantite}
+                        unitesIds={p.ids_en_vitrine}
+                        peutModifier={peutRetirer}
+                        onChangement={() => void charger()}
+                        taille="sm"
+                      />
+                    </div>
                   </div>
 
                   {/* Actions Métier : Vendre & Facturer directement / Mettre en vente */}

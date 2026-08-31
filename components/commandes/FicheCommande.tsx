@@ -464,7 +464,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
       {/* ======================= MODALES D'ACTIONS ======================= */}
       {modalAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree print:hidden">
-          <div className="w-full max-w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4">
+          <div className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4">
             
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
