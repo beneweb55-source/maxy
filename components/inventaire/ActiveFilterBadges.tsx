@@ -137,6 +137,42 @@ export default function ActiveFilterBadges({
     });
   }
 
+  // Champs dynamiques de la matrice
+  const champsDynamiques = [
+    { cle: "marque", prefixe: "Marque" },
+    { cle: "puissance_w", prefixe: "Puissance" },
+    { cle: "type_connecteur", prefixe: "Connecteur" },
+    { cle: "generation", prefixe: "Génération" },
+    { cle: "type_specifique", prefixe: "Type" },
+    { cle: "format_cible", prefixe: "Format" },
+    { cle: "frequence_mhz", prefixe: "Fréquence" },
+    { cle: "interface", prefixe: "Interface" },
+    { cle: "format_physique", prefixe: "Format" },
+    { cle: "capacite", prefixe: "Capacité" },
+    { cle: "taille_pouces", prefixe: "Écran" },
+    { cle: "resolution", prefixe: "Résolution" },
+    { cle: "frequence_hz", prefixe: "Fréquence" },
+    { cle: "type_dalle", prefixe: "Dalle" },
+    { cle: "fondeur", prefixe: "Fondeur" },
+    { cle: "gamme", prefixe: "Gamme" },
+    { cle: "vram_taille", prefixe: "VRAM" },
+    { cle: "type_consommable", prefixe: "Type" },
+    { cle: "couleur", prefixe: "Couleur" },
+    { cle: "technologie", prefixe: "Technologie" },
+    { cle: "format_serveur", prefixe: "Format Serveur" }
+  ];
+
+  for (const c of champsDynamiques) {
+    const val = searchParams.get(c.cle);
+    if (val) {
+      badges.push({
+        id: c.cle,
+        libelle: `${c.prefixe} : ${val}`,
+        onSupprimer: () => majUrl({ [c.cle]: null, page: "1" }),
+      });
+    }
+  }
+
   if (aTarifer) {
     badges.push({
       id: "a_tarifer",
@@ -148,7 +184,7 @@ export default function ActiveFilterBadges({
   if (plus30j) {
     badges.push({
       id: "plus30j",
-      libelle: "+30j en stock",
+      libelle: "En stock > 30j",
       onSupprimer: () => majUrl({ plus30j: null, page: "1" }),
     });
   }
@@ -156,7 +192,7 @@ export default function ActiveFilterBadges({
   if (sansLot) {
     badges.push({
       id: "sans_lot",
-      libelle: "Sans arrivage",
+      libelle: "Arrivage hors-lot",
       onSupprimer: () => majUrl({ sans_lot: null, page: "1" }),
     });
   }

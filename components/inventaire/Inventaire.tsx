@@ -195,6 +195,58 @@ export default function Inventaire({ role }: { role: Role }) {
   const [envoi, setEnvoi] = useState(false);
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
+  const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadCats() {
+      try {
+        const res = await fetch("/api/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategoriesTree(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Error loading categories in Inventaire:", err);
+      }
+    }
+    void loadCats();
+  }, []);
+
+  const familleIdActif = searchParams?.get("famille_id");
+  const categorieIdActif = searchParams?.get("categorie_id");
+  const sousCategorieIdActif = searchParams?.get("sous_categorie_id");
+
+  const familleActive = categoriesTree.find((f: any) => String(f.id) === familleIdActif);
+  let categorieActive: any = null;
+  if (familleActive && categorieIdActif) {
+    categorieActive = (familleActive.enfants || []).find((c: any) => String(c.id) === categorieIdActif);
+  } else if (categorieIdActif) {
+    for (const f of categoriesTree) {
+      const found = (f.enfants || []).find((c: any) => String(c.id) === categorieIdActif);
+      if (found) {
+        categorieActive = found;
+        break;
+      }
+    }
+  }
+
+  let sousCategorieActive: any = null;
+  if (sousCategorieIdActif) {
+    for (const f of categoriesTree) {
+      for (const c of f.enfants || []) {
+        const foundSc = (c.enfants || []).find((sc: any) => String(sc.id) === sousCategorieIdActif);
+        if (foundSc) {
+          sousCategorieActive = foundSc;
+          if (!categorieActive) categorieActive = c;
+          break;
+        }
+      }
+    }
+  }
+
+  const nomFamilleActif = familleActive?.nom || "";
+  const nomCategorieActif = sousCategorieActive?.nom || categorieActive?.nom || "";
+
   const [modalAjoutTerrain, setModalAjoutTerrain] = useState(false);
   const [tiroirFiltresOuvert, setTiroirFiltresOuvert] = useState(false);
   const [produitSourceDuplication, setProduitSourceDuplication] = useState<LigneProduit | null>(null);
@@ -2314,14 +2366,15 @@ export default function Inventaire({ role }: { role: Role }) {
         searchParams={{ get: (k) => searchParams?.get(k) || null }}
         majUrl={majUrl}
         lotsDisponibles={donnees?.lots || []}
-        familleNom={searchParams?.get("famille_id") ? `Famille #${searchParams.get("famille_id")}` : ""}
-        categorieNom={searchParams?.get("categorie_id") ? `Catégorie #${searchParams.get("categorie_id")}` : ""}
+        familleNom={nomFamilleActif}
+        categorieNom={nomCategorieActif}
       />
 
       <ModaleAjoutTerrain
         ouverte={modalAjoutTerrain}
         onFermer={() => setModalAjoutTerrain(false)}
         lotsDisponibles={donnees?.lots || []}
+        categorieDefautId={sousCategorieActive?.id || categorieActive?.id || (categorieIdActif ? Number(categorieIdActif) : null)}
         onSucces={({ codes, ajoutes }) => {
           afficher(`${ajoutes} exemplaire(s) généré(s) avec succès.`);
           void charger();

@@ -14,10 +14,21 @@ import {
   Layers, 
   Tag, 
   Calendar,
-  Check
+  Check,
+  Zap,
+  Tv,
+  Printer,
+  Package,
+  Server,
+  Sparkles
 } from "lucide-react";
 import { INFOS_STATUT, STATUTS_PRODUIT } from "@/lib/statuts";
 import type { StatutProduit } from "@prisma/client";
+import { 
+  MATRICE_EQUIPEMENTS, 
+  determinerProfilEquipement,
+  type ProfilEquipement 
+} from "@/lib/matrice-specifications";
 
 export interface FilterDrawerProps {
   ouvert: boolean;
@@ -38,12 +49,10 @@ export default function FilterDrawer({
   familleNom = "",
   categorieNom = "",
 }: FilterDrawerProps) {
-  // Contexte de navigation actuel (Anti-redondance)
-  const familleIdActif = searchParams.get("famille_id");
-  const categorieIdActif = searchParams.get("categorie_id");
-  const sousCategorieIdActif = searchParams.get("sous_categorie_id");
+  // Détection contextuelle du profil d'équipement selon la matrice métier
+  const profil = determinerProfilEquipement(categorieNom, familleNom);
 
-  // Filtres actifs
+  // Filtres universels actifs
   const statutsActifs = (searchParams.get("statuts") ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -55,25 +64,12 @@ export default function FilterDrawer({
     .filter(Boolean);
 
   const emplacementActif = searchParams.get("emplacement") ?? "";
-  const cpuActif = searchParams.get("cpu") ?? "";
-  const ramActif = searchParams.get("ram") ?? "";
-  const stockageActif = searchParams.get("stockage") ?? "";
-  const formatActif = searchParams.get("format") ?? "";
-  const typeDisqueActif = searchParams.get("type_disque") ?? "";
-  const capaciteDisqueActif = searchParams.get("capacite_disque") ?? "";
-  const tailleEcranActif = searchParams.get("taille_ecran") ?? "";
   const lotActif = searchParams.get("lot") ?? "";
   const sansLotActif = searchParams.get("sans_lot") === "1";
   const aTariferActif = searchParams.get("a_tarifer") === "1";
   const plus30jActif = searchParams.get("plus30j") === "1";
 
-  // Détection contextuelle de la famille/catégorie pour filtres spécifiques
-  const ctx = (familleNom + " " + categorieNom).toUpperCase();
-  const estOrdinateur = ctx.includes("ORDINATEUR") || ctx.includes("PC") || ctx.includes("PORTABLE") || ctx.includes("TOUR") || ctx.includes("STATION");
-  const estStockage = ctx.includes("STOCKAGE") || ctx.includes("DISQUE") || ctx.includes("SSD") || ctx.includes("HDD") || ctx.includes("NVME");
-  const estEcran = ctx.includes("ÉCRAN") || ctx.includes("ECRAN") || ctx.includes("MONITEUR");
-
-  // Toggle helper pour filtres multi-valeurs
+  // Toggle helper pour filtres multi-valeurs (statuts)
   const basculerStatut = (statut: StatutProduit) => {
     let nouveaux: StatutProduit[];
     if (statutsActifs.includes(statut)) {
@@ -95,23 +91,33 @@ export default function FilterDrawer({
   };
 
   const reinitialiserTout = () => {
-    majUrl({
+    const modifs: Record<string, string | null> = {
       statuts: null,
       grade: null,
       emplacement: null,
-      cpu: null,
-      ram: null,
-      stockage: null,
-      format: null,
-      type_disque: null,
-      capacite_disque: null,
-      taille_ecran: null,
       lot: null,
       sans_lot: null,
       a_tarifer: null,
       plus30j: null,
       page: "1",
-    });
+    };
+
+    // Réinitialiser également tous les attributs de la matrice
+    const tousChamps = [
+      "marque", "format", "cpu", "ram", "stockage", "format_cible", "type_specifique",
+      "generation", "frequence_mhz", "type_disque", "interface", "format_physique",
+      "capacite", "capacite_disque", "taille_ecran", "taille_pouces", "resolution",
+      "frequence_hz", "type_dalle", "puissance_w", "type_connecteur", "fondeur",
+      "gamme", "vram_taille", "type_consommable", "couleur", "technologie", "format_serveur",
+      "cpu_gamme", "cpu_generation", "ram_taille", "stockage_principal", "taille_ecran_aio",
+      "clavier_layout", "generation_serveur"
+    ];
+
+    for (const champ of tousChamps) {
+      modifs[champ] = null;
+    }
+
+    majUrl(modifs);
   };
 
   if (!ouvert) return null;
@@ -132,10 +138,10 @@ export default function FilterDrawer({
             </div>
             <div>
               <h2 className="font-extrabold text-sm sm:text-base font-outfit text-brand-black dark:text-white">
-                Filtres & Affinement POS
+                Filtres & Spécifications POS
               </h2>
               <p className="text-[11px] text-brand-warm-grey">
-                Sélection tactile par puces contextuelles
+                {profil ? `Affinement intelligent : ${profil.familleNom}` : "Sélection tactile par puces contextuelles"}
               </p>
             </div>
           </div>
@@ -144,7 +150,7 @@ export default function FilterDrawer({
             <button
               type="button"
               onClick={reinitialiserTout}
-              className="text-xs font-bold text-brand-warm-grey hover:text-danger flex items-center gap-1 p-1.5 rounded-lg hover:bg-brand-light-grey/30"
+              className="text-xs font-bold text-brand-warm-grey hover:text-danger flex items-center gap-1 p-1.5 rounded-lg hover:bg-brand-light-grey/30 transition-colors"
               title="Réinitialiser tous les filtres"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -163,11 +169,56 @@ export default function FilterDrawer({
         {/* Corps des filtres avec défilement fluide */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
 
-          {/* FACETTES CONTEXTUELLES : ORDINATEURS */}
-          {estOrdinateur && (
-            <div className="space-y-4 p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40">
+          {/* 1. FACETTES TECHNIQUES DYNAMIQUES DE LA MATRICE */}
+          {profil && (
+            <div className="space-y-5 p-4 rounded-2xl bg-brand-orange/5 dark:bg-brand-orange/10 border border-brand-orange/20">
+              <div className="flex items-center justify-between pb-2 border-b border-brand-orange/15">
+                <div className="flex items-center gap-2 text-xs font-black text-brand-orange uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4" />
+                  Spécifications : {categorieNom || profil.familleNom}
+                </div>
+              </div>
+
+              {profil.attributs
+                .filter((attr) => attr.filtre && attr.options && attr.options.length > 0)
+                .map((attr) => {
+                  const valeurActive = searchParams.get(attr.cle) ?? "";
+
+                  return (
+                    <div key={attr.cle} className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-brand-black dark:text-white uppercase tracking-wider">
+                        {attr.label}
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {attr.options?.map((opt) => {
+                          const actif = valeurActive === opt.valeur;
+                          return (
+                            <button
+                              key={opt.valeur}
+                              type="button"
+                              onClick={() => majUrl({ [attr.cle]: actif ? null : opt.valeur, page: "1" })}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                                actif
+                                  ? "bg-brand-orange text-white shadow-xs"
+                                  : "bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-brand-black dark:text-white hover:border-brand-orange/60"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+
+          {/* Si aucun profil spécifique n'est actif, afficher les facettes de base matériel */}
+          {!profil && (
+            <div className="space-y-4 p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40">
               <div className="flex items-center gap-1.5 text-xs font-extrabold text-blue-800 dark:text-blue-300 uppercase tracking-wider">
-                <Cpu className="w-3.5 h-3.5" /> Spécifications PC / Processeur
+                <Cpu className="w-4 h-4" /> Spécifications Générales
               </div>
 
               {/* Processeurs */}
@@ -175,13 +226,13 @@ export default function FilterDrawer({
                 <label className="block text-[11px] font-bold text-brand-warm-grey mb-1.5">Famille CPU</label>
                 <div className="flex flex-wrap gap-1.5">
                   {["i3", "i5", "i7", "i9", "Ryzen 5", "Ryzen 7", "Xeon"].map((val) => {
-                    const actif = cpuActif === val;
+                    const actif = searchParams.get("cpu") === val;
                     return (
                       <button
                         key={val}
                         type="button"
                         onClick={() => majUrl({ cpu: actif ? null : val, page: "1" })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           actif
                             ? "bg-blue-600 text-white shadow-xs"
                             : "bg-white dark:bg-brand-paper border border-blue-200 dark:border-blue-900 text-brand-black dark:text-white hover:border-blue-400"
@@ -198,14 +249,14 @@ export default function FilterDrawer({
               <div>
                 <label className="block text-[11px] font-bold text-brand-warm-grey mb-1.5">Mémoire RAM</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {["8", "16", "32", "64"].map((val) => {
-                    const actif = ramActif === val;
+                  {["8", "16", "32", "64", "128"].map((val) => {
+                    const actif = searchParams.get("ram") === val;
                     return (
                       <button
                         key={val}
                         type="button"
                         onClick={() => majUrl({ ram: actif ? null : val, page: "1" })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           actif
                             ? "bg-blue-600 text-white shadow-xs"
                             : "bg-white dark:bg-brand-paper border border-blue-200 dark:border-blue-900 text-brand-black dark:text-white hover:border-blue-400"
@@ -217,306 +268,200 @@ export default function FilterDrawer({
                   })}
                 </div>
               </div>
-
-              {/* Format PC */}
-              <div>
-                <label className="block text-[11px] font-bold text-brand-warm-grey mb-1.5">Facteur de forme</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Portable", "Tour", "Mini PC", "Station"].map((val) => {
-                    const actif = formatActif === val;
-                    return (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => majUrl({ format: actif ? null : val, page: "1" })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          actif
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "bg-white dark:bg-brand-paper border border-blue-200 dark:border-blue-900 text-brand-black dark:text-white hover:border-blue-400"
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
           )}
 
-          {/* FACETTES CONTEXTUELLES : STOCKAGE */}
-          {estStockage && (
-            <div className="space-y-4 p-3.5 rounded-xl bg-cyan-50/50 dark:bg-cyan-950/20 border border-cyan-200/60 dark:border-cyan-900/40">
-              <div className="flex items-center gap-1.5 text-xs font-extrabold text-cyan-800 dark:text-cyan-300 uppercase tracking-wider">
-                <HardDrive className="w-3.5 h-3.5" /> Spécifications Disques & SSD
-              </div>
-
-              {/* Type de stockage */}
-              <div>
-                <label className="block text-[11px] font-bold text-brand-warm-grey mb-1.5">Technologie</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {["NVMe", "SATA", "HDD", "SAS"].map((val) => {
-                    const actif = typeDisqueActif === val;
-                    return (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => majUrl({ type_disque: actif ? null : val, page: "1" })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          actif
-                            ? "bg-cyan-600 text-white shadow-xs"
-                            : "bg-white dark:bg-brand-paper border border-cyan-200 dark:border-cyan-900 text-brand-black dark:text-white hover:border-cyan-400"
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Capacité */}
-              <div>
-                <label className="block text-[11px] font-bold text-brand-warm-grey mb-1.5">Capacité</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {["256Go", "512Go", "1To", "2To", "4To"].map((val) => {
-                    const actif = capaciteDisqueActif === val;
-                    return (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => majUrl({ capacite_disque: actif ? null : val, page: "1" })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          actif
-                            ? "bg-cyan-600 text-white shadow-xs"
-                            : "bg-white dark:bg-brand-paper border border-cyan-200 dark:border-cyan-900 text-brand-black dark:text-white hover:border-cyan-400"
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* FACETTES CONTEXTUELLES : ÉCRANS */}
-          {estEcran && (
-            <div className="space-y-4 p-3.5 rounded-xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-200/60 dark:border-sky-900/40">
-              <div className="flex items-center gap-1.5 text-xs font-extrabold text-sky-800 dark:text-sky-300 uppercase tracking-wider">
-                <Monitor className="w-3.5 h-3.5" /> Spécifications Moniteurs
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-brand-warm-grey mb-1.5">Diagonale d'écran</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {["22", "24", "27", "32"].map((val) => {
-                    const actif = tailleEcranActif === val;
-                    return (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => majUrl({ taille_ecran: actif ? null : val, page: "1" })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          actif
-                            ? "bg-sky-600 text-white shadow-xs"
-                            : "bg-white dark:bg-brand-paper border border-sky-200 dark:border-sky-900 text-brand-black dark:text-white hover:border-sky-400"
-                        }`}
-                      >
-                        {val}"
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* EMPLACEMENT PHYSIQUE (Vitrine vs Réserve) */}
-          <div className="space-y-2">
-            <label className="block text-xs font-extrabold text-brand-black dark:text-white uppercase tracking-wider">
-              Emplacement physique
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => majUrl({ emplacement: null, page: "1" })}
-                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
-                  !emplacementActif
-                    ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-transparent shadow-xs"
-                    : "bg-white dark:bg-brand-paper border-brand-light-grey text-brand-warm-grey"
-                }`}
-              >
-                Tous
-              </button>
-              <button
-                type="button"
-                onClick={() => majUrl({ emplacement: "vitrine", page: "1" })}
-                className={`py-2 px-3 rounded-xl text-xs font-bold border flex items-center justify-center gap-1 transition-all ${
-                  emplacementActif === "vitrine"
-                    ? "bg-brand-orange text-white border-brand-orange shadow-xs"
-                    : "bg-white dark:bg-brand-paper border-brand-light-grey text-brand-warm-grey hover:border-brand-orange"
-                }`}
-              >
-                <Eye className="w-3.5 h-3.5" /> Vitrine
-              </button>
-              <button
-                type="button"
-                onClick={() => majUrl({ emplacement: "reserve", page: "1" })}
-                className={`py-2 px-3 rounded-xl text-xs font-bold border flex items-center justify-center gap-1 transition-all ${
-                  emplacementActif === "reserve"
-                    ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-transparent shadow-xs"
-                    : "bg-white dark:bg-brand-paper border-brand-light-grey text-brand-warm-grey hover:border-brand-black"
-                }`}
-              >
-                <Archive className="w-3.5 h-3.5" /> Réserve
-              </button>
-            </div>
-          </div>
-
-          {/* ÉTATS / GRADES */}
-          <div className="space-y-2">
-            <label className="block text-xs font-extrabold text-brand-black dark:text-white uppercase tracking-wider">
-              Grade & État physique
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {["Neuf", "Grade A", "Grade B", "À réparer", "Pour pièces"].map((g) => {
-                const actif = gradesActifs.includes(g);
-                return (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => basculerGrade(g)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                      actif
-                        ? "bg-brand-black text-white dark:bg-white dark:text-brand-black shadow-xs"
-                        : "bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-brand-black"
-                    }`}
-                  >
-                    {actif && <Check className="w-3 h-3" />}
-                    {g}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* STATUTS */}
-          <div className="space-y-2">
-            <label className="block text-xs font-extrabold text-brand-black dark:text-white uppercase tracking-wider">
+          {/* 2. STATUT COMMERCIAL DU STOCK */}
+          <div>
+            <label className="block text-xs font-extrabold text-brand-black dark:text-white mb-2 uppercase tracking-wider">
               Statut du stock
             </label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {STATUTS_PRODUIT.map((s) => {
                 const actif = statutsActifs.includes(s);
+                const info = INFOS_STATUT[s];
                 return (
                   <button
                     key={s}
                     type="button"
                     onClick={() => basculerStatut(s)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 ${
                       actif
-                        ? "bg-brand-orange text-white border-brand-orange shadow-xs"
-                        : "bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-brand-orange"
+                        ? `${info.badge} border-current shadow-xs`
+                        : "bg-white dark:bg-brand-paper text-brand-warm-grey border-brand-light-grey/80 dark:border-white/10 hover:border-brand-black dark:hover:border-white"
                     }`}
                   >
-                    {actif && <Check className="w-3 h-3" />}
-                    {INFOS_STATUT[s].libelle}
+                    {actif && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    <span>{info.libelle}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* ARRIVAGES / LOTS */}
-          {lotsDisponibles.length > 0 && (
-            <div className="space-y-2">
-              <label className="block text-xs font-extrabold text-brand-black dark:text-white uppercase tracking-wider">
-                Arrivage / Lot
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => majUrl({ sans_lot: sansLotActif ? null : "1", lot: null, page: "1" })}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    sansLotActif
-                      ? "bg-brand-black text-white dark:bg-white dark:text-brand-black shadow-xs"
-                      : "bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-brand-black"
-                  }`}
-                >
-                  Sans arrivage (Indépendant)
-                </button>
-                {lotsDisponibles.map((l) => {
-                  const actif = lotActif === String(l.id);
-                  return (
-                    <button
-                      key={l.id}
-                      type="button"
-                      onClick={() => majUrl({ lot: actif ? null : String(l.id), sans_lot: null, page: "1" })}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        actif
-                          ? "bg-brand-black text-white dark:bg-white dark:text-brand-black shadow-xs"
-                          : "bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-brand-black"
-                      }`}
-                    >
-                      {l.libelle}
-                    </button>
-                  );
-                })}
-              </div>
+          {/* 3. GRADE PHYSIQUE / COSMÉTIQUE */}
+          <div>
+            <label className="block text-xs font-extrabold text-brand-black dark:text-white mb-2 uppercase tracking-wider">
+              État & Grade Cosmétique
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: "Neuf", label: "Neuf / Emballé" },
+                { id: "Grade A+", label: "Grade A+ (Impeccable)" },
+                { id: "Grade A", label: "Grade A (Très bon état)" },
+                { id: "Grade B", label: "Grade B (Traces d'usage)" },
+                { id: "Grade C", label: "Grade C (Abîmé / Rayé)" },
+                { id: "Pour pièces", label: "Pour pièces / HS" },
+              ].map((g) => {
+                const actif = gradesActifs.includes(g.id);
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => basculerGrade(g.id)}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 ${
+                      actif
+                        ? "bg-brand-orange/15 text-brand-orange border-brand-orange shadow-xs"
+                        : "bg-white dark:bg-brand-paper text-brand-warm-grey border-brand-light-grey/80 dark:border-white/10 hover:border-brand-orange/40"
+                    }`}
+                  >
+                    <span>{g.label}</span>
+                    {actif && <Check className="w-3.5 h-3.5 text-brand-orange" />}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
 
-          {/* ALERTES MÉTIER & GESTION */}
-          <div className="space-y-2 border-t border-brand-light-grey/40 dark:border-white/10 pt-4">
-            <label className="block text-xs font-extrabold text-brand-black dark:text-white uppercase tracking-wider">
-              Alertes & Filtres Rapides
+          {/* 4. EMPLACEMENT PHYSIQUE */}
+          <div>
+            <label className="block text-xs font-extrabold text-brand-black dark:text-white mb-2 uppercase tracking-wider">
+              Emplacement physique
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => majUrl({ a_tarifer: aTariferActif ? null : "1", page: "1" })}
-                className={`p-2.5 rounded-xl text-xs font-bold border text-left transition-all ${
-                  aTariferActif
-                    ? "bg-amber-500 text-white border-amber-500 shadow-xs"
-                    : "bg-white dark:bg-brand-paper border-brand-light-grey text-brand-warm-grey hover:border-amber-500"
+                onClick={() => majUrl({ emplacement: emplacementActif === "vitrine" ? null : "vitrine", page: "1" })}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${
+                  emplacementActif === "vitrine"
+                    ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                    : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
                 }`}
               >
-                Sans prix de vente fixé
+                <Eye className="w-4 h-4" /> En Vitrine / Magasin
               </button>
+
               <button
                 type="button"
-                onClick={() => majUrl({ plus30j: plus30jActif ? null : "1", page: "1" })}
-                className={`p-2.5 rounded-xl text-xs font-bold border text-left transition-all ${
-                  plus30jActif
-                    ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                    : "bg-white dark:bg-brand-paper border-brand-light-grey text-brand-warm-grey hover:border-rose-600"
+                onClick={() => majUrl({ emplacement: emplacementActif === "reserve" ? null : "reserve", page: "1" })}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${
+                  emplacementActif === "reserve"
+                    ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-transparent shadow-xs"
+                    : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
                 }`}
               >
-                En stock depuis +30j
+                <Archive className="w-4 h-4" /> En Réserve / Stock
               </button>
             </div>
           </div>
+
+          {/* 5. FILTRES OPÉRATIONNELS RAPIDES */}
+          <div>
+            <label className="block text-xs font-extrabold text-brand-black dark:text-white mb-2 uppercase tracking-wider">
+              Filtres Opérationnels
+            </label>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => majUrl({ a_tarifer: aTariferActif ? null : "1", page: "1" })}
+                className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition-all ${
+                  aTariferActif
+                    ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 font-extrabold"
+                    : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-amber-400"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-amber-500" />
+                  <span>Articles à tarifer (sans prix fixé)</span>
+                </div>
+                {aTariferActif && <Check className="w-4 h-4 text-amber-500" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => majUrl({ plus30j: plus30jActif ? null : "1", page: "1" })}
+                className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition-all ${
+                  plus30jActif
+                    ? "bg-red-500/15 border-red-500 text-red-700 dark:text-red-300 font-extrabold"
+                    : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-red-400"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-red-500" />
+                  <span>Stock dormant (&gt; 30 jours en rayon)</span>
+                </div>
+                {plus30jActif && <Check className="w-4 h-4 text-red-500" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => majUrl({ sans_lot: sansLotActif ? null : "1", page: "1" })}
+                className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition-all ${
+                  sansLotActif
+                    ? "bg-indigo-500/15 border-indigo-500 text-indigo-700 dark:text-indigo-300 font-extrabold"
+                    : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-indigo-400"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-indigo-500" />
+                  <span>Articles hors-lot (Arrivage unitaire)</span>
+                </div>
+                {sansLotActif && <Check className="w-4 h-4 text-indigo-500" />}
+              </button>
+            </div>
+          </div>
+
+          {/* 6. FILTRER PAR LOT D'ARRIVAGE */}
+          {lotsDisponibles.length > 0 && (
+            <div>
+              <label className="block text-xs font-extrabold text-brand-black dark:text-white mb-2 uppercase tracking-wider">
+                Lot d'arrivage source
+              </label>
+              <select
+                value={lotActif}
+                onChange={(e) => majUrl({ lot: e.target.value || null, page: "1" })}
+                className="select select-sm w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 font-bold text-xs"
+              >
+                <option value="">Tous les lots</option>
+                {lotsDisponibles.map((l) => (
+                  <option key={l.id} value={String(l.id)}>
+                    {l.libelle}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/5 flex items-center justify-between">
+        {/* Footer avec bouton d'application */}
+        <div className="p-4 border-t border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/5 flex gap-3">
           <button
             type="button"
             onClick={reinitialiserTout}
-            className="text-xs font-bold text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+            className="btn btn-secondaire flex-1 py-3 text-xs font-bold rounded-xl"
           >
-            Effacer tous les filtres
+            Réinitialiser
           </button>
           <button
             type="button"
             onClick={onFermer}
-            className="btn btn-primaire text-xs py-2 px-5 rounded-xl font-bold shadow-xs"
+            className="btn btn-primaire flex-1 py-3 text-xs font-bold rounded-xl shadow-xs"
           >
-            Afficher les résultats
+            Voir les résultats
           </button>
         </div>
+
       </div>
     </div>
   );

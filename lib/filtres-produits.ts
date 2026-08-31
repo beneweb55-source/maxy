@@ -59,81 +59,31 @@ export function construireFiltresProduits(
     }
   }
 
-  // Filtres de spécifications matérielles adaptatives
-  const cpu = params.get("cpu")?.trim();
-  if (cpu) {
-    clauses.push({
-      OR: [
-        { reference: { contains: cpu, mode: "insensitive" } },
-        { modele: { nom: { contains: cpu, mode: "insensitive" } } },
-      ],
-    });
-  }
+  // Filtres de spécifications matérielles adaptatives (Matrice Unifiée)
+  const champsMatrice = [
+    "marque", "format", "cpu", "ram", "stockage", "format_cible", "type_specifique",
+    "generation", "frequence_mhz", "type_disque", "interface", "format_physique",
+    "capacite", "capacite_disque", "taille_ecran", "taille_pouces", "resolution",
+    "frequence_hz", "type_dalle", "puissance_w", "type_connecteur", "fondeur",
+    "gamme", "vram_taille", "type_consommable", "couleur", "technologie", "format_serveur"
+  ];
 
-  const ram = params.get("ram")?.trim();
-  if (ram) {
-    clauses.push({
-      OR: [
-        { reference: { contains: `${ram}Go`, mode: "insensitive" } },
-        { reference: { contains: `${ram} GB`, mode: "insensitive" } },
-        { reference: { contains: `${ram}G`, mode: "insensitive" } },
-        { reference: { contains: ram, mode: "insensitive" } },
-        { modele: { nom: { contains: ram, mode: "insensitive" } } },
-      ],
-    });
-  }
-
-  const stockage = params.get("stockage")?.trim();
-  if (stockage) {
-    clauses.push({
-      OR: [
-        { reference: { contains: stockage, mode: "insensitive" } },
-        { modele: { nom: { contains: stockage, mode: "insensitive" } } },
-      ],
-    });
-  }
-
-  const formatSpec = params.get("format")?.trim();
-  if (formatSpec) {
-    clauses.push({
-      OR: [
-        { reference: { contains: formatSpec, mode: "insensitive" } },
-        { categorie: { contains: formatSpec, mode: "insensitive" } },
-        { categorie_rel: { nom: { contains: formatSpec, mode: "insensitive" } } },
-      ],
-    });
-  }
-
-  const typeDisque = params.get("type_disque")?.trim();
-  if (typeDisque) {
-    clauses.push({
-      OR: [
-        { reference: { contains: typeDisque, mode: "insensitive" } },
-        { modele: { nom: { contains: typeDisque, mode: "insensitive" } } },
-        { categorie: { contains: typeDisque, mode: "insensitive" } },
-      ],
-    });
-  }
-
-  const capaciteDisque = params.get("capacite_disque")?.trim();
-  if (capaciteDisque) {
-    clauses.push({
-      OR: [
-        { reference: { contains: capaciteDisque, mode: "insensitive" } },
-        { modele: { nom: { contains: capaciteDisque, mode: "insensitive" } } },
-      ],
-    });
-  }
-
-  const tailleEcran = params.get("taille_ecran")?.trim();
-  if (tailleEcran) {
-    clauses.push({
-      OR: [
-        { reference: { contains: `${tailleEcran}"`, mode: "insensitive" } },
-        { reference: { contains: tailleEcran, mode: "insensitive" } },
-        { modele: { nom: { contains: tailleEcran, mode: "insensitive" } } },
-      ],
-    });
+  for (const cle of champsMatrice) {
+    const val = params.get(cle)?.trim();
+    if (val) {
+      // Nettoyer les suffixes comme "Go", "W", "Hz", "pouces" pour une recherche large et précise
+      const valPure = val.replace(/Go|GB|W|Hz|pouces|"/g, "").trim();
+      clauses.push({
+        OR: [
+          { reference: { contains: val, mode: "insensitive" } },
+          { reference: { contains: valPure, mode: "insensitive" } },
+          { modele: { nom: { contains: val, mode: "insensitive" } } },
+          { modele: { nom: { contains: valPure, mode: "insensitive" } } },
+          { categorie: { contains: val, mode: "insensitive" } },
+          { categorie_rel: { nom: { contains: val, mode: "insensitive" } } },
+        ],
+      });
+    }
   }
 
   const cle = params.get("cle");
