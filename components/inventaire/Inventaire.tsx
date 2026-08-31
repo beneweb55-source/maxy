@@ -46,6 +46,7 @@ import ModalClassification from "./ModalClassification";
 import ModalSuppression from "./ModalSuppression";
 import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
 import AssistantImportation from "./AssistantImportation";
+import ModaleExport from "./ModaleExport";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import RechercheMultiModal from "./RechercheMultiModal";
 import FilterDrawer from "./FilterDrawer";
@@ -250,6 +251,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const [modalAjoutTerrain, setModalAjoutTerrain] = useState(false);
   const [modalImportation, setModalImportation] = useState(searchParams?.get("import") === "1");
+  const [modalExport, setModalExport] = useState(false);
   const [tiroirFiltresOuvert, setTiroirFiltresOuvert] = useState(false);
   const [produitSourceDuplication, setProduitSourceDuplication] = useState<LigneProduit | null>(null);
 
@@ -1127,13 +1129,14 @@ export default function Inventaire({ role }: { role: Role }) {
               </button>
             )}
             {estGerant && (
-              <a
-                href={`/api/produits/export?${searchParams?.toString() || ""}`}
-                className="btn btn-secondaire w-full sm:w-auto justify-center bg-white dark:bg-brand-paper shadow-sm"
+              <button
+                type="button"
+                onClick={() => setModalExport(true)}
+                className="btn btn-secondaire w-full sm:w-auto justify-center bg-white dark:bg-brand-paper shadow-sm flex items-center gap-1.5"
               >
                 <IconeTelechargement taille={15} />
-                Export CSV
-              </a>
+                <span>Export CSV / Excel</span>
+              </button>
             )}
             {peutModifier && (
               <button type="button" onClick={() => ouvrirAjout()} className="btn btn-primaire w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20">
@@ -2456,9 +2459,17 @@ export default function Inventaire({ role }: { role: Role }) {
         onFermer={() => setModalImportation(false)}
         lots={donnees?.lots || []}
         onSucces={(resume) => {
-          afficher(`Importation réussie : ${resume.totalExemplairesCrees} unités créées.`);
+          const infoCodes = resume.premierCode ? ` (Codes ${resume.premierCode}${resume.dernierCode && resume.dernierCode !== resume.premierCode ? ` à ${resume.dernierCode}` : ""})` : "";
+          afficher(`Importation réussie : ${resume.totalExemplairesCrees} unités créées${infoCodes}.`, "succes");
           void charger();
         }}
+      />
+
+      <ModaleExport
+        ouverte={modalExport}
+        onFermer={() => setModalExport(false)}
+        searchParamsString={searchParams?.toString() || ""}
+        nbArticlesFiltres={produits.length}
       />
     </>
   );

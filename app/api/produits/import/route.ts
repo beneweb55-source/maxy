@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         modelesCrees,
         modelesExistants,
         exemplairesCrees,
-        codesGeneresCount: codesGeneres.length,
+        codesGeneres,
       };
     }, { timeout: 180000 });
 
@@ -146,6 +146,8 @@ export async function POST(request: NextRequest) {
         total_lignes: lignes.length,
         modeles_crees: resultat.modelesCrees,
         exemplaires_crees: resultat.exemplairesCrees,
+        premier_code: resultat.codesGeneres[0] || null,
+        dernier_code: resultat.codesGeneres[resultat.codesGeneres.length - 1] || null,
       }
     );
 
@@ -156,6 +158,8 @@ export async function POST(request: NextRequest) {
         totalModelesCrees: resultat.modelesCrees,
         totalModelesExistants: resultat.modelesExistants,
         totalExemplairesCrees: resultat.exemplairesCrees,
+        premierCode: resultat.codesGeneres[0] || null,
+        dernierCode: resultat.codesGeneres[resultat.codesGeneres.length - 1] || null,
       }
     }, { status: 201 });
 
