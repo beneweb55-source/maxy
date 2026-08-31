@@ -39,6 +39,11 @@ export async function GET(
         code_interne: true,
         reference: true,
         categorie: true,
+        numero_serie: true,
+        grade: true,
+        emplacement: true,
+        modele_id: true,
+        categorie_id: true,
         statut: true,
         a_jeter: true,
         en_vitrine: true,
@@ -50,6 +55,46 @@ export async function GET(
         etiquette_imprimee: true,
         date_vente: true,
         created_at: true,
+        modele: {
+          select: {
+            id: true,
+            nom: true,
+            description: true,
+            attributs: true,
+            prix_vente_conseille: true,
+            image_url: true,
+            categorie: {
+              select: {
+                id: true,
+                nom: true,
+                parent: {
+                  select: {
+                    id: true,
+                    nom: true,
+                    parent: {
+                      select: { id: true, nom: true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        categorie_rel: {
+          select: {
+            id: true,
+            nom: true,
+            parent: {
+              select: {
+                id: true,
+                nom: true,
+                parent: {
+                  select: { id: true, nom: true }
+                }
+              }
+            }
+          }
+        },
         lot: { select: { id: true, fournisseur: true, date_entree: true, statut_lot: true } },
         reparations: {
           orderBy: { date: "asc" },
@@ -105,24 +150,53 @@ export async function GET(
 
     const coutReparations = p.reparations.reduce((s, r) => s + r.cout, 0);
     
-    // Pour permettre l'édition de la quantité globale du modèle depuis la fiche :
-    const produitsIdentiques = p.lot !== null 
-      ? await prisma.produit.findMany({
-          where: {
-            lot_id: p.lot.id,
-            reference: p.reference,
-            categorie: p.categorie,
-          },
-          select: { id: true }
-        })
-      : [{ id: p.id }];
-    const ids_modele = produitsIdentiques.map(pi => pi.id);
+    // Récupérer l'intégralité des exemplaires physiques de ce modèle / référence
+    const exemplairesRaw = await prisma.produit.findMany({
+      where: p.modele_id 
+        ? { modele_id: p.modele_id }
+        : { reference: p.reference, categorie: p.categorie },
+      select: {
+        id: true,
+        code_interne: true,
+        reference: true,
+        numero_serie: true,
+        grade: true,
+        emplacement: true,
+        statut: true,
+        a_jeter: true,
+        en_vitrine: true,
+        prix_achat: true,
+        prix_vente_fixe: true,
+        prix_vente_reel: true,
+        date_vente: true,
+        etiquette_imprimee: true,
+        lot_id: true,
+        created_at: true,
+        lot: {
+          select: {
+            id: true,
+            fournisseur: true,
+            date_entree: true,
+          }
+        }
+      },
+      orderBy: [{ statut: "asc" }, { id: "asc" }]
+    });
+
+    const ids_modele = exemplairesRaw.map(pi => pi.id);
 
     return NextResponse.json({
       id: p.id,
       code_interne: p.code_interne,
       reference: p.reference,
       categorie: p.categorie,
+      numero_serie: p.numero_serie,
+      grade: p.grade,
+      emplacement: p.emplacement,
+      modele_id: p.modele_id,
+      categorie_id: p.categorie_id,
+      modele: p.modele,
+      categorie_rel: p.categorie_rel,
       statut: p.statut,
       a_jeter: p.a_jeter,
       en_vitrine: p.en_vitrine,
@@ -132,6 +206,16 @@ export async function GET(
       decision_rapport: p.decision_rapport,
       ids_modele,
       quantite: ids_modele.length,
+      exemplaires: exemplairesRaw.map(ex => ({
+        ...ex,
+        created_at: ex.created_at.toISOString(),
+        date_vente: ex.date_vente ? ex.date_vente.toISOString() : null,
+        lot: ex.lot ? {
+          id: ex.lot.id,
+          fournisseur: ex.lot.fournisseur,
+          date_entree: ex.lot.date_entree.toISOString()
+        } : null
+      })),
       etiquette_imprimee: p.etiquette_imprimee,
       prix_achat: p.prix_achat,
       cout_reparations: coutReparations,
@@ -203,7 +287,24 @@ export async function PUT(
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { reference, categorie, prix_achat, image_url, images, prix_vente_fixe, a_jeter, en_vitrine } =
+  const { 
+    reference, 
+    categorie, 
+    prix_achat, 
+    image_url, 
+    images, 
+    prix_vente_fixe, 
+    a_jeter, 
+    en_vitrine,
+    numero_serie,
+    grade,
+    emplacement,
+    statut,
+    notes,
+    modele_id,
+    modele_attributs,
+    modele_nom,
+  } =
     (corps ?? {}) as {
       reference?: unknown;
       categorie?: unknown;
@@ -213,6 +314,14 @@ export async function PUT(
       prix_vente_fixe?: unknown;
       a_jeter?: unknown;
       en_vitrine?: unknown;
+      numero_serie?: unknown;
+      grade?: unknown;
+      emplacement?: unknown;
+      statut?: unknown;
+      notes?: unknown;
+      modele_id?: unknown;
+      modele_attributs?: unknown;
+      modele_nom?: unknown;
     };
 
   const donnees: {
@@ -223,7 +332,12 @@ export async function PUT(
     prix_vente_fixe?: number | null;
     a_jeter?: boolean;
     en_vitrine?: boolean;
+    numero_serie?: string | null;
+    grade?: string | null;
+    emplacement?: string | null;
     statut?: any;
+    notes?: string | null;
+    modele_id?: number | null;
   } = {};
   if (reference !== undefined) {
     if (typeof reference !== "string" || !reference.trim()) {
@@ -269,6 +383,25 @@ export async function PUT(
     extrasARemplacer = stockees.slice(1);
   }
 
+  if (numero_serie !== undefined) {
+    donnees.numero_serie = numero_serie ? String(numero_serie).trim() : null;
+  }
+  if (grade !== undefined) {
+    donnees.grade = grade ? String(grade).trim() : null;
+  }
+  if (emplacement !== undefined) {
+    donnees.emplacement = emplacement ? String(emplacement).trim() : "reserve";
+  }
+  if (statut !== undefined) {
+    donnees.statut = statut;
+  }
+  if (notes !== undefined) {
+    donnees.notes = notes ? String(notes).trim() : null;
+  }
+  if (modele_id !== undefined) {
+    donnees.modele_id = modele_id ? Number(modele_id) : null;
+  }
+
   if (en_vitrine !== undefined) {
     if (typeof en_vitrine !== "boolean") {
       return erreur(400, "Le champ « en vitrine » doit être vrai ou faux.");
@@ -298,21 +431,33 @@ export async function PUT(
     }
   }
 
-  if (Object.keys(donnees).length === 0) {
+  if (Object.keys(donnees).length === 0 && modele_attributs === undefined && modele_nom === undefined) {
     return erreur(400, "Aucune modification fournie.");
   }
 
   try {
     const produit = await prisma.produit.findUnique({ where: { id: produitId } });
     if (!produit) return erreur(404, "Produit introuvable.");
-    if (donnees.a_jeter === true && produit.statut !== "hs") {
+    if (donnees.a_jeter === true && (donnees.statut || produit.statut) !== "hs") {
       return erreur(400, "« À jeter » ne concerne que les produits HS.");
     }
-    if (donnees.en_vitrine === true && produit.statut === "vendu") {
+    if (donnees.en_vitrine === true && (donnees.statut || produit.statut) === "vendu") {
       return erreur(400, "Un produit vendu ne peut pas être mis en vitrine.");
     }
 
     const maj = await prisma.$transaction(async (tx) => {
+      // Mise à jour des attributs techniques du modèle si spécifiés
+      const targetModeleId = donnees.modele_id !== undefined ? donnees.modele_id : produit.modele_id;
+      if (targetModeleId && (modele_attributs !== undefined || modele_nom !== undefined)) {
+        const updateData: any = {};
+        if (modele_attributs !== undefined) updateData.attributs = modele_attributs || {};
+        if (modele_nom !== undefined) updateData.nom = String(modele_nom).trim();
+        await tx.modele.update({
+          where: { id: targetModeleId },
+          data: updateData,
+        });
+      }
+
       let produitsIdentiques = [produit];
       
       // Si le produit fait partie d'un lot, on recherche tous les produits identiques
@@ -328,17 +473,23 @@ export async function PUT(
       }
 
       // Séparer les données qui s'appliquent à tous les produits identiques
-      // de celles qui ne s'appliquent qu'à l'unité spécifique (vitrine, a_jeter).
+      // de celles qui ne s'appliquent qu'à l'unité spécifique (S/N, grade, emplacement, vitrine, a_jeter).
       const donneesCommunes: any = {};
       if (donnees.reference !== undefined) donneesCommunes.reference = donnees.reference;
       if (donnees.categorie !== undefined) donneesCommunes.categorie = donnees.categorie;
       if (donnees.prix_achat !== undefined) donneesCommunes.prix_achat = donnees.prix_achat;
       if (modifPrixVente) donneesCommunes.prix_vente_fixe = donnees.prix_vente_fixe;
       if (donnees.image_url !== undefined) donneesCommunes.image_url = donnees.image_url;
+      if (donnees.modele_id !== undefined) donneesCommunes.modele_id = donnees.modele_id;
 
       const donneesUnite: any = { ...donneesCommunes };
       if (donnees.en_vitrine !== undefined) donneesUnite.en_vitrine = donnees.en_vitrine;
       if (donnees.a_jeter !== undefined) donneesUnite.a_jeter = donnees.a_jeter;
+      if (donnees.numero_serie !== undefined) donneesUnite.numero_serie = donnees.numero_serie;
+      if (donnees.grade !== undefined) donneesUnite.grade = donnees.grade;
+      if (donnees.emplacement !== undefined) donneesUnite.emplacement = donnees.emplacement;
+      if (donnees.statut !== undefined) donneesUnite.statut = donnees.statut;
+      if (donnees.notes !== undefined) donneesUnite.notes = donnees.notes;
 
       let m;
 
