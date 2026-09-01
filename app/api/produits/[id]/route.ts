@@ -150,18 +150,6 @@ export async function GET(
 
     const coutReparations = p.reparations.reduce((s, r) => s + r.cout, 0);
     
-<<<<<<< HEAD
-    // Pour permettre l'édition de la quantité globale du modèle depuis la fiche :
-    const produitsIdentiques = await prisma.produit.findMany({
-      where: {
-        reference: p.reference,
-        categorie: p.categorie,
-        lot_id: p.lot ? p.lot.id : null,
-      },
-      select: { id: true }
-    });
-    const ids_modele = produitsIdentiques.length > 0 ? produitsIdentiques.map(pi => pi.id) : [p.id];
-=======
     // Récupérer l'intégralité des exemplaires physiques de ce modèle / référence
     const exemplairesRaw = await prisma.produit.findMany({
       where: p.modele_id 
@@ -196,7 +184,6 @@ export async function GET(
     });
 
     const ids_modele = exemplairesRaw.map(pi => pi.id);
->>>>>>> 902325d359575a44b8eb5656f24610180059d32f
 
     return NextResponse.json({
       id: p.id,

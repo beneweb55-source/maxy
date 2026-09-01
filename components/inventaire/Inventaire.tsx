@@ -31,18 +31,14 @@ import {
   IconeVitrine,
   IconeOeil,
   IconeOeilBarre,
-<<<<<<< HEAD
   IconeBillet,
   IconeCodeBarres,
   IconeCoche,
   IconeReglages,
   IconeRecu,
   IconeFermer,
-=======
   IconeArchive,
-  IconeBillet,
   IconeEtiquette,
->>>>>>> 902325d359575a44b8eb5656f24610180059d32f
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
@@ -325,10 +321,6 @@ export default function Inventaire({ role }: { role: Role }) {
     prixAchatDefaut?: number;
     prixVenteDefaut?: number | null;
   } | null>(null);
-  const [modalStatutMasse, setModalStatutMasse] = useState<{
-    unites: LigneProduit[];
-  } | null>(null);
-
   function ouvrirVenteInventaire(unites: LigneProduit[]) {
     setModalVenteUnites(unites);
   }
@@ -1769,7 +1761,7 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          {donneesFiltrees && donneesFiltrees.produits.length > 0 && (
+          {donneesFiltrees && donneesFiltrees.produits.length > 0 && vueGroupee && (
             <div className="space-y-4">
               
               {/* ===================== VUE CARTES REGROUPÉE PAR MODÈLE ===================== */}
@@ -2370,8 +2362,8 @@ export default function Inventaire({ role }: { role: Role }) {
                   </tbody>
                 </table>
               </div>
-
-<<<<<<< HEAD
+            </div>
+          )}
       {donneesFiltrees && donneesFiltrees.produits.length > 0 && !vueGroupee && (
         <div className="space-y-4">
           <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden"}`}>
@@ -2641,10 +2633,6 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
         </div>
       )}
-=======
-            </div>
-          )}
->>>>>>> 902325d359575a44b8eb5656f24610180059d32f
 
       {/* Pagination (seulement si non filtré localement pour éviter désynchronisation) */}
       {donneesFiltrees && donneesFiltrees.pages > 1 && !qLoc.trim() && (
@@ -2754,12 +2742,15 @@ export default function Inventaire({ role }: { role: Role }) {
                 onClick={() => {
                   const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
                   if (selectedProds.length > 0) {
-                    setModalStatutMasse({ unites: selectedProds });
+                    setIdsSelectionnes(new Set(selection));
+                    setStatutMasseCible("");
+                    setStatutMasseNote("");
+                    setModalStatutMasse(true);
                   }
                 }}
                 className="btn bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-3.5 h-auto rounded-xl flex items-center gap-1.5"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <IconeReglages taille={15} />
                 <span>Changer statut</span>
               </button>
 
@@ -3158,31 +3149,6 @@ export default function Inventaire({ role }: { role: Role }) {
           }}
         />
       )}
-
-<<<<<<< HEAD
-            <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setModalSuppression(null)}
-                className="btn btn-secondaire w-full sm:w-auto justify-center"
-              >
-                {modalSuppression.unites.length === 0 ? "Fermer" : "Annuler"}
-              </button>
-              {modalSuppression.unites.length > 0 && (
-                <button
-                  type="submit"
-                  disabled={envoi}
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center justify-center gap-1.5 w-full sm:w-auto"
-                >
-                  <IconeCorbeille taille={15} />
-                  Supprimer définitivement
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-      </Modale>
-
       {/* Barre flottante d'actions groupées (Bulk Actions) */}
       {idsSelectionnes.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-3 bg-brand-black text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 animate-entree backdrop-blur-xl max-w-[95vw]">
@@ -3541,7 +3507,7 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
         </form>
       </Modale>
-=======
+
       <FilterDrawer
         ouvert={tiroirFiltresOuvert}
         onFermer={() => setTiroirFiltresOuvert(false)}
@@ -3636,25 +3602,6 @@ export default function Inventaire({ role }: { role: Role }) {
           }))}
         />
       )}
-
-      {/* Modale Changement Statut en Masse pour Sélection Multiple */}
-      {modalStatutMasse && (
-        <ModaleSelectionQuantite
-          ouvert={true}
-          action="statut"
-          reference={`${modalStatutMasse.unites.length} produits sélectionnés`}
-          categorie="Sélection groupée"
-          unites={modalStatutMasse.unites}
-          onFermer={() => setModalStatutMasse(null)}
-          onConfirmer={(unitesSelectionnees, statutCible, note) => {
-            if (statutCible) {
-              void changerStatutUnites(unitesSelectionnees, statutCible, note);
-            }
-            setModalStatutMasse(null);
-          }}
-        />
-      )}
->>>>>>> 902325d359575a44b8eb5656f24610180059d32f
     </>
   );
 }

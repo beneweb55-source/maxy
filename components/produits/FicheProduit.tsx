@@ -1086,105 +1086,6 @@ export default function FicheProduit({
 
       </div>
 
-<<<<<<< HEAD
-      {montrerActions && (
-        <section className="carte">
-          <h2 className="libelle text-brand-smooth">{t("ficheProduit.actions")}</h2>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {cibles.map((cible) => {
-              const Icone = ICONES_STATUT[cible];
-              return (
-                <button
-                  key={cible}
-                  type="button"
-                  disabled={envoi}
-                  onClick={() => demanderTransition(cible)}
-                  className="btn btn-secondaire"
-                >
-                  <Icone taille={14} />
-                  {INFOS_STATUT[cible].libelle}
-                </button>
-              );
-            })}
-            {estGerant && produit.statut === "ok" && (
-              <button
-                type="button"
-                disabled={envoi}
-                onClick={() => {
-                  setPrixTexte("");
-                  setModalPrix(true);
-                }}
-                className="btn btn-primaire"
-              >
-                <IconeEtiquette taille={14} />
-                Fixer le prix — mettre en vente
-              </button>
-            )}
-            {peutVendre && produit.statut === "en_vente" && (
-              <Link href={`/pos?vendre_produit_id=${produit.id}`} className="btn btn-crystal">
-                Vendre ce produit
-                <IconeFlecheDroite taille={14} />
-              </Link>
-            )}
-            {peutModifierStatut && (
-              <button
-                type="button"
-                disabled={envoi}
-                onClick={() => setModalReparation(true)}
-                className="btn border border-dashed border-brand-grey bg-brand-white text-brand-warm-grey hover:bg-brand-light-grey/25"
-              >
-                <IconePlus taille={14} />
-                Réparation
-              </button>
-            )}
-            {(role === "gerant" || role === "technicien" || role === "dev") && (
-              <button
-                type="button"
-                disabled={envoi}
-                onClick={basculerVitrine}
-                title="Exposition physique en vitrine — indépendante de la mise en vente en ligne"
-                className={
-                  produit.en_vitrine
-                    ? "btn bg-brand-orange text-brand-white hover:bg-brand-orange/90"
-                    : "btn btn-secondaire"
-                }
-              >
-                <IconeVitrine taille={14} />
-                {produit.en_vitrine ? "Retirer de la vitrine" : "Mettre en vitrine"}
-              </button>
-            )}
-            <BoutonImpression 
-              ids={[produit.id]} 
-              dejaImprimee={produit.etiquette_imprimee} 
-              className="btn btn-secondaire" 
-              texte="Imprimer l'étiquette"
-            />
-            {!vendu && (
-              <>
-                <button
-                  type="button"
-                  disabled={envoi}
-                  onClick={ouvrirEdition}
-                  className="btn btn-secondaire"
-                >
-                  <IconeCrayon taille={14} />
-                  Modifier
-                </button>
-                <button
-                  type="button"
-                  disabled={envoi}
-                  onClick={() => setModalSuppression(true)}
-                  className="btn border border-danger/30 bg-brand-white text-danger hover:bg-danger/10"
-                >
-                  <IconeCorbeille taille={14} />
-                  Supprimer
-                </button>
-              </>
-            )}
-          </div>
-        </section>
-      )}
-=======
       {/* MODALE : Réception & Arrivage Rapide (Scanner-First) */}
       <ModaleArrivageRapide
         ouvert={modalArrivage}
@@ -1200,7 +1101,6 @@ export default function FicheProduit({
         prixVenteDefaut={produit.prix_vente_fixe || produit.modele?.prix_vente_conseille}
         lots={produit.lot ? [produit.lot] : []}
       />
->>>>>>> 902325d359575a44b8eb5656f24610180059d32f
 
       {/* MODALE : Édition du Modèle & Spécifications */}
       <FormulaireModele
