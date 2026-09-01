@@ -10,8 +10,11 @@ import {
   IconeChevronDroite,
   IconeRecherche,
   IconeCorbeille,
+  IconeImprimante,
 } from "@/components/icons";
 import { useToast } from "@/components/toast";
+import { Download } from "lucide-react";
+import { genererFacturePdf } from "@/lib/facture-pdf";
 
 interface LigneFactureListe {
   id: number;
@@ -49,6 +52,15 @@ export default function ListeFactures({ role }: { role?: string }) {
   const [page, setPage] = useState(1);
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [envoi, setEnvoi] = useState(false);
+
+  // Debounce automatique de la recherche
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      setRecherche(q.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [q]);
 
   const peutSupprimer = role === "gerant" || role === "dev" || role === "social_media";
 
@@ -330,7 +342,7 @@ export default function ListeFactures({ role }: { role?: string }) {
           </div>
 
           {/* Vue Bureau: Tableau */}
-          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+          <div className="hidden w-full overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-brand-light-grey/25">
                 <tr>
@@ -420,19 +432,63 @@ export default function ListeFactures({ role }: { role?: string }) {
                         )}
                         <span className="font-bold">{formaterDA(f.total_net)}</span>
                       </td>
-                      {peutSupprimer && (
-                        <td className="px-3 py-2.5 text-right">
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <div className="inline-flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={(e) => supprimerFacture(f.id, e)}
-                            disabled={envoi}
-                            className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-                            title="Supprimer la facture"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/factures/${f.id}`);
+                                if (!res.ok) throw new Error();
+                                const fullFacture = await res.json();
+                                genererFacturePdf({
+                                  numero: fullFacture.numero,
+                                  date: fullFacture.date_emission,
+                                  vendeur: fullFacture.vendeur,
+                                  type_paiement: fullFacture.mode_paiement,
+                                  garantie_mois: 6,
+                                  client: {
+                                    nom: fullFacture.client_nom,
+                                    telephone: fullFacture.client_tel,
+                                    adresse: fullFacture.client_adresse,
+                                    rc: fullFacture.client_rc,
+                                    nif: fullFacture.client_nif,
+                                    nis: fullFacture.client_nis,
+                                    ai: fullFacture.client_ai,
+                                  },
+                                  lignes: (fullFacture.lignes || []).map((l: any) => ({
+                                    code_interne: l.code_interne,
+                                    designation: l.designation,
+                                    quantite: 1,
+                                    prix_unitaire: l.prix,
+                                    total_ligne: l.prix,
+                                  })),
+                                  total_ttc: fullFacture.total,
+                                });
+                                afficher("Téléchargement du PDF lancé.", "succes");
+                              } catch {
+                                afficher("Erreur génération PDF.", "erreur");
+                              }
+                            }}
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-orange/10 hover:text-brand-orange"
+                            title="Télécharger la Facture (PDF)"
                           >
-                            <IconeCorbeille taille={15} />
+                            <Download className="w-4 h-4" />
                           </button>
-                        </td>
-                      )}
+
+                          {peutSupprimer && (
+                            <button
+                              type="button"
+                              onClick={(e) => supprimerFacture(f.id, e)}
+                              disabled={envoi}
+                              className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                              title="Supprimer la facture"
+                            >
+                              <IconeCorbeille taille={15} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -470,27 +526,42 @@ export default function ListeFactures({ role }: { role?: string }) {
 
       {/* Barre d'action globale pour la sélection multiple */}
       {selection.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-brand-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-6 animate-entree z-50">
-          <span className="font-semibold text-sm">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-brand-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-4 sm:gap-6 animate-entree z-50 border border-white/10 backdrop-blur-md">
+          <span className="font-bold text-xs sm:text-sm whitespace-nowrap">
             {selection.size} facture(s) sélectionnée(s)
           </span>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setSelection(new Set())}
-              disabled={envoi}
-              className="text-xs font-semibold text-brand-grey hover:text-white transition px-2"
+              onClick={() => {
+                const ids = Array.from(selection).join(",");
+                window.open(`/factures/impression-masse?ids=${ids}`, "_blank");
+              }}
+              className="btn bg-brand-orange text-white hover:bg-brand-orange/90 border-0 shadow-lg shadow-brand-orange/20 text-xs font-bold gap-1.5"
             >
-              Annuler
+              <IconeImprimante taille={15} />
+              <span>Imprimer le lot ({selection.size})</span>
             </button>
+
+            {peutSupprimer && (
+              <button
+                type="button"
+                onClick={() => void supprimerSelection()}
+                disabled={envoi}
+                className="btn bg-danger text-white hover:bg-danger/90 border-0 shadow-lg shadow-danger/20 disabled:opacity-50 text-xs font-bold gap-1.5"
+              >
+                <IconeCorbeille taille={15} />
+                <span>Supprimer</span>
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={() => void supprimerSelection()}
+              onClick={() => setSelection(new Set())}
               disabled={envoi}
-              className="btn bg-danger text-white hover:bg-danger/90 border-0 shadow-lg shadow-danger/20 disabled:opacity-50"
+              className="text-xs font-bold text-brand-grey hover:text-white transition px-2"
             >
-              <IconeCorbeille taille={15} />
-              Supprimer
+              Annuler
             </button>
           </div>
         </div>

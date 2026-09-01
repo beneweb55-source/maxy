@@ -9,6 +9,11 @@ export const MAX_QUANTITE_PRODUITS = 500;
 export interface LigneProduitEntree {
   reference: string;
   categorie: string;
+  modele_id?: number | null;
+  categorie_id?: number | null;
+  numero_serie?: string | null;
+  grade?: string | null;
+  emplacement?: string | null;
   prix_achat: number;
   prix_vente_fixe?: number | null;
   /** Photo de couverture (= images[0]), conservée pour la rétro-compatibilité. */
@@ -97,3 +102,11 @@ export function entierPositif(valeur: unknown, champ: string): string | null {
   }
   return null;
 }
+
+export function entierPositifOuNul(valeur: unknown, champ: string): string | null {
+  if (typeof valeur !== "number" || !Number.isInteger(valeur) || valeur < 0) {
+    return `${champ} doit être un entier positif ou nul en DA.`;
+  }
+  return null;
+}
+

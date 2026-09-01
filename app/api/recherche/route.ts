@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
           categorie: true,
           statut: true,
           prix_vente_fixe: true,
+          numero_serie: true,
+          etiquette_imprimee: true,
         },
         take: LIMITE,
         orderBy: { created_at: "desc" },
@@ -85,6 +87,8 @@ export async function GET(request: NextRequest) {
         categorie: p.categorie,
         statut: p.statut,
         prix_vente_fixe: p.prix_vente_fixe,
+        numero_serie: p.numero_serie,
+        etiquette_imprimee: p.etiquette_imprimee,
         href: `/produits/${p.id}`,
       })),
       lots: lots.map((l) => ({

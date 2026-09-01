@@ -5,7 +5,7 @@ import { formaterDA } from "@/lib/caisse";
 import { entierPositif } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
-  const acces = await exigerUtilisateur(["gerant"]);
+  const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 
@@ -32,11 +32,8 @@ export async function POST(request: NextRequest) {
       return erreur(404, "Certains produits sont introuvables.");
     }
     
-    if (produits.some(p => p.statut === "vendu")) {
-      return erreur(400, "Un ou plusieurs produits sont déjà vendus.");
-    }
-    if (produits.some(p => p.statut !== "ok" && p.statut !== "en_vente")) {
-      return erreur(400, "Les produits doivent être en statut « OK » ou déjà « En vente » pour fixer le prix.");
+    if (produits.some(p => p.statut === "vendu" || p.statut === "hs")) {
+      return erreur(400, "Un ou plusieurs produits sont vendus ou hors service.");
     }
 
     await prisma.$transaction(async (tx) => {

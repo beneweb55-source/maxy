@@ -41,7 +41,7 @@ export async function PUT(
     const id = decodeURIComponent((await params).id);
     const body = await req.json();
 
-    const { nom, description } = body;
+    const { nom, description, prix_vente, prix_achat } = body;
     let { image_url } = body;
 
     if (image_url) {
@@ -68,6 +68,26 @@ export async function PUT(
         description: description || null
       }
     });
+
+    // Mettre à jour les produits si un prix est fourni
+    if (prix_vente !== undefined || prix_achat !== undefined) {
+      const { decodeBase64Url } = await import("@/lib/base64url");
+      const cleFamille = decodeBase64Url(id);
+      const [reference, categorie] = cleFamille.split("|");
+      
+      if (reference && categorie) {
+        const updateData: any = {};
+        if (prix_vente !== undefined) updateData.prix_vente_fixe = prix_vente;
+        if (prix_achat !== undefined) updateData.prix_achat = prix_achat;
+        
+        if (Object.keys(updateData).length > 0) {
+          await prisma.produit.updateMany({
+            where: { reference, categorie },
+            data: updateData
+          });
+        }
+      }
+    }
 
     return NextResponse.json(famille);
   } catch (error) {

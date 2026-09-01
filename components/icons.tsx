@@ -543,6 +543,7 @@ export const ICONES_STATUT: Record<StatutProduit, ReturnType<typeof creerIcone>>
   manque_piece: IconePiece,
   hs: IconeCroixCercle,
   en_vente: IconeEtiquette,
+  produit_commande: IconePaquet,
   vendu: IconeBillet,
 };
 

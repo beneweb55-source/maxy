@@ -62,11 +62,11 @@ export default function TableurProduits({
   }
 
   const classeCellule =
-    "w-full border-0 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange/20 focus:bg-brand-orange/5 rounded-md transition-colors font-medium";
+    "w-full border-0 bg-transparent px-3 py-2.5 min-h-[44px] text-base focus:outline-none focus:ring-2 focus:ring-brand-orange/20 focus:bg-brand-orange/5 rounded-md transition-colors font-medium";
 
   return (
     <div ref={conteneur}>
-      <div className="overflow-x-auto rounded-xl border border-brand-light-grey/60 bg-brand-white shadow-sm">
+      <div className="w-full overflow-x-auto rounded-xl border border-brand-light-grey/60 bg-brand-white shadow-sm">
         <table className="w-full min-w-[520px] text-sm">
           <thead className="bg-brand-paper">
             <tr>

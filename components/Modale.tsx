@@ -16,7 +16,7 @@ export default function Modale({
   titre: string;
   ouverte: boolean;
   onFermer: () => void;
-  large?: boolean;
+  large?: boolean | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "full";
   modificationsNonEnregistrees?: boolean;
   children: React.ReactNode;
 }) {
@@ -148,15 +148,27 @@ export default function Modale({
     >
       {/* Fond sombre semi-transparent pour isoler la modale du contenu. */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-entree"
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm animate-entree"
         style={{ animationDuration: '0.3s' }}
       />
       <div
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 flex max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] w-full ${
-          large ? "max-w-2xl" : "max-w-md"
-        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 bg-brand-white shadow-2xl safe-bottom`}
+        className={`relative z-10 flex max-h-[85vh] sm:max-h-[85vh] w-full ${
+          large === "5xl"
+            ? "w-full max-w-[95vw] sm:max-w-5xl"
+            : large === "4xl" || large === true
+            ? "w-full max-w-[95vw] sm:max-w-4xl"
+            : large === "3xl"
+            ? "w-full max-w-[95vw] sm:max-w-3xl"
+            : large === "2xl"
+            ? "w-full max-w-[95vw] sm:max-w-2xl"
+            : large === "xl"
+            ? "w-full max-w-[95vw] sm:max-w-xl"
+            : large === "sm"
+            ? "w-full max-w-[95vw] sm:max-w-sm"
+            : "w-full max-w-[95vw] sm:max-w-lg"
+        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-brand-paper shadow-2xl safe-bottom`}
         style={{
           // On garde l'animation d'entrée si pas de drag
           animation: !isDragging && currentY.current === 0 ? 'entree-douce 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
@@ -175,21 +187,21 @@ export default function Modale({
             <div className="h-1.5 w-12 rounded-full bg-brand-grey/30" />
           </div>
           
-          <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-1 sm:px-6 sm:py-5">
+          <div className="flex items-center justify-between gap-4 px-5 pb-3 pt-1 sm:px-6 sm:py-5">
             <h2 className="text-lg font-bold tracking-tight font-outfit text-brand-smooth">{titre}</h2>
             <button
               type="button"
               onClick={tenterFermeture}
               aria-label="Fermer"
-              className="rounded-lg p-3 sm:p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale"
+              className="h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-brand-warm-grey transition hover:bg-brand-light-grey/60 hover:text-brand-black active-scale cursor-pointer"
             >
-              <IconeFermer taille={18} />
+              <IconeFermer taille={20} />
             </button>
           </div>
         </div>
         
-        {/* Contenu */}
-        <div className="overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+        {/* Contenu Défilable */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 space-y-4">
           {children}
         </div>
       </div>

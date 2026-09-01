@@ -1,0 +1,530 @@
+[
+  {
+    "id": 16,
+    "nom": "ORDINATEURS",
+    "parent_id": null,
+    "path": "ORDINATEURS",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 21,
+    "nom": "STOCKAGE",
+    "parent_id": null,
+    "path": "STOCKAGE",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 80,
+    "nom": "PC Fixes & Stations",
+    "parent_id": 16,
+    "path": "ORDINATEURS > PC Fixes & Stations",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 81,
+    "nom": "Mini PC & Clients Légers",
+    "parent_id": 80,
+    "path": "ORDINATEURS > PC Fixes & Stations > Mini PC & Clients Légers",
+    "produits": 158,
+    "modeles": 32
+  },
+  {
+    "id": 82,
+    "nom": "Tours & Formats SFF",
+    "parent_id": 80,
+    "path": "ORDINATEURS > PC Fixes & Stations > Tours & Formats SFF",
+    "produits": 85,
+    "modeles": 57
+  },
+  {
+    "id": 83,
+    "nom": "Stations de Travail & Gaming",
+    "parent_id": 80,
+    "path": "ORDINATEURS > PC Fixes & Stations > Stations de Travail & Gaming",
+    "produits": 18,
+    "modeles": 7
+  },
+  {
+    "id": 84,
+    "nom": "Tout-en-un (All-in-One)",
+    "parent_id": 80,
+    "path": "ORDINATEURS > PC Fixes & Stations > Tout-en-un (All-in-One)",
+    "produits": 6,
+    "modeles": 6
+  },
+  {
+    "id": 85,
+    "nom": "PC Portables",
+    "parent_id": 16,
+    "path": "ORDINATEURS > PC Portables",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 86,
+    "nom": "Laptops & Ultrabooks",
+    "parent_id": 85,
+    "path": "ORDINATEURS > PC Portables > Laptops & Ultrabooks",
+    "produits": 140,
+    "modeles": 75
+  },
+  {
+    "id": 87,
+    "nom": "Matériel Point de Vente (POS)",
+    "parent_id": 16,
+    "path": "ORDINATEURS > Matériel Point de Vente (POS)",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 88,
+    "nom": "Terminaux & Caisses",
+    "parent_id": 87,
+    "path": "ORDINATEURS > Matériel Point de Vente (POS) > Terminaux & Caisses",
+    "produits": 15,
+    "modeles": 6
+  },
+  {
+    "id": 89,
+    "nom": "Disques Durs Mécaniques (HDD)",
+    "parent_id": 21,
+    "path": "STOCKAGE > Disques Durs Mécaniques (HDD)",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 90,
+    "nom": "Disques Durs SAS 3,5\"",
+    "parent_id": 89,
+    "path": "STOCKAGE > Disques Durs Mécaniques (HDD) > Disques Durs SAS 3,5\"",
+    "produits": 64,
+    "modeles": 10
+  },
+  {
+    "id": 91,
+    "nom": "Disques Durs SATA 3,5\"",
+    "parent_id": 89,
+    "path": "STOCKAGE > Disques Durs Mécaniques (HDD) > Disques Durs SATA 3,5\"",
+    "produits": 58,
+    "modeles": 6
+  },
+  {
+    "id": 92,
+    "nom": "Disques Durs SAS 2,5\"",
+    "parent_id": 89,
+    "path": "STOCKAGE > Disques Durs Mécaniques (HDD) > Disques Durs SAS 2,5\"",
+    "produits": 30,
+    "modeles": 8
+  },
+  {
+    "id": 94,
+    "nom": "Disques Flash (SSD)",
+    "parent_id": 21,
+    "path": "STOCKAGE > Disques Flash (SSD)",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 95,
+    "nom": "SSD SATA 2,5\"",
+    "parent_id": 94,
+    "path": "STOCKAGE > Disques Flash (SSD) > SSD SATA 2,5\"",
+    "produits": 70,
+    "modeles": 6
+  },
+  {
+    "id": 96,
+    "nom": "SSD NVMe / M.2 & U.2",
+    "parent_id": 94,
+    "path": "STOCKAGE > Disques Flash (SSD) > SSD NVMe / M.2 & U.2",
+    "produits": 59,
+    "modeles": 15
+  },
+  {
+    "id": 98,
+    "nom": "Baies & Systèmes de Stockage (NAS/DAS)",
+    "parent_id": 21,
+    "path": "STOCKAGE > Baies & Systèmes de Stockage (NAS/DAS)",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 99,
+    "nom": "Serveurs NAS, DAS & Sauvegarde",
+    "parent_id": 98,
+    "path": "STOCKAGE > Baies & Systèmes de Stockage (NAS/DAS) > Serveurs NAS, DAS & Sauvegarde",
+    "produits": 6,
+    "modeles": 6
+  },
+  {
+    "id": 100,
+    "nom": "SERVEURS & BAIES",
+    "parent_id": null,
+    "path": "SERVEURS & BAIES",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 101,
+    "nom": "Serveurs",
+    "parent_id": 100,
+    "path": "SERVEURS & BAIES > Serveurs",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 102,
+    "nom": "Serveurs Rack (1U / 2U / 4U)",
+    "parent_id": 101,
+    "path": "SERVEURS & BAIES > Serveurs > Serveurs Rack (1U / 2U / 4U)",
+    "produits": 74,
+    "modeles": 22
+  },
+  {
+    "id": 103,
+    "nom": "Serveurs Tour",
+    "parent_id": 101,
+    "path": "SERVEURS & BAIES > Serveurs > Serveurs Tour",
+    "produits": 3,
+    "modeles": 1
+  },
+  {
+    "id": 104,
+    "nom": "Serveurs Multi-formats",
+    "parent_id": 101,
+    "path": "SERVEURS & BAIES > Serveurs > Serveurs Multi-formats",
+    "produits": 56,
+    "modeles": 13
+  },
+  {
+    "id": 105,
+    "nom": "Accessoires de Baies & Châssis",
+    "parent_id": 100,
+    "path": "SERVEURS & BAIES > Accessoires de Baies & Châssis",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 106,
+    "nom": "Rails, PDU & Fixations",
+    "parent_id": 105,
+    "path": "SERVEURS & BAIES > Accessoires de Baies & Châssis > Rails, PDU & Fixations",
+    "produits": 146,
+    "modeles": 23
+  },
+  {
+    "id": 107,
+    "nom": "ALIMENTATION & CHARGEURS",
+    "parent_id": null,
+    "path": "ALIMENTATION & CHARGEURS",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 108,
+    "nom": "Chargeurs & Alimentation Externe",
+    "parent_id": 107,
+    "path": "ALIMENTATION & CHARGEURS > Chargeurs & Alimentation Externe",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 109,
+    "nom": "Chargeurs PC Portables & Docks",
+    "parent_id": 108,
+    "path": "ALIMENTATION & CHARGEURS > Chargeurs & Alimentation Externe > Chargeurs PC Portables & Docks",
+    "produits": 192,
+    "modeles": 18
+  },
+  {
+    "id": 110,
+    "nom": "Câbles & Adaptateurs de Signal",
+    "parent_id": 107,
+    "path": "ALIMENTATION & CHARGEURS > Câbles & Adaptateurs de Signal",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 111,
+    "nom": "Câbles Vidéo, Réseau & Convertisseurs",
+    "parent_id": 110,
+    "path": "ALIMENTATION & CHARGEURS > Câbles & Adaptateurs de Signal > Câbles Vidéo, Réseau & Convertisseurs",
+    "produits": 62,
+    "modeles": 2
+  },
+  {
+    "id": 112,
+    "nom": "Protection Électrique & Onduleurs",
+    "parent_id": 107,
+    "path": "ALIMENTATION & CHARGEURS > Protection Électrique & Onduleurs",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 113,
+    "nom": "Onduleurs (UPS) & Régulateurs",
+    "parent_id": 112,
+    "path": "ALIMENTATION & CHARGEURS > Protection Électrique & Onduleurs > Onduleurs (UPS) & Régulateurs",
+    "produits": 9,
+    "modeles": 5
+  },
+  {
+    "id": 114,
+    "nom": "MÉMOIRE & PROCESSEURS",
+    "parent_id": null,
+    "path": "MÉMOIRE & PROCESSEURS",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 115,
+    "nom": "Mémoire Vive (RAM)",
+    "parent_id": 114,
+    "path": "MÉMOIRE & PROCESSEURS > Mémoire Vive (RAM)",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 116,
+    "nom": "RAM Serveur (ECC Registered)",
+    "parent_id": 115,
+    "path": "MÉMOIRE & PROCESSEURS > Mémoire Vive (RAM) > RAM Serveur (ECC Registered)",
+    "produits": 133,
+    "modeles": 35
+  },
+  {
+    "id": 117,
+    "nom": "RAM PC Fixe (UDIMM)",
+    "parent_id": 115,
+    "path": "MÉMOIRE & PROCESSEURS > Mémoire Vive (RAM) > RAM PC Fixe (UDIMM)",
+    "produits": 23,
+    "modeles": 4
+  },
+  {
+    "id": 119,
+    "nom": "Processeurs (CPU)",
+    "parent_id": 114,
+    "path": "MÉMOIRE & PROCESSEURS > Processeurs (CPU)",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 120,
+    "nom": "Processeurs PC (Intel Core / AMD Ryzen)",
+    "parent_id": 119,
+    "path": "MÉMOIRE & PROCESSEURS > Processeurs (CPU) > Processeurs PC (Intel Core / AMD Ryzen)",
+    "produits": 61,
+    "modeles": 10
+  },
+  {
+    "id": 121,
+    "nom": "Processeurs Serveur (Intel Xeon / AMD EPYC)",
+    "parent_id": 119,
+    "path": "MÉMOIRE & PROCESSEURS > Processeurs (CPU) > Processeurs Serveur (Intel Xeon / AMD EPYC)",
+    "produits": 10,
+    "modeles": 2
+  },
+  {
+    "id": 122,
+    "nom": "IMPRESSION & CONSOMMABLES",
+    "parent_id": null,
+    "path": "IMPRESSION & CONSOMMABLES",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 123,
+    "nom": "Consommables d'Impression",
+    "parent_id": 122,
+    "path": "IMPRESSION & CONSOMMABLES > Consommables d'Impression",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 124,
+    "nom": "Toners, Cartouches & Tambours",
+    "parent_id": 123,
+    "path": "IMPRESSION & CONSOMMABLES > Consommables d'Impression > Toners, Cartouches & Tambours",
+    "produits": 50,
+    "modeles": 22
+  },
+  {
+    "id": 125,
+    "nom": "Imprimantes & Scanners",
+    "parent_id": 122,
+    "path": "IMPRESSION & CONSOMMABLES > Imprimantes & Scanners",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 126,
+    "nom": "Imprimantes Laser, Jet d'encre & Thermiques",
+    "parent_id": 125,
+    "path": "IMPRESSION & CONSOMMABLES > Imprimantes & Scanners > Imprimantes Laser, Jet d'encre & Thermiques",
+    "produits": 29,
+    "modeles": 14
+  },
+  {
+    "id": 127,
+    "nom": "ÉCRANS & PÉRIPHÉRIQUES",
+    "parent_id": null,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 128,
+    "nom": "Périphériques de Saisie",
+    "parent_id": 127,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Périphériques de Saisie",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 129,
+    "nom": "Claviers, Souris & Lecteurs Code-barres",
+    "parent_id": 128,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Périphériques de Saisie > Claviers, Souris & Lecteurs Code-barres",
+    "produits": 24,
+    "modeles": 10
+  },
+  {
+    "id": 130,
+    "nom": "Stations d'Accueil & Hubs",
+    "parent_id": 127,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Stations d'Accueil & Hubs",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 131,
+    "nom": "Docks USB-C & Thunderbolt",
+    "parent_id": 130,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Stations d'Accueil & Hubs > Docks USB-C & Thunderbolt",
+    "produits": 19,
+    "modeles": 5
+  },
+  {
+    "id": 132,
+    "nom": "Moniteurs & Écrans",
+    "parent_id": 127,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Moniteurs & Écrans",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 133,
+    "nom": "Écrans Bureautique & Pro",
+    "parent_id": 132,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Moniteurs & Écrans > Écrans Bureautique & Pro",
+    "produits": 10,
+    "modeles": 8
+  },
+  {
+    "id": 134,
+    "nom": "Accessoires Écrans",
+    "parent_id": 127,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Accessoires Écrans",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 135,
+    "nom": "Supports & Bras Articulés",
+    "parent_id": 134,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Accessoires Écrans > Supports & Bras Articulés",
+    "produits": 7,
+    "modeles": 2
+  },
+  {
+    "id": 136,
+    "nom": "Audio & Visioconférence",
+    "parent_id": 127,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Audio & Visioconférence",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 137,
+    "nom": "Webcams, Micro-casques & Systèmes Visio",
+    "parent_id": 136,
+    "path": "ÉCRANS & PÉRIPHÉRIQUES > Audio & Visioconférence > Webcams, Micro-casques & Systèmes Visio",
+    "produits": 4,
+    "modeles": 4
+  },
+  {
+    "id": 138,
+    "nom": "COMPOSANTS & CARTES D'EXTENSION",
+    "parent_id": null,
+    "path": "COMPOSANTS & CARTES D'EXTENSION",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 139,
+    "nom": "Cartes Graphiques (GPU)",
+    "parent_id": 138,
+    "path": "COMPOSANTS & CARTES D'EXTENSION > Cartes Graphiques (GPU)",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 140,
+    "nom": "Cartes Dédiées & Pro (Quadro/RTX)",
+    "parent_id": 139,
+    "path": "COMPOSANTS & CARTES D'EXTENSION > Cartes Graphiques (GPU) > Cartes Dédiées & Pro (Quadro/RTX)",
+    "produits": 40,
+    "modeles": 16
+  },
+  {
+    "id": 141,
+    "nom": "Contrôleurs & Cartes Spécifiques",
+    "parent_id": 138,
+    "path": "COMPOSANTS & CARTES D'EXTENSION > Contrôleurs & Cartes Spécifiques",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 142,
+    "nom": "Cartes Réseau Internes (PCIe/FlexLOM)",
+    "parent_id": 141,
+    "path": "COMPOSANTS & CARTES D'EXTENSION > Contrôleurs & Cartes Spécifiques > Cartes Réseau Internes (PCIe/FlexLOM)",
+    "produits": 4,
+    "modeles": 2
+  },
+  {
+    "id": 143,
+    "nom": "Contrôleurs RAID, HBA & Risers",
+    "parent_id": 141,
+    "path": "COMPOSANTS & CARTES D'EXTENSION > Contrôleurs & Cartes Spécifiques > Contrôleurs RAID, HBA & Risers",
+    "produits": 2,
+    "modeles": 2
+  },
+  {
+    "id": 149,
+    "nom": "RÉSEAU ACTIF & COMMUTATION",
+    "parent_id": null,
+    "path": "RÉSEAU ACTIF & COMMUTATION",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 150,
+    "nom": "Équipements Réseau",
+    "parent_id": 149,
+    "path": "RÉSEAU ACTIF & COMMUTATION > Équipements Réseau",
+    "produits": 0,
+    "modeles": 0
+  },
+  {
+    "id": 151,
+    "nom": "Switches, Routeurs & Bornes Wi-Fi",
+    "parent_id": 150,
+    "path": "RÉSEAU ACTIF & COMMUTATION > Équipements Réseau > Switches, Routeurs & Bornes Wi-Fi",
+    "produits": 11,
+    "modeles": 7
+  }
+]

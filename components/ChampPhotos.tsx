@@ -336,15 +336,15 @@ export default function ChampPhotos({
                   <a
                     href={lienTelechargementPhoto(src, index).href}
                     download={lienTelechargementPhoto(src, index).nom}
-                    title={t("visionneuse.telecharger")}
-                    aria-label={t("visionneuse.telecharger")}
-                    className="pointer-events-auto rounded-md bg-brand-white/90 p-1 text-brand-black transition hover:bg-brand-white active-scale"
+                    title={t("visionneuse.telechargement")}
+                    aria-label={t("visionneuse.telechargement")}
+                    className="pointer-events-auto flex h-8 w-8 min-h-[32px] min-w-[32px] items-center justify-center rounded-lg bg-brand-white/90 p-1 text-brand-black transition hover:bg-brand-white active-scale"
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()} // Prevent drag on button
                   >
-                    <IconeTelechargement taille={13} />
+                    <IconeTelechargement taille={15} />
                   </a>
-                  {/* Bouton définir couverture retiré car on utilise le drag&drop, mais gardé en backup accessible via clavier ? On le garde pour l'instant */}
+                  {/* Bouton définir couverture */}
                   {index !== 0 && (
                     <button
                       type="button"
@@ -353,9 +353,9 @@ export default function ChampPhotos({
                       onPointerDown={(e) => e.stopPropagation()}
                       title={t("champPhotos.definirCouverture")}
                       aria-label={t("champPhotos.definirCouverture")}
-                      className="pointer-events-auto rounded-md bg-brand-white/90 p-1 text-brand-black transition hover:bg-brand-white active-scale sm:hidden"
+                      className="pointer-events-auto flex h-8 w-8 min-h-[32px] min-w-[32px] items-center justify-center rounded-lg bg-brand-white/90 p-1 text-brand-black transition hover:bg-brand-white active-scale sm:hidden"
                     >
-                      <IconeEtoile taille={13} />
+                      <IconeEtoile taille={15} />
                     </button>
                   )}
                   <button
@@ -365,9 +365,9 @@ export default function ChampPhotos({
                     onPointerDown={(e) => e.stopPropagation()}
                     title={t("champPhotos.retirer")}
                     aria-label={t("champPhotos.retirer")}
-                    className="pointer-events-auto rounded-md bg-brand-white/90 p-1 text-danger transition hover:bg-brand-white active-scale"
+                    className="pointer-events-auto flex h-8 w-8 min-h-[32px] min-w-[32px] items-center justify-center rounded-lg bg-brand-white/90 p-1 text-danger transition hover:bg-brand-white active-scale"
                   >
-                    <IconeCorbeille taille={13} />
+                    <IconeCorbeille taille={15} />
                   </button>
                 </div>
               </div>
@@ -376,13 +376,13 @@ export default function ChampPhotos({
         </div>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2.5 sm:flex-row">
         {photoDisponible && (
           <button
             type="button"
             disabled={disabled || enCours || plein}
             onClick={() => void declencherCamera()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 min-h-[48px] text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
           >
             <IconeAppareilPhoto taille={18} />
             {enCours ? t("champPhotos.preparation") : t("champPhotos.prendrePhoto")}
@@ -392,7 +392,7 @@ export default function ChampPhotos({
           type="button"
           disabled={disabled || enCours || plein}
           onClick={() => champGalerie.current?.click()}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-brand-grey bg-brand-paper px-4 py-3 min-h-[48px] text-sm font-semibold text-brand-smooth transition hover:border-brand-orange hover:bg-brand-glow/25 hover:text-brand-orange disabled:opacity-45"
         >
           <IconeImage taille={18} />
           {enCours ? t("champPhotos.traitement") : t("champPhotos.ajouterPhotos")}

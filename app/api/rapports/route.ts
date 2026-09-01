@@ -23,11 +23,11 @@ export async function GET() {
         );
         return {
           lot_id: lot.id,
-          fournisseur: lot.fournisseur,
-          date_entree: lot.date_entree.toISOString(),
+          fournisseur: lot.fournisseur || "Fournisseur",
+          date_entree: lot.date_entree ? new Date(lot.date_entree).toISOString() : new Date().toISOString(),
           statut_lot: lot.statut_lot,
           nb_produits: lot.produits.length,
-          valeur_achat: lot.produits.reduce((s, p) => s + p.prix_achat, 0),
+          valeur_achat: lot.produits.reduce((s, p) => s + (p.prix_achat ?? 0), 0),
           resume: {
             ok: lot.produits.filter((p) => p.statut === "ok").length,
             a_reparer: lot.produits.filter((p) => p.statut === "a_reparer").length,
@@ -39,8 +39,8 @@ export async function GET() {
         };
       }),
     });
-  } catch (e) {
-    console.error("GET /api/rapports", e);
-    return erreur(500, "Erreur lors du chargement des rapports.");
+  } catch (e: any) {
+    console.error("GET /api/rapports error:", e?.message || e);
+    return erreur(500, e?.message || "Erreur lors du chargement des rapports.");
   }
 }

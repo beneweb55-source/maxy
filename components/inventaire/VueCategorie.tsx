@@ -1,52 +1,49 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import RechercheRapide from "@/components/RechercheRapide";
-import { IconeChevronGauche, IconeCrayon, IconeImage } from "@/components/icons";
-import { formaterDA } from "@/lib/caisse";
-import ModaleEditionCategorie from "./ModaleEditionCategorie";
+import { 
+  IconeChevronGauche, 
+  IconeChevronDroite, 
+  IconeArchive, 
+  IconeAlerte 
+} from "@/components/icons";
+import BreadcrumbNavigation from "./BreadcrumbNavigation";
 
-export interface CategorieInfo {
+interface SousCategorieDetail {
+  id: number;
   nom: string;
-  image_url: string | null;
+  parent_id: number | null;
   description: string | null;
-}
-
-interface Famille {
-  cle: string;
-  reference: string;
-  categorie: string;
   image_url: string | null;
-  nbImages: number;
-  unites: number;
-  disponibles: number;
-  a_tester: number;
-  prixMin: number;
-  prixMax: number;
-  venteMin: number | null;
-  venteMax: number | null;
+  _count: {
+    produits: number;
+    modeles: number;
+  };
 }
 
-interface FamillesData {
-  total: number;
-  pages: number;
-  page: number;
-  familles: Famille[];
-  categorieInfo?: CategorieInfo | null;
+interface CategorieDetail {
+  id: number;
+  nom: string;
+  parent_id: number | null;
+  parent?: {
+    id: number;
+    nom: string;
+  } | null;
+  sousCategories: SousCategorieDetail[];
 }
 
 export default function VueCategorie({
-  categorie,
-  majUrl
+  categorieId,
+  majUrl,
 }: {
-  categorie: string;
+  categorieId: number;
   majUrl: (modifs: Record<string, string | null>) => void;
 }) {
   const searchParams = useSearchParams();
-  const [data, setData] = useState<FamillesData | null>(null);
+  const q = searchParams?.get("q") || "";
+  const [categorie, setCategorie] = useState<CategorieDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [edition, setEdition] = useState(false);
-  const q = searchParams?.get("q") ?? "";
-
   const [erreur, setErreur] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,186 +52,152 @@ export default function VueCategorie({
 
     setLoading(true);
     setErreur(null);
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    // Ensure we are fetching for the right category
-    params.set("categorie", categorie); 
-    
-    fetch(`/api/produits/familles?${params.toString()}`, { signal })
-      .then(async r => {
-        if (!r.ok) throw new Error("Erreur lors du chargement des catégories");
-        return r.json();
+
+    // Charger directement les détails de la catégorie et ses sous-catégories
+    fetch(`/api/categories/${categorieId}`, { signal })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Erreur lors du chargement de la catégorie");
+        return res.json();
       })
-      .then(d => { 
+      .then((data: any) => {
         if (signal.aborted) return;
-        setData(d); 
-        setLoading(false); 
+
+        setCategorie({
+          id: data.id,
+          nom: data.nom || `Catégorie #${categorieId}`,
+          parent_id: data.parent?.id || null,
+          parent: data.parent ? { id: data.parent.id, nom: data.parent.nom } : null,
+          sousCategories: data.enfants || [],
+        });
+        setLoading(false);
       })
-      .catch(e => { 
-        if (e.name === "AbortError") return;
-        console.error(e); 
-        setErreur(e.message || "Erreur réseau");
-        setLoading(false); 
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        console.error(err);
+        setErreur(err.message || "Erreur réseau");
+        setLoading(false);
       });
 
     return () => controller.abort();
-  }, [searchParams, categorie]);
+  }, [categorieId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse p-2">
+        <div className="h-10 w-72 bg-brand-light-grey/30 dark:bg-white/5 rounded-xl"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (erreur || !categorie) {
+    return (
+      <div className="carte p-8 text-center text-danger flex flex-col items-center justify-center animate-entree">
+        <IconeAlerte taille={36} className="mb-3 opacity-80" />
+        <h3 className="font-bold text-lg font-outfit mb-1">Catégorie introuvable</h3>
+        <p className="text-sm text-brand-warm-grey mb-4">{erreur || "Identifiant de catégorie invalide"}</p>
+        <button
+          type="button"
+          onClick={() => majUrl({ vue: "cockpit", categorie_id: null, famille_id: null })}
+          className="btn btn-secondaire text-xs"
+        >
+          <IconeChevronGauche taille={14} /> Retour au Cockpit
+        </button>
+      </div>
+    );
+  }
+
+  // Filtrer les sous-catégories : Masquage strict des impasses (0 produit) et filtre de recherche
+  const sousCatsFiltrees = (categorie.sousCategories || []).filter((sc) => {
+    // Règle stricte anti-impasse : Ne jamais afficher un sous-type avec 0 produit
+    if ((sc._count?.produits || 0) === 0) return false;
+
+    if (!q.trim()) return true;
+    return sc.nom.toLowerCase().includes(q.toLowerCase());
+  });
+
+  const totalProduitsCat = (categorie.sousCategories || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
 
   return (
     <div className="space-y-6 animate-entree">
-      {/* En-tête Navigation (Breadcrumb) et Infos Famille */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-brand-light-grey/50">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => majUrl({ vue: "cockpit", categorie: null, cle: null })}
-            className="hover:text-brand-orange transition-colors flex items-center justify-center w-10 h-10 bg-white dark:bg-brand-paper rounded-full border border-brand-light-grey dark:border-white/10 shadow-sm shrink-0"
-            title="Retour au Cockpit"
-          >
-            <IconeChevronGauche taille={16} />
-          </button>
-          
-          <div className="flex items-center gap-4">
-            {data?.categorieInfo?.image_url && (
-              <img 
-                src={data.categorieInfo.image_url} 
-                alt={categorie} 
-                className="w-16 h-16 rounded-xl object-cover border border-brand-light-grey dark:border-white/10 shadow-sm"
-              />
-            )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-brand-warm-grey">Famille</span>
-                <span className="text-brand-warm-grey">/</span>
-                {data && (
-                  <span className="bg-brand-light-grey/30 dark:bg-white/10 text-brand-black dark:text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                    {data.total} catégories
-                  </span>
-                )}
-              </div>
-              <h1 className="font-extrabold text-brand-black dark:text-white font-outfit text-3xl mt-1">
-                {categorie}
-              </h1>
-              {data?.categorieInfo?.description && (
-                <p className="text-sm text-brand-warm-grey mt-1 max-w-2xl">
-                  {data.categorieInfo.description}
-                </p>
-              )}
-            </div>
-          </div>
+      {/* En-tête de section Catégorie */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-light-grey/40 dark:border-white/5">
+        <div>
+          <h2 className="text-lg sm:text-xl font-black font-outfit text-brand-black dark:text-white">
+            {categorie.nom}
+          </h2>
+          <p className="text-xs text-brand-warm-grey">
+            Touchez un sous-type pour afficher immédiatement sa grille de produits
+          </p>
         </div>
 
-        <button 
-          onClick={() => setEdition(true)}
-          className="btn btn-secondaire flex items-center gap-2 shrink-0 self-start sm:self-center"
+        <button
+          type="button"
+          onClick={() => majUrl({ vue: "tableau", categorie_id: String(categorieId), sous_categorie_id: null })}
+          className="btn btn-primaire text-xs py-2 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2 shrink-0"
         >
-          <IconeCrayon taille={14} />
-          Modifier Famille
+          <IconeArchive taille={15} /> Voir toute la catégorie ({totalProduitsCat})
         </button>
       </div>
 
-      {edition && (
-        <ModaleEditionCategorie
-          nomCategorie={categorie}
-          categorieInfo={data?.categorieInfo || null}
-          fermer={() => setEdition(false)}
-          onSucces={(nouvelleInfo) => {
-            if (data) {
-              setData({ ...data, categorieInfo: nouvelleInfo });
-            }
-            setEdition(false);
-          }}
-        />
-      )}
-
-
-
-      {/* Liste des familles */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="carte p-4 border border-brand-light-grey dark:border-white/5 h-[160px] flex flex-col">
-              <div className="flex gap-4 mb-3">
-                <div className="h-16 w-16 rounded-lg bg-brand-light-grey/30 dark:bg-white/5 flex-shrink-0"></div>
-                <div className="flex-1 space-y-2 py-1">
-                  <div className="h-5 bg-brand-light-grey/30 dark:bg-white/5 rounded-md w-3/4"></div>
-                  <div className="h-4 bg-brand-light-grey/20 dark:bg-white/5 rounded-md w-1/2"></div>
-                </div>
-              </div>
-              <div className="mt-auto grid grid-cols-3 gap-2 border-t border-brand-light-grey/30 dark:border-white/5 pt-3">
-                <div className="h-8 bg-brand-light-grey/20 dark:bg-white/5 rounded-md"></div>
-                <div className="h-8 bg-brand-light-grey/20 dark:bg-white/5 rounded-md"></div>
-                <div className="h-8 bg-brand-light-grey/20 dark:bg-white/5 rounded-md"></div>
-              </div>
-            </div>
-          ))}
+      {/* Grille des Sous-Catégories (Niveau 3) */}
+      <div>
+        <div className="mb-4">
+          <h3 className="text-base font-bold text-brand-black dark:text-white font-outfit">
+            Sous-types de matériels disponibles ({sousCatsFiltrees.length})
+          </h3>
         </div>
-      ) : erreur ? (
-        <div className="carte flex flex-col items-center justify-center p-12 text-danger">
-          <div className="w-16 h-16 bg-danger/10 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+
+        {sousCatsFiltrees.length === 0 ? (
+          <div className="carte p-8 text-center text-brand-warm-grey rounded-2xl bg-white/50 dark:bg-white/5 border border-dashed border-brand-light-grey dark:border-white/10">
+            Aucun sous-type avec du stock disponible dans cette catégorie.
           </div>
-          <div className="text-lg font-bold font-outfit mb-1">Une erreur est survenue</div>
-          <div className="text-sm">{erreur}</div>
-        </div>
-      ) : data?.familles.length === 0 ? (
-        <div className="carte flex flex-col items-center justify-center p-12 text-brand-warm-grey">
-          <div className="w-16 h-16 bg-brand-light-grey/20 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-          </div>
-          <div className="text-lg font-bold font-outfit text-brand-black dark:text-white mb-1">Aucun produit trouvé</div>
-          <div className="text-sm">Essayez de modifier votre recherche ou ajoutez de nouveaux produits.</div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {data?.familles.map(f => (
-            <button
-              key={f.cle}
-              onClick={() => majUrl({ vue: "famille", cle: f.cle })}
-              className="carte group text-left flex flex-col h-full border border-brand-light-grey dark:border-white/10 hover:border-brand-smooth hover:shadow-xl transition-all !p-0 overflow-hidden bg-white dark:bg-brand-paper relative"
-            >
-              <div className="p-4 flex gap-4 mb-2 z-10 relative">
-                <div className="h-20 w-20 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 flex-shrink-0 flex items-center justify-center overflow-hidden border border-brand-light-grey/50 dark:border-white/10 group-hover:scale-105 transition-transform shadow-sm">
-                  {f.image_url ? (
-                    <img src={f.image_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-brand-warm-grey text-[10px] uppercase font-bold opacity-60">Sans image</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 pt-1">
-                  <h3 className="font-bold text-brand-black dark:text-white font-outfit text-lg leading-tight truncate-2-lines mb-1.5 group-hover:text-brand-orange transition-colors">
-                    {f.reference || "Sans référence"}
-                  </h3>
-                  <div className="text-sm font-extrabold text-brand-orange">
-                    {f.venteMin === f.venteMax && f.venteMin !== null
-                      ? `${formaterDA(f.venteMin)}`
-                      : f.venteMin !== null
-                        ? `${formaterDA(f.venteMin)} - ${formaterDA(f.venteMax!)}`
-                        : "Non tarifé"}
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {sousCatsFiltrees.map((sc) => {
+              return (
+                <div
+                  key={sc.id}
+                  onClick={() => majUrl({ 
+                    vue: "tableau", 
+                    sous_categorie_id: String(sc.id), 
+                    categorie_id: String(categorieId),
+                    famille_id: categorie.parent_id ? String(categorie.parent_id) : null 
+                  })}
+                  className="carte group !p-5 border border-brand-light-grey/60 dark:border-white/10 bg-white dark:bg-brand-paper rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-[0.985] min-h-[130px] hover:border-brand-orange/60"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-bold text-base font-outfit text-brand-black dark:text-white group-hover:text-brand-orange transition-colors leading-snug">
+                        {sc.nom}
+                      </h3>
+                      <span className="bg-brand-light-grey/40 dark:bg-white/10 text-brand-black dark:text-white px-2.5 py-0.5 rounded-md text-xs font-black shrink-0">
+                        {sc._count.produits}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-brand-warm-grey">
+                      {sc._count.modeles} modèle{sc._count.modeles > 1 ? "s" : ""} référencé{sc._count.modeles > 1 ? "s" : ""}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-brand-light-grey/40 dark:border-white/5 flex items-center justify-between text-xs text-brand-warm-grey group-hover:text-brand-black dark:group-hover:text-white transition-colors font-medium">
+                    <span>Voir les articles</span>
+                    <div className="w-6 h-6 rounded-full bg-brand-light-grey/30 dark:bg-white/5 flex items-center justify-center group-hover:bg-brand-orange group-hover:text-white transition-colors">
+                      <IconeChevronDroite taille={14} />
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="mt-auto grid grid-cols-3 gap-px bg-brand-light-grey/30 dark:bg-white/10 z-10 relative">
-                <div className="text-center py-2.5 bg-white dark:bg-brand-paper group-hover:bg-brand-light-grey/10 transition-colors">
-                  <div className="text-sm font-bold text-brand-black dark:text-white">{f.unites}</div>
-                  <div className="text-[9px] font-bold uppercase tracking-wider text-brand-warm-grey">Total</div>
-                </div>
-                <div className="text-center py-2.5 bg-emerald-50 dark:bg-emerald-900/10 group-hover:bg-emerald-100/50 transition-colors">
-                  <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{f.disponibles}</div>
-                  <div className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/70 dark:text-emerald-500/70">Dispo</div>
-                </div>
-                <div className={`text-center py-2.5 transition-colors ${f.a_tester > 0 ? 'bg-amber-50 dark:bg-amber-900/10 group-hover:bg-amber-100/50' : 'bg-white dark:bg-brand-paper group-hover:bg-brand-light-grey/10'}`}>
-                  <div className={`text-sm font-bold ${f.a_tester > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-brand-warm-grey'}`}>{f.a_tester}</div>
-                  <div className={`text-[9px] font-bold uppercase tracking-wider ${f.a_tester > 0 ? 'text-amber-600/70 dark:text-amber-500/70' : 'text-brand-warm-grey/50'}`}>À tester</div>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

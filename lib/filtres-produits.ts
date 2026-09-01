@@ -4,7 +4,10 @@ import { decodeBase64Url } from "./base64url";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
-export function construireFiltresProduits(params: URLSearchParams): Prisma.ProduitWhereInput {
+export function construireFiltresProduits(
+  params: URLSearchParams,
+  options?: { ignorerStatuts?: boolean }
+): Prisma.ProduitWhereInput {
   const clauses: Prisma.ProduitWhereInput[] = [];
 
   const q = params.get("q")?.trim();
@@ -13,7 +16,11 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
       OR: [
         { reference: { contains: q, mode: "insensitive" } },
         { code_interne: { contains: q, mode: "insensitive" } },
+        { numero_serie: { contains: q, mode: "insensitive" } },
         { notes: { contains: q, mode: "insensitive" } },
+        { categorie: { contains: q, mode: "insensitive" } },
+        { categorie_rel: { nom: { contains: q, mode: "insensitive" } } },
+        { modele: { nom: { contains: q, mode: "insensitive" } } },
       ],
     });
   }
@@ -21,6 +28,62 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
   const referenceExacte = params.get("reference_exacte");
   if (referenceExacte) {
     clauses.push({ reference: referenceExacte });
+  }
+
+  const codeExact = params.get("code_exact");
+  if (codeExact) {
+    clauses.push({
+      OR: [
+        { code_interne: { equals: codeExact, mode: "insensitive" } },
+        { numero_serie: { equals: codeExact, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  const gradeParam = params.get("grade") || params.get("grades");
+  if (gradeParam) {
+    const grades = gradeParam.split(",").map((g) => g.trim()).filter(Boolean);
+    if (grades.length > 0) {
+      clauses.push({ grade: { in: grades } });
+    }
+  }
+
+  const emplacement = params.get("emplacement")?.trim();
+  if (emplacement) {
+    if (emplacement === "vitrine") {
+      clauses.push({ OR: [{ emplacement: "vitrine" }, { en_vitrine: true }] });
+    } else if (emplacement === "reserve") {
+      clauses.push({ OR: [{ emplacement: "reserve" }, { en_vitrine: false }] });
+    } else {
+      clauses.push({ emplacement });
+    }
+  }
+
+  // Filtres de spécifications matérielles adaptatives (Matrice Unifiée)
+  const champsMatrice = [
+    "marque", "format", "cpu", "ram", "stockage", "format_cible", "type_specifique",
+    "generation", "frequence_mhz", "type_disque", "interface", "format_physique",
+    "capacite", "capacite_disque", "taille_ecran", "taille_pouces", "resolution",
+    "frequence_hz", "type_dalle", "puissance_w", "type_connecteur", "fondeur",
+    "gamme", "vram_taille", "type_consommable", "couleur", "technologie", "format_serveur"
+  ];
+
+  for (const cle of champsMatrice) {
+    const val = params.get(cle)?.trim();
+    if (val) {
+      // Nettoyer les suffixes comme "Go", "W", "Hz", "pouces" pour une recherche large et précise
+      const valPure = val.replace(/Go|GB|W|Hz|pouces|"/g, "").trim();
+      clauses.push({
+        OR: [
+          { reference: { contains: val, mode: "insensitive" } },
+          { reference: { contains: valPure, mode: "insensitive" } },
+          { modele: { nom: { contains: val, mode: "insensitive" } } },
+          { modele: { nom: { contains: valPure, mode: "insensitive" } } },
+          { categorie: { contains: val, mode: "insensitive" } },
+          { categorie_rel: { nom: { contains: val, mode: "insensitive" } } },
+        ],
+      });
+    }
   }
 
   const cle = params.get("cle");
@@ -40,15 +103,49 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     }
   }
 
-  const statuts = (params.get("statuts") ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s): s is StatutProduit => (STATUTS_PRODUIT as readonly string[]).includes(s));
-  if (statuts.length > 0) {
-    clauses.push({ statut: { in: statuts } });
-  } else {
-    // Si aucun statut spécifique n'est demandé, on masque les vendus par défaut
-    clauses.push({ statut: { not: "vendu" } });
+  if (!options?.ignorerStatuts) {
+    const statuts = (params.get("statuts") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s): s is StatutProduit => (STATUTS_PRODUIT as readonly string[]).includes(s));
+    
+    if (statuts.length > 0) {
+      clauses.push({ statut: { in: statuts } });
+    } else {
+      // Si aucun statut spécifique n'est demandé, on masque les vendus et jetés par défaut
+      clauses.push({ statut: { notIn: ["vendu", "hs"] } });
+    }
+  }
+
+  const familleId = Number(params.get("famille_id"));
+  if (Number.isInteger(familleId) && familleId > 0) {
+    clauses.push({
+      OR: [
+        { categorie_id: familleId },
+        { categorie_rel: { parent_id: familleId } },
+        { categorie_rel: { parent: { parent_id: familleId } } },
+      ],
+    });
+  }
+
+  const catRelId = Number(params.get("categorie_id"));
+  if (Number.isInteger(catRelId) && catRelId > 0) {
+    clauses.push({
+      OR: [
+        { categorie_id: catRelId },
+        { categorie_rel: { parent_id: catRelId } },
+      ],
+    });
+  }
+
+  const sousCatId = Number(params.get("sous_categorie_id"));
+  if (Number.isInteger(sousCatId) && sousCatId > 0) {
+    clauses.push({ categorie_id: sousCatId });
+  }
+
+  const modeleId = Number(params.get("modele_id"));
+  if (Number.isInteger(modeleId) && modeleId > 0) {
+    clauses.push({ modele_id: modeleId });
   }
 
   const categorie = params.get("categorie")?.trim();
@@ -89,6 +186,12 @@ export function construireFiltresProduits(params: URLSearchParams): Prisma.Produ
     clauses.push({
       prix_vente_fixe: null,
       statut: { notIn: ["vendu", ...STATUTS_DEFAUT] },
+    });
+  }
+
+  if (params.get("a_classer") === "1") {
+    clauses.push({
+      categorie_id: null,
     });
   }
 

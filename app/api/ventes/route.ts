@@ -8,7 +8,7 @@ import { urlPhotoProduit } from "@/lib/images";
 import { idsParRole, notifier } from "@/lib/notifs";
 import { creerFacture } from "@/lib/factures";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
-import { entierPositif } from "@/lib/validation";
+import { entierPositif, entierPositifOuNul } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   const acces = await exigerUtilisateur();
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_id, prix_vente_reel, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement } =
+  const { produit_id, prix_vente_reel, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement, etiquette_imprimee } =
     (corps ?? {}) as {
       produit_id?: unknown;
       prix_vente_reel?: unknown;
@@ -117,13 +117,15 @@ export async function POST(request: NextRequest) {
       client_nis?: unknown;
       type_facture?: unknown;
       mode_paiement?: unknown;
+      etiquette_imprimee?: unknown;
     };
   const produitId = Number(produit_id);
   if (!Number.isInteger(produitId)) return erreur(400, "Produit invalide.");
-  const erreurPrix = entierPositif(prix_vente_reel, "Le prix de vente réel");
+  const erreurPrix = entierPositifOuNul(prix_vente_reel, "Le prix de vente réel");
   if (erreurPrix) return erreur(400, erreurPrix);
   const prix = prix_vente_reel as number;
   const canalTexte = typeof canal === "string" && canal.trim() ? canal.trim() : null;
+  const estEtiquetteImprimee = Boolean(etiquette_imprimee);
 
   let quand = new Date();
   if (typeof date_vente === "string" && date_vente.trim()) {
@@ -143,8 +145,8 @@ export async function POST(request: NextRequest) {
       include: { reparations: { select: { cout: true } } },
     });
     if (!produit) return erreur(404, "Produit introuvable.");
-    if (produit.statut !== "en_vente") {
-      return erreur(400, "Seul un produit « En vente » peut être vendu.");
+    if (produit.statut === "vendu" || produit.statut === "hs") {
+      return erreur(400, `Ce produit est ${produit.statut === "vendu" ? "déjà vendu" : "hors service (HS)"} et ne peut être facturé.`);
     }
 
     const parametres = await prisma.parametres.findUnique({ where: { id: 1 } });
@@ -162,6 +164,17 @@ export async function POST(request: NextRequest) {
     }
 
     const venteId = await prisma.$transaction(async (tx) => {
+      // 1. Double vérification atomique sous transaction (Protection contre Race Conditions)
+      const pVerif = await tx.produit.findUnique({
+        where: { id: produitId },
+        select: { id: true, statut: true, code_interne: true, numero_serie: true },
+      });
+      if (!pVerif || pVerif.statut === "vendu" || pVerif.statut === "hs") {
+        throw new Error(`Conflit : L'exemplaire ${pVerif?.code_interne || produitId} n'est plus disponible (déjà vendu ou hors service).`);
+      }
+
+      const statutOrigine = pVerif.statut;
+
       const vente = await tx.vente.create({
         data: {
           produit_id: produit.id,
@@ -171,10 +184,21 @@ export async function POST(request: NextRequest) {
           date_vente: quand,
         },
       });
+      const updateData: any = {
+        statut: "vendu",
+        prix_vente_reel: prix,
+        date_vente: quand,
+        en_vitrine: false,
+      };
+      if (estEtiquetteImprimee) {
+        updateData.etiquette_imprimee = true;
+        updateData.etiquette_imprimee_le = quand;
+      }
       await tx.produit.update({
         where: { id: produit.id },
-        data: { statut: "vendu", prix_vente_reel: prix, date_vente: quand, en_vitrine: false },
+        data: updateData,
       });
+
       // Vitrine par modèle : si l'unité vendue représentait le modèle en
       // vitrine, transférer le drapeau à un autre exemplaire identique en
       // stock pour que le modèle reste exposé (avec sa quantité décrémentée).
@@ -200,6 +224,17 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+      if (statutOrigine !== "en_vente") {
+        await tx.historiqueStatut.create({
+          data: {
+            produit_id: produit.id,
+            user_id: user.id,
+            statut_avant: statutOrigine,
+            statut_apres: "en_vente",
+            note: "Mise en vente automatique au comptoir (Auto-Override)",
+          },
+        });
+      }
       await tx.historiqueStatut.create({
         data: {
           produit_id: produit.id,
@@ -224,6 +259,12 @@ export async function POST(request: NextRequest) {
         `Vente enregistrée : ${produit.reference} — ${formaterDA(prix)} (${user.username})`,
         `/produits/${produit.id}`
       );
+
+      // Traçabilité immuable du S/N sur la ligne de facture
+      const designationLigne = produit.numero_serie 
+        ? `${produit.reference} (S/N: ${produit.numero_serie})` 
+        : produit.reference;
+
       // Toute vente génère automatiquement sa facture (garantie incluse).
       const facture = await creerFacture(tx, {
         lignes: [
@@ -231,7 +272,7 @@ export async function POST(request: NextRequest) {
             produit_id: produit.id,
             vente_id: vente.id,
             code_interne: produit.code_interne,
-            designation: produit.reference,
+            designation: designationLigne,
             categorie: produit.categorie,
             prix,
           },
@@ -265,8 +306,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (e) {
+  } catch (e: any) {
     console.error("POST /api/ventes", e);
-    return erreur(500, "Erreur lors de l'enregistrement de la vente.");
+    return erreur(500, e?.message || "Erreur lors de l'enregistrement de la vente.");
   }
 }

@@ -33,7 +33,12 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { 
+  width: "device-width", 
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
 
 export default async function RootLayout({
   children,
@@ -50,7 +55,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: scriptTheme }} />
         <link rel="apple-touch-icon" href="/brand/solutionmaxi-icone.svg" />
       </head>
-      <body className="min-h-screen bg-brand-paper text-brand-black antialiased">
+      <body className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-paper text-brand-black antialiased">
         <LangueProvider langueInitiale={langue}>
           <ThemeProvider>
             {children}

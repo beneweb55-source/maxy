@@ -57,6 +57,7 @@ export const en = {
     dashboard: "Dashboard",
     arrivages: "Arrivals",
     inventaire: "Inventory",
+    categories: "Categories",
     vitrine: "Showcase",
     rapports: "Reports",
     ventes: "Sales",

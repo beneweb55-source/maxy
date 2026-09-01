@@ -11,6 +11,8 @@ interface EtiquetteData {
   id: number;
   code_interne: string;
   reference: string;
+  numero_serie?: string | null;
+  grade?: string | null;
   prix_vente: number | null;
 }
 
@@ -85,7 +87,7 @@ export default function ImprimerEtiquettes() {
           @page { margin: 0; size: 58mm 43mm; } /* Format standard pour étiquettes */
         }
         @media screen {
-          .print-container { padding: 2rem; background: #f0f0f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+          .print-container { padding: 2rem; background: #f0f0f0; min-height: 100dvh; max-width: 100%; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
           .etiquette { border: 1px dashed #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         }
       `}} />
@@ -137,24 +139,42 @@ export default function ImprimerEtiquettes() {
       {etiquettes.map((etiquette, index) => (
         <div 
           key={`${etiquette.id}-${index}`} 
-          className="etiquette flex flex-col items-center justify-center bg-white w-[58mm] h-[43mm] overflow-hidden page-break p-1"
+          className="etiquette flex flex-col items-center justify-between bg-white w-[58mm] h-[43mm] overflow-hidden page-break p-1.5 text-center"
         >
-          <div className="text-[10px] font-bold text-center leading-tight mb-1 truncate w-full px-1">
-            {etiquette.reference || etiquette.code_interne}
+          <div className="w-full">
+            <div className="text-[10px] font-extrabold leading-tight truncate w-full px-1 text-slate-900">
+              {etiquette.reference || etiquette.code_interne}
+            </div>
+            {etiquette.grade && (
+              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+                {etiquette.grade}
+              </span>
+            )}
           </div>
+
           <Barcode 
             value={etiquette.code_interne} 
-            width={2} 
-            height={40} 
-            fontSize={12}
-            margin={10}
+            width={1.6} 
+            height={36} 
+            fontSize={11}
+            margin={4}
             displayValue={true}
           />
-          {etiquette.prix_vente !== null && etiquette.prix_vente !== undefined && (
-            <div className="text-[11px] font-extrabold mt-0.5">
-              {formaterDA(etiquette.prix_vente)}
-            </div>
-          )}
+
+          <div className="w-full flex items-center justify-between px-2 text-[10px] font-bold border-t border-slate-200 pt-0.5">
+            {etiquette.numero_serie ? (
+              <span className="font-mono text-[9px] text-slate-600 truncate max-w-[55%]">
+                S/N: {etiquette.numero_serie}
+              </span>
+            ) : (
+              <span className="text-[8px] text-slate-400">Maxy POS</span>
+            )}
+            {etiquette.prix_vente !== null && etiquette.prix_vente !== undefined && (
+              <span className="font-mono font-black text-slate-900 text-[11px]">
+                {formaterDA(etiquette.prix_vente)}
+              </span>
+            )}
+          </div>
         </div>
       ))}
     </div>

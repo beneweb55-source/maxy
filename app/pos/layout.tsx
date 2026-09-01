@@ -18,7 +18,7 @@ export default async function CaisseLayout({
   
   return (
     <FournisseurToasts>
-      <div className="min-h-screen bg-brand-light-grey/20 flex flex-col overflow-hidden text-brand-black">
+      <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-light-grey/20 flex flex-col text-brand-black">
         {children}
       </div>
     </FournisseurToasts>

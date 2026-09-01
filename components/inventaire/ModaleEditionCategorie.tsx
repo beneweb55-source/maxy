@@ -1,7 +1,12 @@
 import { useState, useRef } from "react";
 import Modale from "@/components/Modale";
 import { IconeEnregistrer, IconeImage, IconeCrayon } from "@/components/icons";
-import type { CategorieInfo } from "./VueCategorie";
+export interface CategorieInfo {
+  id?: number;
+  nom?: string;
+  description: string | null;
+  image_url: string | null;
+}
 
 export default function ModaleEditionCategorie({
   nomCategorie,
@@ -61,7 +66,7 @@ export default function ModaleEditionCategorie({
         payloadImageUrl = previewUrl;
       }
 
-      const res = await fetch(`/api/categories/${encodeURIComponent(nomCategorie)}`, {
+      const res = await fetch(`/api/categories/info/${encodeURIComponent(nomCategorie)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
         id: true,
         code_interne: true,
         reference: true,
+        numero_serie: true,
+        grade: true,
         prix_vente_fixe: true,
         prix_vente_reel: true,
         statut: true
@@ -31,6 +33,8 @@ export async function GET(request: NextRequest) {
       id: p.id,
       code_interne: p.code_interne,
       reference: p.reference,
+      numero_serie: p.numero_serie,
+      grade: p.grade,
       prix_vente: p.statut === 'vendu' ? p.prix_vente_reel : p.prix_vente_fixe
     }));
 

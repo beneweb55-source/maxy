@@ -18,6 +18,8 @@ import { useLangue } from "@/lib/i18n/contexte";
 import GarantieCertificat from "@/components/factures/GarantieCertificat";
 import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
+import { Download } from "lucide-react";
+import { genererFacturePdf } from "@/lib/facture-pdf";
 
 interface LigneFactureDto {
   id: number;
@@ -213,7 +215,7 @@ export default function FactureDetail({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-screen p-4 sm:p-6 rounded-2xl">
+    <div className="mx-auto max-w-3xl w-full space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-[100dvh] p-4 sm:p-6 rounded-2xl">
       {/* Barre d'actions — masquée à l'impression */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50 print:hidden">
         <a
@@ -249,6 +251,43 @@ export default function FactureDetail({
             <IconeBouclier taille={15} />
             Créer garantie
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!facture) return;
+              genererFacturePdf({
+                numero: facture.numero,
+                date: facture.date_emission,
+                vendeur: facture.vendeur,
+                type_paiement: facture.mode_paiement,
+                garantie_mois: 6,
+                client: {
+                  nom: facture.client_nom,
+                  telephone: facture.client_tel,
+                  adresse: facture.client_adresse,
+                  rc: facture.client_rc,
+                  nif: facture.client_nif,
+                  nis: facture.client_nis,
+                  ai: facture.client_ai,
+                },
+                lignes: (facture.lignes || []).map((l) => ({
+                  code_interne: l.code_interne,
+                  designation: l.designation,
+                  quantite: 1,
+                  prix_unitaire: l.prix,
+                  total_ligne: l.prix,
+                })),
+                total_ttc: facture.total,
+              });
+              afficher("Téléchargement du PDF de facture lancé.", "succes");
+            }}
+            className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold"
+            title="Télécharger la Facture (PDF)"
+          >
+            <Download className="w-4 h-4" />
+            <span>Télécharger la Facture (PDF)</span>
+          </button>
+
           <button type="button" onClick={() => window.print()} className="btn btn-primaire">
             <IconeImprimante taille={15} />
             Imprimer
@@ -411,7 +450,7 @@ export default function FactureDetail({
         </div>
 
         {/* Informations du client */}
-        <div className="mb-6 w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
+        <div className="mb-6 w-full sm:w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
           <p className="mb-2"><span className="font-bold">{t("factures.doit")}</span> {facture.client_nom || "Particulier"}</p>
           <p><span className="font-bold">Adresse:</span> {facture.client_adresse || ""}</p>
           <p><span className="font-bold">RC:</span> {facture.client_rc || ""}</p>
@@ -421,8 +460,8 @@ export default function FactureDetail({
         </div>
 
         {/* Tableau des articles */}
-        <div className="mb-6">
-          <table className="w-full border-collapse border border-black text-xs text-center">
+        <div className="mb-6 w-full overflow-x-auto">
+          <table className="w-full min-w-[500px] border-collapse border border-black text-xs text-center">
             <thead>
               <tr className="bg-[#d1d5db]">
                 <th className="border border-black py-1.5 px-2 font-bold w-12">Art N°</th>

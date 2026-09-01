@@ -60,7 +60,7 @@ export function CarnetFiltres({ utilisateurs }: { utilisateurs: { id: number, us
         <input 
           type="text"
           placeholder="Rechercher un rapport, un mot-clé..."
-          className="champ pl-9 w-full"
+          className="champ pl-9 w-full min-h-[48px] text-base"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -68,7 +68,7 @@ export function CarnetFiltres({ utilisateurs }: { utilisateurs: { id: number, us
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <select 
-          className="champ py-2 text-sm cursor-pointer"
+          className="champ min-h-[48px] text-base cursor-pointer"
           value={auteur}
           onChange={(e) => setAuteur(e.target.value)}
         >
@@ -79,7 +79,7 @@ export function CarnetFiltres({ utilisateurs }: { utilisateurs: { id: number, us
         </select>
 
         <select 
-          className="champ py-2 text-sm cursor-pointer capitalize"
+          className="champ min-h-[48px] text-base cursor-pointer capitalize"
           value={categorie}
           onChange={(e) => setCategorie(e.target.value)}
         >
@@ -90,7 +90,7 @@ export function CarnetFiltres({ utilisateurs }: { utilisateurs: { id: number, us
         </select>
 
         <select 
-          className="champ py-2 text-sm cursor-pointer"
+          className="champ min-h-[48px] text-base cursor-pointer"
           value={periode}
           onChange={(e) => setPeriode(e.target.value)}
         >
@@ -111,7 +111,7 @@ export function CarnetFiltres({ utilisateurs }: { utilisateurs: { id: number, us
               setCategorie("");
               setPeriode("");
             }}
-            className="text-xs font-medium text-brand-grey hover:text-brand-orange transition-colors"
+            className="min-h-[40px] px-3 py-1.5 text-xs font-bold text-brand-grey hover:text-brand-orange transition-colors flex items-center"
           >
             Réinitialiser
           </button>

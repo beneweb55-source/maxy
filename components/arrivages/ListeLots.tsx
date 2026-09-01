@@ -11,6 +11,7 @@ import { INFOS_STATUT_LOT } from "@/lib/statuts";
 import { formaterDA } from "@/lib/caisse";
 import { useLangue } from "@/lib/i18n/contexte";
 import { IconeCorbeille, IconeCrayon, IconePlus } from "@/components/icons";
+import { UploadCloud } from "lucide-react";
 
 interface LigneLot {
   id: number;
@@ -200,10 +201,19 @@ export default function ListeLots({ role }: { role: Role }) {
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">{t("listeLots.titre")}</h1>
         {(role === "gerant" || role === "technicien") && (
-          <Link href="/arrivages/nouveau" className="btn btn-primaire">
-            <IconePlus taille={15} />
-            {t("listeLots.nouveauLot")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/inventaire?import=1"
+              className="btn bg-brand-orange/15 hover:bg-brand-orange/25 text-brand-orange border border-brand-orange/30 font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-1.5"
+            >
+              <UploadCloud className="w-4 h-4 text-brand-orange" />
+              <span>Import Excel / CSV</span>
+            </Link>
+            <Link href="/arrivages/nouveau" className="btn btn-primaire">
+              <IconePlus taille={15} />
+              {t("listeLots.nouveauLot")}
+            </Link>
+          </div>
         )}
       </div>
 

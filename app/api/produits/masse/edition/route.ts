@@ -101,6 +101,11 @@ export async function PUT(request: NextRequest) {
       donnees.a_jeter = a_jeter;
     }
 
+    if ((corps as any).categorie_id) donnees.categorie_id = Number((corps as any).categorie_id);
+    if ((corps as any).modele_id) donnees.modele_id = Number((corps as any).modele_id);
+    if ((corps as any).grade) donnees.grade = String((corps as any).grade);
+    if ((corps as any).emplacement) donnees.emplacement = String((corps as any).emplacement);
+
     let modifPrixVente = false;
     if (prix_vente_fixe !== undefined) {
       if (prix_vente_fixe === null || prix_vente_fixe === "") {

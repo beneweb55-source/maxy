@@ -1,18 +1,172 @@
 import { useEffect, useState } from "react";
-import { IconePlus, IconeRecherche, IconeArchive, IconeCocheCercle, IconePanier, IconeImage, IconeAlerte, IconeEtiquette, IconeCle, IconeMinuteur } from "@/components/icons";
+import { 
+  IconePlus, 
+  IconeRecherche, 
+  IconeArchive, 
+  IconeCocheCercle, 
+  IconePanier, 
+  IconeImage, 
+  IconeAlerte, 
+  IconeEtiquette, 
+  IconeCle, 
+  IconeMinuteur,
+  IconeChevronDroite,
+  IconeChevronBas,
+  IconeTableauDeBord
+} from "@/components/icons";
 import { useT } from "@/lib/i18n/contexte";
 
-interface StatsData {
-  summary: { total: number; disponibles: number; en_vente: number; };
-  actions: { sans_prix: number; a_tester: number; a_reparer: number; sans_photo: number; sans_etiquette: number; };
-  categories: { name: string; total: number; disponibles: number; image: string | null }[];
+export interface SousCategorieItem {
+  id: number;
+  nom: string;
+  total: number;
+  modelesCount: number;
+  image_url: string | null;
 }
 
-export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<string, string | null>) => void, q?: string }) {
+export interface CategorieItem {
+  id: number;
+  nom: string;
+  total: number;
+  modelesCount: number;
+  image_url: string | null;
+  sousCategories: SousCategorieItem[];
+}
+
+export interface FamilleArbo {
+  id: number;
+  nom: string;
+  description: string | null;
+  image_url: string | null;
+  total: number;
+  modelesCount: number;
+  categories: CategorieItem[];
+}
+
+interface StatsData {
+  summary: { total: number; disponibles: number; en_vente: number };
+  actions: { 
+    sans_prix: number; 
+    a_tester: number; 
+    a_reparer: number; 
+    sans_photo: number; 
+    sans_etiquette: number; 
+  };
+  categories: { name: string; total: number; disponibles: number; image: string | null }[];
+  familles?: FamilleArbo[];
+}
+
+import { 
+  Laptop, 
+  HardDrive, 
+  Server, 
+  Zap, 
+  Cpu, 
+  Printer, 
+  Monitor, 
+  CircuitBoard, 
+  Globe, 
+  Package, 
+  Archive, 
+  CheckCircle2, 
+  ShoppingCart, 
+  AlertTriangle, 
+  Clock, 
+  Wrench, 
+  Image as ImageIcon, 
+  Tag, 
+  ChevronRight 
+} from "lucide-react";
+
+// Thèmes visuels épurés pour les 9 Grandes Familles (Palette POS tactile moderne)
+const FAMILLE_THEMES: Record<string, { bgSoft: string; iconBg: string; IconComponent: React.ComponentType<{ className?: string }>; textAccent: string; badgeBg: string }> = {
+  "ORDINATEURS": {
+    bgSoft: "hover:border-blue-400/80 dark:hover:border-blue-500/80",
+    iconBg: "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
+    IconComponent: Laptop,
+    textAccent: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+    badgeBg: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+  },
+  "STOCKAGE": {
+    bgSoft: "hover:border-cyan-400/80 dark:hover:border-cyan-500/80",
+    iconBg: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/15 dark:text-cyan-300",
+    IconComponent: HardDrive,
+    textAccent: "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
+    badgeBg: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300",
+  },
+  "SERVEURS & BAIES": {
+    bgSoft: "hover:border-purple-400/80 dark:hover:border-purple-500/80",
+    iconBg: "bg-purple-500/10 text-purple-600 dark:bg-purple-400/15 dark:text-purple-300",
+    IconComponent: Server,
+    textAccent: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
+    badgeBg: "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300",
+  },
+  "ÉLECTRICITÉ & CONNECTIQUE": {
+    bgSoft: "hover:border-amber-400/80 dark:hover:border-amber-500/80",
+    iconBg: "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
+    IconComponent: Zap,
+    textAccent: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+    badgeBg: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
+  },
+  "MÉMOIRE & PROCESSEURS": {
+    bgSoft: "hover:border-emerald-400/80 dark:hover:border-emerald-500/80",
+    iconBg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
+    IconComponent: Cpu,
+    textAccent: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
+    badgeBg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+  },
+  "IMPRESSION & CONSOMMABLES": {
+    bgSoft: "hover:border-rose-400/80 dark:hover:border-rose-500/80",
+    iconBg: "bg-rose-500/10 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300",
+    IconComponent: Printer,
+    textAccent: "group-hover:text-rose-600 dark:group-hover:text-rose-400",
+    badgeBg: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
+  },
+  "ÉCRANS & PÉRIPHÉRIQUES": {
+    bgSoft: "hover:border-sky-400/80 dark:hover:border-sky-500/80",
+    iconBg: "bg-sky-500/10 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
+    IconComponent: Monitor,
+    textAccent: "group-hover:text-sky-600 dark:group-hover:text-sky-400",
+    badgeBg: "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
+  },
+  "COMPOSANTS & CARTES D'EXTENSION": {
+    bgSoft: "hover:border-violet-400/80 dark:hover:border-violet-500/80",
+    iconBg: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
+    IconComponent: CircuitBoard,
+    textAccent: "group-hover:text-violet-600 dark:group-hover:text-violet-400",
+    badgeBg: "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
+  },
+  "RÉSEAU ACTIF & COMMUTATION": {
+    bgSoft: "hover:border-teal-400/80 dark:hover:border-teal-500/80",
+    iconBg: "bg-teal-500/10 text-teal-600 dark:bg-teal-400/15 dark:text-teal-300",
+    IconComponent: Globe,
+    textAccent: "group-hover:text-teal-600 dark:group-hover:text-teal-400",
+    badgeBg: "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300",
+  },
+};
+
+const THEME_DEFAUT = {
+  bgSoft: "hover:border-slate-400",
+  iconBg: "bg-slate-500/10 text-slate-700 dark:bg-slate-400/15 dark:text-slate-200",
+  IconComponent: Package,
+  textAccent: "group-hover:text-brand-orange",
+  badgeBg: "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
+};
+
+export default function Cockpit({ 
+  majUrl, 
+  q = "", 
+  afficherFamilles, 
+  setAfficherFamilles 
+}: { 
+  majUrl: (modifs: Record<string, string | null>) => void; 
+  q?: string;
+  afficherFamilles: boolean;
+  setAfficherFamilles: (val: boolean) => void;
+}) {
   const t = useT();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [erreur, setErreur] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,17 +176,23 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
     setLoading(true);
     setErreur(null);
     
-    fetch("/api/produits/stats", { signal })
-      .then(async r => {
+    const params = new URLSearchParams();
+    if (q?.trim()) {
+      params.set("q", q.trim());
+    }
+    const url = params.toString() ? `/api/produits/stats?${params.toString()}` : "/api/produits/stats";
+    
+    fetch(url, { signal })
+      .then(async (r) => {
         if (!r.ok) throw new Error("Erreur de chargement des statistiques");
         return r.json();
       })
-      .then(d => {
+      .then((d) => {
         if (signal.aborted) return;
         setStats(d);
         setLoading(false);
       })
-      .catch(e => {
+      .catch((e) => {
         if (e.name === "AbortError") return;
         console.error(e);
         setErreur(e.message || "Erreur réseau");
@@ -40,20 +200,21 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
       });
 
     return () => controller.abort();
-  }, []);
+  }, [q]);
 
   if (loading) {
     return (
       <div className="space-y-8 animate-pulse p-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-          <div className="h-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
-          <div className="h-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
-          <div className="h-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-28 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-28 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-28 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
         </div>
-        <div className="h-6 w-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-md mt-10 mb-4"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
-          <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+        <div className="h-6 w-32 bg-brand-light-grey/30 dark:bg-white/5 rounded-md mt-8 mb-4"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
         </div>
       </div>
     );
@@ -73,250 +234,273 @@ export default function Cockpit({ majUrl, q = "" }: { majUrl: (modifs: Record<st
 
   if (!stats) return null;
 
-  const categoriesAffichees = q.trim() 
-    ? stats.categories.filter(c => c.name.toLowerCase().includes(q.toLowerCase()))
-    : stats.categories;
+  // Filtrer les familles (masquage dynamique des nœuds à 0 ou filtrage par recherche)
+  const famillesAffichees = (stats.familles || []).filter((f) => {
+    if (f.total <= 0) return false;
+    if (!q.trim()) return true;
+    const qLower = q.toLowerCase();
+    return (
+      f.nom.toLowerCase().includes(qLower) ||
+      f.categories.some(
+        (c) =>
+          c.nom.toLowerCase().includes(qLower) ||
+          c.sousCategories.some((sc) => sc.nom.toLowerCase().includes(qLower))
+      )
+    );
+  });
 
   return (
-    <div className="space-y-10 animate-entree pb-8">
-      {/* Résumé */}
+    <div className="space-y-8 animate-entree pb-8">
+      {/* 1. Résumé Global du Stock (KPIs) */}
       <div>
-        <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Aperçu du stock</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <h2 className="text-lg font-bold text-brand-black dark:text-white mb-3 font-outfit">
+          Aperçu du stock
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div 
-            className="carte relative overflow-hidden group cursor-pointer bg-gradient-to-br from-brand-black to-brand-smooth dark:from-brand-white dark:to-brand-paper border-0 !p-5"
-            onClick={() => majUrl({ vue: "tableau", statuts: null })}
+            className="carte relative overflow-hidden group cursor-pointer bg-brand-black text-white dark:bg-brand-paper dark:text-white border border-brand-light-grey/30 dark:border-white/10 !p-5 rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-[0.99]"
+            onClick={() => majUrl({ vue: "tableau", statuts: null, famille_id: null, categorie_id: null, sous_categorie_id: null })}
           >
-            <div className="absolute -right-4 -top-4 text-white/5 dark:text-brand-light-grey/20 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-              <IconeArchive taille={100} />
-            </div>
-            <div className="relative z-10 flex flex-col h-full justify-between gap-3">
-              <div className="flex items-center gap-3 text-brand-grey dark:text-brand-grey">
-                <IconeArchive taille={20} className="text-white/70 dark:text-white/50" />
-                <span className="text-sm font-semibold tracking-wide uppercase text-white/90 dark:text-brand-warm-grey">Produits au total</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-brand-grey dark:text-brand-warm-grey mb-1">
+                  Stock Total
+                </div>
+                <div className="text-3xl sm:text-4xl font-extrabold font-outfit">
+                  {stats.summary.total}
+                </div>
               </div>
-              <div className="text-4xl font-extrabold text-white dark:text-white font-outfit">{stats.summary.total}</div>
+              <div className="w-12 h-12 rounded-xl bg-white/10 dark:bg-white/5 flex items-center justify-center text-white/80">
+                <IconeArchive taille={24} />
+              </div>
+            </div>
+            <div className="text-[11px] text-white/60 dark:text-white/40 mt-3 flex items-center gap-1 font-medium">
+              <span>Articles physiques en rayon & réserve</span>
             </div>
           </div>
 
           <div 
-            className="carte relative overflow-hidden group cursor-pointer border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-brand-paper dark:border-emerald-900/50 !p-5"
-            onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu" })}
+            className="carte relative overflow-hidden group cursor-pointer border border-emerald-300/60 bg-emerald-50/60 dark:bg-brand-paper dark:border-emerald-500/30 !p-5 rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-[0.99]"
+            onClick={() => majUrl({ vue: "tableau", statuts: "ok,recu,en_test,en_vente", famille_id: null, categorie_id: null, sous_categorie_id: null })}
           >
-            <div className="absolute -right-4 -top-4 text-emerald-500/5 dark:text-emerald-500/10 transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">
-              <IconeCocheCercle taille={100} />
-            </div>
-            <div className="relative z-10 flex flex-col h-full justify-between gap-3">
-              <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-500">
-                <IconeCocheCercle taille={20} />
-                <span className="text-sm font-semibold tracking-wide uppercase">Disponibles</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1">
+                  Disponibles
+                </div>
+                <div className="text-3xl sm:text-4xl font-extrabold text-emerald-800 dark:text-emerald-400 font-outfit">
+                  {stats.summary.disponibles}
+                </div>
               </div>
-              <div className="text-4xl font-extrabold text-emerald-900 dark:text-emerald-400 font-outfit">{stats.summary.disponibles}</div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <IconeCocheCercle taille={24} />
+              </div>
+            </div>
+            <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/70 mt-3 flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Prêts pour la vente comptoir</span>
             </div>
           </div>
 
           <div 
-            className="carte relative overflow-hidden group cursor-pointer border border-brand-light-orange bg-gradient-to-br from-brand-glow to-white dark:from-brand-orange/20 dark:to-brand-paper dark:border-brand-orange/30 !p-5"
-            onClick={() => majUrl({ vue: "tableau", statuts: "en_vente" })}
+            className="carte relative overflow-hidden group cursor-pointer border border-brand-orange/30 bg-orange-50/40 dark:bg-brand-paper dark:border-brand-orange/30 !p-5 rounded-2xl transition-all duration-200 hover:shadow-lg active:scale-[0.99]"
+            onClick={() => majUrl({ vue: "tableau", statuts: "en_vente", famille_id: null, categorie_id: null, sous_categorie_id: null })}
           >
-            <div className="absolute -right-4 -top-4 text-brand-orange/5 dark:text-brand-orange/10 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-              <IconePanier taille={100} />
-            </div>
-            <div className="relative z-10 flex flex-col h-full justify-between gap-3">
-              <div className="flex items-center gap-3 text-brand-orange">
-                <IconePanier taille={20} />
-                <span className="text-sm font-semibold tracking-wide uppercase">En vente</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-brand-orange mb-1">
+                  En Vente / Vitrine
+                </div>
+                <div className="text-3xl sm:text-4xl font-extrabold text-brand-orange font-outfit">
+                  {stats.summary.en_vente}
+                </div>
               </div>
-              <div className="text-4xl font-extrabold text-brand-orange dark:text-brand-light-orange font-outfit">{stats.summary.en_vente}</div>
+              <div className="w-12 h-12 rounded-xl bg-brand-orange/15 text-brand-orange flex items-center justify-center">
+                <IconePanier taille={24} />
+              </div>
+            </div>
+            <div className="text-[11px] text-brand-orange/80 mt-3 flex items-center gap-1 font-medium">
+              <span>Articles exposés au public</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Actions à traiter */}
+      {/* 2. Actions Prioritaires à Traiter */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xl font-bold text-brand-black dark:text-white font-outfit">À traiter</h2>
-          {Object.values(stats.actions).some(v => v > 0) && (
-            <span className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded-full">
-              Priorité
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-lg font-bold text-brand-black dark:text-white font-outfit">
+            À traiter en priorité
+          </h2>
+          {Object.values(stats.actions).some((v) => v > 0) && (
+            <span className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 text-[11px] font-bold px-2 py-0.5 rounded-full">
+              Action requise
             </span>
           )}
         </div>
         
-        <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {stats.actions.sans_prix > 0 && (
-            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-red-200 dark:border-red-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
-              <div className="mb-6">
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
-                  <IconeAlerte taille={18} />
-                  <span className="font-bold">Sans prix</span>
-                </div>
-                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.sans_prix}</div>
-                <div className="text-sm text-brand-warm-grey">Produits à tarifer</div>
+            <button 
+              type="button"
+              onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
+              className="carte group border border-red-200 dark:border-red-900/40 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                  <IconeAlerte taille={16} /> Sans prix
+                </span>
+                <span className="text-lg font-black text-brand-black dark:text-white font-outfit">
+                  {stats.actions.sans_prix}
+                </span>
               </div>
-              <button 
-                onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-800/50 shadow-none"
-              >
-                Traiter
-              </button>
-            </div>
+              <div className="text-[11px] text-brand-warm-grey mt-2">Tarifs à fixer ›</div>
+            </button>
           )}
           
           {stats.actions.a_tester > 0 && (
-            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-              <div className="mb-6">
-                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-2">
-                  <IconeMinuteur taille={18} />
-                  <span className="font-bold">À tester</span>
-                </div>
-                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.a_tester}</div>
-                <div className="text-sm text-brand-warm-grey">En attente de test</div>
+            <button 
+              type="button"
+              onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
+              className="carte group border border-amber-200 dark:border-amber-900/40 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <IconeMinuteur taille={16} /> À tester
+                </span>
+                <span className="text-lg font-black text-brand-black dark:text-white font-outfit">
+                  {stats.actions.a_tester}
+                </span>
               </div>
-              <button 
-                onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 shadow-none"
-              >
-                Traiter
-              </button>
-            </div>
+              <div className="text-[11px] text-brand-warm-grey mt-2">Banc d'essai ›</div>
+            </button>
           )}
           
           {stats.actions.a_reparer > 0 && (
-            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-orange-200 dark:border-orange-900/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
-              <div className="mb-6">
-                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 mb-2">
-                  <IconeCle taille={18} />
-                  <span className="font-bold">À réparer</span>
-                </div>
-                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.a_reparer}</div>
-                <div className="text-sm text-brand-warm-grey">Produits en panne</div>
+            <button 
+              type="button"
+              onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
+              className="carte group border border-orange-200 dark:border-orange-900/40 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-xs font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1.5">
+                  <IconeCle taille={16} /> À réparer
+                </span>
+                <span className="text-lg font-black text-brand-black dark:text-white font-outfit">
+                  {stats.actions.a_reparer}
+                </span>
               </div>
-              <button 
-                onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn bg-orange-50 hover:bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 dark:text-orange-300 border border-orange-200 dark:border-orange-800/50 shadow-none"
-              >
-                Traiter
-              </button>
-            </div>
+              <div className="text-[11px] text-brand-warm-grey mt-2">Maintenance ›</div>
+            </button>
           )}
           
           {stats.actions.sans_photo > 0 && (
-            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-slate-200 dark:border-slate-800/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-slate-400"></div>
-              <div className="mb-6">
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mb-2">
-                  <IconeImage taille={18} />
-                  <span className="font-bold">Sans photo</span>
-                </div>
-                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.sans_photo}</div>
-                <div className="text-sm text-brand-warm-grey">Pour la vitrine</div>
+            <button 
+              type="button"
+              onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
+              className="carte group border border-slate-200 dark:border-slate-800 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                  <IconeImage taille={16} /> Sans photo
+                </span>
+                <span className="text-lg font-black text-brand-black dark:text-white font-outfit">
+                  {stats.actions.sans_photo}
+                </span>
               </div>
-              <button 
-                onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
-                className="w-full btn bg-slate-50 hover:bg-slate-100 text-slate-700 dark:bg-slate-800/30 dark:hover:bg-slate-800/50 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 shadow-none"
-              >
-                Traiter
-              </button>
-            </div>
+              <div className="text-[11px] text-brand-warm-grey mt-2">Pour vitrine ›</div>
+            </button>
           )}
           
           {stats.actions.sans_etiquette > 0 && (
-            <div className="min-w-[240px] sm:min-w-0 snap-center shrink-0 carte group border border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-brand-paper !p-5 flex flex-col justify-between h-full relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-zinc-400"></div>
-              <div className="mb-6">
-                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 mb-2">
-                  <IconeEtiquette taille={18} />
-                  <span className="font-bold">À étiqueter</span>
-                </div>
-                <div className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-1">{stats.actions.sans_etiquette}</div>
-                <div className="text-sm text-brand-warm-grey">Non confirmés</div>
+            <button 
+              type="button"
+              onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
+              className="carte group border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                  <IconeEtiquette taille={16} /> À étiqueter
+                </span>
+                <span className="text-lg font-black text-brand-black dark:text-white font-outfit">
+                  {stats.actions.sans_etiquette}
+                </span>
               </div>
-              <button 
-                onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
-                className="w-full btn bg-zinc-50 hover:bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30 dark:hover:bg-zinc-800/50 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/50 shadow-none"
-              >
-                Traiter
-              </button>
-            </div>
+              <div className="text-[11px] text-brand-warm-grey mt-2">Code-barres ›</div>
+            </button>
           )}
         </div>
-        
-        {Object.values(stats.actions).every(v => v === 0) && (
-          <div className="flex flex-col items-center justify-center p-12 text-emerald-600 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/10 dark:border-emerald-800/30 rounded-2xl font-medium shadow-sm">
-            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mb-4">
-              <IconeCocheCercle taille={32} />
-            </div>
-            <div className="text-xl font-bold font-outfit mb-1 text-brand-black dark:text-white">Tout est à jour !</div>
-            <div className="text-sm text-emerald-700 dark:text-emerald-500">Aucun produit ne nécessite d'action urgente.</div>
-          </div>
-        )}
       </div>
 
-      {/* Explorer */}
+      {/* 3. Navigation POS Tactile — 9 Grandes Familles (Niveau 1) */}
       <div>
-        <h2 className="text-xl font-bold text-brand-black dark:text-white mb-4 font-outfit">Explorer par catégorie</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-brand-black dark:text-white font-outfit">
+              Catalogue par Grandes Familles
+            </h2>
+            <p className="text-xs text-brand-warm-grey mt-0.5">
+              Sélectionnez une famille pour explorer ses catégories et modèles
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => majUrl({ vue: "tableau", famille_id: null, categorie_id: null, sous_categorie_id: null })}
+            className="btn btn-secondaire text-xs py-1.5 px-3 rounded-lg font-semibold bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 shadow-xs hover:text-brand-orange"
+          >
+            Voir tout l'inventaire ({stats.summary.total})
+          </button>
+        </div>
         
-        {categoriesAffichees.length === 0 && q ? (
-          <div className="text-sm text-brand-warm-grey p-4 text-center border border-dashed border-brand-light-grey dark:border-white/10 rounded-2xl">
-            Aucune catégorie ne correspond à "{q}"
+        {famillesAffichees.length === 0 && q ? (
+          <div className="text-sm text-brand-warm-grey p-8 text-center border border-dashed border-brand-light-grey dark:border-white/10 rounded-2xl bg-white/40 dark:bg-white/5">
+            Aucune famille ne correspond à votre recherche « {q} »
           </div>
         ) : (
-          <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4 sm:pb-0 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-            {categoriesAffichees.map((cat, i) => {
-              // Un petit tableau de couleurs pour les fallbacks (sans image)
-              const fallbackColors = [
-              "from-blue-500/80 to-blue-700/90 dark:from-blue-900/60 dark:to-blue-950/80",
-              "from-emerald-500/80 to-emerald-700/90 dark:from-emerald-900/60 dark:to-emerald-950/80",
-              "from-violet-500/80 to-violet-700/90 dark:from-violet-900/60 dark:to-violet-950/80",
-              "from-amber-500/80 to-amber-700/90 dark:from-amber-900/60 dark:to-amber-950/80",
-              "from-rose-500/80 to-rose-700/90 dark:from-rose-900/60 dark:to-rose-950/80"
-            ];
-            const colorClass = fallbackColors[i % fallbackColors.length];
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {famillesAffichees.map((famille) => {
+              const theme = FAMILLE_THEMES[famille.nom] || THEME_DEFAUT;
+              const nonZeroCategories = famille.categories.filter(c => c.total > 0);
 
-            return (
-              <button
-                key={cat.name}
-                onClick={() => majUrl({ vue: "categorie", categorie: cat.name })}
-                className="min-w-[160px] sm:min-w-0 snap-center shrink-0 carte group relative overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 hover:border-brand-orange/50 hover:shadow-xl transition-all text-left flex flex-col rounded-2xl"
-              >
-                <div className={`h-28 w-full relative overflow-hidden ${cat.image ? 'bg-brand-black' : 'bg-gradient-to-br ' + colorClass}`}>
-                  {cat.image && (
-                    <img src={cat.image} alt={cat.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out" />
-                  )}
-                  {/* Dégradé pour lisibilité du texte (toujours présent si image) */}
-                  {cat.image && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
-                  )}
-                  
-                  {/* Contenu textuel */}
-                  <div className="absolute inset-x-0 bottom-0 p-4 text-white flex flex-col justify-end">
-                    <div className="font-extrabold text-base sm:text-lg font-outfit leading-tight mb-2 drop-shadow-md group-hover:text-brand-orange transition-colors line-clamp-2">
-                      {cat.name}
+              return (
+                <div
+                  key={famille.id}
+                  onClick={() => majUrl({ vue: "famille", famille_id: String(famille.id), categorie_id: null, sous_categorie_id: null })}
+                  className={`carte group !p-5 border border-brand-light-grey/60 dark:border-white/10 bg-white dark:bg-brand-paper rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-[0.985] min-h-[140px] ${theme.bgSoft}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${theme.iconBg}`}>
+                        <theme.IconComponent className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className={`font-bold text-base sm:text-lg font-outfit text-brand-black dark:text-white leading-snug transition-colors ${theme.textAccent}`}>
+                          {famille.nom}
+                        </h3>
+                        <div className="text-xs text-brand-warm-grey mt-0.5">
+                          {nonZeroCategories.length} catégorie{nonZeroCategories.length > 1 ? "s" : ""} · {famille.modelesCount} modèle{famille.modelesCount > 1 ? "s" : ""}
+                        </div>
+                      </div>
                     </div>
-                    
-                    <div className="flex items-center gap-2 mt-auto">
-                      <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-white shadow-sm flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                        {cat.disponibles} <span className="opacity-70 font-medium">dispos</span>
-                      </div>
-                      
-                      <div className="bg-black/30 backdrop-blur-md px-2 py-1 rounded-md text-xs font-medium text-white/80 shadow-sm ml-auto">
-                        {cat.total} <span className="opacity-70 text-[10px] uppercase">total</span>
-                      </div>
+
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold ${theme.badgeBg}`}>
+                      {famille.total}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-brand-light-grey/40 dark:border-white/5 flex items-center justify-between text-xs text-brand-warm-grey group-hover:text-brand-black dark:group-hover:text-white transition-colors font-medium">
+                    <span>Explorer les catégories</span>
+                    <div className="w-6 h-6 rounded-full bg-brand-light-grey/30 dark:bg-white/5 flex items-center justify-center group-hover:bg-brand-orange group-hover:text-white transition-colors">
+                      <IconeChevronDroite taille={14} />
                     </div>
                   </div>
                 </div>
-              </button>
-            );
-          })}
+              );
+            })}
           </div>
         )}
       </div>
     </div>
   );
 }
+

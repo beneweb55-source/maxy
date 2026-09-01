@@ -347,26 +347,20 @@ export default function CaisseDashboard({ role }: { role: Role }) {
       {estGerant && (
         <section className="carte">
           <h2 className="libelle text-brand-smooth">{t("caisseDashboard.nouveauMouvementManuel")}</h2>
-          <div className="mt-3 flex flex-wrap items-end gap-3">
+          <div className="mt-3 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
             <div>
               <label className="libelle mb-1.5" htmlFor="type-mvt">
-                Type
+                Type de mouvement
               </label>
               <select
                 id="type-mvt"
                 value={typeMouvement}
                 onChange={(e) => setTypeMouvement(e.target.value as TypeMouvement)}
-                className="champ w-auto"
+                className="champ w-full sm:w-auto"
               >
-                {TYPES_MANUELS.map((t_m) => (
-                  <option key={t_m} value={t_m}>
-                    {t(LIBELLES_TYPE[t_m])} (
-                    {sensMouvement(t_m) === "entree"
-                      ? "entrée"
-                      : sensMouvement(t_m) === "sortie"
-                        ? "sortie"
-                        : "neutre"}
-                    )
+                {TYPES_MANUELS.map((typeMvt) => (
+                  <option key={typeMvt} value={typeMvt}>
+                    {t(LIBELLES_TYPE[typeMvt])}
                   </option>
                 ))}
               </select>
@@ -382,10 +376,10 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                 step={1}
                 value={montant}
                 onChange={(e) => setMontant(e.target.value)}
-                className="champ w-36"
+                className="champ w-full sm:w-36"
               />
             </div>
-            <div className="min-w-48 flex-1">
+            <div className="min-w-0 sm:min-w-48 flex-1">
               <label className="libelle mb-1.5" htmlFor="desc-mvt">
                 Description
               </label>
@@ -449,9 +443,11 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                       </span>
                     </div>
                   </div>
-                  <div className="text-brand-warm-grey">{m.description ?? "—"}</div>
+                  {m.description && (
+                    <p className="text-xs text-brand-smooth break-words">{m.description}</p>
+                  )}
                   <div className="flex justify-between items-center mt-1 pt-2 border-t border-brand-light-grey/50">
-                    <span className="text-xs text-brand-grey">Par: <span className="font-semibold text-brand-black">{m.par}</span></span>
+                    <span className="text-xs text-brand-warm-grey">{t("caisseDashboard.par")}: {m.par}</span>
                     <span className="text-xs text-brand-grey">Solde: <span className="font-bold text-brand-black">{formaterDA(m.solde_apres)}</span></span>
                   </div>
                 </div>
@@ -460,7 +456,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           </div>
 
           {/* Vue Bureau: Tableau */}
-          <div className="hidden overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
+          <div className="hidden w-full overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-brand-light-grey/25">
                 <tr>

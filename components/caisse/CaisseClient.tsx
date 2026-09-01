@@ -8,6 +8,7 @@ import { rechercheTolérante } from "@/lib/recherche";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Role, StatutProduit } from "@prisma/client";
 import { INFOS_STATUT } from "@/lib/statuts";
+import { REGLES_MACHINE_ETATS } from "@/lib/state-machine";
 import Modale from "@/components/Modale";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
@@ -41,6 +42,8 @@ interface CarteEnVente {
   jours_en_vente: number;
   image_url: string | null;
   images: string[];
+  numero_serie?: string | null;
+  etiquette_imprimee?: boolean;
 }
 
 interface GroupeEnVente {
@@ -265,6 +268,8 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [especesRecues, setEspecesRecues] = useState("");
   const [avertissementBundle, setAvertissementBundle] = useState<string | null>(null);
   const [remiseBundle, setRemiseBundle] = useState("");
+  const [etiquetteVenteValidee, setEtiquetteVenteValidee] = useState(false);
+  const [etiquetteBundleValidee, setEtiquetteBundleValidee] = useState(false);
   const [impressionAuto, setImpressionAuto] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem("impressionAuto");
@@ -405,51 +410,105 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   const [lastScanCodeProcessed, setLastScanCodeProcessed] = useState<string | null>(null);
 
-  const gererScan = useCallback((code: string) => {
-    if (modalBundle || modalRetrait || modalVente || modalAnnulation) return;
-    if (!cartes) return;
-    const produit = cartes.find((c) => c.code_interne === code);
-    if (produit) {
-      const groupe = grouperDoublonsVente(cartes).find((g) => g.unites.some((u) => u.id === produit.id));
-      if (groupe) {
-        setSelection((prev) => {
-          const suivant = new Map(prev);
-          const s = suivant.get(groupe.cle) ? new Set(suivant.get(groupe.cle)) : new Set<number>();
-          if (!s.has(produit.id)) {
-            s.add(produit.id);
-            suivant.set(groupe.cle, s);
-            playBeep(true);
-            afficher(`Produit scanné : ${produit.reference}`);
-          } else {
-            // L'utilisateur a scanné EXACTEMENT le même code-barres physique.
-            // On bloque l'ajout automatique d'un autre exemplaire pour éviter les erreurs.
-            playBeep(false);
-            afficher("Cet exemplaire a déjà été ajouté à la vente.", "erreur");
-          }
-          return suivant;
-        });
+  // Modal d'Action Rapide : Auto-Correction / Override POS
+  const [modalOverride, setModalOverride] = useState<{
+    produit: any;
+    statutActuel: string;
+    prix: number;
+  } | null>(null);
+  const [prixOverride, setPrixOverride] = useState("");
+  const [envoiOverride, setEnvoiOverride] = useState(false);
+
+  const validerOverride = async () => {
+    if (!modalOverride) return;
+    setEnvoiOverride(true);
+    try {
+      const res = await fetch("/api/scan/override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          produit_id: modalOverride.produit.id,
+          prix_vente_fixe: Number(prixOverride) || 0,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors du forçage de mise en vente");
       }
-    } else {
-      // Le produit n'est pas "en_vente" (ou n'existe pas du tout).
-      // On interroge l'API pour donner la raison précise.
-      fetch(`/api/produits?q=${code}&statuts=recu,en_test,ok,a_reparer,manque_piece,hs,en_vente,vendu`)
-        .then(res => res.json())
-        .then((data: any) => {
-          const p = data.produits?.find((prod: any) => prod.code_interne === code);
-          if (p) {
-            playBeep(false);
-            afficher(`Le produit ${code} ne peut pas être ajouté car il est ${INFOS_STATUT[p.statut as StatutProduit]?.libelle.toLowerCase() || p.statut}.`, "erreur");
-          } else {
-            playBeep(false);
-            afficher(`Code non reconnu : ${code}`, "erreur");
-          }
-        })
-        .catch(() => {
-          playBeep(false);
-          afficher(`Code non reconnu ou produit indisponible : ${code}`, "erreur");
-        });
+      afficher(data.message || "Article forcé en vente avec succès", "succes");
+      setModalOverride(null);
+      // Recharger le catalogue pour inclure le produit
+      await chargerCartes();
+      // Ajouter au panier
+      const prod = data.produit;
+      const cle = `${prod.reference.toLowerCase().trim()}|${prod.categorie.toLowerCase().trim()}`;
+      setSelection((prev) => {
+        const suivant = new Map(prev);
+        const s = suivant.get(cle) ? new Set(suivant.get(cle)) : new Set<number>();
+        s.add(prod.id);
+        suivant.set(cle, s);
+        return suivant;
+      });
+      playBeep(true);
+    } catch (err: any) {
+      playBeep(false);
+      afficher(err.message || "Erreur de forçage", "erreur");
+    } finally {
+      setEnvoiOverride(false);
     }
-  }, [cartes, afficher, modalBundle, modalRetrait, modalVente, modalAnnulation]);
+  };
+
+  const gererScan = useCallback(async (code: string) => {
+    if (modalBundle || modalRetrait || modalVente || modalAnnulation || modalOverride) return;
+    try {
+      const res = await fetch(`/api/scan?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        playBeep(false);
+        afficher(data.error || `Code non reconnu ou indisponible : ${code}`, "erreur");
+        return;
+      }
+
+      if (data.requiresOverride) {
+        playBeep(false);
+        setModalOverride({
+          produit: data.produit,
+          statutActuel: data.statutActuel,
+          prix: data.prix || 0,
+        });
+        setPrixOverride(data.prix ? String(data.prix) : "");
+        return;
+      }
+
+      // Produit normal déjà en vente
+      const produit = data.produit;
+      setCartes((prev) => {
+        if (!prev) return [produit];
+        if (prev.some((c) => c.id === produit.id)) return prev;
+        return [produit, ...prev];
+      });
+
+      const cle = `${produit.reference.toLowerCase().trim()}|${produit.categorie.toLowerCase().trim()}`;
+      setSelection((prev) => {
+        const suivant = new Map(prev);
+        const s = suivant.get(cle) ? new Set(suivant.get(cle)) : new Set<number>();
+        if (!s.has(produit.id)) {
+          s.add(produit.id);
+          suivant.set(cle, s);
+          playBeep(true);
+          afficher(`Produit scanné : ${produit.reference}`);
+        } else {
+          playBeep(false);
+          afficher("Cet exemplaire a déjà été ajouté à la vente.", "erreur");
+        }
+        return suivant;
+      });
+    } catch {
+      playBeep(false);
+      afficher(`Code non reconnu ou indisponible : ${code}`, "erreur");
+    }
+  }, [modalBundle, modalRetrait, modalVente, modalAnnulation, modalOverride, afficher]);
 
   useBarcodeScanner((code) => {
     gererScan(code);
@@ -566,6 +625,24 @@ export default function CaisseClient({ role }: { role: Role }) {
     });
   }
 
+  function definirQuantiteSelection(cle: string, qte: number) {
+    setSelection((prev) => {
+      const suivant = new Map(prev);
+      if (!cartes) return suivant;
+      const groupes = grouperDoublonsVente(cartes);
+      const g = groupes.find((x) => x.cle === cle);
+      if (!g) return suivant;
+      const targetQty = Math.max(0, Math.min(g.unites.length, qte));
+      if (targetQty <= 0) {
+        suivant.delete(cle);
+      } else {
+        const ids = g.unites.slice(0, targetQty).map((u) => u.id);
+        suivant.set(cle, new Set(ids));
+      }
+      return suivant;
+    });
+  }
+
   function quitterModeBundle() {
     setSelection(new Map());
     setRemiseBundle("");
@@ -648,6 +725,7 @@ export default function CaisseClient({ role }: { role: Role }) {
           client_nis: clientNisBundle.trim() || undefined,
           type_facture: typeFactureBundle,
           mode_paiement: modePaiementBundle,
+          etiquette_imprimee: etiquetteBundleValidee || undefined,
         }),
       });
       const corps = (await res.json().catch(() => null)) as
@@ -706,6 +784,7 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
         mode_paiement: modePaiement,
+        etiquette_imprimee: etiquetteVenteValidee || undefined,
       } : {
         produit_id: unitesConcernees[0]!.id,
         prix_vente_reel: Number(prixReel),
@@ -721,6 +800,7 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
         mode_paiement: modePaiement,
+        etiquette_imprimee: etiquetteVenteValidee || undefined,
       };
 
       const res = await fetch(url, {
@@ -830,21 +910,21 @@ export default function CaisseClient({ role }: { role: Role }) {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] max-h-[100dvh] bg-brand-light-grey/10">
-      <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex items-center justify-between shadow-md z-10">
-        <div className="flex items-center gap-4">
-          <Link href="/caisse" className="btn py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
+    <div className="flex flex-col min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-light-grey/10">
+      <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-10">
+        <div className="flex items-center gap-3">
+          <Link href="/caisse" className="btn min-h-[44px] py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
             ← Retour au Tableau de Bord
           </Link>
-          <div className="font-black text-lg tracking-wide uppercase flex items-center gap-2">
+          <div className="font-black text-base sm:text-lg tracking-wide uppercase flex items-center gap-2">
             <IconeStore taille={20} className="text-brand-orange" />
             Mode Caisse
           </div>
         </div>
         
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
           {(statsJour || statsJourErreur) && (
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6">
               {statsJourErreur ? (
                 <div className="text-right">
                   <span className="text-sm text-red-500 font-medium">{statsJourErreur}</span>
@@ -853,11 +933,11 @@ export default function CaisseClient({ role }: { role: Role }) {
                 <>
                   <div className="text-right">
                     <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">{t("caisse.ventesAujourdhui")}</span>
-                    <span className="font-bold text-lg leading-none">{statsJour.nombre}</span>
+                    <span className="font-bold text-base sm:text-lg leading-none">{statsJour.nombre}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-brand-warm-grey uppercase tracking-wider block">{t("caisse.chiffreAffaires")}</span>
-                    <span className="font-black text-brand-orange text-lg leading-none">{formaterDA(statsJour.total)}</span>
+                    <span className="font-black text-brand-orange text-base sm:text-lg leading-none">{formaterDA(statsJour.total)}</span>
                   </div>
                 </>
               ) : null}
@@ -870,7 +950,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                         .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
                     }
                   }}
-                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded shadow-sm transition"
+                  className="min-h-[44px] px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-xl shadow-sm transition flex items-center"
                 >
                   Vider la Caisse
                 </button>
@@ -882,12 +962,12 @@ export default function CaisseClient({ role }: { role: Role }) {
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden flex flex-col p-4">
+      <div className="flex-1 overflow-hidden flex flex-col p-2 sm:p-4">
         {onglet === "en_vente" && (
         <div className="flex flex-col lg:flex-row gap-4 items-start h-full overflow-hidden">
-          <div className="flex-1 flex flex-col space-y-3 w-full min-w-0 h-full overflow-y-auto pr-2 pb-24">
-          <div className="carte flex flex-wrap items-center gap-3 bg-brand-white/95 backdrop-blur-xl shadow-lg border-brand-light-grey/30 sticky top-0 z-20 rounded-2xl p-3 mb-4">
-            <div className="relative min-w-64 flex-1">
+          <div className="flex-1 flex flex-col space-y-3 w-full min-w-0 h-full overflow-y-auto pr-1 sm:pr-2 pb-24">
+          <div className="carte flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 bg-brand-white/95 backdrop-blur-xl shadow-lg border-brand-light-grey/30 sticky top-0 z-20 rounded-2xl p-3 mb-4">
+            <div className="relative min-w-0 sm:min-w-64 flex-1">
               <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-orange">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="2" height="8" x="7" y="8"/><rect width="2" height="8" x="11" y="8"/><rect width="2" height="8" x="15" y="8"/></svg>
               </span>
@@ -896,7 +976,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 type="text"
                 autoFocus
                 placeholder="Scanner code-barres..."
-                className="champ pl-10 h-11 rounded-xl border-brand-orange ring-1 ring-brand-orange focus:ring-4 focus:ring-brand-orange/20 focus:border-brand-orange font-mono transition-all duration-300 hover:shadow-md bg-brand-orange/5"
+                className="champ pl-10 h-12 min-h-[48px] text-base rounded-xl border-brand-orange ring-1 ring-brand-orange focus:ring-4 focus:ring-brand-orange/20 focus:border-brand-orange font-mono transition-all duration-300 hover:shadow-md bg-brand-orange/5"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -912,13 +992,13 @@ export default function CaisseClient({ role }: { role: Role }) {
               valeur={rechercheEnVente}
               onChange={setRechercheEnVente}
               placeholder="Rechercher code, ref ou catégorie..."
-              className="w-full sm:max-w-md h-11"
+              className="w-full sm:max-w-md h-12 min-h-[48px]"
             />
             <div className="h-8 w-px bg-brand-light-grey/50 mx-1 hidden sm:block"></div>
             <select
               value={filtreCategorie}
               onChange={(e) => setFiltreCategorie(e.target.value)}
-              className="champ w-auto h-11 rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
+              className="champ w-full sm:w-auto h-12 min-h-[48px] text-base rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
             >
               <option value="">{t("caisse.toutesCategories")}</option>
               {categoriesEnVente.map((c) => (
@@ -930,7 +1010,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             <select
               value={triCartes}
               onChange={(e) => setTriCartes(e.target.value)}
-              className="champ w-auto h-11 rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
+              className="champ w-full sm:w-auto h-12 min-h-[48px] text-base rounded-xl cursor-pointer hover:border-brand-orange/50 transition-colors"
               aria-label="Trier les produits en vente"
             >
               <option value="">{t("caisse.triDefaut")}</option>
@@ -940,8 +1020,8 @@ export default function CaisseClient({ role }: { role: Role }) {
               <option value="anciennete">{t("caisse.anciennete")}</option>
             </select>
             {peutVendre && (
-              <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire h-11 px-4 rounded-xl hover:bg-brand-light-grey/50 hover:text-brand-black border-transparent shadow-sm">
-                <IconeCorbeille taille={16} /> <span className="hidden sm:inline">{t("caisse.viderPanier")}</span>
+              <button type="button" onClick={quitterModeBundle} className="btn btn-secondaire h-12 min-h-[48px] px-4 rounded-xl hover:bg-brand-light-grey/50 hover:text-brand-black border-transparent shadow-sm">
+                <IconeCorbeille taille={16} /> <span className="inline">{t("caisse.viderPanier")}</span>
               </button>
             )}
           </div>
@@ -1193,11 +1273,22 @@ export default function CaisseClient({ role }: { role: Role }) {
                          </div>
                          <div className="text-right flex flex-col items-end shrink-0">
                            <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
-                           <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
-                             <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={18} /></button>
-                             <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
-                             <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
-                           </div>
+                           <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-lg p-1">
+                              <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={16} /></button>
+                              <input
+                                type="number"
+                                min={1}
+                                max={item.groupe.unites.length}
+                                value={item.qty}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10);
+                                  definirQuantiteSelection(item.groupe.cle, isNaN(val) ? 0 : val);
+                                }}
+                                className="w-12 h-9 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                title={`Quantité (Max: ${item.groupe.unites.length})`}
+                              />
+                              <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={16} /></button>
+                            </div>
                          </div>
                        </div>
                      ))}
@@ -1349,11 +1440,22 @@ export default function CaisseClient({ role }: { role: Role }) {
                    </div>
                    <div className="text-right flex flex-col items-end shrink-0">
                      <span className="font-bold text-brand-black text-sm">{formaterDA(item.prix * item.qty)}</span>
-                     <div className="flex items-center gap-2 mt-2 bg-brand-light-grey/20 rounded-md p-1">
-                       <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={18} /></button>
-                       <span className="w-8 text-center font-bold text-lg">{item.qty}</span>
-                       <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-11 w-11 bg-brand-white shadow-sm rounded flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={18} /></button>
-                     </div>
+                     <div className="flex items-center gap-1.5 mt-2 bg-brand-light-grey/20 rounded-lg p-1">
+                        <button onClick={() => retirerDeSelection(item.groupe.cle)} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale"><IconeMoins taille={16} /></button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={item.groupe.unites.length}
+                          value={item.qty}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            definirQuantiteSelection(item.groupe.cle, isNaN(val) ? 0 : val);
+                          }}
+                          className="w-12 h-9 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          title={`Quantité (Max: ${item.groupe.unites.length})`}
+                        />
+                        <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={16} /></button>
+                      </div>
                    </div>
                  </div>
                ))}
@@ -1875,6 +1977,40 @@ export default function CaisseClient({ role }: { role: Role }) {
               </div>
             </details>
 
+            {/* RÈGLE 2 : Contrôle Étiquette pour l'article */}
+            {modalVente && modalVente.unites.some((u) => !u.etiquette_imprimee) && (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-500/5 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="toggle-etiquette-vente" className="text-xs font-bold text-amber-900 dark:text-amber-200 cursor-pointer select-none">
+                    Avez-vous imprimé et collé l&apos;étiquette sur ce produit ?
+                  </label>
+                  <input
+                    id="toggle-etiquette-vente"
+                    type="checkbox"
+                    checked={etiquetteVenteValidee}
+                    onChange={(e) => setEtiquetteVenteValidee(e.target.checked)}
+                    className="toggle toggle-warning h-6 w-11"
+                  />
+                </div>
+                {!etiquetteVenteValidee && (
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
+                    <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">Étiquette non confirmée</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ids = modalVente.unites.slice(0, quantiteVente).map((u) => u.id);
+                        window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
+                        setEtiquetteVenteValidee(true);
+                      }}
+                      className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
+                    >
+                      Imprimer l&apos;étiquette
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {avertissement && (
               <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
                 <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
@@ -2129,7 +2265,44 @@ export default function CaisseClient({ role }: { role: Role }) {
                 </div>
               </div>
             </details>
-          {avertissementBundle && (
+
+            {/* RÈGLE 2 : Contrôle Étiquette pour les articles du panier */}
+            {selectionnees.some((u) => !u.etiquette_imprimee) && (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-500/5 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="toggle-etiquette-bundle" className="text-xs font-bold text-amber-900 dark:text-amber-200 cursor-pointer select-none">
+                    Avez-vous imprimé et collé l&apos;étiquette sur ces produits ?
+                  </label>
+                  <input
+                    id="toggle-etiquette-bundle"
+                    type="checkbox"
+                    checked={etiquetteBundleValidee}
+                    onChange={(e) => setEtiquetteBundleValidee(e.target.checked)}
+                    className="toggle toggle-warning h-6 w-11"
+                  />
+                </div>
+                {!etiquetteBundleValidee && (
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
+                    <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+                      {selectionnees.filter((u) => !u.etiquette_imprimee).length} article(s) sans étiquette
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ids = selectionnees.map((u) => u.id);
+                        window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
+                        setEtiquetteBundleValidee(true);
+                      }}
+                      className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
+                    >
+                      Imprimer les étiquettes
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {avertissementBundle && (
             <div className="flex items-start gap-2 rounded-lg bg-brand-glow/40 px-3 py-2 text-sm text-brand-smooth">
               <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
               {avertissementBundle}
@@ -2238,6 +2411,93 @@ export default function CaisseClient({ role }: { role: Role }) {
           </div>
         )}
       </Modale>
+
+      {/* MODALE D'ACTION RAPIDE : AUTO-CORRECTION / OVERRIDE POS */}
+      {modalOverride && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-300 shadow-2xl p-6 space-y-4 text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600">
+                  <IconeAlerte taille={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black font-outfit text-slate-900">
+                    Mise en Vente Immédiate (Override)
+                  </h3>
+                  <span className="text-xs text-slate-500">
+                    Auto-Correction au Comptoir
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalOverride(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <IconeFermer taille={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <div className="font-extrabold text-sm text-slate-900">
+                  {modalOverride.produit.reference}
+                </div>
+                <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px]">
+                  <span>#{modalOverride.produit.code_interne}</span>
+                  {modalOverride.produit.numero_serie && (
+                    <span className="text-emerald-700 font-bold">
+                      S/N: {modalOverride.produit.numero_serie}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-slate-600">
+                L&apos;article est actuellement au statut{" "}
+                <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  {REGLES_MACHINE_ETATS[modalOverride.statutActuel as StatutProduit]?.libelle || modalOverride.statutActuel}
+                </span>
+                . Voulez-vous forcer sa mise en vente et l&apos;ajouter au panier ?
+              </p>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Prix de Vente Fixe (DA TTC) *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={prixOverride}
+                  onChange={(e) => setPrixOverride(e.target.value)}
+                  placeholder="Ex: 45000"
+                  className="w-full h-11 px-3 bg-white border border-slate-300 rounded-md font-mono font-black text-sm text-slate-900 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/30 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setModalOverride(null)}
+                className="btn btn-secondaire text-xs py-2.5 px-4 rounded-md font-bold"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={envoiOverride || !prixOverride || Number(prixOverride) < 0}
+                onClick={validerOverride}
+                className="btn btn-primaire text-xs py-2.5 px-5 rounded-md font-black flex items-center gap-1.5"
+              >
+                {envoiOverride ? "Forçage en cours..." : "Forcer en Vente & Ajouter"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </div>
   );

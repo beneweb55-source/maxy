@@ -10,6 +10,7 @@ export const STATUTS_PRODUIT: readonly StatutProduit[] = [
   "manque_piece",
   "hs",
   "en_vente",
+  "produit_commande",
   "vendu",
 ];
 
@@ -27,6 +28,7 @@ export const INFOS_STATUT: Record<StatutProduit, InfosStatut> = {
   manque_piece: { libelle: "Manque pièce", badge: "bg-purple-50 text-purple-800 dark:bg-purple-500/20 dark:text-purple-300", hex: "#9333ea" },
   hs: { libelle: "HS", badge: "bg-red-50 text-red-800 dark:bg-red-500/20 dark:text-red-300", hex: "#dc2626" },
   en_vente: { libelle: "En vente", badge: "bg-sky-50 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300", hex: "#1770E5" },
+  produit_commande: { libelle: "Produit Commandé / Réservé", badge: "bg-indigo-50 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300", hex: "#6366f1" },
   vendu: { libelle: "Vendu", badge: "bg-brand-smooth text-white dark:bg-zinc-700 dark:text-zinc-100", hex: "#2E2D2D" },
 };
 

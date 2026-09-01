@@ -1,79 +1,60 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { encodeBase64Url, decodeBase64Url } from "@/lib/base64url";
-import Link from "next/link";
-import { IconeChevronGauche, IconeCrayon, IconeImprimante, IconeVitrine, IconeCorbeille, IconeOeil, IconePlus } from "@/components/icons";
-import BadgeStatut from "@/components/BadgeStatut";
-import { formaterDA } from "@/lib/caisse";
-import type { StatutProduit } from "@prisma/client";
-import ModaleEditionFamille, { type FamilleInfo } from "./ModaleEditionFamille";
-import BoutonImpression from "@/components/BoutonImpression";
-import { useT } from "@/lib/i18n/contexte";
+import { 
+  IconeChevronGauche, 
+  IconeChevronDroite, 
+  IconeArchive, 
+  IconeRecherche, 
+  IconeAlerte,
+  IconePlus
+} from "@/components/icons";
+import BreadcrumbNavigation from "./BreadcrumbNavigation";
 
-// LigneProduit from Inventaire.tsx
-interface LigneProduit {
+interface SousCategorieNode {
   id: number;
-  code_interne: string;
-  reference: string;
-  categorie: string;
-  statut: StatutProduit;
-  a_jeter: boolean;
-  en_vitrine: boolean;
-  prix_achat: number;
-  cout_reparations: number;
-  prix_vente_fixe: number | null;
-  prix_vente_reel: number | null;
-  lot_id: number | null;
-  fournisseur: string | null;
-  date_entree: string;
-  jours_stock: number;
+  nom: string;
+  _count: {
+    produits: number;
+    modeles: number;
+  };
+}
+
+interface CategorieNode {
+  id: number;
+  nom: string;
+  parent_id: number | null;
+  description: string | null;
   image_url: string | null;
-  nb_images: number;
-  etiquette_imprimee: boolean;
+  enfants: SousCategorieNode[];
+  _count: {
+    produits: number;
+    modeles: number;
+    enfants: number;
+  };
+}
+
+interface FamilleDetail {
+  id: number;
+  nom: string;
+  description: string | null;
+  image_url: string | null;
+  categories: CategorieNode[];
 }
 
 export default function VueFamille({
-  cleFamille,
+  familleId,
   majUrl,
-  ouvrirEdition,
-  ouvrirSuppressionUnites,
-  basculerVitrineIds,
-  ouvrirAjout
 }: {
-  cleFamille: string;
+  familleId: number;
   majUrl: (modifs: Record<string, string | null>) => void;
-  ouvrirEdition: (unites: LigneProduit[], titre: string) => void;
-  ouvrirSuppressionUnites: (unites: LigneProduit[]) => void;
-  basculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
-  ouvrirAjout?: (source?: LigneProduit) => void;
 }) {
   const searchParams = useSearchParams();
-  const [stats, setStats] = useState<{
-    unites: number;
-    dispos: number;
-    aTester: number;
-    prixMin: number | null;
-    prixMax: number | null;
-    image_url: string | null;
-  } | null>(null);
-  const [familleInfo, setFamilleInfo] = useState<FamilleInfo | null>(null);
+  const q = searchParams?.get("q") || "";
+  const [famille, setFamille] = useState<FamilleDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editionFamille, setEditionFamille] = useState(false);
-  const t = useT();
-
   const [erreur, setErreur] = useState<string | null>(null);
-
-  // Sécurisation: on décode la cle puis on coupe au dernier "|"
-  let reference = "";
-  let categorie = "";
-  try {
-    const decodedCle = decodeBase64Url(cleFamille);
-    const lastPipeIndex = decodedCle.lastIndexOf("|");
-    reference = lastPipeIndex !== -1 ? decodedCle.substring(0, lastPipeIndex) : decodedCle;
-    categorie = lastPipeIndex !== -1 ? decodedCle.substring(lastPipeIndex + 1) : "";
-  } catch (e) {
-    console.error("Impossible de décoder la clé:", e);
-  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,228 +62,181 @@ export default function VueFamille({
 
     setLoading(true);
     setErreur(null);
-    
-    // On hérite des filtres de l'inventaire (comme statuts, sans_photo, etc.)
-    // mais on retire la recherche textuelle 'q' et la pagination 'page'
-    // qui fausseraient la récupération des produits de cette famille précise.
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    params.delete("q");
-    params.delete("page");
-    params.set("categorie", categorie ?? "");
-    params.set("reference_exacte", reference ?? "");
-    
-    // Fetch les statistiques globales de la famille (Niveau 2)
-    const fetchStats = fetch(`/api/produits/familles?categorie=${encodeURIComponent(categorie)}&reference_exacte=${encodeURIComponent(reference)}`, { signal })
-      .then(async r => {
-        if (!r.ok) throw new Error("Erreur lors du chargement des statistiques");
-        return r.json();
-      });
-    
-    const fetchInfo = fetch(`/api/familles/${encodeURIComponent(cleFamille)}`, { signal }).then(async r => {
-      if (!r.ok) throw new Error("Erreur lors du chargement de la famille");
-      return r.json();
-    });
 
-    Promise.all([fetchStats, fetchInfo])
-      .then(([statsData, info]) => {
+    // Charger directement les détails de la famille et ses catégories rattachées
+    fetch(`/api/categories/${familleId}`, { signal })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Erreur de chargement de la famille");
+        return res.json();
+      })
+      .then((data: any) => {
         if (signal.aborted) return;
         
-        const f = statsData.familles?.[0];
-        if (f) {
-          setStats({
-            unites: f.unites || 0,
-            dispos: f.disponibles || 0,
-            aTester: f.a_tester || 0,
-            prixMin: f.prixMin,
-            prixMax: f.prixMax,
-            image_url: f.image_url || null
-          });
-        }
-        setFamilleInfo(info.id ? info : null);
+        setFamille({
+          id: data.id,
+          nom: data.nom || `Famille #${familleId}`,
+          description: data.description || null,
+          image_url: data.image_url || null,
+          categories: data.enfants || [],
+        });
         setLoading(false);
       })
-      .catch(e => {
-        if (e.name === "AbortError") return;
-        console.error(e);
-        setErreur(e.message || "Erreur de chargement");
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        console.error(err);
+        setErreur(err.message || "Erreur réseau");
         setLoading(false);
       });
 
     return () => controller.abort();
-  }, [searchParams, cleFamille, categorie, reference]);
+  }, [familleId]);
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="carte p-6 flex gap-6 items-center">
-          <div className="h-24 w-24 rounded-2xl bg-brand-light-grey/20 dark:bg-white/5 flex-shrink-0"></div>
-          <div className="flex-1 space-y-3">
-            <div className="h-8 bg-brand-light-grey/30 dark:bg-white/5 rounded-md w-1/3"></div>
-            <div className="h-4 bg-brand-light-grey/20 dark:bg-white/5 rounded-md w-2/3"></div>
-          </div>
-        </div>
-        <div className="h-8 bg-brand-light-grey/20 dark:bg-white/5 rounded-md w-1/4 mb-4"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="carte p-4 h-32 border border-brand-light-grey/50 dark:border-white/5">
-              <div className="h-5 bg-brand-light-grey/30 dark:bg-white/5 rounded-md w-1/2 mb-3"></div>
-              <div className="h-4 bg-brand-light-grey/20 dark:bg-white/5 rounded-md w-1/3"></div>
-            </div>
-          ))}
+      <div className="space-y-6 animate-pulse p-2">
+        <div className="h-10 w-64 bg-brand-light-grey/30 dark:bg-white/5 rounded-xl"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
+          <div className="h-40 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
         </div>
       </div>
     );
   }
 
-  if (erreur) {
+  if (erreur || !famille) {
     return (
-      <div className="space-y-4">
-        <button onClick={() => majUrl({ vue: "categorie", cle: null })} className="btn btn-secondaire">
-          <IconeChevronGauche taille={16} /> Retour
+      <div className="carte p-8 text-center text-danger flex flex-col items-center justify-center animate-entree">
+        <IconeAlerte taille={36} className="mb-3 opacity-80" />
+        <h3 className="font-bold text-lg font-outfit mb-1">Famille introuvable ou erreur de chargement</h3>
+        <p className="text-sm text-brand-warm-grey mb-4">{erreur || "Identifiant de famille invalide"}</p>
+        <button
+          type="button"
+          onClick={() => majUrl({ vue: "cockpit", famille_id: null })}
+          className="btn btn-secondaire text-xs"
+        >
+          <IconeChevronGauche taille={14} /> Retour au Cockpit
         </button>
-        <div className="alerte-erreur" role="alert">{erreur}</div>
       </div>
     );
   }
 
-  if (!stats && !loading) {
+  // Filtrer les catégories : Masquage strict des impasses (0 produit) et filtre de recherche
+  const categoriesFiltrees = (famille.categories || []).filter((cat) => {
+    const totalDirect = cat._count?.produits || 0;
+    const totalEnfants = (cat.enfants || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
+    const totalCat = totalDirect + totalEnfants;
+    if (totalCat === 0) return false;
+
+    if (!q.trim()) return true;
+    const qLower = q.toLowerCase();
     return (
-      <div className="space-y-4">
-        <button onClick={() => majUrl({ vue: "categorie", cle: null })} className="btn btn-secondaire">
-          <IconeChevronGauche taille={16} /> Retour
-        </button>
-        <div className="carte flex flex-col items-center justify-center p-12 text-brand-warm-grey">
-          <div className="w-16 h-16 bg-brand-light-grey/20 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-          </div>
-          <div className="text-lg font-bold font-outfit text-brand-black dark:text-white mb-1">Aucun produit trouvé</div>
-          <div className="text-sm">Cette catégorie ne contient aucun produit avec les filtres actuels.</div>
-        </div>
-      </div>
+      cat.nom.toLowerCase().includes(qLower) ||
+      (cat.enfants || []).some((sc) => sc.nom.toLowerCase().includes(qLower))
     );
-  }
+  });
 
-  const unites = stats?.unites || 0;
-  const dispos = stats?.dispos || 0;
-  const aTester = stats?.aTester || 0;
-  
-  // Prix: le serveur renvoie Min/Max
-  const prixMin = stats?.prixMin ?? null;
-  const prixMax = stats?.prixMax ?? null;
+  const totalProduitsFamille = (famille.categories || []).reduce((acc, cat) => {
+    const direct = cat._count?.produits || 0;
+    const enfants = (cat.enfants || []).reduce((a, sc) => a + (sc._count?.produits || 0), 0);
+    return acc + direct + enfants;
+  }, 0);
 
   return (
-    <div className="space-y-6 animate-entree pb-8">
-      {/* En-tête Navigation (Breadcrumb) */}
-      <div className="flex items-center gap-2 text-sm text-brand-warm-grey font-medium pb-2 border-b border-brand-light-grey/50">
+    <div className="space-y-6 animate-entree">
+      {/* En-tête de section Famille */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-brand-light-grey/40 dark:border-white/5">
+        <div>
+          <h2 className="text-lg sm:text-xl font-black font-outfit text-brand-black dark:text-white">
+            {famille.nom}
+          </h2>
+          <p className="text-xs text-brand-warm-grey">
+            Sélectionnez une catégorie pour explorer ses sous-types de matériels
+          </p>
+        </div>
+
         <button
-          onClick={() => majUrl({ vue: "categorie", cle: null })}
-          className="hover:text-brand-orange transition-colors flex items-center gap-1 bg-white dark:bg-brand-paper px-2 py-1 rounded-md border border-brand-light-grey dark:border-white/10 shadow-sm"
-          title="Retour à la catégorie"
+          type="button"
+          onClick={() => majUrl({ vue: "tableau", famille_id: String(familleId), categorie_id: null, sous_categorie_id: null })}
+          className="btn btn-primaire text-xs py-2 px-4 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2 shrink-0"
         >
-          <IconeChevronGauche taille={14} /> {categorie}
+          <IconeArchive taille={15} /> Voir tous les {totalProduitsFamille} produits de la famille
         </button>
-        <span>/</span>
-        <span className="font-bold text-brand-black dark:text-white font-outfit text-lg">
-          {reference}
-        </span>
       </div>
 
-      {/* Bannière de la Catégorie */}
-      <div className="carte overflow-hidden !p-0 border border-brand-light-grey dark:border-white/10 shadow-lg relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-black/5 to-transparent dark:from-white/5 z-0 pointer-events-none"></div>
-        <div className="p-6 relative z-10">
-          <div className="flex flex-col sm:flex-row gap-8">
-            <div className="h-40 w-40 sm:h-48 sm:w-48 rounded-2xl bg-white dark:bg-black/40 border-4 border-white dark:border-brand-paper shadow-md flex items-center justify-center overflow-hidden shrink-0 mx-auto sm:mx-0">
-              {familleInfo?.image_url || stats?.image_url ? (
-                <img src={familleInfo?.image_url || stats?.image_url!} alt={familleInfo?.nom || reference} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-              ) : (
-                <span className="text-brand-warm-grey text-sm uppercase font-bold opacity-50">Sans photo</span>
-              )}
-            </div>
-            
-            <div className="flex-1 flex flex-col justify-center text-center sm:text-left">
-              {familleInfo?.nom ? (
-                <>
-                  <h3 className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-2">{familleInfo.nom}</h3>
-                  <div className="inline-block text-sm font-semibold px-3 py-1 bg-brand-light-grey/30 dark:bg-white/10 rounded-full text-brand-warm-grey dark:text-brand-warm-grey self-center sm:self-start mb-4">Ref: {reference}</div>
-                </>
-              ) : (
-                <h3 className="text-3xl font-extrabold text-brand-black dark:text-white font-outfit mb-4">{reference}</h3>
-              )}
-              
-              {familleInfo?.description && (
-                <p className="text-sm text-brand-warm-grey dark:text-brand-warm-grey/80 whitespace-pre-wrap max-w-2xl mb-6 bg-white/50 dark:bg-black/20 p-4 rounded-xl border border-brand-light-grey/50 dark:border-white/5 backdrop-blur-sm">
-                  {familleInfo.description}
-                </p>
-              )}
-              
-              <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-8 mt-auto">
-                <div className="text-center sm:text-left">
-                  <div className="text-[10px] font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider mb-1">Exemplaires</div>
-                  <div className="text-2xl font-extrabold text-brand-black dark:text-white font-outfit">{unites}</div>
-                </div>
-                <div className="w-px bg-brand-light-grey dark:bg-white/10 hidden sm:block"></div>
-                <div className="text-center sm:text-left">
-                  <div className="text-[10px] font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider mb-1">Disponibles</div>
-                  <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-outfit">{dispos}</div>
-                </div>
-                <div className="w-px bg-brand-light-grey dark:bg-white/10 hidden sm:block"></div>
-                <div className="text-center sm:text-left">
-                  <div className="text-[10px] font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider mb-1">À tester</div>
-                  <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 font-outfit">{aTester}</div>
-                </div>
-                <div className="w-px bg-brand-light-grey dark:bg-white/10 hidden sm:block"></div>
-                <div className="text-center sm:text-left">
-                  <div className="text-[10px] font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider mb-1">Prix de vente</div>
-                  <div className="text-2xl font-extrabold text-brand-orange font-outfit">
-                    {prixMin === null 
-                      ? "Non tarifé" 
-                      : prixMin === prixMax 
-                        ? formaterDA(prixMin) 
-                        : `${formaterDA(prixMin)} - ${formaterDA(prixMax!)}`}
+      {/* Grille des Catégories (Niveau 2) */}
+      <div>
+        <div className="mb-4">
+          <h3 className="text-base font-bold text-brand-black dark:text-white font-outfit">
+            Catégories disponibles ({categoriesFiltrees.length})
+          </h3>
+        </div>
+
+        {categoriesFiltrees.length === 0 ? (
+          <div className="carte p-8 text-center text-brand-warm-grey rounded-2xl bg-white/50 dark:bg-white/5 border border-dashed border-brand-light-grey dark:border-white/10">
+            Aucune catégorie avec du stock disponible dans cette famille.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {categoriesFiltrees.map((cat) => {
+              const totalDirect = cat._count?.produits || 0;
+              const totalEnfants = (cat.enfants || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
+              const totalCat = totalDirect + totalEnfants;
+              const totalModeles = (cat._count?.modeles || 0) + (cat.enfants || []).reduce((acc, sc) => acc + (sc._count?.modeles || 0), 0);
+              const sousCatsNonZero = (cat.enfants || []).filter(sc => (sc._count?.produits || 0) > 0);
+
+              return (
+                <div
+                  key={cat.id}
+                  onClick={() => majUrl({ vue: "categorie", categorie_id: String(cat.id), famille_id: String(familleId) })}
+                  className="carte group !p-5 border border-brand-light-grey/60 dark:border-white/10 bg-white dark:bg-brand-paper rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-[0.985] min-h-[140px] hover:border-brand-orange/60"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h3 className="font-bold text-base sm:text-lg font-outfit text-brand-black dark:text-white group-hover:text-brand-orange transition-colors leading-snug">
+                        {cat.nom}
+                      </h3>
+                      <span className="bg-brand-light-grey/40 dark:bg-white/10 text-brand-black dark:text-white px-2.5 py-1 rounded-lg text-xs font-black shrink-0">
+                        {totalCat}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-brand-warm-grey">
+                      {sousCatsNonZero.length} sous-catégorie{sousCatsNonZero.length > 1 ? "s" : ""} · {totalModeles} modèle{totalModeles > 1 ? "s" : ""}
+                    </div>
+
+                    {/* Chips d'aperçu des sous-catégories STRICTEMENT NON-VIDES */}
+                    {sousCatsNonZero.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-brand-light-grey/30 dark:border-white/5">
+                        {sousCatsNonZero.slice(0, 4).map((sc) => (
+                          <span 
+                            key={sc.id}
+                            className="text-[11px] px-2 py-0.5 rounded-md bg-brand-light-grey/25 dark:bg-white/5 text-brand-warm-grey dark:text-brand-grey font-medium"
+                          >
+                            {sc.nom} {sc._count?.produits ? `(${sc._count.produits})` : ""}
+                          </span>
+                        ))}
+                        {sousCatsNonZero.length > 4 && (
+                          <span className="text-[11px] px-1.5 py-0.5 text-brand-warm-grey font-semibold">
+                            +{sousCatsNonZero.length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-brand-light-grey/40 dark:border-white/5 flex items-center justify-between text-xs text-brand-warm-grey group-hover:text-brand-black dark:group-hover:text-white transition-colors font-medium">
+                    <span>Explorer les sous-catégories</span>
+                    <div className="w-6 h-6 rounded-full bg-brand-light-grey/30 dark:bg-white/5 flex items-center justify-center group-hover:bg-brand-orange group-hover:text-white transition-colors">
+                      <IconeChevronDroite taille={14} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        </div>
-        
-        <div className="bg-brand-light-grey/20 dark:bg-black/20 px-6 py-4 border-t border-brand-light-grey/50 dark:border-white/5 flex flex-wrap gap-3 items-center justify-center sm:justify-start">
-          <button
-            onClick={() => setEditionFamille(true)}
-            className="btn bg-white dark:bg-brand-paper hover:bg-brand-light-grey/30 dark:hover:bg-white/5 border border-brand-light-grey dark:border-white/10 text-brand-black dark:text-white text-sm shadow-sm"
-          >
-            <IconeCrayon taille={16} className="text-brand-orange" /> 
-            <span className="font-semibold">Personnaliser la fiche</span>
-          </button>
-
-          {ouvrirAjout && (
-            <button
-              onClick={() => ouvrirAjout()}
-              className="btn bg-brand-orange hover:bg-brand-orange/90 text-white text-sm shadow-md"
-            >
-              <IconePlus taille={16} />
-              <span className="font-semibold">Ajouter un exemplaire</span>
-            </button>
-          )}
-        </div>
+        )}
       </div>
-
-
-
-      {editionFamille && (
-        <ModaleEditionFamille
-          cleFamille={cleFamille}
-          familleInfo={familleInfo}
-          fermer={() => setEditionFamille(false)}
-          onSucces={(nouvelleInfo) => {
-            setFamilleInfo(nouvelleInfo);
-            setEditionFamille(false);
-          }}
-        />
-      )}
     </div>
   );
 }

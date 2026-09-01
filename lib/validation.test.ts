@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validerLignesProduits, entierPositif } from "./validation";
+import { validerLignesProduits, entierPositif, entierPositifOuNul } from "./validation";
 
 describe("validation — produits et entrées", () => {
   it("valide une liste de produits conforme", () => {
@@ -35,4 +35,13 @@ describe("validation — produits et entrées", () => {
     expect(entierPositif(12.5, "Le montant")).toContain("entier positif");
     expect(entierPositif("100", "Le montant")).toContain("entier positif");
   });
+
+  it("valide la fonction entierPositifOuNul (autorise 0 DA pour SAV/Cadeaux)", () => {
+    expect(entierPositifOuNul(0, "Le montant")).toBeNull();
+    expect(entierPositifOuNul(5000, "Le montant")).toBeNull();
+    expect(entierPositifOuNul(-1, "Le montant")).toContain("entier positif ou nul");
+    expect(entierPositifOuNul(12.5, "Le montant")).toContain("entier positif ou nul");
+    expect(entierPositifOuNul("0", "Le montant")).toContain("entier positif ou nul");
+  });
 });
+

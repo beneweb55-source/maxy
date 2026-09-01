@@ -42,10 +42,10 @@ export function JournalFiltres({
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center bg-brand-paper p-4 rounded-xl border border-brand-light-grey/50 shadow-sm mb-4">
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1 sm:flex-initial">
         <label className="libelle mb-1">Filtrer par utilisateur</label>
         <select 
-          className="champ py-2 text-sm max-w-[200px] cursor-pointer"
+          className="champ min-h-[48px] text-base w-full sm:max-w-[200px] cursor-pointer"
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
         >
@@ -56,10 +56,10 @@ export function JournalFiltres({
         </select>
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1 sm:flex-initial">
         <label className="libelle mb-1">Filtrer par type d'action</label>
         <select 
-          className="champ py-2 text-sm max-w-[220px] cursor-pointer"
+          className="champ min-h-[48px] text-base w-full sm:max-w-[220px] cursor-pointer"
           value={actionId}
           onChange={(e) => setActionId(e.target.value)}
         >
@@ -78,7 +78,7 @@ export function JournalFiltres({
               setUserId("");
               setActionId("");
             }}
-            className="text-xs text-brand-warm-grey hover:text-brand-orange transition-colors"
+            className="min-h-[40px] px-3 py-1.5 text-xs font-bold text-brand-warm-grey hover:text-brand-orange transition-colors flex items-center"
           >
             Réinitialiser les filtres
           </button>
