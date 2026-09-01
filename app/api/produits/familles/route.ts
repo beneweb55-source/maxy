@@ -152,8 +152,8 @@ export async function GET(request: NextRequest) {
         nbImages: fb._count.images + (fb.image_url ? 1 : 0),
         
         unites: st?._count.id || 0,
-        disponibles: disposMap.get(cle) || 0,
-        a_tester: testerMap.get(cle) || 0,
+        disponibles: disposMap.get(cleRaw) || 0,
+        a_tester: testerMap.get(cleRaw) || 0,
 
         prixMin: st?._min.prix_achat ?? 0,
         prixMax: st?._max.prix_achat ?? 0,

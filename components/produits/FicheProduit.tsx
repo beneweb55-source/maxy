@@ -506,7 +506,7 @@ export default function FicheProduit({
               </button>
             )}
             {peutVendre && produit.statut === "en_vente" && (
-              <Link href={`/caisse?produit=${produit.code_interne}`} className="btn btn-crystal">
+              <Link href={`/pos?vendre_produit_id=${produit.id}`} className="btn btn-crystal">
                 Vendre ce produit
                 <IconeFlecheDroite taille={14} />
               </Link>

@@ -378,10 +378,23 @@ export default function CaisseClient({ role }: { role: Role }) {
     if (cartes && !initTermine) {
       setInitTermine(true);
       const produitId = searchParams.get("vendre_produit_id");
-      if (produitId && peutVendre) {
+      const vendreIds = searchParams.get("vendre_ids") || searchParams.get("ids");
+      if (vendreIds && peutVendre) {
+        const idList = vendreIds.split(",").map(Number).filter((id) => !isNaN(id));
+        const groupes = grouperDoublonsVente(cartes);
+        for (const id of idList) {
+          const produit = cartes.find((c) => c.id === id);
+          if (produit) {
+            const groupe = groupes.find((g) => g.unites.some((u) => u.id === produit.id));
+            if (groupe) {
+              ajouterASelection(groupe.cle, produit.id);
+            }
+          }
+        }
+      } else if (produitId && peutVendre) {
         const produit = cartes.find((c) => c.id === Number(produitId));
         if (produit) {
-          const groupe = grouperDoublonsVente(cartes).find(g => g.unites.some(u => u.id === produit.id));
+          const groupe = grouperDoublonsVente(cartes).find((g) => g.unites.some((u) => u.id === produit.id));
           if (groupe) {
             ajouterASelection(groupe.cle, produit.id);
           }

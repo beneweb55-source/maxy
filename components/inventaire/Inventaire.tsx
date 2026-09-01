@@ -30,6 +30,12 @@ import {
   IconeVitrine,
   IconeOeil,
   IconeOeilBarre,
+  IconeBillet,
+  IconeCodeBarres,
+  IconeCoche,
+  IconeReglages,
+  IconeRecu,
+  IconeFermer,
 } from "@/components/icons";
 import BoutonImpression from "@/components/BoutonImpression";
 import RechercheRapide from "@/components/RechercheRapide";
@@ -260,6 +266,128 @@ export default function Inventaire({ role }: { role: Role }) {
   // Édition du statut depuis l'inventaire (transitions manuelles + note contextuelle).
   const [cibleStatut, setCibleStatut] = useState<StatutProduit | null>(null);
   const [noteStatut, setNoteStatut] = useState("");
+
+  // Sélection multi-produits (Bulk Actions unifiées)
+  const [idsSelectionnes, setIdsSelectionnes] = useState<Set<number>>(new Set());
+
+  // Modale rapide "Ajouter un exemplaire"
+  const [produitRapideAjout, setProduitRapideAjout] = useState<LigneProduit | null>(null);
+  const [prixVenteRapide, setPrixVenteRapide] = useState<string>("");
+  const [modifierPrixVenteRapide, setModifierPrixVenteRapide] = useState<boolean>(false);
+  const [snRapide, setSnRapide] = useState<string>("");
+  const [quantiteRapide, setQuantiteRapide] = useState<string>("1");
+
+  // Modale changement de statut en masse
+  const [modalStatutMasse, setModalStatutMasse] = useState<boolean>(false);
+  const [statutMasseCible, setStatutMasseCible] = useState<StatutProduit | "">("");
+  const [statutMasseNote, setStatutMasseNote] = useState<string>("");
+
+  function basculerSelection(id: number) {
+    setIdsSelectionnes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toutSelectionner() {
+    if (!donneesFiltrees) return;
+    const tousIds = donneesFiltrees.produits.map((p) => p.id);
+    const tousCoches = tousIds.length > 0 && tousIds.every((id) => idsSelectionnes.has(id));
+    if (tousCoches) {
+      setIdsSelectionnes(new Set());
+    } else {
+      setIdsSelectionnes(new Set(tousIds));
+    }
+  }
+
+  function deselectionnerTout() {
+    setIdsSelectionnes(new Set());
+  }
+
+  function ouvrirAjoutRapide(source?: LigneProduit) {
+    if (!source) {
+      ouvrirAjout();
+      return;
+    }
+    setProduitRapideAjout(source);
+    setPrixVenteRapide(source.prix_vente_fixe !== null ? String(source.prix_vente_fixe) : "");
+    setModifierPrixVenteRapide(false);
+    setSnRapide("");
+    setQuantiteRapide("1");
+  }
+
+  async function validerAjoutRapide() {
+    if (!produitRapideAjout || envoi) return;
+    setEnvoi(true);
+    try {
+      const prixVenteFinal = modifierPrixVenteRapide
+        ? (prixVenteRapide.trim() ? Number(prixVenteRapide) : null)
+        : produitRapideAjout.prix_vente_fixe;
+
+      const qty = Math.max(1, parseInt(quantiteRapide, 10) || 1);
+
+      const res = await fetch("/api/produits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lot_id: produitRapideAjout.lot_id,
+          reference: produitRapideAjout.reference,
+          categorie: produitRapideAjout.categorie,
+          prix_achat: produitRapideAjout.prix_achat,
+          prix_vente_fixe: prixVenteFinal,
+          image_url: produitRapideAjout.image_url,
+          quantite: qty,
+          en_vitrine: false,
+        }),
+      });
+      const corps = await res.json().catch(() => null);
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de l'ajout de l'exemplaire.", "erreur");
+        return;
+      }
+      afficher(`${qty} exemplaire(s) ajouté(s) : ${produitRapideAjout.reference}`);
+      setProduitRapideAjout(null);
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  async function appliquerStatutMasse() {
+    if (!statutMasseCible || idsSelectionnes.size === 0 || envoi) return;
+    setEnvoi(true);
+    try {
+      const ids = Array.from(idsSelectionnes);
+      const res = await fetch("/api/produits/masse/statut", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          statut: statutMasseCible,
+          note: statutMasseNote.trim() || undefined,
+        }),
+      });
+      const corps = await res.json().catch(() => null);
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors du changement de statut en masse.", "erreur");
+        return;
+      }
+      afficher(`${ids.length} produit(s) → ${INFOS_STATUT[statutMasseCible as StatutProduit]?.libelle}`);
+      setModalStatutMasse(false);
+      setStatutMasseCible("");
+      setStatutMasseNote("");
+      setIdsSelectionnes(new Set());
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
 
   const estGerant = role === "gerant";
   const peutStatut = role === "gerant" || role === "technicien";
@@ -1603,19 +1731,35 @@ export default function Inventaire({ role }: { role: Role }) {
                 estSocial={estSocial}
                 peutModifier={peutModifier}
                 envoi={envoi}
+                selectionne={idsSelectionnes.has(p.id)}
+                onToggleSelection={basculerSelection}
                 basculerVitrineIds={basculerVitrineIds}
                 ouvrirEdition={ouvrirEdition}
                 ouvrirSuppressionUnites={ouvrirSuppressionUnites}
-                ouvrirAjout={ouvrirAjout}
+                ouvrirAjout={ouvrirAjoutRapide}
+                ouvrirVente={(prod) => router.push(`/pos?vendre_produit_id=${prod.id}`)}
                 t={t}
               />
             ))}
           </div>
 
           <div className={`overflow-x-auto rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "block max-h-[800px]" : "hidden"}`}>
-            <table className="w-full min-w-[820px] text-[13px] relative">
+            <table className="w-full min-w-[860px] text-[13px] relative">
               <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
+                  <th className="py-3 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        donneesFiltrees.produits.length > 0 &&
+                        donneesFiltrees.produits.every((p) => idsSelectionnes.has(p.id))
+                      }
+                      onChange={toutSelectionner}
+                      className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange accent-brand-orange cursor-pointer"
+                      title="Tout sélectionner"
+                      aria-label="Tout sélectionner"
+                    />
+                  </th>
                   {COLONNES_TRI.filter(c => c.cle !== 'prix_achat' || !estSocial).map((c) => (
                     <th
                       key={c.cle}
@@ -1634,126 +1778,213 @@ export default function Inventaire({ role }: { role: Role }) {
                     </th>
                   ))}
                   <th className="py-3 px-4 text-right font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">{t("inventaire.jours")}</th>
-                  <th className="py-3 px-4" />
+                  <th className="py-3 px-4 text-right font-bold text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
-                {donneesFiltrees.produits.map((p) => (
-                  <tr
-                    key={p.id}
-                    onClick={() => router.push(`/produits/${p.id}`)}
-                    className="group cursor-pointer transition-colors hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-2.5 font-mono text-xs text-brand-warm-grey dark:text-brand-grey font-semibold">
-                      {p.code_interne}
-                    </td>
-                    <td className="max-w-64 truncate px-4 py-2.5 font-semibold text-brand-black dark:text-white" title={p.reference}>
-                      {p.reference}
-                    </td>
-                    <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-warm-grey">{p.categorie}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center gap-2">
-                        <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-                        {p.en_vitrine && (
-                          <IconeVitrine
-                            taille={14}
-                            className="text-brand-orange"
-                            aria-label={t("inventaire.enVitrine")}
-                          />
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-brand-black dark:text-brand-warm-grey">
-                      <div className="font-medium">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</div>
-                      <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
-                        {p.lot_id
-                          ? t("inventaire.lotLong", { n: p.lot_id, f: p.fournisseur || "" })
-                          : t("inventaire.sansArrivage")}
-                      </div>
-                    </td>
-                    {!estSocial && (
-                      <td className="px-4 py-2.5 text-right">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mb-0.5">{t("inventaire.achat")}</span>
-                        <span className="font-bold text-brand-black dark:text-white">{formaterDA(p.prix_achat)}</span>
-                        {p.cout_reparations > 0 && (
-                          <span className="block text-[10px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
-                            +{formaterDA(p.cout_reparations)} {t("inventaire.reparationsAbr")}
-                          </span>
-                        )}
+                {donneesFiltrees.produits.map((p) => {
+                  const estCoche = idsSelectionnes.has(p.id);
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => router.push(`/produits/${p.id}`)}
+                      className={`group cursor-pointer transition-colors ${
+                        estCoche
+                          ? "bg-brand-orange/[0.04] dark:bg-brand-orange/[0.08]"
+                          : "hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      <td
+                        className="px-3 py-2.5 text-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={estCoche}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            basculerSelection(p.id);
+                          }}
+                          className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange accent-brand-orange cursor-pointer"
+                        />
                       </td>
-                    )}
-                    <td className="px-4 py-2.5 text-right">
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-orange/80 mb-0.5">{t("inventaire.vente")}</span>
-                      {prixVenteAffiche(p) !== null ? (
-                        <span className="font-extrabold text-brand-orange text-sm">
-                          {formaterDA(prixVenteAffiche(p)!)}
-                          {p.statut === "vendu" && (
-                            <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mt-0.5">
-                              {t("inventaire.statutVendu")}
+                      <td className="px-4 py-2.5 font-mono text-xs text-brand-warm-grey dark:text-brand-grey font-semibold">
+                        {p.code_interne}
+                      </td>
+                      <td className="max-w-64 truncate px-4 py-2.5 font-semibold text-brand-black dark:text-white" title={p.reference}>
+                        {p.reference}
+                      </td>
+                      <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-warm-grey">{p.categorie}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="inline-flex items-center gap-2">
+                          <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
+                          {p.en_vitrine && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-orange">
+                              <IconeVitrine taille={11} /> {t("inventaire.vitrine")}
                             </span>
                           )}
                         </span>
-                      ) : (
-                        <span className="text-brand-warm-grey dark:text-brand-grey font-medium">—</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-brand-black dark:text-brand-warm-grey">
+                        <div className="font-medium">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</div>
+                        <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
+                          {p.lot_id
+                            ? t("inventaire.lotLong", { n: p.lot_id, f: p.fournisseur || "" })
+                            : t("inventaire.sansArrivage")}
+                        </div>
+                      </td>
+                      {!estSocial && (
+                        <td className="px-4 py-2.5 text-right">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mb-0.5">{t("inventaire.achat")}</span>
+                          <span className="font-bold text-brand-black dark:text-white">{formaterDA(p.prix_achat)}</span>
+                          {p.cout_reparations > 0 && (
+                            <span className="block text-[10px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
+                              +{formaterDA(p.cout_reparations)} {t("inventaire.reparationsAbr")}
+                            </span>
+                          )}
+                        </td>
                       )}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-warm-grey font-medium">{p.jours_stock}</td>
-                    <td className="px-3 py-2.5">
-                      {peutModifier && (
-                        <div className="flex items-center justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity">
-                          {p.statut !== "vendu" && (
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-orange/80 mb-0.5">{t("inventaire.vente")}</span>
+                        {prixVenteAffiche(p) !== null ? (
+                          <span className="font-extrabold text-brand-orange text-sm">
+                            {formaterDA(prixVenteAffiche(p)!)}
+                            {p.statut === "vendu" && (
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mt-0.5">
+                                {t("inventaire.statutVendu")}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-brand-warm-grey dark:text-brand-grey font-medium">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-warm-grey font-medium">{p.jours_stock}</td>
+                      <td className="px-3 py-2.5">
+                        {peutModifier && (
+                          <div
+                            className="flex items-center justify-end gap-1"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            {/* + : Ajouter exemplaire rapide */}
                             <button
                               type="button"
-                              disabled={envoi}
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
-                                void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
+                                ouvrirAjoutRapide(p);
                               }}
-                              title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
-                              aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
-                              className={`rounded-lg p-2 transition-colors disabled:opacity-40 ${
-                                p.en_vitrine
-                                  ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
-                                  : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
-                              }`}
+                              title="Ajouter un exemplaire"
+                              aria-label="Ajouter un exemplaire"
+                              className="rounded-lg p-1.5 text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange transition-colors"
                             >
-                              <IconeVitrine taille={15} />
+                              <IconePlus taille={15} />
                             </button>
-                          )}
-                          <BoutonImpression 
-                            ids={[p.id]} 
-                            dejaImprimee={p.etiquette_imprimee} 
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white" 
-                          />
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              ouvrirEdition([p], p.code_interne);
-                            }}
-                            title={t("inventaire.editer")}
-                            aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
-                          >
-                            <IconeCrayon taille={15} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              ouvrirSuppressionUnites([p]);
-                            }}
-                            title={t("inventaire.supprimer")}
-                            aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
-                            className="rounded-lg p-2 text-brand-warm-grey transition-colors hover:bg-danger/10 hover:text-danger"
-                          >
-                            <IconeCorbeille taille={15} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+
+                            {/* Billet : Vendre / Facturer */}
+                            {p.statut === "en_vente" && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  router.push(`/pos?vendre_produit_id=${p.id}`);
+                                }}
+                                title="Vendre / Facturer"
+                                aria-label="Vendre"
+                                className="rounded-lg p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                              >
+                                <IconeBillet taille={15} />
+                              </button>
+                            )}
+
+                            {/* Barcode : Copier code interne */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(p.code_interne);
+                                afficher(`Code ${p.code_interne} copié !`);
+                              }}
+                              title={`Copier le code : ${p.code_interne}`}
+                              aria-label="Copier le code"
+                              className="rounded-lg p-1.5 text-brand-warm-grey hover:bg-brand-light-grey/60 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white transition-colors"
+                            >
+                              <IconeCodeBarres taille={14} />
+                            </button>
+
+                            {/* Imprimer */}
+                            <BoutonImpression
+                              ids={[p.id]}
+                              dejaImprimee={p.etiquette_imprimee}
+                              className="rounded-lg p-1.5 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
+                            />
+
+                            {/* Crayon : Éditer */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                ouvrirEdition([p], p.code_interne);
+                              }}
+                              title={t("inventaire.editer")}
+                              aria-label={t("inventaire.editerProduit", { code: p.code_interne })}
+                              className="rounded-lg p-1.5 text-brand-warm-grey transition-colors hover:bg-brand-light-grey/50 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
+                            >
+                              <IconeCrayon taille={15} />
+                            </button>
+
+                            {/* Vitrine */}
+                            {p.statut !== "vendu" && (
+                              <button
+                                type="button"
+                                disabled={envoi}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  void basculerVitrineIds([p.id], !p.en_vitrine, p.code_interne);
+                                }}
+                                title={p.en_vitrine ? t("inventaire.retirerDeVitrine") : t("inventaire.mettreVitrine")}
+                                aria-label={t("inventaire.basculerVitrine", { code: p.code_interne, action: p.en_vitrine ? t("inventaire.retirer") : t("inventaire.mettre") })}
+                                className={`rounded-lg p-1.5 transition-colors disabled:opacity-40 ${
+                                  p.en_vitrine
+                                    ? "text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20"
+                                    : "text-brand-warm-grey hover:bg-brand-orange/10 hover:text-brand-orange"
+                                }`}
+                              >
+                                <IconeVitrine taille={15} />
+                              </button>
+                            )}
+
+                            {/* Supprimer */}
+                            {p.statut !== "vendu" && (
+                              <button
+                                type="button"
+                                onClick={(e: React.MouseEvent) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  ouvrirSuppressionUnites([p]);
+                                }}
+                                title={t("inventaire.supprimer")}
+                                aria-label={t("inventaire.supprimerProduit", { code: p.code_interne })}
+                                className="rounded-lg p-1.5 text-brand-warm-grey transition-colors hover:bg-danger/10 hover:text-danger"
+                              >
+                                <IconeCorbeille taille={15} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2207,6 +2438,365 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           </form>
         )}
+      </Modale>
+
+      {/* Barre flottante d'actions groupées (Bulk Actions) */}
+      {idsSelectionnes.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-3 bg-brand-black text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 animate-entree backdrop-blur-xl max-w-[95vw]">
+          <div className="flex items-center gap-2 border-r border-white/20 pr-3">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-orange text-xs font-bold text-white">
+              {idsSelectionnes.size}
+            </span>
+            <span className="text-sm font-semibold whitespace-nowrap">
+              {idsSelectionnes.size} sélectionné{idsSelectionnes.size > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Facturer / Vendre */}
+            <button
+              type="button"
+              onClick={() => {
+                router.push(`/pos?vendre_ids=${Array.from(idsSelectionnes).join(",")}`);
+              }}
+              className="btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-2 px-3 shadow-sm flex items-center gap-1.5 font-bold"
+              title="Ajouter au panier POS (1 unité par article)"
+            >
+              <IconeRecu taille={15} />
+              <span>Facturer / Vendre</span>
+            </button>
+
+            {/* Changer le statut */}
+            {peutStatut && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatutMasseCible("");
+                  setStatutMasseNote("");
+                  setModalStatutMasse(true);
+                }}
+                className="btn bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs py-2 px-3 shadow-sm flex items-center gap-1.5 font-semibold"
+                title="Changer le statut de la sélection"
+              >
+                <IconeReglages taille={15} />
+                <span>Statut</span>
+              </button>
+            )}
+
+            {/* Imprimer les étiquettes */}
+            <button
+              type="button"
+              onClick={() => {
+                window.open(
+                  `/imprimer-etiquettes?ids=${Array.from(idsSelectionnes).join(",")}`,
+                  "_blank",
+                  "width=400,height=600"
+                );
+              }}
+              className="btn bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs py-2 px-3 shadow-sm flex items-center gap-1.5 font-semibold"
+              title="Imprimer les étiquettes de la sélection"
+            >
+              <IconeImprimante taille={15} />
+              <span>Étiquettes</span>
+            </button>
+
+            {/* Mettre en vitrine */}
+            {peutModifier && (
+              <button
+                type="button"
+                disabled={envoi}
+                onClick={() => {
+                  void basculerVitrineIds(
+                    Array.from(idsSelectionnes),
+                    true,
+                    `${idsSelectionnes.size} produit(s)`
+                  );
+                }}
+                className="btn bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs py-2 px-3 shadow-sm flex items-center gap-1.5 font-semibold"
+                title="Mettre en vitrine"
+              >
+                <IconeVitrine taille={15} />
+                <span className="hidden sm:inline">Vitrine</span>
+              </button>
+            )}
+
+            {/* Supprimer */}
+            {peutModifier && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (donneesFiltrees) {
+                    const selectionnes = donneesFiltrees.produits.filter((p) =>
+                      idsSelectionnes.has(p.id)
+                    );
+                    ouvrirSuppressionUnites(selectionnes);
+                  }
+                }}
+                className="btn bg-red-600/80 hover:bg-red-600 text-white text-xs py-2 px-3 shadow-sm flex items-center gap-1.5 font-semibold"
+                title="Supprimer les exemplaires sélectionnés"
+              >
+                <IconeCorbeille taille={15} />
+                <span>Supprimer</span>
+              </button>
+            )}
+          </div>
+
+          {/* Désélectionner */}
+          <button
+            type="button"
+            onClick={deselectionnerTout}
+            className="p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10 transition ml-auto"
+            title="Désélectionner tout"
+          >
+            <IconeFermer taille={15} />
+          </button>
+        </div>
+      )}
+
+      {/* Modale Rapide : Ajouter un exemplaire */}
+      <Modale
+        titre="Ajouter un exemplaire"
+        ouverte={produitRapideAjout !== null}
+        onFermer={() => setProduitRapideAjout(null)}
+      >
+        {produitRapideAjout && (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void validerAjoutRapide();
+            }}
+          >
+            {/* Résumé du produit source */}
+            <div className="p-3 bg-brand-light-grey/20 dark:bg-white/5 rounded-xl border border-brand-light-grey/50 dark:border-white/10 flex items-center gap-3">
+              {produitRapideAjout.image_url ? (
+                <img
+                  src={produitRapideAjout.image_url}
+                  alt={produitRapideAjout.reference}
+                  className="w-12 h-12 rounded-lg object-cover border border-brand-light-grey/50 shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-brand-light-grey/30 flex items-center justify-center shrink-0">
+                  <IconeImage taille={20} className="text-brand-warm-grey opacity-50" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="font-mono text-[11px] text-brand-warm-grey font-bold">
+                  {produitRapideAjout.code_interne}
+                </div>
+                <div className="font-bold text-sm text-brand-black dark:text-white truncate">
+                  {produitRapideAjout.reference}
+                </div>
+                <div className="text-xs text-brand-warm-grey truncate">
+                  {produitRapideAjout.categorie}
+                </div>
+              </div>
+            </div>
+
+            {/* Informations de prix */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/30 dark:border-white/5">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey">
+                  Prix d'achat
+                </span>
+                <span className="font-bold text-brand-black dark:text-white text-base">
+                  {formaterDA(produitRapideAjout.prix_achat)}
+                </span>
+                <span className="block text-[10px] text-brand-warm-grey mt-0.5">
+                  Conservé du modèle
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-brand-orange/10 border border-brand-orange/20">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-orange/80">
+                  Prix de vente actuel
+                </span>
+                <span className="font-extrabold text-brand-orange text-base">
+                  {produitRapideAjout.prix_vente_fixe !== null
+                    ? formaterDA(produitRapideAjout.prix_vente_fixe)
+                    : "Non fixé"}
+                </span>
+              </div>
+            </div>
+
+            {/* Choix du prix de vente pour ce nouvel exemplaire */}
+            <div className="space-y-3 p-3 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper">
+              <span className="block text-xs font-bold uppercase tracking-wider text-brand-black dark:text-white">
+                Prix de vente de cet exemplaire
+              </span>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2.5 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    name="choixPrixRapide"
+                    checked={!modifierPrixVenteRapide}
+                    onChange={() => setModifierPrixVenteRapide(false)}
+                    className="accent-brand-orange"
+                  />
+                  <span>
+                    Conserver le prix actuel (
+                    <strong>
+                      {produitRapideAjout.prix_vente_fixe !== null
+                        ? formaterDA(produitRapideAjout.prix_vente_fixe)
+                        : "Non fixé"}
+                    </strong>
+                    )
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2.5 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    name="choixPrixRapide"
+                    checked={modifierPrixVenteRapide}
+                    onChange={() => setModifierPrixVenteRapide(true)}
+                    className="accent-brand-orange"
+                  />
+                  <span>Modifier le prix de vente</span>
+                </label>
+              </div>
+
+              {modifierPrixVenteRapide && (
+                <div className="pt-2 animate-entree">
+                  <label className="libelle mb-1.5" htmlFor="prix-vente-rapide">
+                    Nouveau prix de vente (DA)
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="prix-vente-rapide"
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      step={1}
+                      autoFocus
+                      value={prixVenteRapide}
+                      onChange={(e) =>
+                        setPrixVenteRapide(e.target.value.replace(/[^\d]/g, ""))
+                      }
+                      placeholder="Ex: 82000"
+                      className="champ text-right pr-10 font-bold"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-grey pointer-events-none">
+                      DA
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quantité d'exemplaires */}
+            <div className="flex gap-3 items-center">
+              <div className="w-1/2">
+                <label className="libelle mb-1.5" htmlFor="quantite-rapide">
+                  Nombre d'exemplaires
+                </label>
+                <input
+                  id="quantite-rapide"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={quantiteRapide}
+                  onChange={(e) =>
+                    setQuantiteRapide(e.target.value.replace(/[^\d]/g, "") || "1")
+                  }
+                  className="champ text-right font-bold"
+                />
+              </div>
+            </div>
+
+            {/* Boutons de validation */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-brand-light-grey/50 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setProduitRapideAjout(null)}
+                className="btn btn-secondaire"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={envoi}
+                className="btn btn-primaire shadow-md"
+              >
+                <IconePlus taille={16} />
+                Ajouter l'exemplaire
+              </button>
+            </div>
+          </form>
+        )}
+      </Modale>
+
+      {/* Modale de changement de statut en masse */}
+      <Modale
+        titre={`Changer le statut — ${idsSelectionnes.size} produit(s)`}
+        ouverte={modalStatutMasse}
+        onFermer={() => setModalStatutMasse(false)}
+      >
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void appliquerStatutMasse();
+          }}
+        >
+          <div>
+            <label className="libelle mb-1.5" htmlFor="statut-cible-masse">
+              Nouveau statut *
+            </label>
+            <select
+              id="statut-cible-masse"
+              value={statutMasseCible}
+              onChange={(e) => setStatutMasseCible(e.target.value as StatutProduit)}
+              className="champ"
+              required
+            >
+              <option value="">Sélectionner un statut…</option>
+              {STATUTS_PRODUIT.map((s) => (
+                <option key={s} value={s}>
+                  {INFOS_STATUT[s].libelle}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {statutMasseCible &&
+            STATUTS_NOTE_OBLIGATOIRE.includes(statutMasseCible as StatutProduit) && (
+              <div>
+                <label className="libelle mb-1.5" htmlFor="statut-note-masse">
+                  Note contextuelle obligatoire *
+                </label>
+                <textarea
+                  id="statut-note-masse"
+                  rows={2}
+                  value={statutMasseNote}
+                  onChange={(e) => setStatutMasseNote(e.target.value)}
+                  placeholder="Raison du changement de statut…"
+                  className="champ"
+                  required
+                />
+              </div>
+            )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-brand-light-grey/50">
+            <button
+              type="button"
+              onClick={() => setModalStatutMasse(false)}
+              className="btn btn-secondaire"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={envoi || !statutMasseCible}
+              className="btn btn-primaire"
+            >
+              Appliquer le statut
+            </button>
+          </div>
+        </form>
       </Modale>
     </>
   );

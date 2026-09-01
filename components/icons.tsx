@@ -584,3 +584,25 @@ export const IconeH2 = creerIcone("H2", <><path d="M4 12h8" /><path d="M4 18V6" 
 export const IconeH3 = creerIcone("H3", <><path d="M4 12h8" /><path d="M4 18V6" /><path d="M12 18V6" /><path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2" /><path d="M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2" /></>);
 export const IconeCouleurTexte = creerIcone("CouleurTexte", <><path d="M4 20h16" /><path d="m6 16 6-12 6 12" /><path d="M8 12h8" /></>);
 export const IconeSurligner = creerIcone("Surligner", <><path d="m9 11-6 6v3h9l3-3" /><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" /></>);
+
+export const IconeCodeBarres = creerIcone(
+  "CodeBarres",
+  <>
+    <path d="M3 5v14" />
+    <path d="M8 5v14" />
+    <path d="M12 5v14" />
+    <path d="M17 5v14" />
+    <path d="M21 5v14" />
+  </>
+);
+
+export const IconeRecu = creerIcone(
+  "Recu",
+  <>
+    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+    <path d="M16 8h-8" />
+    <path d="M16 12h-8" />
+    <path d="M10 16h-2" />
+  </>
+);
+

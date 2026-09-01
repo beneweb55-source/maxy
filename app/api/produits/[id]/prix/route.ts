@@ -38,19 +38,15 @@ export async function POST(
     }
 
     await prisma.$transaction(async (tx) => {
-      let produitsToUpdate = [produit];
-
-      if (produit.lot_id !== null) {
-        const identiques = await tx.produit.findMany({
-          where: {
-            lot_id: produit.lot_id,
-            reference: produit.reference,
-            categorie: produit.categorie,
-          }
-        });
-        // We only update price for products that are not sold.
-        produitsToUpdate = identiques.filter(p => p.statut !== "vendu");
-      }
+      const identiques = await tx.produit.findMany({
+        where: {
+          lot_id: produit.lot_id,
+          reference: produit.reference,
+          categorie: produit.categorie,
+        }
+      });
+      // We update price for all non-sold identical products of this model
+      const produitsToUpdate = identiques.filter(p => p.statut !== "vendu");
 
       // Update prix_vente_fixe for all non-sold identical products
       const idsTous = produitsToUpdate.map(p => p.id);
