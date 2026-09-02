@@ -4,22 +4,36 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formaterDA } from "@/lib/caisse";
-import {
-  IconeBouclier,
-  IconeChevronGauche,
-  IconeChevronDroite,
-  IconeRecherche,
-  IconeCorbeille,
-  IconeImprimante,
-} from "@/components/icons";
 import { useToast } from "@/components/toast";
-import { Download, FileText, ClipboardList, FilePen, Store, Truck } from "lucide-react";
+import {
+  Download,
+  FileText,
+  ClipboardList,
+  FilePen,
+  Store,
+  Truck,
+  Search,
+  Calendar,
+  Filter,
+  X,
+  RotateCcw,
+  Eye,
+  Printer,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  FileSearch,
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 import { genererFacturePdf } from "@/lib/facture-pdf";
 
 type TypeDocument = "FACTURE_TVA" | "PROFORMA" | "DEVIS";
-
-/** Onglets de filtrage par type de document */
 type OngletType = "tous" | "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+type FiltreTypeVente = "TOUTES" | "COMPTOIR" | "YALIDINE";
 
 interface LigneFactureListe {
   id: number;
@@ -51,12 +65,19 @@ interface ReponseFactures {
 }
 
 function dateFr(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR");
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
-/** Badge coloré selon le type de document */
+/** Badge Type de Document Fiscal */
 function BadgeTypeDocument({ type }: { type: TypeDocument }) {
-  const config: Record<TypeDocument, { label: string; cls: string; Icon: React.ComponentType<{className?: string}> }> = {
+  const config: Record<
+    TypeDocument,
+    { label: string; cls: string; Icon: React.ComponentType<{ className?: string }> }
+  > = {
     FACTURE_TVA: {
       label: "Facture TVA",
       cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
@@ -75,26 +96,32 @@ function BadgeTypeDocument({ type }: { type: TypeDocument }) {
   };
   const { label, cls, Icon } = config[type] ?? config.FACTURE_TVA;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${cls}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold ${cls}`}>
       <Icon className="w-3 h-3" />
       {label}
     </span>
   );
 }
 
-/** Badge Comptoir / Yalidine */
+/** Badge Type de Vente Interne (Dashboard Admin uniquement) */
 function BadgeTypeVente({ type }: { type?: "COMPTOIR" | "YALIDINE" | null }) {
   const estYalidine = type === "YALIDINE";
   if (estYalidine) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+      <span
+        title="Canal interne : Expédition Yalidine"
+        className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+      >
         <Truck className="w-3 h-3" />
         Yalidine
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+    <span
+      title="Canal interne : Vente directe magasin"
+      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+    >
       <Store className="w-3 h-3" />
       Comptoir
     </span>
@@ -106,6 +133,7 @@ export default function ListeFactures({ role }: { role?: string }) {
   const { afficher } = useToast();
   const [donnees, setDonnees] = useState<ReponseFactures | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(true);
   const [q, setQ] = useState("");
   const [recherche, setRecherche] = useState("");
   const [mois, setMois] = useState("");
@@ -113,7 +141,7 @@ export default function ListeFactures({ role }: { role?: string }) {
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [envoi, setEnvoi] = useState(false);
   const [onglet, setOnglet] = useState<OngletType>("tous");
-  const [filtreTypeVente, setFiltreTypeVente] = useState<"TOUTES" | "COMPTOIR" | "YALIDINE">("TOUTES");
+  const [filtreTypeVente, setFiltreTypeVente] = useState<FiltreTypeVente>("TOUTES");
 
   // Debounce automatique de la recherche
   useEffect(() => {
@@ -127,16 +155,16 @@ export default function ListeFactures({ role }: { role?: string }) {
   const peutSupprimer = role === "gerant" || role === "dev" || role === "social_media";
 
   const charger = useCallback(async () => {
+    setChargement(true);
     setErreur(null);
     try {
       const params = new URLSearchParams();
       if (recherche) params.set("q", recherche);
       if (mois) params.set("mois", mois);
       params.set("page", String(page));
-      // Filtre par type de document selon l'onglet actif
       if (onglet !== "tous") params.set("type", onglet);
-      // Filtre par type de vente (COMPTOIR ou YALIDINE)
       if (filtreTypeVente !== "TOUTES") params.set("type_vente", filtreTypeVente);
+
       const res = await fetch(`/api/factures?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -145,6 +173,8 @@ export default function ListeFactures({ role }: { role?: string }) {
       setDonnees((await res.json()) as ReponseFactures);
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
+    } finally {
+      setChargement(false);
     }
   }, [recherche, mois, page, onglet, filtreTypeVente]);
 
@@ -154,6 +184,17 @@ export default function ListeFactures({ role }: { role?: string }) {
 
   const factures = donnees?.factures ?? [];
   const maintenant = Date.now();
+  const estFiltreActif = Boolean(recherche || mois || onglet !== "tous" || filtreTypeVente !== "TOUTES");
+
+  function reinitialiserFiltres() {
+    setQ("");
+    setRecherche("");
+    setMois("");
+    setOnglet("tous");
+    setFiltreTypeVente("TOUTES");
+    setPage(1);
+    setSelection(new Set());
+  }
 
   function toggleSelection(id: number) {
     setSelection((prev) => {
@@ -195,7 +236,7 @@ export default function ListeFactures({ role }: { role?: string }) {
 
   async function supprimerSelection() {
     if (selection.size === 0) return;
-    if (!window.confirm(`Supprimer ces ${selection.size} factures ? Les ventes seront annulées.`)) return;
+    if (!window.confirm(`Supprimer ces ${selection.size} factures ? Les ventes associées seront annulées.`)) return;
     setEnvoi(true);
     let erreurs = 0;
     for (const id of selection) {
@@ -216,172 +257,293 @@ export default function ListeFactures({ role }: { role?: string }) {
     setEnvoi(false);
   }
 
-  // Configuration des onglets
-  const onglets: { id: OngletType; label: string; Icon: React.ComponentType<{className?: string}> }[] = [
-    { id: "tous", label: "Tous", Icon: FileText },
-    { id: "FACTURE_TVA", label: "Factures TVA", Icon: FileText },
-    { id: "PROFORMA", label: "Proformas", Icon: FilePen },
-    { id: "DEVIS", label: "Devis", Icon: ClipboardList },
-  ];
+  async function telechargerPdfDirect(f: LigneFactureListe, ev: React.MouseEvent) {
+    ev.stopPropagation();
+    try {
+      const res = await fetch(`/api/factures/${f.id}`);
+      if (!res.ok) throw new Error();
+      const fullFacture = await res.json();
+      await genererFacturePdf({
+        numero: fullFacture.numero,
+        date: fullFacture.date_emission,
+        vendeur: fullFacture.vendeur,
+        type_paiement: fullFacture.mode_paiement,
+        garantie_mois: 6,
+        client: {
+          nom: fullFacture.client_nom,
+          telephone: fullFacture.client_tel,
+          adresse: fullFacture.client_adresse,
+          rc: fullFacture.client_rc,
+          nif: fullFacture.client_nif,
+          nis: fullFacture.client_nis,
+          ai: fullFacture.client_ai,
+        },
+        lignes: (fullFacture.lignes || []).map((l: any) => ({
+          code_interne: l.code_interne,
+          designation: l.designation,
+          quantite: 1,
+          prix_unitaire: l.prix,
+          total_ligne: l.prix,
+        })),
+        total_ttc: fullFacture.total,
+      });
+      afficher("Téléchargement du PDF lancé.", "succes");
+    } catch {
+      afficher("Erreur lors de la génération du PDF.", "erreur");
+    }
+  }
 
   return (
-    <div className="space-y-6 animate-entree">
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
+    <div className="space-y-5 animate-entree">
+      {/* ===================== EN-TÊTE ERP ===================== */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-brand-black dark:text-white">Documents</h1>
-          <p className="mt-1 text-sm text-brand-warm-grey">
-            Factures TVA, proformas et devis — générés à chaque vente avec 6 mois de garantie.
-          </p>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-brand-orange/10 text-brand-orange">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                Factures & Documents
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Gestion et historique commercial — Factures fiscales, proformas et devis
+              </p>
+            </div>
+          </div>
         </div>
+
+        {donnees && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700">
+              <strong className="font-bold text-slate-900 dark:text-white">{donnees.total}</strong> document
+              {donnees.total > 1 ? "s" : ""}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Filtres Documents et Types de Vente */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Onglets de filtrage par type de document */}
-        <div className="flex gap-1 p-1 rounded-2xl bg-brand-light-grey/30 dark:bg-white/5 border border-brand-light-grey/40 dark:border-white/10 w-full sm:w-auto overflow-x-auto">
-          {onglets.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => { setOnglet(id); setPage(1); setSelection(new Set()); }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-1 justify-center cursor-pointer ${
-                onglet === id
-                  ? "bg-white dark:bg-brand-paper text-brand-orange shadow-sm"
-                  : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
-              }`}
+      {/* ===================== BARRE D'OUTILS COMPACTE ERP ===================== */}
+      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 shadow-xs space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Recherche */}
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Rechercher N°, client, article..."
+              className="w-full h-9 pl-9 pr-7 text-xs font-medium rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-zinc-900 focus:border-brand-orange outline-none transition"
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  setRecherche("");
+                  setPage(1);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Filtre Type de Vente (Interne) */}
+          <div className="relative">
+            <select
+              value={filtreTypeVente}
+              onChange={(e) => {
+                setFiltreTypeVente(e.target.value as FiltreTypeVente);
+                setPage(1);
+              }}
+              className="h-9 text-xs font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 px-3 pr-7 text-slate-700 dark:text-slate-200 focus:border-brand-orange outline-none cursor-pointer"
             >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
+              <option value="TOUTES">Tous les canaux</option>
+              <option value="COMPTOIR">Vente Comptoir</option>
+              <option value="YALIDINE">Vente Yalidine</option>
+            </select>
+          </div>
+
+          {/* Filtre Type de Document */}
+          <div className="relative">
+            <select
+              value={onglet}
+              onChange={(e) => {
+                setOnglet(e.target.value as OngletType);
+                setPage(1);
+              }}
+              className="h-9 text-xs font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 px-3 pr-7 text-slate-700 dark:text-slate-200 focus:border-brand-orange outline-none cursor-pointer"
+            >
+              <option value="tous">Tous les documents</option>
+              <option value="FACTURE_TVA">Factures TVA</option>
+              <option value="PROFORMA">Proformas</option>
+              <option value="DEVIS">Devis</option>
+            </select>
+          </div>
+
+          {/* Filtre Période (Mois) */}
+          <div className="relative">
+            <input
+              type="month"
+              value={mois}
+              onChange={(e) => {
+                setPage(1);
+                setMois(e.target.value);
+              }}
+              className="h-9 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 px-3 text-slate-700 dark:text-slate-200 focus:border-brand-orange outline-none cursor-pointer"
+              title="Filtrer par mois"
+            />
+          </div>
+
+          {/* Action Réinitialiser si filtre actif */}
+          {estFiltreActif && (
+            <button
+              type="button"
+              onClick={reinitialiserFiltres}
+              className="h-9 px-3 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-danger rounded-xl border border-dashed border-slate-300 dark:border-zinc-700 hover:border-danger/40 transition flex items-center gap-1.5 cursor-pointer bg-white dark:bg-zinc-800"
+              title="Effacer tous les filtres"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Réinitialiser</span>
             </button>
-          ))}
+          )}
         </div>
 
-        {/* Filtres Type de Vente : Comptoir vs Yalidine */}
-        <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => { setFiltreTypeVente("TOUTES"); setPage(1); setSelection(new Set()); }}
-            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
-              filtreTypeVente === "TOUTES"
-                ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs font-black"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Toutes les ventes
-          </button>
-          <button
-            type="button"
-            onClick={() => { setFiltreTypeVente("COMPTOIR"); setPage(1); setSelection(new Set()); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
-              filtreTypeVente === "COMPTOIR"
-                ? "bg-emerald-600 text-white shadow-xs font-black"
-                : "text-slate-500 hover:text-emerald-600"
-            }`}
-          >
-            <Store className="w-3.5 h-3.5" />
-            Ventes Comptoir
-          </button>
-          <button
-            type="button"
-            onClick={() => { setFiltreTypeVente("YALIDINE"); setPage(1); setSelection(new Set()); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
-              filtreTypeVente === "YALIDINE"
-                ? "bg-blue-600 text-white shadow-xs font-black"
-                : "text-slate-500 hover:text-blue-600"
-            }`}
-          >
-            <Truck className="w-3.5 h-3.5" />
-            Ventes Yalidine
-          </button>
-        </div>
-      </div>
+        {/* Badges des filtres actifs */}
+        {estFiltreActif && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800/60 text-xs">
+            <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
+              <Filter className="w-3 h-3" /> Filtres actifs :
+            </span>
 
-      <div className="carte flex flex-wrap items-center gap-3">
-        <form
-          className="relative min-w-56 flex-1"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setPage(1);
-            setRecherche(q.trim());
-          }}
-        >
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-grey">
-            <IconeRecherche taille={15} />
-          </span>
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="N° document, client, produit..."
-            className="champ pl-9"
-          />
-        </form>
-        <input
-          type="month"
-          value={mois}
-          onChange={(e) => {
-            setPage(1);
-            setMois(e.target.value);
-          }}
-          className="champ w-auto"
-        />
-        {(recherche || mois) && (
-          <button
-            type="button"
-            onClick={() => {
-              setQ("");
-              setRecherche("");
-              setMois("");
-              setPage(1);
-            }}
-            className="text-sm text-brand-warm-grey hover:underline"
-          >
-            Réinitialiser
-          </button>
+            {recherche && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
+                Recherche: &quot;{recherche}&quot;
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQ("");
+                    setRecherche("");
+                    setPage(1);
+                  }}
+                  className="hover:text-danger ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {filtreTypeVente !== "TOUTES" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
+                {filtreTypeVente === "COMPTOIR" ? <Store className="w-3 h-3 text-emerald-600" /> : <Truck className="w-3 h-3 text-blue-600" />}
+                Canal: {filtreTypeVente === "COMPTOIR" ? "Comptoir" : "Yalidine"}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFiltreTypeVente("TOUTES");
+                    setPage(1);
+                  }}
+                  className="hover:text-danger ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {onglet !== "tous" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
+                <FileText className="w-3 h-3 text-brand-orange" />
+                Document: {onglet === "FACTURE_TVA" ? "Facture TVA" : onglet === "PROFORMA" ? "Proforma" : "Devis"}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOnglet("tous");
+                    setPage(1);
+                  }}
+                  className="hover:text-danger ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {mois && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
+                <Calendar className="w-3 h-3 text-slate-500" />
+                Mois: {mois}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMois("");
+                    setPage(1);
+                  }}
+                  className="hover:text-danger ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+          </div>
         )}
       </div>
 
       {erreur && (
-        <div className="alerte-erreur" role="alert">
-          {erreur}
+        <div className="p-4 rounded-xl bg-danger/10 text-danger border border-danger/20 text-xs font-semibold flex items-center gap-2" role="alert">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{erreur}</span>
         </div>
       )}
-      {!erreur && donnees === null && (
-        <p className="text-sm text-brand-warm-grey">Chargement des documents…</p>
-      )}
 
-      {donnees && (
-        <p className="text-sm text-brand-warm-grey">
-          <strong className="text-brand-black dark:text-white">{donnees.total}</strong>{" "}
-          {onglet === "DEVIS" ? "devis" : onglet === "PROFORMA" ? "proforma(s)" : `facture${donnees.total > 1 ? "s" : ""}`}
-        </p>
-      )}
-
-      {donnees && factures.length === 0 && (
-        <div className="carte border-dashed p-8 text-center text-sm text-brand-warm-grey">
-          <p className="font-semibold text-brand-black dark:text-white">Aucun document.</p>
-          <p className="mt-1">
-            {onglet === "DEVIS"
-              ? "Aucun devis créé pour le moment."
-              : onglet === "PROFORMA"
-              ? "Aucune proforma créée pour le moment."
-              : "Chaque vente enregistrée génère automatiquement sa facture."}
+      {/* ===================== TABLEAU DES FACTURES ===================== */}
+      {chargement && !donnees ? (
+        /* Skeleton Table */
+        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-11 rounded-xl bg-slate-100 dark:bg-zinc-800 animate-pulse" />
+          ))}
+        </div>
+      ) : factures.length === 0 ? (
+        /* État Vide Professionnel */
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 p-12 text-center bg-white dark:bg-zinc-900/50">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-3">
+            <FileSearch className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+            Aucune facture trouvée
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
+            {estFiltreActif
+              ? "Aucun document ne correspond à vos critères de filtrage. Essayez de réinitialiser vos filtres."
+              : "Aucune facture enregistrée pour le moment. Chaque vente génère automatiquement sa facture."}
           </p>
-          {onglet === "tous" && (
-            <Link href="/vitrine" className="btn btn-primaire mt-4">
-              Vendre depuis la vitrine
+          {estFiltreActif ? (
+            <button
+              type="button"
+              onClick={reinitialiserFiltres}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 transition cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Réinitialiser les filtres
+            </button>
+          ) : (
+            <Link
+              href="/vitrine"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-orange hover:bg-brand-orange/90 transition shadow-xs"
+            >
+              Accéder au point de vente
             </Link>
           )}
         </div>
-      )}
-
-      {factures.length > 0 && (
+      ) : (
         <div className="space-y-4">
-          {/* Vue Mobile: Cartes */}
+          {/* Vue Mobile (Cartes ERP) */}
           <div className="flex flex-col gap-3 md:hidden">
             {peutSupprimer && (
-              <div className="flex items-center justify-between rounded-lg bg-brand-light-grey/25 px-4 py-3 border border-brand-light-grey">
-                <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-zinc-800/50 px-4 py-2.5 border border-slate-200 dark:border-zinc-700">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selection.size > 0 && selection.size === factures.length}
@@ -391,120 +553,121 @@ export default function ListeFactures({ role }: { role?: string }) {
                       }
                     }}
                     onChange={toggleTout}
-                    className="h-4 w-4 rounded border-brand-grey text-brand-orange focus:ring-brand-orange"
+                    className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange"
                   />
                   Tout sélectionner
                 </label>
               </div>
             )}
-            
+
             {factures.map((f) => {
-              const garantieActive = new Date(f.garantie_fin).getTime() > maintenant;
               const estSelectionnee = selection.has(f.id);
+              const garantieActive = new Date(f.garantie_fin).getTime() > maintenant;
 
               return (
                 <div
                   key={f.id}
                   onClick={() => router.push(`/factures/${f.id}`)}
-                  className={`relative flex flex-col gap-2 rounded-xl border bg-brand-white p-4 shadow-sm transition active:scale-[0.99] cursor-pointer ${
-                    estSelectionnee ? "border-brand-orange ring-1 ring-brand-orange" : "border-brand-light-grey"
-                  } ${f.annulee ? "opacity-75" : ""}`}
+                  className={`flex flex-col gap-2.5 rounded-2xl border bg-white dark:bg-zinc-900 p-4 shadow-xs transition active:scale-[0.99] cursor-pointer ${
+                    estSelectionnee
+                      ? "border-brand-orange ring-1 ring-brand-orange"
+                      : "border-slate-200 dark:border-zinc-800"
+                  } ${f.annulee ? "opacity-70" : ""}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
                       {peutSupprimer && (
                         <input
                           type="checkbox"
                           checked={estSelectionnee}
                           onClick={(e) => e.stopPropagation()}
                           onChange={() => toggleSelection(f.id)}
-                          className="h-5 w-5 rounded border-brand-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
+                          className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange"
                         />
                       )}
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-mono text-sm font-bold text-brand-orange">{f.numero}</span>
+                          <span className="font-mono text-xs font-black text-brand-orange">
+                            {f.numero}
+                          </span>
                           <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
                           <BadgeTypeVente type={f.type_vente} />
                           {f.annulee && (
-                            <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger uppercase">
+                            <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger">
                               Annulée
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-brand-warm-grey mt-0.5">
-                          <span>{dateFr(f.date_emission)}</span>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          {dateFr(f.date_emission)}
                           {f.commande_numero && (
-                            <span>· <strong className="font-mono text-slate-700 dark:text-slate-300">{f.commande_numero}</strong></span>
+                            <span className="ml-1.5 font-mono text-slate-600 dark:text-slate-300">
+                              · Cmd {f.commande_numero}
+                            </span>
                           )}
                         </div>
-                        {f.premier_article && (
-                          <div
-                            className="text-xs text-slate-500 truncate max-w-[260px] whitespace-nowrap mt-0.5"
-                            title={`${f.premier_article}${f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}`}
-                          >
-                            {f.premier_article}
-                            {f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}
-                          </div>
-                        )}
                       </div>
                     </div>
-                    <div className="text-right">
+
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-sm font-black text-slate-900 dark:text-white">
+                        {formaterDA(f.total_net)}
+                      </div>
                       {f.total_net !== f.total && (
-                        <div className="text-[10px] text-brand-grey line-through">{formaterDA(f.total)}</div>
+                        <div className="text-[10px] text-slate-400 line-through">
+                          {formaterDA(f.total)}
+                        </div>
                       )}
-                      <div className="font-bold text-brand-black">{formaterDA(f.total_net)}</div>
                     </div>
                   </div>
 
-                  <div className="mt-1 flex flex-col gap-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-brand-warm-grey">Client :</span>
-                      <span className="font-semibold text-brand-black text-right">
-                        {f.client_nom || <span className="text-brand-grey font-normal">Comptoir</span>}
-                        {f.canal && <span className="ml-1 text-xs text-brand-grey">({f.canal})</span>}
+                  <div className="text-xs text-slate-600 dark:text-slate-300 flex justify-between items-center pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <div>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {f.client_nom || "Client comptoir"}
                       </span>
+                      {f.premier_article && (
+                        <p className="text-[11px] text-slate-400 truncate max-w-[220px]">
+                          {f.premier_article}
+                          {f.nb_autres_articles ? ` (+${f.nb_autres_articles})` : ""}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-brand-warm-grey">Garantie :</span>
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                          garantieActive
-                            ? "bg-emerald-50 text-emerald-800"
-                            : "bg-brand-light-grey/60 text-brand-warm-grey"
-                        }`}
-                      >
-                        <IconeBouclier taille={10} />
-                        {garantieActive ? `→ ${dateFr(f.garantie_fin)}` : "expirée"}
-                      </span>
-                    </div>
-                  </div>
 
-                  {peutSupprimer && (
-                    <div className="mt-2 border-t border-brand-light-grey/50 pt-3 flex justify-end">
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
-                        onClick={(e) => supprimerFacture(f.id, e)}
-                        disabled={envoi}
-                        className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/20 disabled:opacity-50"
+                        onClick={(e) => telechargerPdfDirect(f, e)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10 transition"
+                        title="Télécharger PDF"
                       >
-                        <IconeCorbeille taille={14} />
-                        Supprimer
+                        <Download className="w-4 h-4" />
                       </button>
+                      {peutSupprimer && (
+                        <button
+                          type="button"
+                          onClick={(e) => supprimerFacture(f.id, e)}
+                          disabled={envoi}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-danger hover:bg-danger/10 transition"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Vue Bureau: Tableau */}
-          <div className="hidden w-full overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white dark:bg-brand-paper dark:border-white/10 md:block">
-            <table className="w-full min-w-[780px] text-sm">
-              <thead className="bg-brand-light-grey/25 dark:bg-black/30">
+          {/* Vue Bureau: Tableau Haute Lisibilité ERP */}
+          <div className="hidden w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs md:block">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-slate-50 dark:bg-zinc-800/60 border-b border-slate-200 dark:border-zinc-800 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
                   {peutSupprimer && (
-                    <th className="entete-table w-10 px-3 text-center">
+                    <th className="w-10 px-3 py-3 text-center">
                       <input
                         type="checkbox"
                         checked={selection.size > 0 && selection.size === factures.length}
@@ -514,145 +677,158 @@ export default function ListeFactures({ role }: { role?: string }) {
                           }
                         }}
                         onChange={toggleTout}
-                        className="h-4 w-4 rounded border-brand-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
+                        className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange cursor-pointer"
                       />
                     </th>
                   )}
-                  <th className="entete-table">N°</th>
-                  <th className="entete-table">Type</th>
-                  <th className="entete-table">Commande</th>
-                  <th className="entete-table">Date</th>
-                  <th className="entete-table">Client</th>
-                  <th className="entete-table text-right">Articles</th>
-                  <th className="entete-table">Garantie</th>
-                  <th className="entete-table">Vendeur</th>
-                  <th className="entete-table text-right">Total</th>
-                  {peutSupprimer && <th className="entete-table text-right">Actions</th>}
+                  <th className="px-3.5 py-3">N° Facture</th>
+                  <th className="px-3 py-3">Document</th>
+                  <th className="px-3 py-3">Client</th>
+                  <th className="px-3 py-3">Commande</th>
+                  <th className="px-3 py-3">Articles</th>
+                  <th className="px-3 py-3">Date</th>
+                  <th className="px-3 py-3">Type Vente</th>
+                  <th className="px-3.5 py-3 text-right">Total Net</th>
+                  <th className="px-3 py-3 text-center">Statut</th>
+                  <th className="px-3.5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
                 {factures.map((f) => {
-                  const garantieActive = new Date(f.garantie_fin).getTime() > maintenant;
                   const estSelectionnee = selection.has(f.id);
 
                   return (
                     <tr
                       key={f.id}
                       onClick={() => router.push(`/factures/${f.id}`)}
-                      className={`ligne-table border-b border-brand-light-grey/30 dark:border-white/5 last:border-0 cursor-pointer ${
-                        f.annulee ? "text-brand-grey" : ""
+                      className={`transition-colors cursor-pointer hover:bg-slate-50/80 dark:hover:bg-zinc-800/50 ${
+                        f.annulee ? "opacity-60 bg-slate-50/40" : ""
                       } ${estSelectionnee ? "bg-brand-orange/5" : ""}`}
                     >
                       {peutSupprimer && (
-                        <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={estSelectionnee}
                             onChange={() => toggleSelection(f.id)}
-                            className="h-4 w-4 rounded border-brand-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
+                            className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange cursor-pointer"
                           />
                         </td>
                       )}
-                      <td className="px-3 py-3 font-mono text-xs font-bold text-brand-orange">
-                        {f.numero}
-                        {f.annulee && (
-                          <span className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-[10px] font-semibold text-danger">
-                            annulée
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex flex-col gap-1 items-start">
-                          <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
-                          <BadgeTypeVente type={f.type_vente} />
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="font-mono text-xs font-bold text-brand-black dark:text-white">
-                          {f.commande_numero || "—"}
-                        </div>
-                        {f.premier_article && (
-                          <div
-                            className="text-xs text-slate-500 truncate max-w-[200px] whitespace-nowrap"
-                            title={`${f.premier_article}${f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}`}
-                          >
-                            {f.premier_article}
-                            {f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 py-3">{dateFr(f.date_emission)}</td>
-                      <td className="px-3 py-3">
-                        {f.client_nom || <span className="text-brand-grey">Client comptoir</span>}
-                        {f.canal && (
-                          <span className="block text-xs text-brand-grey">{f.canal}</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-3 text-right font-semibold">{f.nb_lignes}</td>
-                      <td className="px-3 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            garantieActive
-                              ? "bg-emerald-50 text-emerald-800"
-                              : "bg-brand-light-grey/60 text-brand-warm-grey"
-                          }`}
-                          title={`Garantie jusqu'au ${dateFr(f.garantie_fin)}`}
-                        >
-                          <IconeBouclier taille={11} />
-                          {garantieActive ? `→ ${dateFr(f.garantie_fin)}` : "expirée"}
+
+                      {/* N° Facture */}
+                      <td className="px-3.5 py-2.5 whitespace-nowrap">
+                        <span className="font-mono font-black text-brand-orange hover:underline">
+                          {f.numero}
                         </span>
                       </td>
-                      <td className="px-3 py-3">{f.vendeur}</td>
-                      <td className="px-3 py-3 text-right">
+
+                      {/* Type Document */}
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
+                      </td>
+
+                      {/* Client */}
+                      <td className="px-3 py-2.5">
+                        <div className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[160px]">
+                          {f.client_nom || <span className="text-slate-400 font-normal">Client comptoir</span>}
+                        </div>
+                      </td>
+
+                      {/* Commande associée */}
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        {f.commande_numero ? (
+                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700">
+                            {f.commande_numero}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-zinc-600">—</span>
+                        )}
+                      </td>
+
+                      {/* Résumé Articles */}
+                      <td className="px-3 py-2.5">
+                        {f.premier_article ? (
+                          <div
+                            className="truncate max-w-[200px] text-slate-600 dark:text-slate-300 font-medium"
+                            title={`${f.premier_article}${f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}`}
+                          >
+                            <span>{f.premier_article}</span>
+                            {f.nb_autres_articles ? (
+                              <span className="ml-1 text-[10px] font-bold text-slate-400">
+                                (+{f.nb_autres_articles})
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">{f.nb_lignes} article{f.nb_lignes > 1 ? "s" : ""}</span>
+                        )}
+                      </td>
+
+                      {/* Date */}
+                      <td className="px-3 py-2.5 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                        {dateFr(f.date_emission)}
+                      </td>
+
+                      {/* Type Vente Interne (Gestion Comptoir / Yalidine) */}
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <BadgeTypeVente type={f.type_vente} />
+                      </td>
+
+                      {/* Total Net */}
+                      <td className="px-3.5 py-2.5 whitespace-nowrap text-right">
                         {f.total_net !== f.total && (
-                          <span className="block text-[10px] text-brand-grey line-through">
+                          <span className="block text-[10px] text-slate-400 line-through">
                             {formaterDA(f.total)}
                           </span>
                         )}
-                        <span className="font-bold">{formaterDA(f.total_net)}</span>
+                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs">
+                          {formaterDA(f.total_net)}
+                        </span>
                       </td>
-                      <td className="px-3 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+
+                      {/* Statut */}
+                      <td className="px-3 py-2.5 whitespace-nowrap text-center">
+                        {f.annulee ? (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-danger/10 text-danger">
+                            <XCircle className="w-3 h-3" />
+                            Annulée
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Valide
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-3.5 py-2.5 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="inline-flex items-center gap-1">
+                          <Link
+                            href={`/factures/${f.id}`}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                            title="Consulter la facture"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Link>
+
                           <button
                             type="button"
-                            onClick={async () => {
-                              try {
-                                const res = await fetch(`/api/factures/${f.id}`);
-                                if (!res.ok) throw new Error();
-                                const fullFacture = await res.json();
-                                genererFacturePdf({
-                                  numero: fullFacture.numero,
-                                  date: fullFacture.date_emission,
-                                  vendeur: fullFacture.vendeur,
-                                  type_paiement: fullFacture.mode_paiement,
-                                  garantie_mois: 6,
-                                  client: {
-                                    nom: fullFacture.client_nom,
-                                    telephone: fullFacture.client_tel,
-                                    adresse: fullFacture.client_adresse,
-                                    rc: fullFacture.client_rc,
-                                    nif: fullFacture.client_nif,
-                                    nis: fullFacture.client_nis,
-                                    ai: fullFacture.client_ai,
-                                  },
-                                  lignes: (fullFacture.lignes || []).map((l: any) => ({
-                                    code_interne: l.code_interne,
-                                    designation: l.designation,
-                                    quantite: 1,
-                                    prix_unitaire: l.prix,
-                                    total_ligne: l.prix,
-                                  })),
-                                  total_ttc: fullFacture.total,
-                                });
-                                afficher("Téléchargement du PDF lancé.", "succes");
-                              } catch {
-                                afficher("Erreur génération PDF.", "erreur");
-                              }
-                            }}
-                            className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-orange/10 hover:text-brand-orange"
-                            title="Télécharger le PDF"
+                            onClick={(e) => telechargerPdfDirect(f, e)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-brand-orange hover:bg-brand-orange/10 transition cursor-pointer"
+                            title="Télécharger le PDF client"
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => window.open(`/factures/${f.id}?print=ticket`, "_blank")}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                            title="Imprimer ticket de caisse"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
                           </button>
 
                           {peutSupprimer && (
@@ -660,10 +836,10 @@ export default function ListeFactures({ role }: { role?: string }) {
                               type="button"
                               onClick={(e) => supprimerFacture(f.id, e)}
                               disabled={envoi}
-                              className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-danger hover:bg-danger/10 transition cursor-pointer disabled:opacity-50"
                               title="Supprimer la facture"
                             >
-                              <IconeCorbeille taille={15} />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
@@ -677,37 +853,56 @@ export default function ListeFactures({ role }: { role?: string }) {
         </div>
       )}
 
+      {/* ===================== PAGINATION MODERNE ===================== */}
       {donnees && donnees.pages > 1 && (
-        <div className="flex items-center justify-center gap-2 text-sm">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => setPage((n) => Math.max(1, n - 1))}
-            className="btn btn-secondaire"
-          >
-            <IconeChevronGauche taille={15} />
-            Précédent
-          </button>
-          <span className="px-2 text-brand-warm-grey">
-            Page {donnees.page} / {donnees.pages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= donnees.pages}
-            onClick={() => setPage((n) => n + 1)}
-            className="btn btn-secondaire"
-          >
-            Suivant
-            <IconeChevronDroite taille={15} />
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <p className="text-xs text-slate-500">
+            Affichage de{" "}
+            <strong className="font-bold text-slate-700 dark:text-slate-200">
+              {(donnees.page - 1) * 25 + 1}
+            </strong>{" "}
+            à{" "}
+            <strong className="font-bold text-slate-700 dark:text-slate-200">
+              {Math.min(donnees.page * 25, donnees.total)}
+            </strong>{" "}
+            sur{" "}
+            <strong className="font-bold text-slate-700 dark:text-slate-200">{donnees.total}</strong>{" "}
+            factures
+          </p>
+
+          <div className="flex items-center gap-1.5 text-xs font-bold">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((n) => Math.max(1, n - 1))}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition shadow-xs"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Précédent</span>
+            </button>
+
+            <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-slate-300 font-mono text-xs">
+              {donnees.page} / {donnees.pages}
+            </span>
+
+            <button
+              type="button"
+              disabled={page >= donnees.pages}
+              onClick={() => setPage((n) => n + 1)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition shadow-xs"
+            >
+              <span>Suivant</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Barre d'action globale pour la sélection multiple */}
+      {/* ===================== BARRE FLOTTANTE SÉLECTION MULTIPLE ===================== */}
       {selection.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-brand-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-4 sm:gap-6 animate-entree z-50 border border-white/10 backdrop-blur-md">
-          <span className="font-bold text-xs sm:text-sm whitespace-nowrap">
-            {selection.size} document(s) sélectionné(s)
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 sm:gap-6 animate-entree z-50 border border-slate-800 backdrop-blur-md">
+          <span className="font-bold text-xs whitespace-nowrap">
+            {selection.size} sélectionné{selection.size > 1 ? "s" : ""}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -716,10 +911,10 @@ export default function ListeFactures({ role }: { role?: string }) {
                 const ids = Array.from(selection).join(",");
                 window.open(`/factures/impression-masse?ids=${ids}`, "_blank");
               }}
-              className="btn bg-brand-orange text-white hover:bg-brand-orange/90 border-0 shadow-lg shadow-brand-orange/20 text-xs font-bold gap-1.5"
+              className="px-3 py-1.5 rounded-xl bg-brand-orange text-white hover:bg-brand-orange/90 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <IconeImprimante taille={15} />
-              <span>Imprimer le lot ({selection.size})</span>
+              <Printer className="w-3.5 h-3.5" />
+              <span>Imprimer ({selection.size})</span>
             </button>
 
             {peutSupprimer && (
@@ -727,9 +922,9 @@ export default function ListeFactures({ role }: { role?: string }) {
                 type="button"
                 onClick={() => void supprimerSelection()}
                 disabled={envoi}
-                className="btn bg-danger text-white hover:bg-danger/90 border-0 shadow-lg shadow-danger/20 disabled:opacity-50 text-xs font-bold gap-1.5"
+                className="px-3 py-1.5 rounded-xl bg-danger text-white hover:bg-danger/90 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
               >
-                <IconeCorbeille taille={15} />
+                <Trash2 className="w-3.5 h-3.5" />
                 <span>Supprimer</span>
               </button>
             )}
@@ -738,7 +933,7 @@ export default function ListeFactures({ role }: { role?: string }) {
               type="button"
               onClick={() => setSelection(new Set())}
               disabled={envoi}
-              className="text-xs font-bold text-brand-grey hover:text-white transition px-2"
+              className="text-xs font-bold text-slate-400 hover:text-white transition px-1 cursor-pointer"
             >
               Annuler
             </button>

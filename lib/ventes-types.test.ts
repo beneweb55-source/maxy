@@ -3,6 +3,7 @@ import { validerTypeVente, TYPES_VENTE } from "./validation";
 import { prisma } from "./db";
 import { creerFacture } from "./factures";
 import { ajouterMouvement } from "./caisse-db";
+import { impactSolde } from "./caisse";
 
 describe("Séparation Métier Ventes COMPTOIR vs YALIDINE", () => {
   afterAll(async () => {
@@ -156,14 +157,14 @@ describe("Séparation Métier Ventes COMPTOIR vs YALIDINE", () => {
 
         const soldePhysique = mouvements
           .filter((m) => m.caisse !== "CAISSE_YALIDINE")
-          .reduce((sum, m) => sum + (m.type === "retrait" ? -m.montant : m.montant), 0);
+          .reduce((sum, m) => sum + impactSolde(m.type, m.montant), 0);
 
         const soldeYalidine = mouvements
           .filter((m) => m.caisse === "CAISSE_YALIDINE")
-          .reduce((sum, m) => sum + (m.type === "retrait" ? -m.montant : m.montant), 0);
+          .reduce((sum, m) => sum + impactSolde(m.type, m.montant), 0);
 
         const soldeGlobal = mouvements.reduce(
-          (sum, m) => sum + (m.type === "retrait" ? -m.montant : m.montant),
+          (sum, m) => sum + impactSolde(m.type, m.montant),
           0
         );
 

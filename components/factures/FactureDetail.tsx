@@ -374,15 +374,15 @@ export default function FactureDetail({
               <input id="client-ai" type="text" value={ai} onChange={e => setAi(e.target.value)} className="champ" />
             </div>
             <div>
-              <label className="libelle mb-1.5" htmlFor="client-type-vente">Type de vente</label>
+              <label className="libelle mb-1.5" htmlFor="client-type-vente">Type de vente (interne)</label>
               <select
                 id="client-type-vente"
                 value={typeVente}
                 onChange={e => setTypeVente(e.target.value as any)}
                 className="champ font-bold text-xs"
               >
-                <option value="COMPTOIR">🏪 Vente au comptoir (Caisse Normale)</option>
-                <option value="YALIDINE">🚚 Vente Yalidine (Caisse Yalidine)</option>
+                <option value="COMPTOIR">Comptoir (Caisse Normale)</option>
+                <option value="YALIDINE">Yalidine (Caisse Yalidine)</option>
               </select>
             </div>
           </div>
@@ -450,22 +450,11 @@ export default function FactureDetail({
           </div>
         </div>
 
-        {/* Titre facture et Mention Contextuelle selon Canal */}
+        {/* Titre facture */}
         <div className="text-center mb-5">
           <h2 className="text-lg font-bold">
             {facture.type_facture === "proforma" ? "Facture proforma" : "Facture"} n°: {facture.numero}
           </h2>
-          <div className="mt-1.5">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-              facture.type_vente === "YALIDINE" || facture.canal_vente === "YALIDINE" || facture.canal === "YALIDINE"
-                ? "border-blue-300 bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
-                : "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
-            }`}>
-              {facture.type_vente === "YALIDINE" || facture.canal_vente === "YALIDINE" || facture.canal === "YALIDINE"
-                ? "🚚 Vente Yalidine — Expédition & Recouvrement"
-                : "🏪 Vente au Comptoir — Paiement immédiat"}
-            </span>
-          </div>
         </div>
 
         {/* Informations du client */}
