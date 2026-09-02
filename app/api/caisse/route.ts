@@ -19,13 +19,20 @@ export async function GET(request: NextRequest) {
     const maintenant = new Date();
     const moisCourant = cleMoisUTC(maintenant);
 
-    const [tous, total, pageMouvements, parametres, repartitionFaite] = await Promise.all([
+    const caisseFilter = request.nextUrl.searchParams.get("caisse");
+    const whereMouvementsPage: any = {};
+    if (caisseFilter === "CAISSE_PHYSIQUE" || caisseFilter === "CAISSE_YALIDINE") {
+      whereMouvementsPage.caisse = caisseFilter;
+    }
+
+    const [tous, totalFiltre, pageMouvements, parametres, repartitionFaite] = await Promise.all([
       prisma.mouvementCaisse.findMany({
         orderBy: { id: "asc" },
-        select: { type: true, montant: true, date: true, solde_apres: true },
+        select: { type: true, montant: true, date: true, solde_apres: true, caisse: true },
       }),
-      prisma.mouvementCaisse.count(),
+      prisma.mouvementCaisse.count({ where: whereMouvementsPage }),
       prisma.mouvementCaisse.findMany({
+        where: whereMouvementsPage,
         orderBy: { id: "desc" },
         skip: (page - 1) * PAR_PAGE,
         take: PAR_PAGE,
@@ -38,7 +45,28 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const soldes = calculerSoldes(tous);
+    const mvtsPhysique = tous.filter((m) => m.caisse !== "CAISSE_YALIDINE");
+    const mvtsYalidine = tous.filter((m) => m.caisse === "CAISSE_YALIDINE");
+
+    const soldesPhysique = calculerSoldes(mvtsPhysique);
+    const soldesYalidine = calculerSoldes(mvtsYalidine);
+    const soldesGlobal = calculerSoldes(tous);
+
+    const soldes = {
+      total: soldesGlobal.total,
+      reserve: soldesGlobal.reserve,
+      disponible: soldesGlobal.disponible,
+      physique: {
+        total: soldesPhysique.total,
+        reserve: soldesPhysique.reserve,
+        disponible: soldesPhysique.disponible,
+      },
+      yalidine: {
+        total: soldesYalidine.total,
+        reserve: soldesYalidine.reserve,
+        disponible: soldesYalidine.disponible,
+      },
+    };
 
         const JOUR_MS = 24 * 60 * 60 * 1000;
     
@@ -93,8 +121,8 @@ export async function GET(request: NextRequest) {
         benefice_mois: benefice,
       },
       page,
-      pages: Math.max(1, Math.ceil(total / PAR_PAGE)),
-      total,
+      pages: Math.max(1, Math.ceil(totalFiltre / PAR_PAGE)),
+      total: totalFiltre,
       mouvements: pageMouvements.map((m) => ({
         id: m.id,
         date: m.date.toISOString(),
@@ -105,6 +133,7 @@ export async function GET(request: NextRequest) {
         par: m.user.username,
         produit_id: m.produit_id,
         lot_id: m.lot_id,
+        caisse: m.caisse,
       })),
     });
   } catch (e) {

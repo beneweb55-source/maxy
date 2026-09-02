@@ -18,10 +18,11 @@ export async function GET() {
       orderBy: { id: "asc" },
       include: { user: { select: { username: true } } },
     });
-    const entetes = ["Date", "Type", "Sens", "Montant (DA)", "Solde après (DA)", "Par", "Description"];
+    const entetes = ["Date", "Caisse", "Type", "Sens", "Montant (DA)", "Solde après (DA)", "Par", "Description"];
     const lignes = mouvements.map((m) =>
       [
         m.date.toISOString().replace("T", " ").slice(0, 16),
+        m.caisse === "CAISSE_YALIDINE" ? "Yalidine" : "Magasin",
         m.type,
         sensMouvement(m.type),
         m.montant,

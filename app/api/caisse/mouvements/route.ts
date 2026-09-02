@@ -18,11 +18,12 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { type, montant, description, confirmer } = (corps ?? {}) as {
+  const { type, montant, description, confirmer, caisse } = (corps ?? {}) as {
     type?: unknown;
     montant?: unknown;
     description?: unknown;
     confirmer?: unknown;
+    caisse?: unknown;
   };
 
   if (
@@ -53,10 +54,12 @@ export async function POST(request: NextRequest) {
     }
 
     const mouvement = await prisma.$transaction(async (tx) => {
+      const caisseCible = caisse === "CAISSE_YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE";
       const m = await ajouterMouvement(tx, {
         montant: montantDA,
         type: typeMouvement,
         user_id: user.id,
+        caisse: caisseCible,
         description:
           typeof description === "string" && description.trim() ? description.trim() : undefined,
       });

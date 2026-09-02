@@ -14,6 +14,7 @@ import {
   IconeTelechargement,
   IconeStore,
 } from "@/components/icons";
+import { Store, Truck, Layers, Wallet, ArrowRightLeft } from "lucide-react";
 import { useT } from "@/lib/i18n/contexte";
 
 interface MouvementDto {
@@ -24,10 +25,17 @@ interface MouvementDto {
   solde_apres: number;
   description: string | null;
   par: string;
+  caisse?: "CAISSE_PHYSIQUE" | "CAISSE_YALIDINE";
 }
 
 interface ReponseCaisse {
-  soldes: { total: number; reserve: number; disponible: number };
+  soldes: {
+    total: number;
+    reserve: number;
+    disponible: number;
+    physique?: { total: number; reserve?: number; disponible: number };
+    yalidine?: { total: number; reserve?: number; disponible: number };
+  };
   parametres: { marge_minimum_pct: number; objectif_reserve: number };
   graphique_soldes: { jour: {label: string, solde: number}[], mois: {label: string, solde: number}[], an: {label: string, solde: number}[] };
   repartition: { mois: string; deja_appliquee: boolean; benefice_mois: number };
@@ -57,6 +65,9 @@ export default function CaisseDashboard({ role }: { role: Role }) {
   const [page, setPage] = useState(1);
   const [envoi, setEnvoi] = useState(false);
 
+  const [filtreCaisse, setFiltreCaisse] = useState<"TOUTES" | "CAISSE_PHYSIQUE" | "CAISSE_YALIDINE">("TOUTES");
+  const [caisseCibleMouvement, setCaisseCibleMouvement] = useState<"CAISSE_PHYSIQUE" | "CAISSE_YALIDINE">("CAISSE_PHYSIQUE");
+
   const [typeMouvement, setTypeMouvement] = useState<TypeMouvement>("apport_associe");
   const [montant, setMontant] = useState("");
   const [description, setDescription] = useState("");
@@ -72,7 +83,8 @@ export default function CaisseDashboard({ role }: { role: Role }) {
 
   const rafraichir = useCallback(async () => {
     try {
-      const res = await fetch(`/api/caisse?page=${page}`);
+      const url = `/api/caisse?page=${page}${filtreCaisse !== "TOUTES" ? `&caisse=${filtreCaisse}` : ""}`;
+      const res = await fetch(url);
       const corps = (await res.json().catch(() => null)) as
         | ReponseCaisse
         | { error?: string }
@@ -98,7 +110,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
     } catch {
       setErreur("Impossible de joindre le serveur.");
     }
-  }, [page]);
+  }, [page, filtreCaisse]);
 
   useEffect(() => {
     void rafraichir();
@@ -115,6 +127,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           montant: Number(montant),
           description: description.trim() || undefined,
           confirmer: confirmer || undefined,
+          caisse: caisseCibleMouvement,
         }),
       });
       const corps = (await res.json().catch(() => null)) as
@@ -225,10 +238,123 @@ export default function CaisseDashboard({ role }: { role: Role }) {
         </div>
       </div>
 
+      {/* SECTION PRINCIPALE : LES DEUX CAISSES CÔTE À CÔTE */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* CARTE 1 : CAISSE NORMALE (MAGASIN / COMPTOIR) */}
+        <div 
+          onClick={() => {
+            setFiltreCaisse((prev) => (prev === "CAISSE_PHYSIQUE" ? "TOUTES" : "CAISSE_PHYSIQUE"));
+            setPage(1);
+          }}
+          className={`relative overflow-hidden rounded-3xl p-6 border-2 transition-all cursor-pointer shadow-sm ${
+            filtreCaisse === "CAISSE_PHYSIQUE"
+              ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20"
+              : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-400"
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner">
+                <Store className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-black text-slate-900 dark:text-white">Caisse Normale</h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    Magasin &amp; Comptoir
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Ventes physiques directes, espèces &amp; opérations courantes
+                </p>
+              </div>
+            </div>
+            {filtreCaisse === "CAISSE_PHYSIQUE" && (
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-1 rounded-full">
+                Filtre actif
+              </span>
+            )}
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex items-end justify-between">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                Disponible Caisse Normale
+              </span>
+              <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+                {formaterDA(soldes.physique?.disponible ?? soldes.disponible)}
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Mouvements</span>
+              <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">
+                {formaterDA(soldes.physique?.total ?? soldes.total)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* CARTE 2 : CAISSE YALIDINE (EXPÉDITIONS & RECOUVREMENTS) */}
+        <div 
+          onClick={() => {
+            setFiltreCaisse((prev) => (prev === "CAISSE_YALIDINE" ? "TOUTES" : "CAISSE_YALIDINE"));
+            setPage(1);
+          }}
+          className={`relative overflow-hidden rounded-3xl p-6 border-2 transition-all cursor-pointer shadow-sm ${
+            filtreCaisse === "CAISSE_YALIDINE"
+              ? "border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 ring-2 ring-blue-500/20"
+              : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-400"
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner">
+                <Truck className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-black text-slate-900 dark:text-white">Caisse Yalidine</h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    Livraisons &amp; Colis
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Fonds recouvrés auprès des livreurs et bordereaux Yalidine
+                </p>
+              </div>
+            </div>
+            {filtreCaisse === "CAISSE_YALIDINE" && (
+              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/60 px-2.5 py-1 rounded-full">
+                Filtre actif
+              </span>
+            )}
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex items-end justify-between">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                Disponible Caisse Yalidine
+              </span>
+              <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-blue-600 dark:text-blue-400">
+                {formaterDA(soldes.yalidine?.disponible ?? 0)}
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Recouvré</span>
+              <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">
+                {formaterDA(soldes.yalidine?.total ?? 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SYNTHÈSE GLOBALE & RÉSERVE */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="carte">
-          <p className="libelle">{t("caisseDashboard.soldeTotal")}</p>
+          <p className="libelle">{t("caisseDashboard.soldeTotal")} (Consolidé)</p>
           <p className="mt-2 text-2xl font-bold tracking-tight">{formaterDA(soldes.total)}</p>
+          <p className="text-xs text-brand-warm-grey mt-1">Cumul Magasin + Yalidine</p>
         </div>
         <div className="carte">
           <p className="libelle">{t("caisseDashboard.fondsReserve")}</p>
@@ -244,10 +370,11 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           </p>
         </div>
         <div className="carte">
-          <p className="libelle">{t("caisseDashboard.disponible")}</p>
+          <p className="libelle">{t("caisseDashboard.disponible")} Total</p>
           <p className="mt-2 text-2xl font-bold tracking-tight">
             {formaterDA(soldes.disponible)}
           </p>
+          <p className="text-xs text-brand-warm-grey mt-1">Trésorerie nette hors réserve</p>
         </div>
       </div>
 
@@ -392,6 +519,20 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                 className="champ"
               />
             </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="caisse-mvt">
+                Caisse
+              </label>
+              <select
+                id="caisse-mvt"
+                value={caisseCibleMouvement}
+                onChange={(e) => setCaisseCibleMouvement(e.target.value as any)}
+                className="champ w-full sm:w-auto font-bold text-xs"
+              >
+                <option value="CAISSE_PHYSIQUE">Caisse Normale (Magasin)</option>
+                <option value="CAISSE_YALIDINE">Caisse Yalidine (Expéditions)</option>
+              </select>
+            </div>
             <button
               type="button"
               disabled={envoi || !montant.trim()}
@@ -408,25 +549,79 @@ export default function CaisseDashboard({ role }: { role: Role }) {
         </section>
       )}
 
-      <section className="space-y-2">
-        <h2 className="libelle text-brand-smooth">
-          Historique ({donnees.total} mouvement{donnees.total > 1 ? "s" : ""})
-        </h2>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="libelle text-brand-smooth">
+            Historique ({donnees.total} mouvement{donnees.total > 1 ? "s" : ""})
+          </h2>
+
+          {/* Onglets Filtres de Caisse */}
+          <div className="inline-flex rounded-xl bg-slate-100 dark:bg-zinc-800 p-1 border border-slate-200 dark:border-zinc-700 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => { setFiltreCaisse("TOUTES"); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                filtreCaisse === "TOUTES"
+                  ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Toutes les caisses
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFiltreCaisse("CAISSE_PHYSIQUE"); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+                filtreCaisse === "CAISSE_PHYSIQUE"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-500 hover:text-emerald-600"
+              }`}
+            >
+              <Store className="w-3.5 h-3.5" />
+              Caisse Normale
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFiltreCaisse("CAISSE_YALIDINE"); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+                filtreCaisse === "CAISSE_YALIDINE"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-slate-500 hover:text-blue-600"
+              }`}
+            >
+              <Truck className="w-3.5 h-3.5" />
+              Caisse Yalidine
+            </button>
+          </div>
+        </div>
+
         <div className="space-y-4">
           {/* Vue Mobile: Cartes */}
           <div className="flex flex-col gap-3 md:hidden">
             {donnees.mouvements.length === 0 && (
               <div className="carte border-dashed text-center p-6 text-brand-warm-grey text-sm">
-                Aucun mouvement pour le moment. La caisse démarre à 0 DA.
+                Aucun mouvement pour le moment dans cette caisse.
               </div>
             )}
             {donnees.mouvements.map((m) => {
               const sens = sensMouvement(m.type);
+              const estYalidine = m.caisse === "CAISSE_YALIDINE";
               return (
                 <div key={m.id} className="flex flex-col gap-2 rounded-xl border border-brand-light-grey bg-brand-white p-4 shadow-sm text-sm">
                   <div className="flex items-start justify-between border-b border-brand-light-grey/50 pb-2 mb-1">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-brand-black">{t(LIBELLES_TYPE[m.type])}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-brand-black">{t(LIBELLES_TYPE[m.type])}</span>
+                        {estYalidine ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            <Truck className="w-2.5 h-2.5" /> Yalidine
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            <Store className="w-2.5 h-2.5" /> Magasin
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-brand-warm-grey">
                         {new Date(m.date).toLocaleString("fr-FR", {
                           day: "2-digit",
@@ -461,6 +656,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               <thead className="bg-brand-light-grey/25">
                 <tr>
                   <th className="entete-table">{t("caisseDashboard.colDate")}</th>
+                  <th className="entete-table">Caisse</th>
                   <th className="entete-table">{t("caisseDashboard.colType")}</th>
                   <th className="entete-table">{t("caisseDashboard.colMotif")}</th>
                   <th className="entete-table">{t("caisseDashboard.par")}</th>
@@ -471,14 +667,14 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               <tbody className="">
                 {donnees.mouvements.length === 0 && (
                   <tr className="ligne-table border-b border-brand-light-grey/30 last:border-0">
-                    <td colSpan={6} className="px-3 py-6 text-center text-brand-warm-grey">
-                      Aucun mouvement pour le moment. La caisse démarre à 0 DA — enregistrez un
-                      apport associé pour l'alimenter.
+                    <td colSpan={7} className="px-3 py-6 text-center text-brand-warm-grey">
+                      Aucun mouvement pour le moment dans cette caisse.
                     </td>
                   </tr>
                 )}
                 {donnees.mouvements.map((m) => {
                   const sens = sensMouvement(m.type);
+                  const estYalidine = m.caisse === "CAISSE_YALIDINE";
                   return (
                     <tr key={m.id} className="ligne-table border-b border-brand-light-grey/30 last:border-0">
                       <td className="px-3 py-2 text-xs">
@@ -489,6 +685,17 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {estYalidine ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            <Truck className="w-3 h-3" /> Yalidine
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            <Store className="w-3 h-3" /> Magasin
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2">{t(LIBELLES_TYPE[m.type])}</td>
                       <td
