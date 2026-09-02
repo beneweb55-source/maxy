@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
     }
 
     const statut = searchParams.get("statut");
+    const canal = searchParams.get("canal");
+    const caisse = searchParams.get("caisse");
     const q = searchParams.get("q")?.trim();
     const periode = searchParams.get("periode"); // "aujourdhui", "semaine", "mois"
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
@@ -57,11 +59,21 @@ export async function GET(request: NextRequest) {
       where.statut = statut as StatutCommande;
     }
 
+    if (canal && canal !== "tous") {
+      where.canal = canal;
+    }
+
+    if (caisse && caisse !== "tous") {
+      where.caisse = caisse;
+    }
+
     if (q) {
       where.OR = [
         { numero: { contains: q, mode: "insensitive" } },
         { client_nom: { contains: q, mode: "insensitive" } },
         { client_tel: { contains: q, mode: "insensitive" } },
+        { wilaya: { contains: q, mode: "insensitive" } },
+        { commune: { contains: q, mode: "insensitive" } },
         { client: { nom: { contains: q, mode: "insensitive" } } },
         { lignes: { some: { designation: { contains: q, mode: "insensitive" } } } },
         { lignes: { some: { numero_serie: { contains: q, mode: "insensitive" } } } },

@@ -110,12 +110,15 @@ export async function creerFacture(
     numeroManuel?: string | null;
     /** ID de la commande associée si applicable */
     commandeId?: number | null;
+    canalVente?: import("@prisma/client").CanalVente | null;
+    caisseDestination?: import("@prisma/client").CaisseDestination | null;
   }
 ): Promise<{ id: number; numero: string }> {
   const {
     lignes, userId, quand, canal,
     clientNom, clientTel, clientAdresse, clientRc, clientNif, clientAi, clientNis,
     typeDocument, typeFacture, modePaiement, groupeVente, numeroManuel, commandeId,
+    canalVente, caisseDestination,
   } = options;
 
   // Résolution du type de document légal
@@ -152,6 +155,8 @@ export async function creerFacture(
       garantie_mois: GARANTIE_MOIS,
       garantie_fin: garantieFin,
       canal: canal?.trim() || null,
+      canal_vente: canalVente ?? (canal ? (canal as any) : "COMPTOIR"),
+      caisse_destination: caisseDestination ?? "CAISSE_PHYSIQUE",
       mode_paiement: modePaiement?.trim() || "especes",
       groupe_vente: groupeVente ?? null,
       commande_id: commandeId ?? null,

@@ -15,16 +15,23 @@ export async function GET(request: NextRequest) {
   const terme = normaliserTexte(q);
   const LIMITE = 6;
 
+  const disponibles = request.nextUrl.searchParams.get("disponibles") === "1";
+
   try {
     // Recherche en parallèle sur les 3 entités
     const [produits, lots, factures] = await Promise.all([
       prisma.produit.findMany({
         where: {
-          OR: [
-            { code_interne: { contains: q, mode: "insensitive" } },
-            { reference: { contains: q, mode: "insensitive" } },
-            { categorie: { contains: q, mode: "insensitive" } },
-            { notes: { contains: q, mode: "insensitive" } },
+          AND: [
+            ...(disponibles ? [{ statut: { in: ["en_vente", "ok"] as any } }] : []),
+            {
+              OR: [
+                { code_interne: { contains: q, mode: "insensitive" } },
+                { reference: { contains: q, mode: "insensitive" } },
+                { categorie: { contains: q, mode: "insensitive" } },
+                { notes: { contains: q, mode: "insensitive" } },
+              ],
+            },
           ],
         },
         select: {

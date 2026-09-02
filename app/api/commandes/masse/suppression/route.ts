@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
       });
 
       for (const cmd of commandes) {
-        // 1. Remise en stock si commande payée ou réservée
-        if (cmd.statut === "payee" || cmd.statut === "en_attente") {
+        // 1. Remise en stock si la commande n'était pas déjà annulée
+        if (cmd.statut !== "ANNULEE") {
           for (const ligne of cmd.lignes) {
             if (ligne.produit_id) {
               await tx.produit.update({

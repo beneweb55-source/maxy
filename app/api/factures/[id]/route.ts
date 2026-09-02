@@ -28,6 +28,8 @@ export async function GET(
         garantie_mois: true,
         garantie_fin: true,
         canal: true,
+        canal_vente: true,
+        caisse_destination: true,
         type_document: true,
         client_adresse: true,
         client_rc: true,
@@ -85,6 +87,8 @@ export async function GET(
       garantie_mois: f.garantie_mois,
       garantie_fin: f.garantie_fin.toISOString(),
       canal: f.canal,
+      canal_vente: f.canal_vente,
+      caisse_destination: f.caisse_destination,
       type_document: f.type_document,
       type_facture: f.type_document, // Alias legacy pour compatibilité PDF
       client_adresse: f.client_adresse,

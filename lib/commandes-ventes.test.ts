@@ -81,7 +81,7 @@ describe("Système de Commande, Vente & Facturation", () => {
 
     const resultat = await createOrder(
       {
-        statut: "payee",
+        statut: "TERMINEE",
         type_paiement: "especes",
         client_nom: "Samy Entreprise",
         client_tel: "0555000000",
@@ -123,7 +123,7 @@ describe("Système de Commande, Vente & Facturation", () => {
       numero: "CMD-2026-0043",
       client_nom: "Client Réservation",
       total_ttc: 65000,
-      statut: "en_attente",
+      statut: "EN_ATTENTE",
       date_commande: new Date(),
     };
 
@@ -140,7 +140,7 @@ describe("Système de Commande, Vente & Facturation", () => {
 
     const resultat = await createOrder(
       {
-        statut: "en_attente",
+        statut: "EN_ATTENTE",
         type_paiement: "virement",
         client_nom: "Client Réservation",
         lignes: [
@@ -211,7 +211,7 @@ describe("Système de Commande, Vente & Facturation", () => {
           client_nom: "Sarl Tech Algiers",
           client_rc: "16/00-1234567",
           client_nif: "001916001234567",
-          type_facture: "tva",
+          type_document: "FACTURE_TVA",
           mode_paiement: "virement",
           total: 120000,
         }),

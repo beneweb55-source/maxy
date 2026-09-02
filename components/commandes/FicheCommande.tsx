@@ -179,44 +179,20 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
 
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               if (!commande) return;
-              genererFacturePdf({
-                numero: commande.numero,
-                date: commande.created_at,
-                vendeur: commande.vendeur?.username,
-                type_paiement: commande.type_paiement,
-                garantie_mois: commande.garantie_mois,
-                garantie_fin: commande.garantie_fin,
-                client: {
-                  nom: commande.client?.nom || commande.client_nom,
-                  telephone: commande.client?.telephone || commande.client_tel,
-                  adresse: commande.client?.adresse || commande.client_adresse,
-                  rc: commande.client?.rc,
-                  nif: commande.client?.nif,
-                  nis: commande.client?.nis,
-                  ai: commande.client?.ai,
-                },
-                lignes: (commande.lignes || []).map((l: any) => ({
-                  code_interne: l.code_interne,
-                  designation: l.designation,
-                  numero_serie: l.numero_serie,
-                  quantite: l.quantite,
-                  prix_unitaire: l.prix_unitaire,
-                  total_ligne: l.total_ligne,
-                })),
-                total_ht: commande.total_ht,
-                remise_globale: commande.remise_globale,
-                total_ttc: commande.total_ttc,
-                notes: commande.notes,
-              });
-              afficher("Téléchargement du PDF lancé avec succès.", "succes");
+              try {
+                await genererFacturePdf({ numero: commande.numero });
+                afficher("Téléchargement du PDF 1:1 terminé !", "succes");
+              } catch (e: any) {
+                window.print();
+              }
             }}
-            className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold"
-            title="Télécharger la facture officielle en PDF"
+            className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold cursor-pointer"
+            title="Télécharger la Facture (PDF WYSIWYG)"
           >
             <Download className="w-4 h-4" />
-            <span>Télécharger la Facture (PDF)</span>
+            <span>Télécharger (PDF)</span>
           </button>
 
           <button
@@ -269,9 +245,12 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
         </div>
       )}
 
-      {/* ======================= FORMAT A4 STANDARD (IDENTIQUE À FACTUREDETAIL.TSX) ======================= */}
+      {/* ======================= FORMAT A4 STANDARD WYSIWYG 1:1 ======================= */}
       {!formatTicket && (
-        <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight">
+        <div 
+          id="commande-print-area"
+          className="carte w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-slate-200"
+        >
           
           {/* En-tête : Info entreprise à gauche, Logo à droite */}
           <div className="flex justify-between items-start gap-4 mb-6">
@@ -295,6 +274,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
                 <img
                   src="/brand/solutionmaxi-icone.svg"
                   alt="Logo"
+                  crossOrigin="anonymous"
                   className="h-10 w-auto object-contain"
                 />
                 <div className="flex flex-col justify-center">
@@ -311,11 +291,20 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
             </div>
           </div>
 
-          {/* Titre facture */}
-          <div className="text-center mb-6">
+          {/* Titre facture et Mention Contextuelle */}
+          <div className="text-center mb-5">
             <h2 className="text-lg font-bold">
-              {commande.statut === "devis" ? "Facture proforma" : "Facture"} n°: {commande.numero}
+              {commande.statut === "EN_ATTENTE" ? "Bon de Commande / Devis" : "Facture"} n°: {commande.numero}
             </h2>
+            <div className="mt-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-slate-300 bg-[#f3f4f6] text-slate-800">
+                {commande.canal === "YALIDINE"
+                  ? "Commande Yalidine — Expédition & Recouvrement"
+                  : commande.canal && commande.canal !== "COMPTOIR"
+                    ? `Commande ${commande.canal} — Expédition Yalidine`
+                    : "Vente au Comptoir — Paiement immédiat"}
+              </span>
+            </div>
           </div>
 
           {/* Informations du client */}

@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, TypeMouvement } from "@prisma/client";
+import type { Prisma, PrismaClient, TypeMouvement, CaisseDestination } from "@prisma/client";
 import { calculerSoldes, soldeApres, type SoldesCaisse } from "./caisse";
 
 type Db = Prisma.TransactionClient | PrismaClient;
@@ -11,15 +11,22 @@ export interface NouveauMouvement {
   lot_id?: number;
   description?: string;
   date?: Date;
+  caisse?: CaisseDestination;
 }
 
 export async function ajouterMouvement(tx: Prisma.TransactionClient, m: NouveauMouvement) {
+  const caisseCible = m.caisse ?? "CAISSE_PHYSIQUE";
   const dernier = await tx.mouvementCaisse.findFirst({
+    where: { caisse: caisseCible },
     orderBy: { id: "desc" },
     select: { solde_apres: true },
   });
   return tx.mouvementCaisse.create({
-    data: { ...m, solde_apres: soldeApres(dernier?.solde_apres ?? 0, m.type, m.montant) },
+    data: {
+      ...m,
+      caisse: caisseCible,
+      solde_apres: soldeApres(dernier?.solde_apres ?? 0, m.type, m.montant),
+    },
   });
 }
 

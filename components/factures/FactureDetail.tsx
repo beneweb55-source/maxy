@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Role } from "@prisma/client";
@@ -19,7 +19,7 @@ import GarantieCertificat from "@/components/factures/GarantieCertificat";
 import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
 import { Download } from "lucide-react";
-import { genererFacturePdf } from "@/lib/facture-pdf";
+import { telechargerElementEnPdf } from "@/lib/facture-pdf";
 
 interface LigneFactureDto {
   id: number;
@@ -49,6 +49,8 @@ interface FactureDto {
   client_ai: string | null;
   client_nis: string | null;
   canal: string | null;
+  canal_vente?: string | null;
+  caisse_destination?: string | null;
   mode_paiement: string | null;
   annulee: boolean;
   vendeur: string;
@@ -90,6 +92,7 @@ export default function FactureDetail({
   const [erreur, setErreur] = useState<string | null>(null);
   const [editionClient, setEditionClient] = useState(false);
   const [formatTicket, setFormatTicket] = useState(autoPrint);
+  const invoiceRef = useRef<HTMLDivElement>(null);
   const [nom, setNom] = useState("");
   const [tel, setTel] = useState("");
   const [typeFacture, setTypeFacture] = useState("normale");
@@ -253,36 +256,18 @@ export default function FactureDetail({
           </button>
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               if (!facture) return;
-              genererFacturePdf({
-                numero: facture.numero,
-                date: facture.date_emission,
-                vendeur: facture.vendeur,
-                type_paiement: facture.mode_paiement,
-                garantie_mois: 6,
-                client: {
-                  nom: facture.client_nom,
-                  telephone: facture.client_tel,
-                  adresse: facture.client_adresse,
-                  rc: facture.client_rc,
-                  nif: facture.client_nif,
-                  nis: facture.client_nis,
-                  ai: facture.client_ai,
-                },
-                lignes: (facture.lignes || []).map((l) => ({
-                  code_interne: l.code_interne,
-                  designation: l.designation,
-                  quantite: 1,
-                  prix_unitaire: l.prix,
-                  total_ligne: l.prix,
-                })),
-                total_ttc: facture.total,
-              });
-              afficher("Téléchargement du PDF de facture lancé.", "succes");
+              if (invoiceRef.current) {
+                afficher("Génération du PDF WYSIWYG 1:1 en cours...", "info");
+                await telechargerElementEnPdf(invoiceRef.current, `facture-${facture.numero}.pdf`);
+                afficher("Facture PDF 1:1 téléchargée avec succès.", "succes");
+              } else {
+                window.print();
+              }
             }}
-            className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold"
-            title="Télécharger la Facture (PDF)"
+            className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold cursor-pointer"
+            title="Télécharger la Facture (PDF WYSIWYG)"
           >
             <Download className="w-4 h-4" />
             <span>Télécharger la Facture (PDF)</span>
@@ -403,9 +388,13 @@ export default function FactureDetail({
         </div>
       )}
 
-      {/* Document imprimable */}
+      {/* Document imprimable WYSIWYG 1:1 */}
       {!formatTicket && (
-        <div className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight">
+        <div
+          id="facture-print-area"
+          ref={invoiceRef}
+          className="carte w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-slate-200"
+        >
         
         {/* En-tête : Info entreprise à gauche, Logo à droite */}
         <div className="flex justify-between items-start gap-4 mb-6">
@@ -419,7 +408,7 @@ export default function FactureDetail({
               <span className="font-semibold">{t("factures.art")}:</span> <span>{facture.entreprise?.art || "ART XXXXXXXXX"}</span>
               <span className="font-semibold">{t("factures.rib")}:</span> <span>{facture.entreprise?.rib || "0000 00 00 00 00"}</span>
             </div>
-            {/* Petit coin stylisé en haut à gauche pour reproduire la forme de la capture (optionnel) */}
+            {/* Petit coin stylisé en haut à gauche */}
             <div className="absolute top-0 left-0 -mt-[1px] -ml-[1px] w-4 h-4 bg-white rounded-br-xl"></div>
           </div>
 
@@ -428,6 +417,7 @@ export default function FactureDetail({
               <img
                 src="/brand/solutionmaxi-icone.svg"
                 alt="Logo"
+                crossOrigin="anonymous"
                 className="h-10 w-auto object-contain"
               />
               <div className="flex flex-col justify-center">
@@ -442,11 +432,20 @@ export default function FactureDetail({
           </div>
         </div>
 
-        {/* Titre facture */}
-        <div className="text-center mb-6">
+        {/* Titre facture et Mention Contextuelle selon Canal */}
+        <div className="text-center mb-5">
           <h2 className="text-lg font-bold">
             {facture.type_facture === "proforma" ? "Facture proforma" : "Facture"} n°: {facture.numero}
           </h2>
+          <div className="mt-1.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-slate-300 bg-[#f3f4f6] text-slate-800">
+              {facture.canal_vente === "YALIDINE" || facture.canal === "YALIDINE"
+                ? "Commande Yalidine — Expédition & Recouvrement"
+                : facture.canal_vente && facture.canal_vente !== "COMPTOIR"
+                  ? `Commande ${facture.canal_vente} — Expédition Yalidine`
+                  : "Vente au Comptoir — Paiement immédiat"}
+            </span>
+          </div>
         </div>
 
         {/* Informations du client */}

@@ -333,6 +333,7 @@ model MouvementCaisse {
   user_id     Int
   description String?
   solde_apres Int
+  caisse      CaisseDestination @default(CAISSE_PHYSIQUE)
 
   produit Produit? @relation(fields: [produit_id], references: [id])
   lot     Lot?     @relation(fields: [lot_id], references: [id])
@@ -341,6 +342,7 @@ model MouvementCaisse {
   @@index([produit_id])
   @@index([lot_id])
   @@index([date])
+  @@index([caisse])
   @@map("mouvements_caisse")
 }
 
@@ -364,6 +366,8 @@ model Facture {
   cree_par      Int
   annulee       Boolean      @default(false)
   mode_paiement String?      @default("especes")
+  canal_vente   CanalVente?  @default(COMPTOIR)
+  caisse_destination CaisseDestination @default(CAISSE_PHYSIQUE)
   updated_at    DateTime     @default(now()) @updatedAt
 
   commande_id   Int?
@@ -375,6 +379,7 @@ model Facture {
   @@index([date_emission])
   @@index([type_document])
   @@index([commande_id])
+  @@index([caisse_destination])
   @@map("factures")
 }
 
@@ -530,12 +535,25 @@ model MigrationLog {
   @@map("migration_logs")
 }
 
+enum CanalVente {
+  COMPTOIR
+  YALIDINE
+  OUEDKNISS
+  TELEPHONE
+  FACEBOOK
+}
+
 enum StatutCommande {
-  devis
-  en_attente
-  payee
-  annulee
-  remboursee
+  EN_ATTENTE
+  CONFIRMEE
+  EN_LIVRAISON
+  TERMINEE
+  ANNULEE
+}
+
+enum CaisseDestination {
+  CAISSE_PHYSIQUE
+  CAISSE_YALIDINE
 }
 
 enum TypePaiement {
@@ -567,8 +585,11 @@ model Commande {
   id               Int            @id @default(autoincrement())
   numero           String         @unique
   date_commande    DateTime       @default(now())
-  statut           StatutCommande @default(payee)
+  canal            CanalVente     @default(COMPTOIR)
+  statut           StatutCommande @default(EN_ATTENTE)
+  caisse           CaisseDestination @default(CAISSE_PHYSIQUE)
   type_paiement    TypePaiement   @default(especes)
+  payee            Boolean        @default(false)
   
   client_id        Int?
   client           Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
@@ -576,6 +597,9 @@ model Commande {
   client_nom       String?
   client_tel       String?
   client_adresse   String?
+  wilaya           String?
+  commune          String?
+  frais_livraison  Int            @default(0)
 
   total_ht         Int
   total_tva        Int            @default(0)
@@ -597,6 +621,8 @@ model Commande {
 
   @@index([date_commande])
   @@index([statut])
+  @@index([canal])
+  @@index([caisse])
   @@index([client_id])
   @@map("commandes")
 }

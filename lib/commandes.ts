@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/db";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 import { creerFacture } from "@/lib/factures";
-import type { StatutCommande, TypePaiement, StatutProduit } from "@prisma/client";
+import { ajouterMouvement } from "@/lib/caisse-db";
+import type { 
+  StatutCommande, 
+  TypePaiement, 
+  StatutProduit, 
+  CanalVente, 
+  CaisseDestination 
+} from "@prisma/client";
 
 export interface LigneCommandeInput {
   produit_id?: number | null;
@@ -26,9 +33,15 @@ export interface CreateOrderInput {
   client_nif?: string | null;
   client_ai?: string | null;
   client_nis?: string | null;
+  canal?: CanalVente;
+  statut?: StatutCommande; // EN_ATTENTE, CONFIRMEE, EN_LIVRAISON, TERMINEE, ANNULEE
+  caisse?: CaisseDestination; // CAISSE_PHYSIQUE ou CAISSE_YALIDINE
+  wilaya?: string | null;
+  commune?: string | null;
+  frais_livraison?: number;
+  payee?: boolean;
   type_facture?: string | null;
-  statut?: StatutCommande; // "payee" | "en_attente" | "devis" | "annulee" | "remboursee"
-  type_paiement?: TypePaiement; // "especes" | "carte" | "virement" | "cheque"
+  type_paiement?: TypePaiement;
   remise_globale?: number;
   garantie_mois?: number;
   notes?: string | null;
@@ -36,19 +49,33 @@ export interface CreateOrderInput {
 }
 
 /**
- * Logique Métier ERP / WMS pour la création et le déstockage des commandes :
- * - RÈGLE 1 (Scan douchette) : L'article scanné possède déjà son étiquette -> Statut "vendu" immédiat en caisse.
- * - RÈGLE 2 (Ajout manuel) : Vérification d'étiquetage. Si validé -> "vendu" + etiquette_imprimee = true.
- *                            Si commande en attente/devis -> Statut "produit_commande" (réservé en stock).
+ * Moteur Métier OMS pour la création, réservation de stock et encaissement omnicanal :
+ * 
+ * - CANAUX : COMPTOIR, YALIDINE, OUEDKNISS, TELEPHONE, FACEBOOK
+ * - PHASE RÉSERVATION (EN_ATTENTE / CONFIRMEE / EN_LIVRAISON) :
+ *     Les exemplaires physiques passent immédiatement en statut "produit_commande" (réservé).
+ *     Ils sont exclus du stock vendable au comptoir pour empêcher les doubles ventes.
+ * - PHASE CLÔTURE & FINANCE (TERMINEE) :
+ *     Les produits passent définitivement en statut "vendu".
+ *     Si canal COMPTOIR -> argent injecté dans CAISSE_PHYSIQUE.
+ *     Si canal YALIDINE -> argent injecté dans CAISSE_YALIDINE.
+ * - PHASE ANNULATION (ANNULEE) :
+ *     Les exemplaires réservés repassent au statut disponible "en_vente".
  */
 export async function createOrder(data: CreateOrderInput, userId: number) {
   if (!Array.isArray(data.lignes) || data.lignes.length === 0) {
     throw new Error("Le panier ne contient aucun article.");
   }
 
-  const statut = data.statut || "payee";
-  const type_paiement = data.type_paiement || "especes";
+  // Détermination du canal et de la caisse
+  const canal: CanalVente = data.canal || "COMPTOIR";
+  const caisse: CaisseDestination = 
+    data.caisse || (canal === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE");
+  const statut: StatutCommande = data.statut || (canal === "COMPTOIR" && data.payee ? "TERMINEE" : "EN_ATTENTE");
+  const type_paiement: TypePaiement = data.type_paiement || "especes";
+  const fraisLivraison = Math.max(0, Number(data.frais_livraison) || 0);
   const garantie_mois = Number(data.garantie_mois ?? 6);
+  const estPayee = Boolean(data.payee ?? (statut === "TERMINEE"));
 
   // Calculs financiers & normalisation des lignes
   let totalHT = 0;
@@ -78,7 +105,7 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
     };
   });
 
-  const totalFinalTTC = Math.max(0, totalHT - Number(data.remise_globale || 0));
+  const totalFinalTTC = Math.max(0, totalHT + fraisLivraison - Number(data.remise_globale || 0));
 
   // Date de fin de garantie
   const garantieFin = new Date();
@@ -86,7 +113,7 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
 
   // Transaction atomique
   const commandeCreee = await prisma.$transaction(async (tx) => {
-    // 1. Génération du numéro séquentiel CMD-YYYY-XXXX
+    // 1. Numéro séquentiel annuel : CMD-YYYY-XXXX
     const anneeCourante = new Date().getFullYear();
     const prefixe = `CMD-${anneeCourante}-`;
 
@@ -108,12 +135,18 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
     const cmd = await tx.commande.create({
       data: {
         numero: numeroCommande,
+        canal,
         statut,
+        caisse,
         type_paiement,
+        payee: estPayee,
         client_id: data.client_id ? Number(data.client_id) : null,
         client_nom: data.client_nom || (data.client_id ? null : "Client Particulier"),
         client_tel: data.client_tel || null,
         client_adresse: data.client_adresse || null,
+        wilaya: data.wilaya || null,
+        commune: data.commune || null,
+        frais_livraison: fraisLivraison,
         total_ht: totalHT,
         total_tva: 0,
         total_ttc: totalFinalTTC,
@@ -133,80 +166,76 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
       },
     });
 
-    // 3. Déstockage et transition de statut des équipements physiques
-    if (statut === "payee" || statut === "en_attente") {
-      for (const l of lignesTraitees) {
-        if (l.produit_id) {
-          const prodExistant = await tx.produit.findUnique({
-            where: { id: l.produit_id },
-            select: { id: true, statut: true, code_interne: true },
-          });
-          const statutActuel = prodExistant?.statut || "en_vente";
+    // 3. Moteur d'États & Réservation des exemplaires physiques
+    for (const l of lignesTraitees) {
+      if (l.produit_id) {
+        const prodExistant = await tx.produit.findUnique({
+          where: { id: l.produit_id },
+          select: { id: true, statut: true, code_interne: true },
+        });
+        const statutActuel = prodExistant?.statut || "en_vente";
 
-          let statutCible: StatutProduit = "vendu";
-          let noteHistorique = "";
+        let statutCible: StatutProduit = "produit_commande";
+        let noteHistorique = "";
 
-          if (statut === "en_attente") {
-            // RÈGLE 2.b : Commande en attente (réservée par téléphone ou devis) -> "produit_commande"
-            statutCible = "produit_commande";
-            noteHistorique = `Produit réservé (Commande en attente ${numeroCommande})`;
-          } else {
-            // Statut "payee"
-            if (l.mode_ajout === "scan") {
-              // RÈGLE 1 : Scan douchette avec étiquette pré-imprimée -> "vendu"
-              statutCible = "vendu";
-              noteHistorique = `Vente effectuée par scan étiquette sur la commande ${numeroCommande}`;
-            } else {
-              // RÈGLE 2 : Ajout manuel
-              if (l.etiquette_imprimee) {
-                statutCible = "vendu";
-                noteHistorique = `Vente effectuée avec validation étiquette sur la commande ${numeroCommande}`;
-              } else {
-                statutCible = "produit_commande";
-                noteHistorique = `Produit commandé manuellement (en attente étiquette) sur la commande ${numeroCommande}`;
-              }
-            }
-          }
-
-          const updateData: {
-            statut: StatutProduit;
-            prix_vente_reel: number;
-            date_vente?: Date;
-            etiquette_imprimee?: boolean;
-            etiquette_imprimee_le?: Date;
-          } = {
-            statut: statutCible,
-            prix_vente_reel: l.prix_unitaire,
-          };
-
-          if (statutCible === "vendu") {
-            updateData.date_vente = new Date();
-          }
-
-          if (l.etiquette_imprimee) {
-            updateData.etiquette_imprimee = true;
-            updateData.etiquette_imprimee_le = new Date();
-          }
-
-          await tx.produit.update({
-            where: { id: l.produit_id },
-            data: updateData,
-          });
-
-          await tx.historiqueStatut.create({
-            data: {
-              produit_id: l.produit_id,
-              user_id: userId,
-              statut_avant: statutActuel,
-              statut_apres: statutCible,
-              note: noteHistorique,
-            },
-          });
+        if (statut === "TERMINEE") {
+          statutCible = "vendu";
+          noteHistorique = `Vente effectuée sur la commande ${numeroCommande} (${canal})`;
+        } else {
+          // Réservation immédiate pour EN_ATTENTE, CONFIRMEE, EN_LIVRAISON
+          statutCible = "produit_commande";
+          noteHistorique = `Stock réservé pour commande ${numeroCommande} (${canal} - ${statut})`;
         }
+
+        const updateData: {
+          statut: StatutProduit;
+          prix_vente_reel: number;
+          date_vente?: Date;
+          etiquette_imprimee?: boolean;
+          etiquette_imprimee_le?: Date;
+        } = {
+          statut: statutCible,
+          prix_vente_reel: l.prix_unitaire,
+        };
+
+        if (statutCible === "vendu") {
+          updateData.date_vente = new Date();
+        }
+
+        if (l.etiquette_imprimee) {
+          updateData.etiquette_imprimee = true;
+          updateData.etiquette_imprimee_le = new Date();
+        }
+
+        await tx.produit.update({
+          where: { id: l.produit_id },
+          data: updateData,
+        });
+
+        await tx.historiqueStatut.create({
+          data: {
+            produit_id: l.produit_id,
+            user_id: userId,
+            statut_avant: statutActuel,
+            statut_apres: statutCible,
+            note: noteHistorique,
+          },
+        });
       }
     }
 
-    // 4. Création conjointe de la facture si payée ou si préparée
+    // 4. Flux Financier si TERMINEE
+    if (statut === "TERMINEE" && totalFinalTTC > 0) {
+      await ajouterMouvement(tx, {
+        montant: totalFinalTTC,
+        type: "vente",
+        user_id: userId,
+        description: `Encaissement commande ${numeroCommande} (${canal})`,
+        caisse,
+      });
+    }
+
+    // 5. Facturation conjointe
     let factureInfo: { id: number; numero: string } | null = null;
     const lignesFacture = lignesTraitees
       .filter((l) => l.produit_id !== null)
@@ -218,21 +247,24 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
         prix: l.prix_unitaire,
       }));
 
-    if (lignesFacture.length > 0 && (statut === "payee" || data.type_facture)) {
+    if (lignesFacture.length > 0 && (statut === "TERMINEE" || estPayee || data.type_facture)) {
       factureInfo = await creerFacture(tx, {
         lignes: lignesFacture,
         userId,
         quand: new Date(),
         clientNom: data.client_nom || (data.client_id ? null : "Client Particulier"),
         clientTel: data.client_tel,
-        clientAdresse: data.client_adresse,
+        clientAdresse: data.client_adresse || (data.wilaya ? `${data.commune ? data.commune + ", " : ""}${data.wilaya}` : null),
         clientRc: data.client_rc,
         clientNif: data.client_nif,
         clientAi: data.client_ai,
         clientNis: data.client_nis,
-        typeFacture: data.type_facture || (statut === "devis" ? "proforma" : "normale"),
+        typeFacture: data.type_facture || (statut === "EN_ATTENTE" ? "proforma" : "normale"),
         modePaiement: type_paiement,
         commandeId: cmd.id,
+        canal: canal,
+        canalVente: canal,
+        caisseDestination: caisse,
       });
     }
 
@@ -243,7 +275,7 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
     };
   });
 
-  // 5. Journal d'audit
+  // 6. Journal d'audit
   await enregistrerActivite(
     prisma,
     userId,
@@ -252,11 +284,171 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
     commandeCreee.id,
     {
       numero: commandeCreee.numero,
+      canal: commandeCreee.canal,
       total_ttc: commandeCreee.total_ttc,
       nb_lignes: lignesTraitees.length,
       statut: commandeCreee.statut,
+      caisse: commandeCreee.caisse,
     }
   );
 
   return commandeCreee;
+}
+
+/**
+ * Transition d'état contrôlée d'une commande (Moteur OMS) :
+ * 
+ * - Si passage à TERMINEE :
+ *     - Produits -> 'vendu'
+ *     - Encaissement automatique dans cmd.caisse (CAISSE_PHYSIQUE ou CAISSE_YALIDINE)
+ * - Si passage à ANNULEE :
+ *     - Libération immédiate des exemplaires réservés -> 'en_vente'
+ * - Si passage à CONFIRMEE ou EN_LIVRAISON :
+ *     - Produits maintenus en 'produit_commande' (réservés)
+ */
+export async function changerStatutCommande(
+  commandeId: number,
+  nouveauStatut: StatutCommande,
+  userId: number,
+  options?: { note?: string }
+) {
+  return await prisma.$transaction(async (tx) => {
+    const cmd = await tx.commande.findUnique({
+      where: { id: commandeId },
+      include: {
+        lignes: true,
+        factures: true,
+      },
+    });
+
+    if (!cmd) throw new Error("Commande introuvable.");
+    const ancienStatut = cmd.statut;
+    if (ancienStatut === nouveauStatut) return cmd;
+
+    // 1. Traitement selon le nouveau statut
+    if (nouveauStatut === "ANNULEE") {
+      // ANNULATION : Libérer les produits réservés
+      for (const l of cmd.lignes) {
+        if (l.produit_id) {
+          const prod = await tx.produit.findUnique({
+            where: { id: l.produit_id },
+            select: { id: true, statut: true },
+          });
+
+          if (prod && (prod.statut === "produit_commande" || prod.statut === "vendu")) {
+            await tx.produit.update({
+              where: { id: l.produit_id },
+              data: {
+                statut: "en_vente",
+                date_vente: null,
+              },
+            });
+
+            await tx.historiqueStatut.create({
+              data: {
+                produit_id: l.produit_id,
+                user_id: userId,
+                statut_avant: prod.statut,
+                statut_apres: "en_vente",
+                note: `Stock libéré suite à annulation de la commande ${cmd.numero}${options?.note ? ` : ${options.note}` : ""}`,
+              },
+            });
+          }
+        }
+      }
+
+      // Annuler les factures associées
+      for (const f of cmd.factures) {
+        await tx.facture.update({
+          where: { id: f.id },
+          data: { annulee: true },
+        });
+      }
+    } else if (nouveauStatut === "TERMINEE") {
+      // CLÔTURE & ENCAISSEMENT
+      for (const l of cmd.lignes) {
+        if (l.produit_id) {
+          const prod = await tx.produit.findUnique({
+            where: { id: l.produit_id },
+            select: { id: true, statut: true },
+          });
+
+          await tx.produit.update({
+            where: { id: l.produit_id },
+            data: {
+              statut: "vendu",
+              date_vente: new Date(),
+              prix_vente_reel: l.prix_unitaire,
+            },
+          });
+
+          if (prod && prod.statut !== "vendu") {
+            await tx.historiqueStatut.create({
+              data: {
+                produit_id: l.produit_id,
+                user_id: userId,
+                statut_avant: prod.statut,
+                statut_apres: "vendu",
+                note: `Vente finalisée / Livraison confirmée pour commande ${cmd.numero} (${cmd.canal})`,
+              },
+            });
+          }
+        }
+      }
+
+      // Encaissement étanche dans la caisse de destination (si non encore payée)
+      if (!cmd.payee && cmd.total_ttc > 0) {
+        await ajouterMouvement(tx, {
+          montant: cmd.total_ttc,
+          type: "vente",
+          user_id: userId,
+          description: `Encaissement commande ${cmd.numero} (${cmd.canal})`,
+          caisse: cmd.caisse,
+        });
+      }
+    } else if (nouveauStatut === "EN_LIVRAISON" || nouveauStatut === "CONFIRMEE") {
+      // Réservation stricte en stock
+      for (const l of cmd.lignes) {
+        if (l.produit_id) {
+          const prod = await tx.produit.findUnique({
+            where: { id: l.produit_id },
+            select: { id: true, statut: true },
+          });
+
+          if (prod && prod.statut === "en_vente") {
+            await tx.produit.update({
+              where: { id: l.produit_id },
+              data: { statut: "produit_commande" },
+            });
+
+            await tx.historiqueStatut.create({
+              data: {
+                produit_id: l.produit_id,
+                user_id: userId,
+                statut_avant: "en_vente",
+                statut_apres: "produit_commande",
+                note: `Article réservé pour commande ${cmd.numero} (${nouveauStatut})`,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // 2. Mise à jour de la commande
+    const cmdMaj = await tx.commande.update({
+      where: { id: commandeId },
+      data: {
+        statut: nouveauStatut,
+        payee: nouveauStatut === "TERMINEE" ? true : cmd.payee,
+      },
+      include: {
+        client: true,
+        lignes: true,
+        vendeur: { select: { id: true, username: true } },
+      },
+    });
+
+    return cmdMaj;
+  });
 }
