@@ -37,43 +37,69 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    // On ne supprime jamais un produit vendu (son historique de vente et son
-    // mouvement de caisse doivent être conservés). En mode « modèle » on les
-    // ignore silencieusement ; en mode « ids » on refuse le lot pour éviter
-    // une suppression partielle surprise.
     const cibles = await prisma.produit.findMany({
       where,
       select: { 
         id: true, 
         statut: true,
-        _count: { select: { ventes: true, mouvements: true } }
       },
     });
     if (cibles.length === 0) {
       return erreur(404, "Aucun produit à supprimer.");
     }
 
-    const vendusOuHistorique = cibles.filter((p) => p.statut === "vendu" || p._count.ventes > 0 || p._count.mouvements > 0);
-    const aSupprimer = cibles.filter((p) => p.statut !== "vendu" && p._count.ventes === 0 && p._count.mouvements === 0).map((p) => p.id);
+    // Seuls les produits non vendus (en stock) sont supprimés.
+    // Les produits vendus sont protégés.
+    const vendus = cibles.filter((p) => p.statut === "vendu");
+    const aSupprimer = cibles.filter((p) => p.statut !== "vendu").map((p) => p.id);
 
-    if ("ids" in (corps as object) && !modele && vendusOuHistorique.length > 0) {
-      return erreur(400, "Un ou plusieurs produits ont un historique financier (ventes/mouvements) et ne peuvent être supprimés.");
-    }
     if (aSupprimer.length === 0) {
-      return erreur(400, "Ces produits ont un historique financier et ne peuvent être supprimés.");
+      return erreur(400, "Ces produits sont déjà marqués comme vendus et ne peuvent être supprimés du stock.");
     }
 
     await prisma.$transaction(async (tx) => {
+      // 1. Détacher les mouvements de caisse pour préserver l'historique comptable sans bloquer la suppression
+      await tx.mouvementCaisse.updateMany({
+        where: { produit_id: { in: aSupprimer } },
+        data: { produit_id: null },
+      });
+
+      // 2. Détacher les lignes de factures pour conserver les factures dénormalisées intactes
+      await tx.factureLigne.updateMany({
+        where: { produit_id: { in: aSupprimer } },
+        data: { produit_id: null },
+      });
+
+      // 3. Détacher les lignes de commande
+      await tx.ligneCommande.updateMany({
+        where: { produit_id: { in: aSupprimer } },
+        data: { produit_id: null },
+      });
+
+      // 4. Détacher les composants assemblés (BOM)
+      await tx.produit.updateMany({
+        where: { parent_id: { in: aSupprimer } },
+        data: { parent_id: null },
+      });
+
+      // 5. Supprimer les ventes associées (anciennes ventes/annulations)
+      await tx.vente.deleteMany({
+        where: { produit_id: { in: aSupprimer } },
+      });
+
+      // 6. Supprimer les dépendances directes
       await tx.produitImage.deleteMany({ where: { produit_id: { in: aSupprimer } } });
       await tx.reparation.deleteMany({ where: { produit_id: { in: aSupprimer } } });
       await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: aSupprimer } } });
+
+      // 7. Supprimer les produits
       await tx.produit.deleteMany({ where: { id: { in: aSupprimer } } });
     });
 
     return NextResponse.json({
       ok: true,
       supprimes: aSupprimer.length,
-      vendus_conserves: vendusOuHistorique.length,
+      vendus_conserves: vendus.length,
     });
   } catch (e) {
     console.error("DELETE /api/produits/masse/suppression", e);

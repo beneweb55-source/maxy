@@ -335,23 +335,18 @@ export class StockService {
 
           // Filtrer les exemplaires éligibles à la suppression :
           // - Statut éligible (en_vente, recu, ok)
-          // - Aucun historique financier ni engagement (0 vente, 0 commande, 0 mouvement)
+          // - Libres, sans numéro de série et sans engagement
           const exemplairesEligibles = exemplairesActuels.filter((p) => {
             const statutOk = STATUTS_ELIGIBLES_DIMINUTION.includes(p.statut);
             const sansLien =
-              p._count.ventes === 0 &&
-              p._count.mouvements === 0 &&
+              !p.numero_serie &&
               p._count.reparations === 0 &&
               p._count.lignes_commande === 0;
             return statutOk && sansLien;
           });
 
-          // Trier par priorité : ceux SANS numéro de série d'abord, puis les plus récents
-          exemplairesEligibles.sort((a, b) => {
-            if (!a.numero_serie && b.numero_serie) return -1;
-            if (a.numero_serie && !b.numero_serie) return 1;
-            return b.id - a.id;
-          });
+          // Trier par priorité : les plus récents en premier
+          exemplairesEligibles.sort((a, b) => b.id - a.id);
 
           if (exemplairesEligibles.length < aSupprimer) {
             throw new Error(
@@ -363,8 +358,27 @@ export class StockService {
           const idsASupprimer = ciblesASupprimer.map((p) => p.id);
 
           // Nettoyage atomique des dépendances de ces exemplaires
-          await tx.produitImage.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
-          await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
+          if (tx.mouvementCaisse?.updateMany) {
+            await tx.mouvementCaisse.updateMany({ where: { produit_id: { in: idsASupprimer } }, data: { produit_id: null } });
+          }
+          if (tx.factureLigne?.updateMany) {
+            await tx.factureLigne.updateMany({ where: { produit_id: { in: idsASupprimer } }, data: { produit_id: null } });
+          }
+          if (tx.ligneCommande?.updateMany) {
+            await tx.ligneCommande.updateMany({ where: { produit_id: { in: idsASupprimer } }, data: { produit_id: null } });
+          }
+          if (tx.vente?.deleteMany) {
+            await tx.vente.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
+          }
+          if (tx.reparation?.deleteMany) {
+            await tx.reparation.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
+          }
+          if (tx.produitImage?.deleteMany) {
+            await tx.produitImage.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
+          }
+          if (tx.historiqueStatut?.deleteMany) {
+            await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
+          }
           await tx.produit.deleteMany({ where: { id: { in: idsASupprimer } } });
 
           // Mise à jour de la quantité sur le modèle

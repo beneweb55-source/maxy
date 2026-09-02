@@ -131,9 +131,9 @@ export async function PUT(request: NextRequest) {
       if (diff < 0) {
         const nbASupprimer = -diff;
         
-        const deletableProducts = produits.filter(p => p._count.ventes === 0 && p._count.mouvements === 0);
+        const deletableProducts = produits.filter(p => p.statut !== "vendu");
         if (deletableProducts.length < nbASupprimer) {
-          throw new Error("Impossible de réduire la quantité : certains exemplaires ont un historique financier.");
+          throw new Error("Impossible de réduire la quantité : nombre insuffisant d'exemplaires non vendus en stock.");
         }
         
         const idsASupprimer = deletableProducts.slice(0, nbASupprimer).map(p => p.id);
@@ -143,6 +143,11 @@ export async function PUT(request: NextRequest) {
            if (idx !== -1) idsAUpdate.splice(idx, 1);
         }
 
+        await tx.mouvementCaisse.updateMany({ where: { produit_id: { in: idsASupprimer } }, data: { produit_id: null } });
+        await tx.factureLigne.updateMany({ where: { produit_id: { in: idsASupprimer } }, data: { produit_id: null } });
+        await tx.ligneCommande.updateMany({ where: { produit_id: { in: idsASupprimer } }, data: { produit_id: null } });
+        await tx.produit.updateMany({ where: { parent_id: { in: idsASupprimer } }, data: { parent_id: null } });
+        await tx.vente.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.produitImage.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.reparation.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
         await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: idsASupprimer } } });

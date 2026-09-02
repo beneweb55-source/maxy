@@ -571,27 +571,57 @@ export async function DELETE(
   try {
     const produit = await prisma.produit.findUnique({
       where: { id: produitId },
-      include: {
-        _count: { select: { ventes: true, mouvements: true } },
-      },
     });
     if (!produit) return erreur(404, "Produit introuvable.");
-    if (produit._count.ventes > 0 || produit._count.mouvements > 0) {
+    if (produit.statut === "vendu") {
       return erreur(
         400,
-        "Impossible de supprimer ce produit : il possède un historique financier (ventes ou mouvements de caisse)."
+        "Impossible de supprimer ce produit : il a été vendu et n'est plus en stock."
       );
     }
-    await prisma.$transaction([
-      prisma.produitImage.deleteMany({ where: { produit_id: produitId } }),
-      prisma.historiqueStatut.deleteMany({ where: { produit_id: produitId } }),
-      prisma.reparation.deleteMany({ where: { produit_id: produitId } }),
-      prisma.produit.delete({ where: { id: produitId } }),
-    ]);
 
-    await enregistrerActivite(prisma, acces.user.id, ACTIONS_JOURNAL.PRODUIT_SUPPRIMER, "produit", produitId, {
-      reference: produit.reference,
-      code_interne: produit.code_interne
+    await prisma.$transaction(async (tx) => {
+      // 1. Détacher les mouvements de caisse
+      await tx.mouvementCaisse.updateMany({
+        where: { produit_id: produitId },
+        data: { produit_id: null },
+      });
+
+      // 2. Détacher les lignes de factures
+      await tx.factureLigne.updateMany({
+        where: { produit_id: produitId },
+        data: { produit_id: null },
+      });
+
+      // 3. Détacher les lignes de commande
+      await tx.ligneCommande.updateMany({
+        where: { produit_id: produitId },
+        data: { produit_id: null },
+      });
+
+      // 4. Détacher les composants assemblés
+      await tx.produit.updateMany({
+        where: { parent_id: produitId },
+        data: { parent_id: null },
+      });
+
+      // 5. Supprimer les ventes associées
+      await tx.vente.deleteMany({
+        where: { produit_id: produitId },
+      });
+
+      // 6. Supprimer images, historiques et réparations
+      await tx.produitImage.deleteMany({ where: { produit_id: produitId } });
+      await tx.historiqueStatut.deleteMany({ where: { produit_id: produitId } });
+      await tx.reparation.deleteMany({ where: { produit_id: produitId } });
+
+      // 7. Supprimer le produit
+      await tx.produit.delete({ where: { id: produitId } });
+
+      await enregistrerActivite(tx, acces.user.id, ACTIONS_JOURNAL.PRODUIT_SUPPRIMER, "produit", produitId, {
+        reference: produit.reference,
+        code_interne: produit.code_interne,
+      });
     });
 
     return NextResponse.json({ ok: true, supprime: produit.code_interne });
