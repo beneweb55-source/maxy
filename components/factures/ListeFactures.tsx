@@ -34,6 +34,11 @@ interface LigneFactureListe {
   vendeur: string;
   nb_lignes: number;
   type_document: TypeDocument;
+  commande_id?: number | null;
+  commande_numero?: string | null;
+  premier_article?: string | null;
+  nb_autres_articles?: number;
+  nb_articles_total?: number;
 }
 
 interface ReponseFactures {
@@ -360,7 +365,21 @@ export default function ListeFactures({ role }: { role?: string }) {
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-brand-warm-grey">{dateFr(f.date_emission)}</div>
+                        <div className="flex items-center gap-2 text-xs text-brand-warm-grey mt-0.5">
+                          <span>{dateFr(f.date_emission)}</span>
+                          {f.commande_numero && (
+                            <span>· <strong className="font-mono text-slate-700 dark:text-slate-300">{f.commande_numero}</strong></span>
+                          )}
+                        </div>
+                        {f.premier_article && (
+                          <div
+                            className="text-xs text-slate-500 truncate max-w-[260px] whitespace-nowrap mt-0.5"
+                            title={`${f.premier_article}${f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}`}
+                          >
+                            {f.premier_article}
+                            {f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
@@ -434,6 +453,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                   )}
                   <th className="entete-table">N°</th>
                   <th className="entete-table">Type</th>
+                  <th className="entete-table">Commande</th>
                   <th className="entete-table">Date</th>
                   <th className="entete-table">Client</th>
                   <th className="entete-table text-right">Articles</th>
@@ -476,6 +496,20 @@ export default function ListeFactures({ role }: { role?: string }) {
                       </td>
                       <td className="px-3 py-3">
                         <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="font-mono text-xs font-bold text-brand-black dark:text-white">
+                          {f.commande_numero || "—"}
+                        </div>
+                        {f.premier_article && (
+                          <div
+                            className="text-xs text-slate-500 truncate max-w-[200px] whitespace-nowrap"
+                            title={`${f.premier_article}${f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}`}
+                          >
+                            {f.premier_article}
+                            {f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-3">{dateFr(f.date_emission)}</td>
                       <td className="px-3 py-3">

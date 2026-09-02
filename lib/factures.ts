@@ -108,12 +108,14 @@ export async function creerFacture(
     groupeVente?: string | null;
     /** Numéro personnalisé — remplace la génération automatique si fourni */
     numeroManuel?: string | null;
+    /** ID de la commande associée si applicable */
+    commandeId?: number | null;
   }
 ): Promise<{ id: number; numero: string }> {
   const {
     lignes, userId, quand, canal,
     clientNom, clientTel, clientAdresse, clientRc, clientNif, clientAi, clientNis,
-    typeDocument, typeFacture, modePaiement, groupeVente, numeroManuel,
+    typeDocument, typeFacture, modePaiement, groupeVente, numeroManuel, commandeId,
   } = options;
 
   // Résolution du type de document légal
@@ -152,6 +154,7 @@ export async function creerFacture(
       canal: canal?.trim() || null,
       mode_paiement: modePaiement?.trim() || "especes",
       groupe_vente: groupeVente ?? null,
+      commande_id: commandeId ?? null,
       cree_par: userId,
     },
     select: { id: true, numero: true },

@@ -55,6 +55,11 @@ UPDATE factures SET type_document = 'FACTURE_TVA' WHERE type_facture IS NULL OR 
 -- 2d. Ajouter l'index sur type_document
 CREATE INDEX IF NOT EXISTS idx_factures_type_document ON factures(type_document);
 
+-- 2e. Ajouter la colonne commande_id et son index pour lier les factures à leur commande
+ALTER TABLE factures
+  ADD COLUMN IF NOT EXISTS commande_id INTEGER REFERENCES commandes(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_factures_commande_id ON factures(commande_id);
+
 -- 2e. Supprimer l'ancienne colonne type_facture (String) maintenant remplacée
 --     ⚠️ ATTENTION : Décommenter cette ligne SEULEMENT après avoir vérifié
 --     que le mapping en 2c est correct et que l'application ne réfère plus

@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
           { numero: { contains: q, mode: "insensitive" } },
           { client_nom: { contains: q, mode: "insensitive" } },
           { client_tel: { contains: q, mode: "insensitive" } },
+          { commande: { numero: { contains: q, mode: "insensitive" } } },
           { lignes: { some: { designation: { contains: q, mode: "insensitive" } } } },
           { lignes: { some: { code_interne: { contains: q, mode: "insensitive" } } } },
         ],
@@ -145,7 +146,16 @@ export async function GET(request: NextRequest) {
           canal: true,
           type_document: true,
           createur: { select: { username: true } },
-          lignes: { select: { prix: true, vente_id: true } },
+          commande: {
+            select: {
+              id: true,
+              numero: true,
+              lignes: {
+                select: { designation: true },
+              },
+            },
+          },
+          lignes: { select: { designation: true, prix: true, vente_id: true } },
         },
       }),
     ]);
@@ -178,6 +188,14 @@ export async function GET(request: NextRequest) {
           (s, l) => (l.vente_id !== null && ventesAnnulees.has(l.vente_id) ? s : s + l.prix),
           0
         );
+        const commandeRef = f.commande?.numero ?? null;
+        const lignesSource = (f.commande?.lignes && f.commande.lignes.length > 0)
+          ? f.commande.lignes
+          : f.lignes;
+        const premierArticle = lignesSource[0]?.designation ?? null;
+        const nbArticlesTotal = lignesSource.length;
+        const nbAutresArticles = Math.max(0, nbArticlesTotal - 1);
+
         return {
           id: f.id,
           numero: f.numero,
@@ -192,6 +210,11 @@ export async function GET(request: NextRequest) {
           type_facture: f.type_document, // Alias legacy
           vendeur: f.createur.username,
           nb_lignes: f.lignes.length,
+          commande_id: f.commande?.id ?? null,
+          commande_numero: commandeRef,
+          premier_article: premierArticle,
+          nb_autres_articles: nbAutresArticles,
+          nb_articles_total: nbArticlesTotal,
         };
       }),
     });

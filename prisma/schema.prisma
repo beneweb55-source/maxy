@@ -366,11 +366,15 @@ model Facture {
   mode_paiement String?      @default("especes")
   updated_at    DateTime     @default(now()) @updatedAt
 
+  commande_id   Int?
+  commande      Commande?      @relation(fields: [commande_id], references: [id], onDelete: SetNull)
+
   createur User           @relation(fields: [cree_par], references: [id])
   lignes   FactureLigne[]
 
   @@index([date_emission])
   @@index([type_document])
+  @@index([commande_id])
   @@map("factures")
 }
 
@@ -586,6 +590,7 @@ model Commande {
   vendeur          User           @relation(fields: [cree_par], references: [id])
   
   lignes           LigneCommande[]
+  factures         Facture[]
   
   created_at       DateTime       @default(now())
   updated_at       DateTime       @updatedAt

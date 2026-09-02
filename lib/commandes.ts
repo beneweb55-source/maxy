@@ -232,6 +232,7 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
         clientNis: data.client_nis,
         typeFacture: data.type_facture || (statut === "devis" ? "proforma" : "normale"),
         modePaiement: type_paiement,
+        commandeId: cmd.id,
       });
     }
 
