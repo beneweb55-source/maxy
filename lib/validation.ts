@@ -110,3 +110,19 @@ export function entierPositifOuNul(valeur: unknown, champ: string): string | nul
   return null;
 }
 
+export const TYPES_VENTE = ["COMPTOIR", "YALIDINE"] as const;
+export type TypeVente = (typeof TYPES_VENTE)[number];
+
+export function validerTypeVente(
+  valeur: unknown
+): { type: TypeVente; erreur?: undefined } | { erreur: string; type?: undefined } {
+  if (typeof valeur !== "string") {
+    return { erreur: "Type de vente obligatoire. Choisissez 'COMPTOIR' ou 'YALIDINE'." };
+  }
+  const normalise = valeur.trim().toUpperCase();
+  if (normalise !== "COMPTOIR" && normalise !== "YALIDINE") {
+    return { erreur: `Type de vente '${valeur}' invalide. Les seules valeurs autorisées sont 'COMPTOIR' et 'YALIDINE'.` };
+  }
+  return { type: normalise as TypeVente };
+}
+

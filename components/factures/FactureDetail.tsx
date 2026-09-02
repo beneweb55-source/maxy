@@ -51,6 +51,8 @@ interface FactureDto {
   canal: string | null;
   canal_vente?: string | null;
   caisse_destination?: string | null;
+  type_vente?: "COMPTOIR" | "YALIDINE";
+  saleType?: "COMPTOIR" | "YALIDINE";
   mode_paiement: string | null;
   annulee: boolean;
   vendeur: string;
@@ -101,6 +103,7 @@ export default function FactureDetail({
   const [nif, setNif] = useState("");
   const [ai, setAi] = useState("");
   const [nis, setNis] = useState("");
+  const [typeVente, setTypeVente] = useState<"COMPTOIR" | "YALIDINE">("COMPTOIR");
   const [envoi, setEnvoi] = useState(false);
   const [vueGarantie, setVueGarantie] = useState(false);
 
@@ -126,6 +129,7 @@ export default function FactureDetail({
       setNif(f.client_nif ?? "");
       setAi(f.client_ai ?? "");
       setNis(f.client_nis ?? "");
+      setTypeVente(f.type_vente ?? "COMPTOIR");
       setErreur(null);
     } catch {
       setErreur("Impossible de joindre le serveur.");
@@ -159,6 +163,8 @@ export default function FactureDetail({
           client_nif: nif,
           client_ai: ai,
           client_nis: nis,
+          type_vente: typeVente,
+          saleType: typeVente,
         }),
       });
       const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -367,6 +373,18 @@ export default function FactureDetail({
               <label className="libelle mb-1.5" htmlFor="client-ai">Art. d&apos;Imposition</label>
               <input id="client-ai" type="text" value={ai} onChange={e => setAi(e.target.value)} className="champ" />
             </div>
+            <div>
+              <label className="libelle mb-1.5" htmlFor="client-type-vente">Type de vente</label>
+              <select
+                id="client-type-vente"
+                value={typeVente}
+                onChange={e => setTypeVente(e.target.value as any)}
+                className="champ font-bold text-xs"
+              >
+                <option value="COMPTOIR">🏪 Vente au comptoir (Caisse Normale)</option>
+                <option value="YALIDINE">🚚 Vente Yalidine (Caisse Yalidine)</option>
+              </select>
+            </div>
           </div>
 
           <div className="text-right">
@@ -438,12 +456,14 @@ export default function FactureDetail({
             {facture.type_facture === "proforma" ? "Facture proforma" : "Facture"} n°: {facture.numero}
           </h2>
           <div className="mt-1.5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-slate-300 bg-[#f3f4f6] text-slate-800">
-              {facture.canal_vente === "YALIDINE" || facture.canal === "YALIDINE"
-                ? "Commande Yalidine — Expédition & Recouvrement"
-                : facture.canal_vente && facture.canal_vente !== "COMPTOIR"
-                  ? `Commande ${facture.canal_vente} — Expédition Yalidine`
-                  : "Vente au Comptoir — Paiement immédiat"}
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+              facture.type_vente === "YALIDINE" || facture.canal_vente === "YALIDINE" || facture.canal === "YALIDINE"
+                ? "border-blue-300 bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                : "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+            }`}>
+              {facture.type_vente === "YALIDINE" || facture.canal_vente === "YALIDINE" || facture.canal === "YALIDINE"
+                ? "🚚 Vente Yalidine — Expédition & Recouvrement"
+                : "🏪 Vente au Comptoir — Paiement immédiat"}
             </span>
           </div>
         </div>

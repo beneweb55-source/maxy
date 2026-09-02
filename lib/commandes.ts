@@ -265,6 +265,8 @@ export async function createOrder(data: CreateOrderInput, userId: number) {
         canal: canal,
         canalVente: canal,
         caisseDestination: caisse,
+        typeVente: (caisse === "CAISSE_YALIDINE" || canal === "YALIDINE") ? "YALIDINE" : "COMPTOIR",
+        saleType: (caisse === "CAISSE_YALIDINE" || canal === "YALIDINE") ? "YALIDINE" : "COMPTOIR",
       });
     }
 

@@ -284,12 +284,14 @@ model Vente {
   annulee_par      Int?
   annulee_at       DateTime?
   groupe_vente     String?
+  type_vente       TypeVente @default(COMPTOIR)
 
   produit Produit @relation(fields: [produit_id], references: [id])
   vendeur User    @relation("ventes_effectuees", fields: [vendu_par], references: [id])
 
   @@index([produit_id])
   @@index([date_vente])
+  @@index([type_vente])
   @@map("ventes")
 }
 
@@ -369,6 +371,7 @@ model Facture {
   mode_paiement String?      @default("especes")
   canal_vente   CanalVente?  @default(COMPTOIR)
   caisse_destination CaisseDestination @default(CAISSE_PHYSIQUE)
+  type_vente    TypeVente    @default(COMPTOIR)
   updated_at    DateTime     @default(now()) @updatedAt
 
   commande_id   Int?
@@ -379,6 +382,7 @@ model Facture {
 
   @@index([date_emission])
   @@index([type_document])
+  @@index([type_vente])
   @@index([commande_id])
   @@index([caisse_destination])
   @@map("factures")
@@ -534,6 +538,11 @@ model MigrationLog {
   @@index([batch_id])
   @@index([produit_id])
   @@map("migration_logs")
+}
+
+enum TypeVente {
+  COMPTOIR
+  YALIDINE
 }
 
 enum CanalVente {

@@ -27,11 +27,26 @@ export async function GET() {
     },
     select: {
       prix_vente_reel: true,
+      type_vente: true,
     }
   });
 
-  const total = ventes.reduce((sum, v) => sum + v.prix_vente_reel, 0);
+  const totalComptoir = ventes
+    .filter((v) => v.type_vente !== "YALIDINE")
+    .reduce((sum, v) => sum + v.prix_vente_reel, 0);
+  const totalYalidine = ventes
+    .filter((v) => v.type_vente === "YALIDINE")
+    .reduce((sum, v) => sum + v.prix_vente_reel, 0);
+  const totalGlobal = totalComptoir + totalYalidine;
   const nombre = ventes.length;
 
-  return NextResponse.json({ total, nombre });
+  return NextResponse.json({
+    total: totalGlobal,
+    nombre,
+    total_comptoir: totalComptoir,
+    total_yalidine: totalYalidine,
+    total_global: totalGlobal,
+    nombre_comptoir: ventes.filter((v) => v.type_vente !== "YALIDINE").length,
+    nombre_yalidine: ventes.filter((v) => v.type_vente === "YALIDINE").length,
+  });
 }

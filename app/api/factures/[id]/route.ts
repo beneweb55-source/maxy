@@ -30,6 +30,7 @@ export async function GET(
         canal: true,
         canal_vente: true,
         caisse_destination: true,
+        type_vente: true,
         type_document: true,
         client_adresse: true,
         client_rc: true,
@@ -89,6 +90,8 @@ export async function GET(
       canal: f.canal,
       canal_vente: f.canal_vente,
       caisse_destination: f.caisse_destination,
+      type_vente: f.type_vente,
+      saleType: f.type_vente,
       type_document: f.type_document,
       type_facture: f.type_document, // Alias legacy pour compatibilité PDF
       client_adresse: f.client_adresse,
@@ -127,7 +130,7 @@ export async function GET(
   }
 }
 
-// Renseigner/corriger les informations client après coup (nom, téléphone).
+// Renseigner/corriger les informations client ou le type de vente après coup.
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -159,6 +162,9 @@ export async function PATCH(
     client_ai?: string | null;
     client_nis?: string | null;
     type_document?: "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+    type_vente?: "COMPTOIR" | "YALIDINE";
+    caisse_destination?: "CAISSE_PHYSIQUE" | "CAISSE_YALIDINE";
+    canal_vente?: "COMPTOIR" | "YALIDINE";
   } = {};
   if (client_nom !== undefined) {
     if (client_nom !== null && typeof client_nom !== "string") {
@@ -189,7 +195,21 @@ export async function PATCH(
     if (!valStr || !typesValides.includes(valStr)) {
       return erreur(400, `Type de document invalide. Valeurs acceptées : ${typesValides.join(", ")}`);
     }
-    (donnees as any)["type_document"] = valStr;
+    donnees.type_document = valStr as "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+  }
+
+  // Gestion du type de vente (COMPTOIR ou YALIDINE) avec rééquilibrage de caisse
+  const typeVenteBody = (corps as any)?.["type_vente"] ?? (corps as any)?.["saleType"];
+  let nouveauTypeVente: "COMPTOIR" | "YALIDINE" | undefined;
+  if (typeVenteBody !== undefined) {
+    const valStr = typeof typeVenteBody === "string" ? typeVenteBody.trim().toUpperCase() : null;
+    if (valStr !== "COMPTOIR" && valStr !== "YALIDINE") {
+      return erreur(400, "Type de vente invalide. Choisissez 'COMPTOIR' ou 'YALIDINE'.");
+    }
+    nouveauTypeVente = valStr as "COMPTOIR" | "YALIDINE";
+    donnees.type_vente = nouveauTypeVente;
+    donnees.caisse_destination = nouveauTypeVente === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE";
+    donnees.canal_vente = nouveauTypeVente === "YALIDINE" ? "YALIDINE" : "COMPTOIR";
   }
 
   for (const field of additionalFields) {
@@ -206,12 +226,62 @@ export async function PATCH(
   if (Object.keys(donnees).length === 0) return erreur(400, "Aucune modification fournie.");
 
   try {
-    const maj = await prisma.facture.update({
-      where: { id: factureId },
-      data: donnees,
-      select: { id: true, client_nom: true, client_tel: true, type_document: true },
+    const maj = await prisma.$transaction(async (tx) => {
+      const ancienneFacture = await tx.facture.findUnique({
+        where: { id: factureId },
+        include: { lignes: { select: { vente_id: true, produit_id: true } } },
+      });
+      if (!ancienneFacture) throw new Error("Facture introuvable.");
+
+      const fMaj = await tx.facture.update({
+        where: { id: factureId },
+        data: donnees,
+        select: {
+          id: true,
+          client_nom: true,
+          client_tel: true,
+          type_document: true,
+          type_vente: true,
+          caisse_destination: true,
+        },
+      });
+
+      // Si le type de vente a changé (ex: COMPTOIR <-> YALIDINE)
+      if (nouveauTypeVente && nouveauTypeVente !== ancienneFacture.type_vente) {
+        const venteIds = ancienneFacture.lignes
+          .map((l) => l.vente_id)
+          .filter((v): v is number => v !== null);
+
+        if (venteIds.length > 0) {
+          // 1. Mettre à jour les ventes associées
+          await tx.vente.updateMany({
+            where: { id: { in: venteIds } },
+            data: { type_vente: nouveauTypeVente },
+          });
+
+          // 2. Mettre à jour les mouvements de caisse liés à ces produits
+          const produitIds = ancienneFacture.lignes
+            .map((l) => l.produit_id)
+            .filter((p): p is number => p !== null);
+
+          if (produitIds.length > 0) {
+            await tx.mouvementCaisse.updateMany({
+              where: {
+                produit_id: { in: produitIds },
+                type: "vente",
+              },
+              data: {
+                caisse: nouveauTypeVente === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE",
+              },
+            });
+          }
+        }
+      }
+
+      return fMaj;
     });
-    return NextResponse.json({ ok: true, ...maj });
+
+    return NextResponse.json({ ok: true, ...maj, saleType: maj.type_vente });
   } catch (e) {
     console.error("PATCH /api/factures/[id]", e);
     return erreur(500, "Erreur lors de la modification de la facture.");

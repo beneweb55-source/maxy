@@ -29,6 +29,7 @@ import {
   IconeMoins,
   IconeFermer,
 } from "@/components/icons";
+import { Store, Truck } from "lucide-react";
 
 interface CarteEnVente {
   id: number;
@@ -242,6 +243,8 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [clientNis, setClientNis] = useState("");
   const [modePaiement, setModePaiement] = useState("especes");
   const [avertissement, setAvertissement] = useState<string | null>(null);
+  const [typeVente, setTypeVente] = useState<"COMPTOIR" | "YALIDINE">("COMPTOIR");
+  const [typeVenteBundle, setTypeVenteBundle] = useState<"COMPTOIR" | "YALIDINE">("COMPTOIR");
 
   // Recherche / filtres / tri de l'onglet « En vente » (côté client).
   const [rechercheEnVente, setRechercheEnVente] = useState("");
@@ -729,6 +732,8 @@ export default function CaisseClient({ role }: { role: Role }) {
           client_nis: clientNisBundle.trim() || undefined,
           type_facture: typeFactureBundle,
           type_document: typeFactureBundle,
+          type_vente: typeVenteBundle,
+          saleType: typeVenteBundle,
           numero_manuel: numeroManuelBundle.trim() || undefined,
           mode_paiement: modePaiementBundle,
           etiquette_imprimee: etiquetteBundleValidee || undefined,
@@ -790,6 +795,8 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
         type_document: typeFacture,
+        type_vente: typeVente,
+        saleType: typeVente,
         numero_manuel: numeroManuel.trim() || undefined,
         mode_paiement: modePaiement,
         etiquette_imprimee: etiquetteVenteValidee || undefined,
@@ -808,6 +815,8 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
         type_document: typeFacture,
+        type_vente: typeVente,
+        saleType: typeVente,
         numero_manuel: numeroManuel.trim() || undefined,
         mode_paiement: modePaiement,
         etiquette_imprimee: etiquetteVenteValidee || undefined,
@@ -1863,6 +1872,39 @@ export default function CaisseClient({ role }: { role: Role }) {
                 })()}
               </div>
             </div>
+            {/* Sélecteur Type de Vente Obligatoire */}
+            <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 p-3 space-y-1.5">
+              <label className="libelle block text-slate-700 dark:text-slate-300 font-bold">
+                Type de vente <span className="text-danger">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTypeVente("COMPTOIR")}
+                  className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
+                    typeVente === "COMPTOIR"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                      : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-emerald-400"
+                  }`}
+                >
+                  <Store className="w-4 h-4" />
+                  Vente au comptoir
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTypeVente("YALIDINE")}
+                  className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
+                    typeVente === "YALIDINE"
+                      ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                      : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-blue-400"
+                  }`}
+                >
+                  <Truck className="w-4 h-4" />
+                  Vente Yalidine
+                </button>
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="libelle mb-1.5" htmlFor="date-vente">
@@ -2133,6 +2175,39 @@ export default function CaisseClient({ role }: { role: Role }) {
               </strong>
             </p>
           )}
+
+          {/* Sélecteur Type de Vente Obligatoire Bundle */}
+          <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 p-3 space-y-1.5">
+            <label className="libelle block text-slate-700 dark:text-slate-300 font-bold">
+              Type de vente <span className="text-danger">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTypeVenteBundle("COMPTOIR")}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
+                  typeVenteBundle === "COMPTOIR"
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                    : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-emerald-400"
+                }`}
+              >
+                <Store className="w-4 h-4" />
+                Vente au comptoir
+              </button>
+              <button
+                type="button"
+                onClick={() => setTypeVenteBundle("YALIDINE")}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
+                  typeVenteBundle === "YALIDINE"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-blue-400"
+                }`}
+              >
+                <Truck className="w-4 h-4" />
+                Vente Yalidine
+              </button>
+            </div>
+          </div>
 
           <div className="flex gap-3">
             <div className="flex-1">

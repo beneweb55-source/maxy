@@ -22,7 +22,9 @@ import {
   Layers,
   AlertCircle,
   AlertTriangle,
-  Download
+  Download,
+  Store,
+  Truck
 } from "lucide-react";
 
 export interface ArticleAVendre {
@@ -88,6 +90,7 @@ export default function ModaleVente({
   const [canal, setCanal] = useState("");
   const [dateVente, setDateVente] = useState(aujourdhuiIso());
   const [garantieMois, setGarantieMois] = useState(6);
+  const [typeVente, setTypeVente] = useState<"COMPTOIR" | "YALIDINE">("COMPTOIR");
   const [etiquetteValidee, setEtiquetteValidee] = useState(false);
   const [avertissement, setAvertissement] = useState<string | null>(null);
 
@@ -237,6 +240,8 @@ export default function ModaleVente({
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
         type_document: typeFacture,
+        type_vente: typeVente,
+        saleType: typeVente,
         numero_manuel: numeroManuel.trim() || undefined,
         mode_paiement: modePaiement,
         etiquette_imprimee: etiquetteValidee || undefined,
@@ -538,6 +543,39 @@ export default function ModaleVente({
           <span className="text-2xl font-black font-mono text-brand-orange">
             {formaterDA(total)}
           </span>
+        </div>
+
+        {/* ===================== SECTION TYPE DE VENTE ===================== */}
+        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 p-4 space-y-2">
+          <label className="libelle block text-slate-800 dark:text-slate-200 font-black text-xs uppercase tracking-wider">
+            Type de vente <span className="text-danger">*</span>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setTypeVente("COMPTOIR")}
+              className={`flex items-center justify-center gap-2.5 rounded-xl py-3 px-4 text-xs font-black transition border cursor-pointer ${
+                typeVente === "COMPTOIR"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                  : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-emerald-400"
+              }`}
+            >
+              <Store className="w-4 h-4" />
+              Vente au comptoir
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeVente("YALIDINE")}
+              className={`flex items-center justify-center gap-2.5 rounded-xl py-3 px-4 text-xs font-black transition border cursor-pointer ${
+                typeVente === "YALIDINE"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                  : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-blue-400"
+              }`}
+            >
+              <Truck className="w-4 h-4" />
+              Vente Yalidine
+            </button>
+          </div>
         </div>
 
         {/* ===================== SECTION 2 : FACTURATION & PAIEMENT ===================== */}

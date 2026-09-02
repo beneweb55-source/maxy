@@ -13,7 +13,7 @@ import {
   IconeImprimante,
 } from "@/components/icons";
 import { useToast } from "@/components/toast";
-import { Download, FileText, ClipboardList, FilePen } from "lucide-react";
+import { Download, FileText, ClipboardList, FilePen, Store, Truck } from "lucide-react";
 import { genererFacturePdf } from "@/lib/facture-pdf";
 
 type TypeDocument = "FACTURE_TVA" | "PROFORMA" | "DEVIS";
@@ -34,6 +34,8 @@ interface LigneFactureListe {
   vendeur: string;
   nb_lignes: number;
   type_document: TypeDocument;
+  type_vente?: "COMPTOIR" | "YALIDINE";
+  saleType?: "COMPTOIR" | "YALIDINE";
   commande_id?: number | null;
   commande_numero?: string | null;
   premier_article?: string | null;
@@ -73,9 +75,28 @@ function BadgeTypeDocument({ type }: { type: TypeDocument }) {
   };
   const { label, cls, Icon } = config[type] ?? config.FACTURE_TVA;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${cls}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${cls}`}>
       <Icon className="w-3 h-3" />
       {label}
+    </span>
+  );
+}
+
+/** Badge Comptoir / Yalidine */
+function BadgeTypeVente({ type }: { type?: "COMPTOIR" | "YALIDINE" | null }) {
+  const estYalidine = type === "YALIDINE";
+  if (estYalidine) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+        <Truck className="w-3 h-3" />
+        Yalidine
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+      <Store className="w-3 h-3" />
+      Comptoir
     </span>
   );
 }
@@ -92,6 +113,7 @@ export default function ListeFactures({ role }: { role?: string }) {
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [envoi, setEnvoi] = useState(false);
   const [onglet, setOnglet] = useState<OngletType>("tous");
+  const [filtreTypeVente, setFiltreTypeVente] = useState<"TOUTES" | "COMPTOIR" | "YALIDINE">("TOUTES");
 
   // Debounce automatique de la recherche
   useEffect(() => {
@@ -113,6 +135,8 @@ export default function ListeFactures({ role }: { role?: string }) {
       params.set("page", String(page));
       // Filtre par type de document selon l'onglet actif
       if (onglet !== "tous") params.set("type", onglet);
+      // Filtre par type de vente (COMPTOIR ou YALIDINE)
+      if (filtreTypeVente !== "TOUTES") params.set("type_vente", filtreTypeVente);
       const res = await fetch(`/api/factures?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -122,7 +146,7 @@ export default function ListeFactures({ role }: { role?: string }) {
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
     }
-  }, [recherche, mois, page, onglet]);
+  }, [recherche, mois, page, onglet, filtreTypeVente]);
 
   useEffect(() => {
     void charger();
@@ -211,23 +235,65 @@ export default function ListeFactures({ role }: { role?: string }) {
         </div>
       </div>
 
-      {/* Onglets de filtrage par type */}
-      <div className="flex gap-1 p-1 rounded-2xl bg-brand-light-grey/30 dark:bg-white/5 border border-brand-light-grey/40 dark:border-white/10 w-full sm:w-auto overflow-x-auto">
-        {onglets.map(({ id, label, Icon }) => (
+      {/* Filtres Documents et Types de Vente */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Onglets de filtrage par type de document */}
+        <div className="flex gap-1 p-1 rounded-2xl bg-brand-light-grey/30 dark:bg-white/5 border border-brand-light-grey/40 dark:border-white/10 w-full sm:w-auto overflow-x-auto">
+          {onglets.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => { setOnglet(id); setPage(1); setSelection(new Set()); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-1 justify-center cursor-pointer ${
+                onglet === id
+                  ? "bg-white dark:bg-brand-paper text-brand-orange shadow-sm"
+                  : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Filtres Type de Vente : Comptoir vs Yalidine */}
+        <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 text-xs font-bold">
           <button
-            key={id}
             type="button"
-            onClick={() => { setOnglet(id); setPage(1); setSelection(new Set()); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-1 justify-center ${
-              onglet === id
-                ? "bg-white dark:bg-brand-paper text-brand-orange shadow-sm"
-                : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+            onClick={() => { setFiltreTypeVente("TOUTES"); setPage(1); setSelection(new Set()); }}
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+              filtreTypeVente === "TOUTES"
+                ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs font-black"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
+            Toutes les ventes
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => { setFiltreTypeVente("COMPTOIR"); setPage(1); setSelection(new Set()); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
+              filtreTypeVente === "COMPTOIR"
+                ? "bg-emerald-600 text-white shadow-xs font-black"
+                : "text-slate-500 hover:text-emerald-600"
+            }`}
+          >
+            <Store className="w-3.5 h-3.5" />
+            Ventes Comptoir
+          </button>
+          <button
+            type="button"
+            onClick={() => { setFiltreTypeVente("YALIDINE"); setPage(1); setSelection(new Set()); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
+              filtreTypeVente === "YALIDINE"
+                ? "bg-blue-600 text-white shadow-xs font-black"
+                : "text-slate-500 hover:text-blue-600"
+            }`}
+          >
+            <Truck className="w-3.5 h-3.5" />
+            Ventes Yalidine
+          </button>
+        </div>
       </div>
 
       <div className="carte flex flex-wrap items-center gap-3">
@@ -356,9 +422,10 @@ export default function ListeFactures({ role }: { role?: string }) {
                         />
                       )}
                       <div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-mono text-sm font-bold text-brand-orange">{f.numero}</span>
                           <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
+                          <BadgeTypeVente type={f.type_vente} />
                           {f.annulee && (
                             <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger uppercase">
                               Annulée
@@ -495,7 +562,10 @@ export default function ListeFactures({ role }: { role?: string }) {
                         )}
                       </td>
                       <td className="px-3 py-3">
-                        <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
+                        <div className="flex flex-col gap-1 items-start">
+                          <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
+                          <BadgeTypeVente type={f.type_vente} />
+                        </div>
                       </td>
                       <td className="px-3 py-3">
                         <div className="font-mono text-xs font-bold text-brand-black dark:text-white">

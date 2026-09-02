@@ -125,6 +125,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Filtre par type de vente : ?type_vente=COMPTOIR ou ?type_vente=YALIDINE (ou ?saleType=...)
+    const typeVenteParam = params.get("type_vente") || params.get("saleType");
+    if (typeVenteParam) {
+      const tv = typeVenteParam.trim().toUpperCase();
+      if (tv === "COMPTOIR" || tv === "YALIDINE") {
+        clauses.push({ type_vente: tv as "COMPTOIR" | "YALIDINE" });
+      }
+    }
+
     const where: Prisma.FactureWhereInput = clauses.length > 0 ? { AND: clauses } : {};
     const page = Math.max(1, Number(params.get("page")) || 1);
 
@@ -144,6 +153,9 @@ export async function GET(request: NextRequest) {
           garantie_fin: true,
           annulee: true,
           canal: true,
+          canal_vente: true,
+          caisse_destination: true,
+          type_vente: true,
           type_document: true,
           createur: { select: { username: true } },
           commande: {
@@ -206,6 +218,10 @@ export async function GET(request: NextRequest) {
           garantie_fin: f.garantie_fin.toISOString(),
           annulee: f.annulee,
           canal: f.canal,
+          canal_vente: f.canal_vente,
+          caisse_destination: f.caisse_destination,
+          type_vente: f.type_vente,
+          saleType: f.type_vente,
           type_document: f.type_document,
           type_facture: f.type_document, // Alias legacy
           vendeur: f.createur.username,

@@ -8,7 +8,7 @@ import { urlPhotoProduit } from "@/lib/images";
 import { idsParRole, notifier } from "@/lib/notifs";
 import { creerFacture } from "@/lib/factures";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
-import { entierPositif, entierPositifOuNul } from "@/lib/validation";
+import { entierPositif, entierPositifOuNul, validerTypeVente } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   const acces = await exigerUtilisateur();
@@ -17,6 +17,11 @@ export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
     const clauses: import("@prisma/client").Prisma.VenteWhereInput[] = [];
+
+    const typeVenteParam = params.get("type_vente") || params.get("saleType");
+    if (typeVenteParam && (typeVenteParam.toUpperCase() === "COMPTOIR" || typeVenteParam.toUpperCase() === "YALIDINE")) {
+      clauses.push({ type_vente: typeVenteParam.toUpperCase() as "COMPTOIR" | "YALIDINE" });
+    }
 
     const mois = params.get("mois");
     if (mois && /^\d{4}-\d{2}$/.test(mois)) {
@@ -65,6 +70,8 @@ export async function GET(request: NextRequest) {
         prix_vente_reel: v.prix_vente_reel,
         marge: margeVente(v.prix_vente_reel, v.produit.prix_achat, coutRep),
         canal: v.canal,
+        type_vente: v.type_vente,
+        saleType: v.type_vente,
         date_vente: v.date_vente.toISOString(),
         vendeur: v.vendeur.username,
         vendeur_id: v.vendeur.id,
@@ -101,11 +108,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_id, prix_vente_reel, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, type_document, numero_manuel, mode_paiement, etiquette_imprimee } =
+  const { produit_id, prix_vente_reel, canal, type_vente, saleType, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, type_document, numero_manuel, mode_paiement, etiquette_imprimee } =
     (corps ?? {}) as {
       produit_id?: unknown;
       prix_vente_reel?: unknown;
       canal?: unknown;
+      type_vente?: unknown;
+      saleType?: unknown;
       date_vente?: unknown;
       confirmer?: unknown;
       client_nom?: unknown;
@@ -128,6 +137,12 @@ export async function POST(request: NextRequest) {
   const prix = prix_vente_reel as number;
   const canalTexte = typeof canal === "string" && canal.trim() ? canal.trim() : null;
   const estEtiquetteImprimee = Boolean(etiquette_imprimee);
+
+  // Validation stricte du Type de Vente (COMPTOIR ou YALIDINE)
+  const typeVenteBrut = type_vente ?? saleType ?? (canalTexte?.toUpperCase() === "YALIDINE" ? "YALIDINE" : "COMPTOIR");
+  const validTyp = validerTypeVente(typeVenteBrut);
+  if (validTyp.erreur) return erreur(400, validTyp.erreur);
+  const typeVenteFinal = validTyp.type;
 
   let quand = new Date();
   if (typeof date_vente === "string" && date_vente.trim()) {
@@ -183,6 +198,7 @@ export async function POST(request: NextRequest) {
           vendu_par: user.id,
           prix_vente_reel: prix,
           canal: canalTexte,
+          type_vente: typeVenteFinal,
           date_vente: quand,
         },
       });
@@ -253,12 +269,13 @@ export async function POST(request: NextRequest) {
         produit_id: produit.id,
         date: quand,
         description: `Vente ${produit.reference}${canalTexte ? ` — ${canalTexte}` : ""}`,
+        caisse: typeVenteFinal === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE",
       });
       const gerants = await idsParRole(tx, "gerant");
       await notifier(
         tx,
         gerants,
-        `Vente enregistrée : ${produit.reference} — ${formaterDA(prix)} (${user.username})`,
+        `Vente enregistrée (${typeVenteFinal}) : ${produit.reference} — ${formaterDA(prix)} (${user.username})`,
         `/produits/${produit.id}`
       );
 
@@ -282,6 +299,8 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         quand,
         canal: canalTexte,
+        typeVente: typeVenteFinal,
+        saleType: typeVenteFinal,
         clientNom: typeof client_nom === "string" ? client_nom : null,
         clientTel: typeof client_tel === "string" ? client_tel : null,
         clientAdresse: typeof client_adresse === "string" ? client_adresse : null,

@@ -112,14 +112,30 @@ export async function creerFacture(
     commandeId?: number | null;
     canalVente?: import("@prisma/client").CanalVente | null;
     caisseDestination?: import("@prisma/client").CaisseDestination | null;
+    /** Type de vente : COMPTOIR ou YALIDINE (source de vérité unique) */
+    typeVente?: import("@prisma/client").TypeVente | null;
+    /** Alias pour typeVente */
+    saleType?: import("@prisma/client").TypeVente | null;
   }
 ): Promise<{ id: number; numero: string }> {
   const {
     lignes, userId, quand, canal,
     clientNom, clientTel, clientAdresse, clientRc, clientNif, clientAi, clientNis,
     typeDocument, typeFacture, modePaiement, groupeVente, numeroManuel, commandeId,
-    canalVente, caisseDestination,
+    canalVente, caisseDestination, typeVente, saleType,
   } = options;
+
+  // Résolution du type de vente (COMPTOIR ou YALIDINE)
+  const typeVenteFinal: import("@prisma/client").TypeVente =
+    typeVente ??
+    saleType ??
+    (caisseDestination === "CAISSE_YALIDINE" || canalVente === "YALIDINE" || canal?.toUpperCase() === "YALIDINE"
+      ? "YALIDINE"
+      : "COMPTOIR");
+
+  // La caisse de destination découle strictement du type de vente
+  const caisseDestinationFinale: import("@prisma/client").CaisseDestination =
+    caisseDestination ?? (typeVenteFinal === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE");
 
   // Résolution du type de document légal
   // typeDocument a la priorité sur le legacy typeFacture
@@ -151,12 +167,13 @@ export async function creerFacture(
       client_ai: clientAi?.trim() || null,
       client_nis: clientNis?.trim() || null,
       type_document: typeDocumentFinal,
+      type_vente: typeVenteFinal,
       total,
       garantie_mois: GARANTIE_MOIS,
       garantie_fin: garantieFin,
       canal: canal?.trim() || null,
-      canal_vente: canalVente ?? (canal ? (canal as any) : "COMPTOIR"),
-      caisse_destination: caisseDestination ?? "CAISSE_PHYSIQUE",
+      canal_vente: canalVente ?? (typeVenteFinal === "YALIDINE" ? "YALIDINE" : "COMPTOIR"),
+      caisse_destination: caisseDestinationFinale,
       mode_paiement: modePaiement?.trim() || "especes",
       groupe_vente: groupeVente ?? null,
       commande_id: commandeId ?? null,

@@ -6,7 +6,7 @@ import { ajouterMouvement } from "@/lib/caisse-db";
 import { formaterDA } from "@/lib/caisse";
 import { margeVente, seuilMargeMinimum } from "@/lib/finances";
 import { idsParRole, notifier } from "@/lib/notifs";
-import { entierPositif, entierPositifOuNul } from "@/lib/validation";
+import { entierPositif, entierPositifOuNul, validerTypeVente } from "@/lib/validation";
 import { creerFacture, type LigneFacture } from "@/lib/factures";
 
 /**
@@ -25,12 +25,14 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_ids, prix_total, prix_par_produit, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, type_document, numero_manuel, mode_paiement, etiquette_imprimee } =
+  const { produit_ids, prix_total, prix_par_produit, canal, type_vente, saleType, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, type_document, numero_manuel, mode_paiement, etiquette_imprimee } =
     (corps ?? {}) as {
       produit_ids?: unknown;
       prix_total?: unknown;
       prix_par_produit?: unknown;
       canal?: unknown;
+      type_vente?: unknown;
+      saleType?: unknown;
       date_vente?: unknown;
       confirmer?: unknown;
       client_nom?: unknown;
@@ -49,6 +51,13 @@ export async function POST(request: NextRequest) {
 
   const estEtiquetteImprimee = Boolean(etiquette_imprimee);
 
+  // Validation stricte du Type de Vente
+  const canalTexte = typeof canal === "string" && canal.trim() ? canal.trim() : null;
+  const typeVenteBrut = type_vente ?? saleType ?? (canalTexte?.toUpperCase() === "YALIDINE" ? "YALIDINE" : "COMPTOIR");
+  const validTyp = validerTypeVente(typeVenteBrut);
+  if (validTyp.erreur) return erreur(400, validTyp.erreur);
+  const typeVenteFinal = validTyp.type;
+
   if (!Array.isArray(produit_ids) || produit_ids.length < 1) {
     return erreur(400, "Sélectionnez au moins un produit pour une vente groupée.");
   }
@@ -64,7 +73,6 @@ export async function POST(request: NextRequest) {
   const erreurPrix = entierPositifOuNul(prix_total, "Le prix total");
   if (erreurPrix) return erreur(400, erreurPrix);
   const prixTotal = prix_total as number;
-  const canalTexte = typeof canal === "string" && canal.trim() ? canal.trim() : null;
 
   let quand = new Date();
   if (typeof date_vente === "string" && date_vente.trim()) {
@@ -173,6 +181,7 @@ export async function POST(request: NextRequest) {
             vendu_par: user.id,
             prix_vente_reel: part,
             canal: canalTexte,
+            type_vente: typeVenteFinal,
             date_vente: quand,
             groupe_vente: groupeVente,
           },
@@ -242,6 +251,7 @@ export async function POST(request: NextRequest) {
           produit_id: produit.id,
           date: quand,
           description: `Vente groupée ${produit.reference}${canalTexte ? ` — ${canalTexte}` : ""}`,
+          caisse: typeVenteFinal === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE",
         });
         cree.push(vente.id);
 
@@ -271,6 +281,8 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         quand,
         canal: canalTexte,
+        typeVente: typeVenteFinal,
+        saleType: typeVenteFinal,
         clientNom: typeof client_nom === "string" ? client_nom : null,
         clientTel: typeof client_tel === "string" ? client_tel : null,
         clientAdresse: typeof client_adresse === "string" ? client_adresse : null,
