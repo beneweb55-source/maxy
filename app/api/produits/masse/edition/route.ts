@@ -5,6 +5,7 @@ import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
 import { televerserPhotos } from "@/lib/stockage-images";
+import { StockService } from "@/lib/stock-service";
 
 export async function PUT(request: NextRequest) {
   const acces = await exigerUtilisateur(["technicien", "gerant", "dev"]);
@@ -211,6 +212,16 @@ export async function PUT(request: NextRequest) {
           userId: user.id,
           statut: originalProduct.statut,
         });
+      }
+
+      // Synchroniser la quantité du modèle parent si présent
+      if (diff !== 0) {
+        const modeleIdsTouches = Array.from(
+          new Set(produits.map((p) => p.modele_id).filter((id): id is number => typeof id === "number"))
+        );
+        for (const mId of modeleIdsTouches) {
+          await StockService.synchroniserCompteModele(mId, tx);
+        }
       }
     }, { timeout: 120000 });
 

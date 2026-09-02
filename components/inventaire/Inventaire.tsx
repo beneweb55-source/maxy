@@ -57,7 +57,8 @@ import AssistantImportation from "./AssistantImportation";
 import ModaleExport from "./ModaleExport";
 import ModaleVenteInventaire from "./ModaleVenteInventaire";
 import ModaleSelectionQuantite from "./ModaleSelectionQuantite";
-import ModaleArrivageRapide from "@/components/produits/ModaleArrivageRapide";
+import UniversalStockManager, { type TargetStockSource } from "@/components/produits/UniversalStockManager";
+import GestionnaireQuantite from "@/components/produits/GestionnaireQuantite";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import RechercheMultiModal from "./RechercheMultiModal";
 import FilterDrawer from "./FilterDrawer";
@@ -317,13 +318,7 @@ export default function Inventaire({ role }: { role: Role }) {
     action: "facturer" | "statut" | "supprimer";
     groupe: GroupeProduits;
   } | null>(null);
-  const [modalArrivageRapideModele, setModalArrivageRapideModele] = useState<{
-    modeleId?: number | null;
-    modeleNom: string;
-    categorieId?: number | null;
-    prixAchatDefaut?: number;
-    prixVenteDefaut?: number | null;
-  } | null>(null);
+  const [cibleStockManager, setCibleStockManager] = useState<TargetStockSource | null>(null);
   function ouvrirVenteInventaire(unites: LigneProduit[]) {
     setModalVenteUnites(unites);
   }
@@ -421,13 +416,6 @@ export default function Inventaire({ role }: { role: Role }) {
   // Sélection multi-produits (Bulk Actions unifiées)
   const [idsSelectionnes, setIdsSelectionnes] = useState<Set<number>>(new Set());
 
-  // Modale rapide "Ajouter un exemplaire"
-  const [produitRapideAjout, setProduitRapideAjout] = useState<LigneProduit | null>(null);
-  const [prixVenteRapide, setPrixVenteRapide] = useState<string>("");
-  const [modifierPrixVenteRapide, setModifierPrixVenteRapide] = useState<boolean>(false);
-  const [snRapide, setSnRapide] = useState<string>("");
-  const [quantiteRapide, setQuantiteRapide] = useState<string>("1");
-
   // Modale changement de statut en masse
   const [modalStatutMasse, setModalStatutMasse] = useState<boolean>(false);
   const [statutMasseCible, setStatutMasseCible] = useState<StatutProduit | "">("");
@@ -457,55 +445,24 @@ export default function Inventaire({ role }: { role: Role }) {
     setIdsSelectionnes(new Set());
   }
 
-  function ouvrirAjoutRapide(source?: LigneProduit) {
+  function ouvrirAjoutRapide(source?: LigneProduit | any) {
     if (!source) {
       ouvrirAjout();
       return;
     }
-    setProduitRapideAjout(source);
-    setPrixVenteRapide(source.prix_vente_fixe !== null ? String(source.prix_vente_fixe) : "");
-    setModifierPrixVenteRapide(false);
-    setSnRapide("");
-    setQuantiteRapide("1");
-  }
-
-  async function validerAjoutRapide() {
-    if (!produitRapideAjout || envoi) return;
-    setEnvoi(true);
-    try {
-      const prixVenteFinal = modifierPrixVenteRapide
-        ? (prixVenteRapide.trim() ? Number(prixVenteRapide) : null)
-        : produitRapideAjout.prix_vente_fixe;
-
-      const qty = Math.max(1, parseInt(quantiteRapide, 10) || 1);
-
-      const res = await fetch("/api/produits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lot_id: produitRapideAjout.lot_id,
-          reference: produitRapideAjout.reference,
-          categorie: produitRapideAjout.categorie,
-          prix_achat: produitRapideAjout.prix_achat,
-          prix_vente_fixe: prixVenteFinal,
-          image_url: produitRapideAjout.image_url,
-          quantite: qty,
-          en_vitrine: false,
-        }),
-      });
-      const corps = await res.json().catch(() => null);
-      if (!res.ok) {
-        afficher(corps?.error ?? "Erreur lors de l'ajout de l'exemplaire.", "erreur");
-        return;
-      }
-      afficher(`${qty} exemplaire(s) ajouté(s) : ${produitRapideAjout.reference}`);
-      setProduitRapideAjout(null);
-      await charger();
-    } catch {
-      afficher("Impossible de joindre le serveur.", "erreur");
-    } finally {
-      setEnvoi(false);
-    }
+    setCibleStockManager({
+      modeleId: source.modele_id ?? source.modeleId ?? null,
+      produitId: source.id ?? null,
+      reference: source.reference ?? source.modeleNom ?? "Article",
+      categorie: source.categorie ?? "Matériel",
+      categorie_id: source.categorie_id ?? source.categorieId ?? null,
+      prix_achat: source.prix_achat ?? source.prixAchatDefaut ?? source.prixMin ?? 0,
+      prix_vente_fixe: source.prix_vente_fixe ?? source.prixVenteDefaut ?? source.venteMin ?? null,
+      image_url: source.image_url ?? null,
+      grade: source.grade ?? "Grade A",
+      emplacement: source.emplacement ?? "reserve",
+      lot_id: source.lot_id ?? null,
+    });
   }
 
   async function appliquerStatutMasse() {
@@ -698,13 +655,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
   function ouvrirAjout(source?: LigneProduit) {
     if (source) {
-      setModalArrivageRapideModele({
-        modeleId: source.modele_id,
-        modeleNom: source.reference,
-        categorieId: source.categorie_id,
-        prixAchatDefaut: source.prix_achat,
-        prixVenteDefaut: source.prix_vente_fixe,
-      });
+      ouvrirAjoutRapide(source);
     } else {
       setModalAjoutTerrain(true);
     }
@@ -1870,21 +1821,22 @@ export default function Inventaire({ role }: { role: Role }) {
 
                         {/* Actions Rapides */}
                         <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-1">
-                          {/* Bouton (+) Arrivage Rapide / Scanner Douchette */}
+                          {/* Bouton (+) Arrivage Rapide Universel */}
                           {peutModifier && (
                             <button
                               type="button"
                               onClick={() => {
-                                setModalArrivageRapideModele({
-                                  modeleId: g.modele_id,
-                                  modeleNom: g.reference,
-                                  categorieId: g.categorie_id,
-                                  prixAchatDefaut: g.prixMin,
-                                  prixVenteDefaut: g.venteMin,
+                                ouvrirAjoutRapide({
+                                  modele_id: g.modele_id,
+                                  reference: g.reference,
+                                  categorie: g.categorie,
+                                  categorie_id: g.categorie_id,
+                                  prixMin: g.prixMin,
+                                  venteMin: g.venteMin,
                                 });
                               }}
-                              className="p-2 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition font-bold"
-                              title="Arrivage Rapide / Scanner des codes-barres à la volée"
+                              className="p-2 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition font-bold cursor-pointer"
+                              title="Ajouter des exemplaires en stock"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -2087,16 +2039,16 @@ export default function Inventaire({ role }: { role: Role }) {
                               {g.categorie}
                             </td>
 
-                            {/* Badge Quantité en Stock */}
-                            <td className="py-4 px-3 text-center">
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black text-xs shadow-2xs ${
-                                g.totalDisponibles > 0 
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" 
-                                  : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800"
-                              }`}>
-                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                                <span>En stock : {g.totalDisponibles}</span>
-                              </span>
+                            {/* Saisie Directe Quantité en Stock (Zéro Friction) */}
+                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <GestionnaireQuantite
+                                modeleId={g.modele_id}
+                                quantiteActuelle={g.totalDisponibles}
+                                unitesIds={g.unites.map((u) => u.id)}
+                                peutModifier={peutModifier}
+                                onChangement={() => void charger()}
+                                taille="sm"
+                              />
                             </td>
 
                             {/* Prix Achat */}
@@ -2120,21 +2072,22 @@ export default function Inventaire({ role }: { role: Role }) {
                             {/* Actions Rapides Modèle */}
                             <td className="py-4 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                               <div className="inline-flex items-center gap-1 justify-end">
-                                {/* Bouton (+) Arrivage Rapide / Scanner Douchette */}
+                                {/* Bouton (+) Arrivage Rapide Universel */}
                                 {peutModifier && (
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      setModalArrivageRapideModele({
-                                        modeleId: g.modele_id,
-                                        modeleNom: g.reference,
-                                        categorieId: g.categorie_id,
-                                        prixAchatDefaut: g.prixMin,
-                                        prixVenteDefaut: g.venteMin,
+                                      ouvrirAjoutRapide({
+                                        modele_id: g.modele_id,
+                                        reference: g.reference,
+                                        categorie: g.categorie,
+                                        categorie_id: g.categorie_id,
+                                        prixMin: g.prixMin,
+                                        venteMin: g.venteMin,
                                       });
                                     }}
-                                    className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 transition shadow-2xs font-bold"
-                                    title="Arrivage Rapide / Scanner des codes-barres à la volée"
+                                    className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 transition shadow-2xs font-bold cursor-pointer"
+                                    title="Ajouter des exemplaires en stock"
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
@@ -2302,20 +2255,12 @@ export default function Inventaire({ role }: { role: Role }) {
 
                                             {peutModifier && (
                                               <div className="flex items-center gap-1">
-                                                {/* Bouton (+) Scanner Arrivage */}
+                                                {/* Bouton (+) Scanner Arrivage Universel */}
                                                 <button
                                                   type="button"
-                                                  onClick={() => {
-                                                    setModalArrivageRapideModele({
-                                                      modeleId: p.modele_id,
-                                                      modeleNom: p.reference,
-                                                      categorieId: p.categorie_id,
-                                                      prixAchatDefaut: p.prix_achat,
-                                                      prixVenteDefaut: p.prix_vente_fixe,
-                                                    });
-                                                  }}
-                                                  className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold"
-                                                  title="Arrivage Rapide / Scanner des codes-barres"
+                                                  onClick={() => ouvrirAjoutRapide(p)}
+                                                  className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold cursor-pointer"
+                                                  title="Ajouter des exemplaires en stock"
                                                 >
                                                   <Plus className="w-3.5 h-3.5" />
                                                 </button>
@@ -3262,181 +3207,7 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       )}
 
-      {/* Modale Rapide : Ajouter un exemplaire */}
-      <Modale
-        titre="Ajouter un exemplaire"
-        ouverte={produitRapideAjout !== null}
-        onFermer={() => setProduitRapideAjout(null)}
-      >
-        {produitRapideAjout && (
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void validerAjoutRapide();
-            }}
-          >
-            {/* Résumé du produit source */}
-            <div className="p-3 bg-brand-light-grey/20 dark:bg-white/5 rounded-xl border border-brand-light-grey/50 dark:border-white/10 flex items-center gap-3">
-              {produitRapideAjout.image_url ? (
-                <img
-                  src={produitRapideAjout.image_url}
-                  alt={produitRapideAjout.reference}
-                  className="w-12 h-12 rounded-lg object-cover border border-brand-light-grey/50 shrink-0"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-lg bg-brand-light-grey/30 flex items-center justify-center shrink-0">
-                  <IconeImage taille={20} className="text-brand-warm-grey opacity-50" />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="font-mono text-[11px] text-brand-warm-grey font-bold">
-                  {produitRapideAjout.code_interne}
-                </div>
-                <div className="font-bold text-sm text-brand-black dark:text-white truncate">
-                  {produitRapideAjout.reference}
-                </div>
-                <div className="text-xs text-brand-warm-grey truncate">
-                  {produitRapideAjout.categorie}
-                </div>
-              </div>
-            </div>
 
-            {/* Informations de prix */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/30 dark:border-white/5">
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey">
-                  Prix d'achat
-                </span>
-                <span className="font-bold text-brand-black dark:text-white text-base">
-                  {formaterDA(produitRapideAjout.prix_achat)}
-                </span>
-                <span className="block text-[10px] text-brand-warm-grey mt-0.5">
-                  Conservé du modèle
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-brand-orange/10 border border-brand-orange/20">
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-orange/80">
-                  Prix de vente actuel
-                </span>
-                <span className="font-extrabold text-brand-orange text-base">
-                  {produitRapideAjout.prix_vente_fixe !== null
-                    ? formaterDA(produitRapideAjout.prix_vente_fixe)
-                    : "Non fixé"}
-                </span>
-              </div>
-            </div>
-
-            {/* Choix du prix de vente pour ce nouvel exemplaire */}
-            <div className="space-y-3 p-3 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper">
-              <span className="block text-xs font-bold uppercase tracking-wider text-brand-black dark:text-white">
-                Prix de vente de cet exemplaire
-              </span>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2.5 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    name="choixPrixRapide"
-                    checked={!modifierPrixVenteRapide}
-                    onChange={() => setModifierPrixVenteRapide(false)}
-                    className="accent-brand-orange"
-                  />
-                  <span>
-                    Conserver le prix actuel (
-                    <strong>
-                      {produitRapideAjout.prix_vente_fixe !== null
-                        ? formaterDA(produitRapideAjout.prix_vente_fixe)
-                        : "Non fixé"}
-                    </strong>
-                    )
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-2.5 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    name="choixPrixRapide"
-                    checked={modifierPrixVenteRapide}
-                    onChange={() => setModifierPrixVenteRapide(true)}
-                    className="accent-brand-orange"
-                  />
-                  <span>Modifier le prix de vente</span>
-                </label>
-              </div>
-
-              {modifierPrixVenteRapide && (
-                <div className="pt-2 animate-entree">
-                  <label className="libelle mb-1.5" htmlFor="prix-vente-rapide">
-                    Nouveau prix de vente (DA)
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="prix-vente-rapide"
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      step={1}
-                      autoFocus
-                      value={prixVenteRapide}
-                      onChange={(e) =>
-                        setPrixVenteRapide(e.target.value.replace(/[^\d]/g, ""))
-                      }
-                      placeholder="Ex: 82000"
-                      className="champ text-right pr-10 font-bold"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-grey pointer-events-none">
-                      DA
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Quantité d'exemplaires */}
-            <div className="flex gap-3 items-center">
-              <div className="w-1/2">
-                <label className="libelle mb-1.5" htmlFor="quantite-rapide">
-                  Nombre d'exemplaires
-                </label>
-                <input
-                  id="quantite-rapide"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={50}
-                  step={1}
-                  value={quantiteRapide}
-                  onChange={(e) =>
-                    setQuantiteRapide(e.target.value.replace(/[^\d]/g, "") || "1")
-                  }
-                  className="champ text-right font-bold"
-                />
-              </div>
-            </div>
-
-            {/* Boutons de validation */}
-            <div className="flex justify-end gap-2 pt-3 border-t border-brand-light-grey/50 dark:border-white/10">
-              <button
-                type="button"
-                onClick={() => setProduitRapideAjout(null)}
-                className="btn btn-secondaire"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                disabled={envoi}
-                className="btn btn-primaire shadow-md"
-              >
-                <IconePlus taille={16} />
-                Ajouter l'exemplaire
-              </button>
-            </div>
-          </form>
-        )}
-      </Modale>
 
       {/* Modale de changement de statut en masse */}
       <Modale
@@ -3581,27 +3352,16 @@ export default function Inventaire({ role }: { role: Role }) {
         />
       )}
 
-      {/* Modale Arrivage Rapide / Douchette (Bouton + 100% Fonctionnel) */}
-      {modalArrivageRapideModele && (
-        <ModaleArrivageRapide
-          ouvert={true}
-          onFermer={() => setModalArrivageRapideModele(null)}
-          onSucces={() => {
-            setModalArrivageRapideModele(null);
-            void charger();
-          }}
-          modeleId={modalArrivageRapideModele.modeleId}
-          modeleNom={modalArrivageRapideModele.modeleNom}
-          categorieId={modalArrivageRapideModele.categorieId}
-          prixAchatDefaut={modalArrivageRapideModele.prixAchatDefaut}
-          prixVenteDefaut={modalArrivageRapideModele.prixVenteDefaut}
-          lots={(donnees?.lots || []).map((l) => ({
-            id: l.id,
-            fournisseur: l.libelle,
-            date_entree: new Date().toISOString(),
-          }))}
-        />
-      )}
+      {/* COMPOSANT UNIVERSEL UNIQUE : Gestion du stock & Ajout d'exemplaires */}
+      <UniversalStockManager
+        ouvert={cibleStockManager !== null}
+        onFermer={() => setCibleStockManager(null)}
+        onSucces={() => {
+          setCibleStockManager(null);
+          void charger();
+        }}
+        cible={cibleStockManager}
+      />
     </>
   );
 }

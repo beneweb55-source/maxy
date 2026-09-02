@@ -44,13 +44,12 @@ import {
 } from "lucide-react";
 import BadgeStatut from "@/components/BadgeStatut";
 import Modale from "@/components/Modale";
-import ChampPhotos from "@/components/ChampPhotos";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
-import ModalClassification from "@/components/inventaire/ModalClassification";
-import ModaleArrivageRapide from "@/components/produits/ModaleArrivageRapide";
+import UniversalStockManager from "@/components/produits/UniversalStockManager";
 import FormulaireModele from "@/components/produits/FormulaireModele";
-import BoutonImpression from "@/components/BoutonImpression";
+import ModalClassification from "@/components/inventaire/ModalClassification";
 import SelecteurStatutProduit from "@/components/produits/SelecteurStatutProduit";
+import BoutonImpression from "@/components/BoutonImpression";
 import GestionnaireQuantite from "@/components/produits/GestionnaireQuantite";
 import ModaleVente from "@/components/ventes/ModaleVente";
 import { useToast } from "@/components/toast";
@@ -1109,20 +1108,27 @@ export default function FicheProduit({
 
       </div>
 
-      {/* MODALE : Réception & Arrivage Rapide (Scanner-First) */}
-      <ModaleArrivageRapide
+      {/* MODALE UNIVERSELLE : Ajout d'exemplaires & Gestion de Stock */}
+      <UniversalStockManager
         ouvert={modalArrivage}
         onFermer={() => setModalArrivage(false)}
         onSucces={() => {
-          afficher("Exemplaires ajoutés avec succès", "succes");
+          afficher("Stock mis à jour avec succès !", "succes");
           void chargerProduit();
         }}
-        modeleId={produit.modele_id}
-        modeleNom={nomCommercial}
-        categorieId={produit.categorie_id}
-        prixAchatDefaut={produit.prix_achat}
-        prixVenteDefaut={produit.prix_vente_fixe || produit.modele?.prix_vente_conseille}
-        lots={produit.lot ? [produit.lot] : []}
+        cible={{
+          modeleId: produit.modele_id,
+          produitId: produit.id,
+          reference: nomCommercial,
+          categorie: produit.categorie,
+          categorie_id: produit.categorie_id,
+          prix_achat: produit.prix_achat,
+          prix_vente_fixe: produit.prix_vente_fixe || produit.modele?.prix_vente_conseille,
+          image_url: produit.image_url,
+          emplacement: produit.emplacement,
+          grade: produit.grade,
+          lot_id: produit.lot?.id,
+        }}
       />
 
       {/* MODALE : Édition du Modèle & Spécifications */}

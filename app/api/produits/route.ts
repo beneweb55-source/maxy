@@ -8,6 +8,7 @@ import { televerserLignes } from "@/lib/stockage-images";
 import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
+import { StockService } from "@/lib/stock-service";
 
 const PAR_PAGE = 50;
 const JOUR_MS = 24 * 60 * 60 * 1000;
@@ -244,13 +245,18 @@ export async function POST(request: NextRequest) {
     // leur URL (une seule fois, partagée par les `qty` exemplaires).
     const lignes = await televerserLignes(Array.from({ length: qty }, () => ligne));
     const codes = await prisma.$transaction(
-      (tx) =>
-        creerProduitsGroupes(tx, {
+      async (tx) => {
+        const c = await creerProduitsGroupes(tx, {
           lotId: lotId,
           lignes,
           userId: user.id,
           enVitrine: en_vitrine === true,
-        }),
+        });
+        if (ligne.modele_id) {
+          await StockService.synchroniserCompteModele(ligne.modele_id, tx);
+        }
+        return c;
+      },
       { timeout: 120000 }
     );
 

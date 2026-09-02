@@ -175,6 +175,7 @@ model Modele {
   description  String?
   attributs    Json?     
   prix_vente_conseille Int? 
+  quantite     Int      @default(0)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
