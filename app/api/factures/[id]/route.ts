@@ -28,7 +28,7 @@ export async function GET(
         garantie_mois: true,
         garantie_fin: true,
         canal: true,
-        type_facture: true,
+        type_document: true,
         client_adresse: true,
         client_rc: true,
         client_nif: true,
@@ -85,7 +85,8 @@ export async function GET(
       garantie_mois: f.garantie_mois,
       garantie_fin: f.garantie_fin.toISOString(),
       canal: f.canal,
-      type_facture: f.type_facture,
+      type_document: f.type_document,
+      type_facture: f.type_document, // Alias legacy pour compatibilité PDF
       client_adresse: f.client_adresse,
       client_rc: f.client_rc,
       client_nif: f.client_nif,
@@ -145,15 +146,15 @@ export async function PATCH(
     client_tel?: unknown;
   };
 
-  const donnees: { 
-    client_nom?: string | null; 
+  const donnees: {
+    client_nom?: string | null;
     client_tel?: string | null;
     client_adresse?: string | null;
     client_rc?: string | null;
     client_nif?: string | null;
     client_ai?: string | null;
     client_nis?: string | null;
-    type_facture?: string;
+    type_document?: "FACTURE_TVA" | "PROFORMA" | "DEVIS";
   } = {};
   if (client_nom !== undefined) {
     if (client_nom !== null && typeof client_nom !== "string") {
@@ -174,8 +175,18 @@ export async function PATCH(
     "client_nif",
     "client_ai",
     "client_nis",
-    "type_facture",
   ] as const;
+
+  // Gestion séparée du type de document (nouveau: type_document, legacy: type_facture)
+  const typeDocumentBody = (corps as any)?.["type_document"] ?? (corps as any)?.["type_facture"];
+  if (typeDocumentBody !== undefined) {
+    const typesValides = ["FACTURE_TVA", "PROFORMA", "DEVIS"];
+    const valStr = typeof typeDocumentBody === "string" ? typeDocumentBody.trim().toUpperCase() : null;
+    if (!valStr || !typesValides.includes(valStr)) {
+      return erreur(400, `Type de document invalide. Valeurs acceptées : ${typesValides.join(", ")}`);
+    }
+    (donnees as any)["type_document"] = valStr;
+  }
 
   for (const field of additionalFields) {
     const val = (corps ?? {})[field as keyof typeof corps];
@@ -184,11 +195,7 @@ export async function PATCH(
         return erreur(400, `Le champ ${field} est invalide.`);
       }
       const valStr = val as string;
-      if (field === "type_facture") {
-        (donnees as any)[field] = typeof val === "string" && valStr.trim() ? valStr.trim() : "normale";
-      } else {
-        (donnees as any)[field] = typeof val === "string" && valStr.trim() ? valStr.trim() : null;
-      }
+      (donnees as any)[field] = typeof val === "string" && valStr.trim() ? valStr.trim() : null;
     }
   }
 
@@ -198,7 +205,7 @@ export async function PATCH(
     const maj = await prisma.facture.update({
       where: { id: factureId },
       data: donnees,
-      select: { id: true, client_nom: true, client_tel: true },
+      select: { id: true, client_nom: true, client_tel: true, type_document: true },
     });
     return NextResponse.json({ ok: true, ...maj });
   } catch (e) {

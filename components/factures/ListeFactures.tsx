@@ -13,8 +13,13 @@ import {
   IconeImprimante,
 } from "@/components/icons";
 import { useToast } from "@/components/toast";
-import { Download } from "lucide-react";
+import { Download, FileText, ClipboardList, FilePen } from "lucide-react";
 import { genererFacturePdf } from "@/lib/facture-pdf";
+
+type TypeDocument = "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+
+/** Onglets de filtrage par type de document */
+type OngletType = "tous" | "FACTURE_TVA" | "PROFORMA" | "DEVIS";
 
 interface LigneFactureListe {
   id: number;
@@ -28,6 +33,7 @@ interface LigneFactureListe {
   canal: string | null;
   vendeur: string;
   nb_lignes: number;
+  type_document: TypeDocument;
 }
 
 interface ReponseFactures {
@@ -41,6 +47,34 @@ function dateFr(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR");
 }
 
+/** Badge coloré selon le type de document */
+function BadgeTypeDocument({ type }: { type: TypeDocument }) {
+  const config: Record<TypeDocument, { label: string; cls: string; Icon: React.ComponentType<{className?: string}> }> = {
+    FACTURE_TVA: {
+      label: "Facture TVA",
+      cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+      Icon: FileText,
+    },
+    PROFORMA: {
+      label: "Proforma",
+      cls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+      Icon: FilePen,
+    },
+    DEVIS: {
+      label: "Devis",
+      cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+      Icon: ClipboardList,
+    },
+  };
+  const { label, cls, Icon } = config[type] ?? config.FACTURE_TVA;
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${cls}`}>
+      <Icon className="w-3 h-3" />
+      {label}
+    </span>
+  );
+}
+
 export default function ListeFactures({ role }: { role?: string }) {
   const router = useRouter();
   const { afficher } = useToast();
@@ -52,6 +86,7 @@ export default function ListeFactures({ role }: { role?: string }) {
   const [page, setPage] = useState(1);
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [envoi, setEnvoi] = useState(false);
+  const [onglet, setOnglet] = useState<OngletType>("tous");
 
   // Debounce automatique de la recherche
   useEffect(() => {
@@ -71,6 +106,8 @@ export default function ListeFactures({ role }: { role?: string }) {
       if (recherche) params.set("q", recherche);
       if (mois) params.set("mois", mois);
       params.set("page", String(page));
+      // Filtre par type de document selon l'onglet actif
+      if (onglet !== "tous") params.set("type", onglet);
       const res = await fetch(`/api/factures?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) {
         const corps = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -80,7 +117,7 @@ export default function ListeFactures({ role }: { role?: string }) {
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Erreur inattendue.");
     }
-  }, [recherche, mois, page]);
+  }, [recherche, mois, page, onglet]);
 
   useEffect(() => {
     void charger();
@@ -150,15 +187,42 @@ export default function ListeFactures({ role }: { role?: string }) {
     setEnvoi(false);
   }
 
+  // Configuration des onglets
+  const onglets: { id: OngletType; label: string; Icon: React.ComponentType<{className?: string}> }[] = [
+    { id: "tous", label: "Tous", Icon: FileText },
+    { id: "FACTURE_TVA", label: "Factures TVA", Icon: FileText },
+    { id: "PROFORMA", label: "Proformas", Icon: FilePen },
+    { id: "DEVIS", label: "Devis", Icon: ClipboardList },
+  ];
+
   return (
     <div className="space-y-6 animate-entree">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-brand-black">Factures</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-brand-black dark:text-white">Documents</h1>
           <p className="mt-1 text-sm text-brand-warm-grey">
-            Générées automatiquement à chaque vente, avec 6 mois de garantie.
+            Factures TVA, proformas et devis — générés à chaque vente avec 6 mois de garantie.
           </p>
         </div>
+      </div>
+
+      {/* Onglets de filtrage par type */}
+      <div className="flex gap-1 p-1 rounded-2xl bg-brand-light-grey/30 dark:bg-white/5 border border-brand-light-grey/40 dark:border-white/10 w-full sm:w-auto overflow-x-auto">
+        {onglets.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => { setOnglet(id); setPage(1); setSelection(new Set()); }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-1 justify-center ${
+              onglet === id
+                ? "bg-white dark:bg-brand-paper text-brand-orange shadow-sm"
+                : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="carte flex flex-wrap items-center gap-3">
@@ -177,7 +241,7 @@ export default function ListeFactures({ role }: { role?: string }) {
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="N° facture, client, produit puis Entrée"
+            placeholder="N° document, client, produit..."
             className="champ pl-9"
           />
         </form>
@@ -212,25 +276,31 @@ export default function ListeFactures({ role }: { role?: string }) {
         </div>
       )}
       {!erreur && donnees === null && (
-        <p className="text-sm text-brand-warm-grey">Chargement des factures…</p>
+        <p className="text-sm text-brand-warm-grey">Chargement des documents…</p>
       )}
 
       {donnees && (
         <p className="text-sm text-brand-warm-grey">
-          <strong className="text-brand-black">{donnees.total}</strong> facture
-          {donnees.total > 1 ? "s" : ""}
+          <strong className="text-brand-black dark:text-white">{donnees.total}</strong>{" "}
+          {onglet === "DEVIS" ? "devis" : onglet === "PROFORMA" ? "proforma(s)" : `facture${donnees.total > 1 ? "s" : ""}`}
         </p>
       )}
 
       {donnees && factures.length === 0 && (
         <div className="carte border-dashed p-8 text-center text-sm text-brand-warm-grey">
-          <p className="font-semibold text-brand-black">Aucune facture.</p>
+          <p className="font-semibold text-brand-black dark:text-white">Aucun document.</p>
           <p className="mt-1">
-            Chaque vente enregistrée (à l&apos;unité ou groupée) génère automatiquement sa facture.
+            {onglet === "DEVIS"
+              ? "Aucun devis créé pour le moment."
+              : onglet === "PROFORMA"
+              ? "Aucune proforma créée pour le moment."
+              : "Chaque vente enregistrée génère automatiquement sa facture."}
           </p>
-          <Link href="/vitrine" className="btn btn-primaire mt-4">
-            Vendre depuis la vitrine
-          </Link>
+          {onglet === "tous" && (
+            <Link href="/vitrine" className="btn btn-primaire mt-4">
+              Vendre depuis la vitrine
+            </Link>
+          )}
         </div>
       )}
 
@@ -281,8 +351,9 @@ export default function ListeFactures({ role }: { role?: string }) {
                         />
                       )}
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-sm font-bold text-brand-orange">{f.numero}</span>
+                          <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
                           {f.annulee && (
                             <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger uppercase">
                               Annulée
@@ -342,9 +413,9 @@ export default function ListeFactures({ role }: { role?: string }) {
           </div>
 
           {/* Vue Bureau: Tableau */}
-          <div className="hidden w-full overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white md:block">
-            <table className="w-full min-w-[720px] text-sm">
-              <thead className="bg-brand-light-grey/25">
+          <div className="hidden w-full overflow-x-auto rounded-xl border border-brand-light-grey bg-brand-white dark:bg-brand-paper dark:border-white/10 md:block">
+            <table className="w-full min-w-[780px] text-sm">
+              <thead className="bg-brand-light-grey/25 dark:bg-black/30">
                 <tr>
                   {peutSupprimer && (
                     <th className="entete-table w-10 px-3 text-center">
@@ -362,6 +433,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                     </th>
                   )}
                   <th className="entete-table">N°</th>
+                  <th className="entete-table">Type</th>
                   <th className="entete-table">Date</th>
                   <th className="entete-table">Client</th>
                   <th className="entete-table text-right">Articles</th>
@@ -380,12 +452,12 @@ export default function ListeFactures({ role }: { role?: string }) {
                     <tr
                       key={f.id}
                       onClick={() => router.push(`/factures/${f.id}`)}
-                      className={`ligne-table border-b border-brand-light-grey/30 last:border-0 cursor-pointer ${
+                      className={`ligne-table border-b border-brand-light-grey/30 dark:border-white/5 last:border-0 cursor-pointer ${
                         f.annulee ? "text-brand-grey" : ""
                       } ${estSelectionnee ? "bg-brand-orange/5" : ""}`}
                     >
                       {peutSupprimer && (
-                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={estSelectionnee}
@@ -394,7 +466,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                           />
                         </td>
                       )}
-                      <td className="px-3 py-2.5 font-mono text-xs font-bold text-brand-orange">
+                      <td className="px-3 py-3 font-mono text-xs font-bold text-brand-orange">
                         {f.numero}
                         {f.annulee && (
                           <span className="ml-1 rounded bg-danger/10 px-1 py-0.5 text-[10px] font-semibold text-danger">
@@ -402,15 +474,18 @@ export default function ListeFactures({ role }: { role?: string }) {
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5">{dateFr(f.date_emission)}</td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-3">
+                        <BadgeTypeDocument type={f.type_document ?? "FACTURE_TVA"} />
+                      </td>
+                      <td className="px-3 py-3">{dateFr(f.date_emission)}</td>
+                      <td className="px-3 py-3">
                         {f.client_nom || <span className="text-brand-grey">Client comptoir</span>}
                         {f.canal && (
                           <span className="block text-xs text-brand-grey">{f.canal}</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5 text-right font-semibold">{f.nb_lignes}</td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-3 text-right font-semibold">{f.nb_lignes}</td>
+                      <td className="px-3 py-3">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
                             garantieActive
@@ -423,8 +498,8 @@ export default function ListeFactures({ role }: { role?: string }) {
                           {garantieActive ? `→ ${dateFr(f.garantie_fin)}` : "expirée"}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5">{f.vendeur}</td>
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="px-3 py-3">{f.vendeur}</td>
+                      <td className="px-3 py-3 text-right">
                         {f.total_net !== f.total && (
                           <span className="block text-[10px] text-brand-grey line-through">
                             {formaterDA(f.total)}
@@ -432,7 +507,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                         )}
                         <span className="font-bold">{formaterDA(f.total_net)}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-3 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="inline-flex items-center gap-1">
                           <button
                             type="button"
@@ -471,7 +546,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                               }
                             }}
                             className="inline-flex items-center justify-center rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-orange/10 hover:text-brand-orange"
-                            title="Télécharger la Facture (PDF)"
+                            title="Télécharger le PDF"
                           >
                             <Download className="w-4 h-4" />
                           </button>
@@ -528,7 +603,7 @@ export default function ListeFactures({ role }: { role?: string }) {
       {selection.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-brand-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-4 sm:gap-6 animate-entree z-50 border border-white/10 backdrop-blur-md">
           <span className="font-bold text-xs sm:text-sm whitespace-nowrap">
-            {selection.size} facture(s) sélectionnée(s)
+            {selection.size} document(s) sélectionné(s)
           </span>
           <div className="flex items-center gap-2">
             <button

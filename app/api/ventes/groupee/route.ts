@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { produit_ids, prix_total, prix_par_produit, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, mode_paiement, etiquette_imprimee } =
+  const { produit_ids, prix_total, prix_par_produit, canal, date_vente, confirmer, client_nom, client_tel, client_adresse, client_rc, client_nif, client_ai, client_nis, type_facture, type_document, numero_manuel, mode_paiement, etiquette_imprimee } =
     (corps ?? {}) as {
       produit_ids?: unknown;
       prix_total?: unknown;
@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
       client_ai?: unknown;
       client_nis?: unknown;
       type_facture?: unknown;
+      type_document?: unknown;  // TypeDocument enum : FACTURE_TVA | PROFORMA | DEVIS
+      numero_manuel?: unknown;  // Numéro personnalisé (override auto)
       mode_paiement?: unknown;
       etiquette_imprimee?: unknown;
     };
@@ -277,6 +279,10 @@ export async function POST(request: NextRequest) {
         clientAi: typeof client_ai === "string" ? client_ai : null,
         clientNis: typeof client_nis === "string" ? client_nis : null,
         typeFacture: typeof type_facture === "string" ? type_facture : null,
+        typeDocument: typeof type_document === "string" && ["FACTURE_TVA", "PROFORMA", "DEVIS"].includes(type_document)
+          ? (type_document as "FACTURE_TVA" | "PROFORMA" | "DEVIS")
+          : null,
+        numeroManuel: typeof numero_manuel === "string" && numero_manuel.trim() ? numero_manuel.trim() : null,
         modePaiement: typeof mode_paiement === "string" ? mode_paiement : null,
         groupeVente,
       });

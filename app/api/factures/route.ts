@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
               garantie_mois: true,
               garantie_fin: true,
               canal: true,
-              type_facture: true,
+              type_document: true,
               client_adresse: true,
               client_rc: true,
               client_nif: true,
@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
             garantie_fin: f.garantie_fin.toISOString(),
             total_net: f.total,
             vendeur: f.createur.username,
+            type_facture: f.type_document, // Alias legacy pour compatibilité PDF
             entreprise: {
               nom: parametres?.entreprise_nom ?? "Solution Maxi",
               adresse: parametres?.entreprise_adresse ?? "Alger, Algérie",
@@ -109,6 +110,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Filtre par type de document : ?type=DEVIS ou ?type=FACTURE_TVA,PROFORMA
+    const typeParam = params.get("type");
+    if (typeParam) {
+      const typesValides = ["FACTURE_TVA", "PROFORMA", "DEVIS"] as const;
+      type TypeDoc = typeof typesValides[number];
+      const typesFiltres = typeParam
+        .split(",")
+        .map((t) => t.trim().toUpperCase())
+        .filter((t): t is TypeDoc => (typesValides as readonly string[]).includes(t));
+      if (typesFiltres.length > 0) {
+        clauses.push({ type_document: { in: typesFiltres } });
+      }
+    }
+
     const where: Prisma.FactureWhereInput = clauses.length > 0 ? { AND: clauses } : {};
     const page = Math.max(1, Number(params.get("page")) || 1);
 
@@ -128,6 +143,7 @@ export async function GET(request: NextRequest) {
           garantie_fin: true,
           annulee: true,
           canal: true,
+          type_document: true,
           createur: { select: { username: true } },
           lignes: { select: { prix: true, vente_id: true } },
         },
@@ -172,6 +188,8 @@ export async function GET(request: NextRequest) {
           garantie_fin: f.garantie_fin.toISOString(),
           annulee: f.annulee,
           canal: f.canal,
+          type_document: f.type_document,
+          type_facture: f.type_document, // Alias legacy
           vendeur: f.createur.username,
           nb_lignes: f.lignes.length,
         };

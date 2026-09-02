@@ -233,7 +233,8 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [dateVente, setDateVente] = useState(aujourdhuiIso());
   const [clientNom, setClientNom] = useState("");
   const [clientTel, setClientTel] = useState("");
-  const [typeFacture, setTypeFacture] = useState("normale");
+  const [typeFacture, setTypeFacture] = useState<"FACTURE_TVA" | "PROFORMA" | "DEVIS">("FACTURE_TVA");
+  const [numeroManuel, setNumeroManuel] = useState("");
   const [clientAdresse, setClientAdresse] = useState("");
   const [clientRc, setClientRc] = useState("");
   const [clientNif, setClientNif] = useState("");
@@ -258,7 +259,8 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [dateBundle, setDateBundle] = useState(aujourdhuiIso());
   const [clientNomBundle, setClientNomBundle] = useState("");
   const [clientTelBundle, setClientTelBundle] = useState("");
-  const [typeFactureBundle, setTypeFactureBundle] = useState("normale");
+  const [typeFactureBundle, setTypeFactureBundle] = useState<"FACTURE_TVA" | "PROFORMA" | "DEVIS">("FACTURE_TVA");
+  const [numeroManuelBundle, setNumeroManuelBundle] = useState("");
   const [clientAdresseBundle, setClientAdresseBundle] = useState("");
   const [clientRcBundle, setClientRcBundle] = useState("");
   const [clientNifBundle, setClientNifBundle] = useState("");
@@ -368,7 +370,8 @@ export default function CaisseClient({ role }: { role: Role }) {
     setDateVente(aujourdhuiIso());
     setClientNom("");
     setClientTel("");
-    setTypeFacture("normale");
+    setTypeFacture("FACTURE_TVA");
+    setNumeroManuel("");
     setClientAdresse("");
     setClientRc("");
     setClientNif("");
@@ -678,7 +681,8 @@ export default function CaisseClient({ role }: { role: Role }) {
     setDateBundle(aujourdhuiIso());
     setClientNomBundle("");
     setClientTelBundle("");
-    setTypeFactureBundle("normale");
+    setTypeFactureBundle("FACTURE_TVA");
+    setNumeroManuelBundle("");
     setClientAdresseBundle("");
     setClientRcBundle("");
     setClientNifBundle("");
@@ -724,6 +728,8 @@ export default function CaisseClient({ role }: { role: Role }) {
           client_ai: clientAiBundle.trim() || undefined,
           client_nis: clientNisBundle.trim() || undefined,
           type_facture: typeFactureBundle,
+          type_document: typeFactureBundle,
+          numero_manuel: numeroManuelBundle.trim() || undefined,
           mode_paiement: modePaiementBundle,
           etiquette_imprimee: etiquetteBundleValidee || undefined,
         }),
@@ -783,6 +789,8 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_ai: clientAi.trim() || undefined,
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
+        type_document: typeFacture,
+        numero_manuel: numeroManuel.trim() || undefined,
         mode_paiement: modePaiement,
         etiquette_imprimee: etiquetteVenteValidee || undefined,
       } : {
@@ -799,6 +807,8 @@ export default function CaisseClient({ role }: { role: Role }) {
         client_ai: clientAi.trim() || undefined,
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
+        type_document: typeFacture,
+        numero_manuel: numeroManuel.trim() || undefined,
         mode_paiement: modePaiement,
         etiquette_imprimee: etiquetteVenteValidee || undefined,
       };
@@ -1934,18 +1944,31 @@ export default function CaisseClient({ role }: { role: Role }) {
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="libelle mb-1.5" htmlFor="type-facture">
-                  Type de facture
+                  Type de document
                 </label>
                 <select
                   id="type-facture"
                   value={typeFacture}
-                  onChange={(e) => setTypeFacture(e.target.value)}
-                  className="champ"
+                  onChange={(e) => setTypeFacture(e.target.value as any)}
+                  className="champ font-bold text-xs"
                 >
-                  <option value="normale">{t("caisse.factureNormale")}</option>
-                  <option value="tva">{t("caisse.factureTVA")}</option>
-                  <option value="proforma">{t("caisse.factureProforma")}</option>
+                  <option value="FACTURE_TVA">Facture TVA (Document fiscal)</option>
+                  <option value="PROFORMA">Facture Proforma</option>
+                  <option value="DEVIS">Devis Client</option>
                 </select>
+              </div>
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="numero-manuel">
+                  N° personnalisé (Optionnel)
+                </label>
+                <input
+                  id="numero-manuel"
+                  type="text"
+                  value={numeroManuel}
+                  onChange={(e) => setNumeroManuel(e.target.value)}
+                  placeholder="Auto (ex: FA-2026-...)"
+                  className="champ font-mono text-xs"
+                />
               </div>
             </div>
 
@@ -2223,18 +2246,31 @@ export default function CaisseClient({ role }: { role: Role }) {
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="libelle mb-1.5" htmlFor="type-facture-bundle">
-                  Type de facture
+                  Type de document
                 </label>
                 <select
                   id="type-facture-bundle"
                   value={typeFactureBundle}
-                  onChange={(e) => setTypeFactureBundle(e.target.value)}
-                  className="champ"
+                  onChange={(e) => setTypeFactureBundle(e.target.value as any)}
+                  className="champ font-bold text-xs"
                 >
-                  <option value="normale">{t("caisse.factureNormale")}</option>
-                  <option value="tva">{t("caisse.factureTVA")}</option>
-                  <option value="proforma">{t("caisse.factureProforma")}</option>
+                  <option value="FACTURE_TVA">Facture TVA (Document fiscal)</option>
+                  <option value="PROFORMA">Facture Proforma</option>
+                  <option value="DEVIS">Devis Client</option>
                 </select>
+              </div>
+              <div className="flex-1">
+                <label className="libelle mb-1.5" htmlFor="numero-manuel-bundle">
+                  N° personnalisé (Optionnel)
+                </label>
+                <input
+                  id="numero-manuel-bundle"
+                  type="text"
+                  value={numeroManuelBundle}
+                  onChange={(e) => setNumeroManuelBundle(e.target.value)}
+                  placeholder="Auto (ex: FA-2026-...)"
+                  className="champ font-mono text-xs"
+                />
               </div>
             </div>
 

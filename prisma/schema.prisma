@@ -41,6 +41,14 @@ enum StatutProduit {
   en_vente
   produit_commande
   vendu
+  assemble // Composant intégré dans un produit parent (BOM) — retiré du stock général
+}
+
+// Types de documents commerciaux légaux
+enum TypeDocument {
+  FACTURE_TVA  // Facture avec TVA (document fiscal)
+  PROFORMA     // Facture proforma (non définitive)
+  DEVIS        // Devis client (sans engagement)
 }
 
 enum TypeMouvement {
@@ -222,6 +230,12 @@ model Produit {
   etiquette_imprimee_le DateTime?
   created_at       DateTime         @default(now())
 
+  // === Produits Composés (BOM - Bill of Materials) ===
+  // Un PC assemblé peut contenir des composants issus du stock
+  parent_id    Int?                 // Si non-null : ce produit est assemblé dans le produit parent
+  parent       Produit?             @relation("ComposantParent", fields: [parent_id], references: [id])
+  composants   Produit[]            @relation("ComposantParent")
+
   lot         Lot?               @relation(fields: [lot_id], references: [id])
   modele      Modele?            @relation(fields: [modele_id], references: [id])
   categorie_rel Categorie?       @relation(fields: [categorie_id], references: [id])
@@ -240,6 +254,7 @@ model Produit {
   @@index([numero_serie])
   @@index([categorie])
   @@index([lot_id, reference, categorie])
+  @@index([parent_id])
   @@map("produits")
 }
 
@@ -330,10 +345,10 @@ model MouvementCaisse {
 }
 
 model Facture {
-  id            Int      @id @default(autoincrement())
-  numero        String   @unique
-  date_emission DateTime @default(now())
-  type_facture  String   @default("normale") // "normale", "tva", "proforma"
+  id            Int          @id @default(autoincrement())
+  numero        String       @unique
+  date_emission DateTime     @default(now())
+  type_document TypeDocument @default(FACTURE_TVA) // Type légal du document
   client_nom    String?
   client_adresse String?
   client_tel    String?
@@ -342,19 +357,20 @@ model Facture {
   client_ai     String?
   client_nis    String?
   total         Int
-  garantie_mois Int      @default(6)
+  garantie_mois Int          @default(6)
   garantie_fin  DateTime
   canal         String?
   groupe_vente  String?
   cree_par      Int
-  annulee       Boolean  @default(false)
-  mode_paiement String?  @default("especes")
-  updated_at    DateTime @default(now()) @updatedAt
+  annulee       Boolean      @default(false)
+  mode_paiement String?      @default("especes")
+  updated_at    DateTime     @default(now()) @updatedAt
 
   createur User           @relation(fields: [cree_par], references: [id])
   lignes   FactureLigne[]
 
   @@index([date_emission])
+  @@index([type_document])
   @@map("factures")
 }
 

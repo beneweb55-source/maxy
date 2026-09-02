@@ -20,15 +20,48 @@ export function finGarantie(depuis: Date, mois = GARANTIE_MOIS): Date {
   return fin;
 }
 
+/** Préfixes des numéros de document selon le type */
+const PREFIXES_DOCUMENT: Record<TypeDocumentLegal, string> = {
+  FACTURE_TVA: "FA",
+  PROFORMA: "PF",
+  DEVIS: "DV",
+};
+
 /**
- * Numéro de facture séquentiel par année : « FA-2026-0001 ».
- * Calculé dans la transaction de vente pour rester cohérent.
+ * Type légal d'un document commercial.
+ * Correspond à l'enum TypeDocument dans le schéma Prisma.
  */
-async function prochainNumero(tx: Tx, quand: Date): Promise<string> {
+export type TypeDocumentLegal = "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+
+/**
+ * Numéro de document séquentiel par type et par année.
+ * Exemples : « FA-2026-0001 », « DV-2026-0042 », « PF-2026-0007 »
+ * Calculé dans la transaction pour rester cohérent (protection race condition).
+ *
+ * Si `numeroManuel` est fourni et non-vide, il est utilisé directement
+ * après vérification d'unicité dans la base.
+ */
+async function prochainNumero(
+  tx: Tx,
+  quand: Date,
+  typeDoc: TypeDocumentLegal = "FACTURE_TVA",
+  numeroManuel?: string | null
+): Promise<string> {
+  // Numéro manuel : priorité si fourni et non-vide
+  if (numeroManuel && numeroManuel.trim()) {
+    const numero = numeroManuel.trim();
+    // Vérifier l'unicité
+    const existing = await tx.facture.findUnique({ where: { numero }, select: { id: true } });
+    if (existing) {
+      throw new Error(`Le numéro de document « ${numero} » est déjà utilisé par une autre facture.`);
+    }
+    return numero;
+  }
+
   const annee = quand.getFullYear();
-  const prefixe = `FA-${annee}-`;
-  // Rang maximal calculé NUMÉRIQUEMENT (et non par tri de chaîne, qui placerait
-  // « FA-2026-9999 » après « FA-2026-10000 » au-delà de 9 999 factures).
+  const prefixe = `${PREFIXES_DOCUMENT[typeDoc]}-${annee}-`;
+
+  // Rang maximal calculé NUMÉRIQUEMENT (et non par tri de chaîne)
   const lignes = await tx.$queryRaw<{ rang: number | null }[]>`
     SELECT MAX(CAST(split_part(numero, '-', 3) AS INTEGER)) AS rang
     FROM factures
@@ -48,8 +81,10 @@ export interface LigneFacture {
 }
 
 /**
- * Crée la facture correspondant à une vente (simple ou groupée). Toute vente
- * génère automatiquement sa facture, avec la garantie appliquée à chaque ligne.
+ * Crée la facture correspondant à une vente (simple ou groupée).
+ * Supporte désormais :
+ * - Les types de documents légaux (FACTURE_TVA, PROFORMA, DEVIS)
+ * - La numérotation personnalisable (numeroManuel)
  */
 export async function creerFacture(
   tx: Tx,
@@ -65,18 +100,43 @@ export async function creerFacture(
     clientNif?: string | null;
     clientAi?: string | null;
     clientNis?: string | null;
+    /** @deprecated Utilisez typeDocument à la place */
     typeFacture?: string | null;
+    /** Type légal du document : FACTURE_TVA (défaut), PROFORMA, ou DEVIS */
+    typeDocument?: TypeDocumentLegal | null;
     modePaiement?: string | null;
     groupeVente?: string | null;
+    /** Numéro personnalisé — remplace la génération automatique si fourni */
+    numeroManuel?: string | null;
   }
 ): Promise<{ id: number; numero: string }> {
-  const { lignes, userId, quand, canal, clientNom, clientTel, clientAdresse, clientRc, clientNif, clientAi, clientNis, typeFacture, modePaiement, groupeVente } = options;
+  const {
+    lignes, userId, quand, canal,
+    clientNom, clientTel, clientAdresse, clientRc, clientNif, clientAi, clientNis,
+    typeDocument, typeFacture, modePaiement, groupeVente, numeroManuel,
+  } = options;
+
+  // Résolution du type de document légal
+  // typeDocument a la priorité sur le legacy typeFacture
+  let typeDocumentFinal: TypeDocumentLegal = "FACTURE_TVA";
+  if (typeDocument && ["FACTURE_TVA", "PROFORMA", "DEVIS"].includes(typeDocument)) {
+    typeDocumentFinal = typeDocument;
+  } else if (typeFacture) {
+    // Mapping legacy pour rétrocompatibilité
+    const tf = typeFacture.toLowerCase().trim();
+    if (tf === "proforma") typeDocumentFinal = "PROFORMA";
+    else if (tf === "devis") typeDocumentFinal = "DEVIS";
+    else typeDocumentFinal = "FACTURE_TVA";
+  }
+
   const garantieFin = finGarantie(quand);
   const total = lignes.reduce((s, l) => s + l.prix, 0);
 
+  const numero = await prochainNumero(tx, quand, typeDocumentFinal, numeroManuel);
+
   const facture = await tx.facture.create({
     data: {
-      numero: await prochainNumero(tx, quand),
+      numero,
       date_emission: quand,
       client_nom: clientNom?.trim() || null,
       client_tel: clientTel?.trim() || null,
@@ -85,7 +145,7 @@ export async function creerFacture(
       client_nif: clientNif?.trim() || null,
       client_ai: clientAi?.trim() || null,
       client_nis: clientNis?.trim() || null,
-      type_facture: typeFacture?.trim() || "normale",
+      type_document: typeDocumentFinal,
       total,
       garantie_mois: GARANTIE_MOIS,
       garantie_fin: garantieFin,

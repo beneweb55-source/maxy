@@ -56,6 +56,7 @@ import ModaleVente from "@/components/ventes/ModaleVente";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
+import PanneauComposants from "@/components/inventaire/PanneauComposants";
 import { 
   determinerProfilEquipement, 
   type ProfilEquipement 
@@ -216,8 +217,8 @@ export default function FicheProduit({
     }
   }, [modalEditUnite, modalReparation]);
 
-  // Onglet secondaire actif (Exemplaires, Atelier SAV, Historique, Ventes)
-  const [ongletActif, setOngletActif] = useState<"exemplaires" | "atelier" | "historique" | "ventes">("exemplaires");
+  // Onglet secondaire actif (Exemplaires, Atelier SAV, Historique, Ventes, Composants BOM)
+  const [ongletActif, setOngletActif] = useState<"exemplaires" | "atelier" | "historique" | "ventes" | "composants">("exemplaires");
 
   // Charger les données du produit
   const chargerProduit = useCallback(async () => {
@@ -794,6 +795,19 @@ export default function FicheProduit({
                   <ShoppingBag className="w-3.5 h-3.5 text-brand-orange" />
                   Ventes ({produit.ventes?.length || 0})
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOngletActif("composants")}
+                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all ${
+                    ongletActif === "composants"
+                      ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
+                      : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-brand-orange" />
+                  Composants BOM
+                </button>
               </div>
 
               {ongletActif === "exemplaires" && peutModifier && (
@@ -1078,6 +1092,15 @@ export default function FicheProduit({
                   </div>
                 )}
               </div>
+            )}
+
+            {/* ==================== ONGLET 5 : COMPOSANTS & NOMENCLATURE (BOM) ==================== */}
+            {ongletActif === "composants" && (
+              <PanneauComposants
+                produitId={produit.id}
+                peutModifier={peutModifier}
+                onMiseAJour={() => void chargerProduit()}
+              />
             )}
 
           </div>

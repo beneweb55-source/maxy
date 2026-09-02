@@ -120,6 +120,9 @@ export default function ModaleAjoutTerrain({
   const [suggestionAuto, setSuggestionAuto] = useState<SuggestionCategorie | null>(null);
   const [categorieModifieeManuellement, setCategorieModifieeManuellement] = useState(false);
 
+  // Accordion spécifications techniques (masquées par défaut, optionnelles)
+  const [specsOuvertes, setSpecsOuvertes] = useState(false);
+
   // Profil d'équipement dynamique déterminé selon la sous-catégorie sélectionnée
   const sousCatSelectionnee = sousCategories.find((sc) => sc.id === sousCatId);
   const profilActif = determinerProfilEquipement(
@@ -302,19 +305,18 @@ export default function ModaleAjoutTerrain({
         setErreur("Veuillez sélectionner un modèle existant ou choisir 'Nouveau modèle'.");
         return;
       }
-      setEtape(3); // Aller direct à l'arrivage pour un modèle existant
-      return;
+    } else {
+      if (!sousCatId) {
+        setErreur("Veuillez sélectionner une catégorie.");
+        return;
+      }
+      if (!nomBase && !designationComplete) {
+        setErreur("Veuillez renseigner le nom ou modèle de l'équipement.");
+        return;
+      }
     }
-
-    if (!sousCatId) {
-      setErreur("Veuillez sélectionner une catégorie.");
-      return;
-    }
-    if (!nomBase && !designationComplete) {
-      setErreur("Veuillez renseigner le nom ou modèle de l'équipement.");
-      return;
-    }
-    setEtape(2);
+    // On passe directement à l'étape 3 (arrivage) — les specs sont optionnelles via accordion
+    setEtape(3);
   };
 
   const passerEtape3 = () => {
@@ -459,72 +461,45 @@ export default function ModaleAjoutTerrain({
               type="button"
               onClick={() => setEtape(1)}
               className={`flex items-center gap-2 text-xs font-bold transition-all ${
-                etape === 1 
-                  ? "text-brand-orange" 
-                  : etape > 1 
-                  ? "text-brand-black dark:text-white" 
+                etape === 1
+                  ? "text-brand-orange"
+                  : etape > 1
+                  ? "text-brand-black dark:text-white"
                   : "text-brand-warm-grey"
               }`}
             >
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
-                etape === 1 
-                  ? "bg-brand-orange text-white" 
-                  : etape > 1 
-                  ? "bg-brand-green/20 text-brand-green" 
+                etape === 1
+                  ? "bg-brand-orange text-white"
+                  : etape > 1
+                  ? "bg-brand-green/20 text-brand-green"
                   : "bg-brand-light-grey text-brand-warm-grey"
               }`}>
                 {etape > 1 ? <Check className="w-3.5 h-3.5" /> : "1"}
               </div>
-              <span className="hidden sm:inline">1. Modèle & Catégorie</span>
+              <span className="hidden sm:inline">1. Modèle &amp; Catégorie</span>
             </button>
 
             <div className="h-0.5 flex-1 bg-brand-light-grey/50 dark:bg-white/10" />
 
-            {/* Step 2 */}
-            <button
-              type="button"
-              onClick={() => { if (onglet === "nouveau_modele" && sousCatId) setEtape(2); }}
-              disabled={onglet === "modele_existant"}
-              className={`flex items-center gap-2 text-xs font-bold transition-all ${
-                etape === 2 
-                  ? "text-brand-orange" 
-                  : etape > 2 
-                  ? "text-brand-black dark:text-white" 
-                  : "text-brand-warm-grey"
-              } ${onglet === "modele_existant" ? "opacity-40 cursor-not-allowed" : ""}`}
-            >
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
-                etape === 2 
-                  ? "bg-brand-orange text-white" 
-                  : etape > 2 
-                  ? "bg-brand-green/20 text-brand-green" 
-                  : "bg-brand-light-grey text-brand-warm-grey"
-              }`}>
-                {etape > 2 ? <Check className="w-3.5 h-3.5" /> : "2"}
-              </div>
-              <span className="hidden sm:inline">2. Spécifications</span>
-            </button>
-
-            <div className="h-0.5 flex-1 bg-brand-light-grey/50 dark:bg-white/10" />
-
-            {/* Step 3 */}
+            {/* Step 2 — Exemplaires & Scan */}
             <button
               type="button"
               onClick={() => { if (modeleSelectionne || (sousCatId && (nomBase || designationComplete))) setEtape(3); }}
               className={`flex items-center gap-2 text-xs font-bold transition-all ${
-                etape === 3 
-                  ? "text-brand-orange" 
+                etape === 3
+                  ? "text-brand-orange"
                   : "text-brand-warm-grey"
               }`}
             >
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
-                etape === 3 
-                  ? "bg-brand-orange text-white" 
+                etape === 3
+                  ? "bg-brand-orange text-white"
                   : "bg-brand-light-grey text-brand-warm-grey"
               }`}>
-                3
+                2
               </div>
-              <span className="hidden sm:inline">3. Exemplaires & Scan</span>
+              <span className="hidden sm:inline">2. Exemplaires &amp; Scan</span>
             </button>
 
           </div>
@@ -758,102 +733,104 @@ export default function ModaleAjoutTerrain({
                 </div>
               )}
 
-            </div>
-          )}
+              {/* === ACCORDION : CARACTÉRISTIQUES TECHNIQUES (optionnel) === */}
+              {onglet === "nouveau_modele" && profilActif && (
+                <div className="border border-brand-light-grey/50 dark:border-white/10 rounded-2xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setSpecsOuvertes((v) => !v)}
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-brand-light-grey/20 dark:hover:bg-white/5 transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-brand-orange" />
+                      <span className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white">
+                        Ajouter des caractéristiques techniques
+                      </span>
+                      <span className="text-[10px] font-bold text-brand-warm-grey bg-brand-light-grey/40 dark:bg-white/10 px-2 py-0.5 rounded-full">
+                        Optionnel
+                      </span>
+                      {Object.keys(specs).filter(k => specs[k]).length > 0 && (
+                        <span className="text-[10px] font-black text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
+                          {Object.keys(specs).filter(k => specs[k]).length} rempli(s)
+                        </span>
+                      )}
+                    </div>
+                    <div className={`transition-transform duration-200 ${specsOuvertes ? "rotate-180" : ""}`}>
+                      <ArrowLeft className="w-4 h-4 text-brand-warm-grey -rotate-90" />
+                    </div>
+                  </button>
 
-          {/* ========================================================================= */}
-          {/* ÉTAPE 2 : SPÉCIFICATIONS TECHNIQUES DYNAMIQUES */}
-          {/* ========================================================================= */}
-          {etape === 2 && (
-            <div className="space-y-6 animate-entree">
-              <div className="p-4 rounded-2xl bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-between">
-                <div>
-                  <h3 className="font-extrabold text-sm text-brand-orange font-outfit">
-                    Spécifications : {sousCatSelectionnee?.nom || "Équipement"}
-                  </h3>
-                  <p className="text-xs text-brand-warm-grey">
-                    Sélectionnez les caractéristiques techniques requises
-                  </p>
-                </div>
-                <div className="w-8 h-8 rounded-xl bg-brand-orange/20 text-brand-orange flex items-center justify-center font-bold">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-              </div>
-
-              {profilActif ? (
-                <div className="space-y-5">
-                  {profilActif.attributs.map((attr) => {
-                    const valeurActuelle = specs[attr.cle] ?? "";
-
-                    return (
-                      <div key={attr.cle} className="space-y-2 p-3.5 rounded-2xl bg-brand-light-grey/15 dark:bg-white/2 border border-brand-light-grey/40 dark:border-white/5">
-                        <div className="flex items-center justify-between">
-                          <label className="block text-xs font-extrabold text-brand-black dark:text-white uppercase tracking-wider">
-                            {attr.label} {attr.obligatoire && <span className="text-brand-orange">*</span>}
-                          </label>
-                          {attr.aide && (
-                            <span className="text-[11px] text-brand-warm-grey italic">{attr.aide}</span>
-                          )}
-                        </div>
-
-                        {/* Options Pills Toggle */}
-                        {attr.options && attr.options.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {attr.options.map((opt) => {
-                              const estSelectionne = attr.type === "pills_multi"
-                                ? Array.isArray(valeurActuelle) && valeurActuelle.includes(opt.valeur)
-                                : valeurActuelle === opt.valeur;
-
-                              return (
-                                <button
-                                  key={opt.valeur}
-                                  type="button"
-                                  onClick={() => {
-                                    if (attr.type === "pills_multi") {
-                                      const arr = Array.isArray(valeurActuelle) ? [...valeurActuelle] : [];
-                                      const nouv = arr.includes(opt.valeur)
-                                        ? arr.filter((v) => v !== opt.valeur)
-                                        : [...arr, opt.valeur];
-                                      setSpecs({ ...specs, [attr.cle]: nouv });
-                                    } else {
-                                      setSpecs({
-                                        ...specs,
-                                        [attr.cle]: valeurActuelle === opt.valeur ? "" : opt.valeur,
-                                      });
-                                    }
-                                  }}
-                                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 ${
-                                    estSelectionne
-                                      ? "bg-brand-orange text-white border-brand-orange shadow-xs"
-                                      : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-black dark:text-white hover:border-brand-orange/60"
-                                  }`}
-                                >
-                                  {opt.label}
-                                </button>
-                              );
-                            })}
+                  {specsOuvertes && (
+                    <div className="p-4 pt-0 space-y-4 border-t border-brand-light-grey/40 dark:border-white/10 animate-entree">
+                      <p className="text-[11px] text-brand-warm-grey">
+                        Caractéristiques spécifiques à <strong>{sousCatSelectionnee?.nom}</strong>.
+                        La désignation commerciale sera mise à jour automatiquement.
+                      </p>
+                      {profilActif.attributs.map((attr) => {
+                        const valeurActuelle = specs[attr.cle] ?? "";
+                        return (
+                          <div key={attr.cle} className="space-y-2 p-3.5 rounded-2xl bg-brand-light-grey/15 dark:bg-white/2 border border-brand-light-grey/40 dark:border-white/5">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-extrabold text-brand-black dark:text-white uppercase tracking-wider">
+                                {attr.label}
+                              </label>
+                              {attr.aide && (
+                                <span className="text-[11px] text-brand-warm-grey italic">{attr.aide}</span>
+                              )}
+                            </div>
+                            {attr.options && attr.options.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {attr.options.map((opt: any) => {
+                                  const estSelectionne = attr.type === "pills_multi"
+                                    ? Array.isArray(valeurActuelle) && valeurActuelle.includes(opt.valeur)
+                                    : valeurActuelle === opt.valeur;
+                                  return (
+                                    <button
+                                      key={opt.valeur}
+                                      type="button"
+                                      onClick={() => {
+                                        if (attr.type === "pills_multi") {
+                                          const arr = Array.isArray(valeurActuelle) ? [...valeurActuelle] : [];
+                                          const nouv = arr.includes(opt.valeur)
+                                            ? arr.filter((v: string) => v !== opt.valeur)
+                                            : [...arr, opt.valeur];
+                                          setSpecs({ ...specs, [attr.cle]: nouv });
+                                        } else {
+                                          setSpecs({
+                                            ...specs,
+                                            [attr.cle]: valeurActuelle === opt.valeur ? "" : opt.valeur,
+                                          });
+                                        }
+                                      }}
+                                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 ${
+                                        estSelectionne
+                                          ? "bg-brand-orange text-white border-brand-orange shadow-xs"
+                                          : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-black dark:text-white hover:border-brand-orange/60"
+                                      }`}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {attr.type === "text" && (
+                              <input
+                                type="text"
+                                value={valeurActuelle}
+                                onChange={(e) => setSpecs({ ...specs, [attr.cle]: e.target.value })}
+                                placeholder={attr.placeholder || `Saisir ${attr.label}...`}
+                                className="input w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 text-xs font-bold"
+                              />
+                            )}
                           </div>
-                        )}
-
-                        {/* Saisie texte complémentaire ou libre */}
-                        {attr.type === "text" && (
-                          <input
-                            type="text"
-                            value={valeurActuelle}
-                            onChange={(e) => setSpecs({ ...specs, [attr.cle]: e.target.value })}
-                            placeholder={attr.placeholder || `Saisir ${attr.label}...`}
-                            className="input w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 text-xs font-bold"
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-brand-warm-grey text-xs rounded-2xl border border-dashed border-brand-light-grey">
-                  Aucune spécification technique particulière pour cette catégorie. Vous pouvez passer à l'étape suivante.
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
+
             </div>
           )}
 
@@ -1102,7 +1079,7 @@ export default function ModaleAjoutTerrain({
           {etape > 1 ? (
             <button
               type="button"
-              onClick={() => setEtape((prev) => (prev - 1) as 1 | 2)}
+              onClick={() => setEtape(1)}
               disabled={enSoumission}
               className="btn btn-secondaire text-xs py-3 px-5 rounded-2xl font-bold flex items-center gap-2"
             >
@@ -1129,16 +1106,6 @@ export default function ModaleAjoutTerrain({
             </button>
           )}
 
-          {etape === 2 && (
-            <button
-              type="button"
-              onClick={passerEtape3}
-              className="btn btn-primaire text-xs py-3 px-6 rounded-2xl font-black shadow-xs flex items-center gap-2"
-            >
-              Continuer vers l'Arrivage <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
-
           {etape === 3 && (
             <button
               type="button"
@@ -1150,7 +1117,7 @@ export default function ModaleAjoutTerrain({
                 <>Enregistrement en cours...</>
               ) : (
                 <>
-                  <Check className="w-4 h-4" /> Valider & Entrer en Stock ({quantite})
+                  <Check className="w-4 h-4" /> Valider &amp; Entrer en Stock ({quantite})
                 </>
               )}
             </button>

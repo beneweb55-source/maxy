@@ -186,8 +186,12 @@ export interface GroupeProduits {
 }
 
 function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
+  // Exclure formellement les produits vendus, hors-service et composants assemblés de l'inventaire actif
+  const produitsActifs = produits.filter(
+    (p) => p.statut !== "vendu" && p.statut !== "hs" && p.statut !== "assemble"
+  );
   const groupes = new Map<string, LigneProduit[]>();
-  for (const p of produits) {
+  for (const p of produitsActifs) {
     const catFormatee = formatCategoriePath(p);
     const cle = p.modele_id
       ? `mod-${p.modele_id}`
@@ -204,7 +208,6 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
     const parStatut = new Map<StatutProduit, number>();
     for (const u of unites) parStatut.set(u.statut, (parStatut.get(u.statut) ?? 0) + 1);
     const premier = unites[0]!;
-    const nonVendus = unites.filter((u) => u.statut !== "vendu" && u.statut !== "hs");
     return {
       cle,
       reference: premier.reference,
@@ -220,7 +223,7 @@ function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
       venteMin: vente.length > 0 ? Math.min(...vente) : null,
       venteMax: vente.length > 0 ? Math.max(...vente) : null,
       resumeStatuts: Array.from(parStatut.entries()).map(([statut, n]) => ({ statut, n })),
-      totalDisponibles: nonVendus.length,
+      totalDisponibles: unites.length,
     };
   });
 }
@@ -392,7 +395,7 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formVitrine, setFormVitrine] = useState(false);
   const [formMettreEnVente, setFormMettreEnVente] = useState(false);
 
-  const vueGroupee = false;
+  const vueGroupee = true; // Mode groupé activé par défaut (vue propre)
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
   const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
   const [afficherFamilles, setAfficherFamilles] = useState(true);
@@ -2008,9 +2011,9 @@ export default function Inventaire({ role }: { role: Role }) {
                       return (
                         <React.Fragment key={g.cle}>
                           {/* Ligne Principale du Modèle */}
-                          <tr className={`group transition-colors ${tousCoches || certainsCoches ? "bg-brand-orange/5 dark:bg-brand-orange/10" : "hover:bg-brand-light-grey/20 dark:hover:bg-white/2"}`}>
+                          <tr className={`group transition-colors min-h-[80px] ${tousCoches || certainsCoches ? "bg-brand-orange/5 dark:bg-brand-orange/10" : "hover:bg-brand-light-grey/20 dark:hover:bg-white/2"}`}>
                             {/* Checkbox Modèle */}
-                            <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                               <input 
                                 type="checkbox"
                                 checked={tousCoches}
@@ -2030,7 +2033,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             </td>
 
                             {/* Chevron Drill-Down */}
-                            <td className="py-3 px-2 text-center">
+                            <td className="py-4 px-2 text-center">
                               <button
                                 type="button"
                                 onClick={() => basculerGroupe(g.cle)}
@@ -2042,35 +2045,35 @@ export default function Inventaire({ role }: { role: Role }) {
                             </td>
 
                             {/* Photo & Référence Modèle */}
-                            <td className="py-3 px-3">
+                            <td className="py-4 px-3">
                               <div className="flex items-center gap-3">
                                 {g.image_url ? (
                                   <img 
                                     src={g.image_url}
                                     alt={g.reference}
-                                    className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0 bg-slate-50"
+                                    className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0 bg-slate-50"
                                   />
                                 ) : (
-                                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-dashed border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-400 shrink-0">
-                                    <Boxes className="w-5 h-5 opacity-40" />
+                                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-dashed border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-400 shrink-0">
+                                    <Boxes className="w-6 h-6 opacity-40" />
                                   </div>
                                 )}
                                 <div className="min-w-0">
                                   <div 
                                     onClick={() => basculerGroupe(g.cle)}
-                                    className="font-extrabold text-sm text-slate-900 dark:text-white hover:text-brand-orange cursor-pointer truncate max-w-xs sm:max-w-md"
+                                    className="font-black text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-orange cursor-pointer whitespace-normal break-words max-w-[320px] leading-snug"
                                     title={g.reference}
                                   >
                                     {g.reference}
                                   </div>
-                                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                     {g.resumeStatuts.map((r) => (
-                                      <span key={r.statut} className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
+                                      <span key={r.statut} className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
                                         {r.n}× {INFOS_STATUT[r.statut].libelle}
                                       </span>
                                     ))}
                                     {g.enVitrine > 0 && (
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-brand-orange/15 text-[10px] font-bold text-brand-orange">
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-brand-orange/15 text-[10px] font-bold text-brand-orange">
                                         <IconeVitrine taille={10} /> Vitrine ({g.enVitrine})
                                       </span>
                                     )}
@@ -2080,28 +2083,25 @@ export default function Inventaire({ role }: { role: Role }) {
                             </td>
 
                             {/* Catégorie */}
-                            <td className="py-3 px-3 text-xs font-semibold text-slate-500">
+                            <td className="py-4 px-3 text-xs font-semibold text-slate-500 whitespace-normal break-words max-w-[160px]">
                               {g.categorie}
                             </td>
 
                             {/* Badge Quantité en Stock */}
-                            <td className="py-3 px-3 text-center">
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-xs shadow-2xs ${
+                            <td className="py-4 px-3 text-center">
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black text-xs shadow-2xs ${
                                 g.totalDisponibles > 0 
                                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" 
                                   : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800"
                               }`}>
                                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                                 <span>En stock : {g.totalDisponibles}</span>
-                                {g.unites.length > g.totalDisponibles && (
-                                  <span className="text-[10px] text-slate-400 font-normal">({g.unites.length} total)</span>
-                                )}
                               </span>
                             </td>
 
                             {/* Prix Achat */}
                             {!estSocial && (
-                              <td className="py-3 px-3 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
+                              <td className="py-4 px-3 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
                                 {g.prixMin === g.prixMax
                                   ? formaterDA(g.prixMin)
                                   : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
@@ -2109,7 +2109,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             )}
 
                             {/* Prix Vente */}
-                            <td className="py-3 px-3 text-right font-mono font-black text-sm text-brand-orange">
+                            <td className="py-4 px-3 text-right font-mono font-black text-sm text-brand-orange">
                               {g.venteMin === null
                                 ? "—"
                                 : g.venteMin === g.venteMax
@@ -2118,7 +2118,7 @@ export default function Inventaire({ role }: { role: Role }) {
                             </td>
 
                             {/* Actions Rapides Modèle */}
-                            <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <td className="py-4 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                               <div className="inline-flex items-center gap-1 justify-end">
                                 {/* Bouton (+) Arrivage Rapide / Scanner Douchette */}
                                 {peutModifier && (
@@ -2431,14 +2431,14 @@ export default function Inventaire({ role }: { role: Role }) {
                     <tr
                       key={p.id}
                       onClick={() => router.push(`/produits/${p.id}`)}
-                      className={`group cursor-pointer transition-colors ${
+                      className={`group cursor-pointer transition-colors min-h-[80px] ${
                         estCoche
                           ? "bg-brand-orange/[0.04] dark:bg-brand-orange/[0.08]"
                           : "hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
                       }`}
                     >
                       <td
-                        className="px-3 py-2.5 text-center"
+                        className="px-3 py-4 text-center"
                         onClick={(e) => {
                           e.stopPropagation();
                         }}
@@ -2453,46 +2453,46 @@ export default function Inventaire({ role }: { role: Role }) {
                           className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange accent-brand-orange cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-brand-warm-grey dark:text-brand-grey font-semibold">
+                      <td className="px-4 py-4 font-mono text-xs text-brand-warm-grey dark:text-brand-grey font-bold">
                         {p.code_interne}
                       </td>
-                      <td className="max-w-64 truncate px-4 py-2.5 font-semibold text-brand-black dark:text-white" title={p.reference}>
+                      <td className="whitespace-normal break-words max-w-[280px] px-4 py-4 font-extrabold text-sm text-brand-black dark:text-white leading-snug" title={p.reference}>
                         {p.reference}
                       </td>
-                      <td className="px-4 py-2.5 text-brand-warm-grey dark:text-brand-warm-grey">{p.categorie}</td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-4 text-xs font-semibold text-brand-warm-grey dark:text-brand-warm-grey whitespace-normal break-words max-w-[160px]">{p.categorie}</td>
+                      <td className="px-4 py-4">
                         <span className="inline-flex items-center gap-2">
                           <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
                           {p.en_vitrine && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-orange">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/15 px-2 py-0.5 text-[10px] font-bold text-brand-orange">
                               <IconeVitrine taille={11} /> {t("inventaire.vitrine")}
                             </span>
                           )}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-brand-black dark:text-brand-warm-grey">
-                        <div className="font-medium">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</div>
-                        <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
+                      <td className="px-4 py-4 text-xs text-brand-black dark:text-brand-warm-grey">
+                        <div className="font-bold">{new Date(p.date_entree).toLocaleDateString("fr-FR")}</div>
+                        <div className="text-[11px] text-brand-warm-grey dark:text-brand-grey mt-0.5 font-medium">
                           {p.lot_id
                             ? t("inventaire.lotLong", { n: p.lot_id, f: p.fournisseur || "" })
                             : t("inventaire.sansArrivage")}
                         </div>
                       </td>
                       {!estSocial && (
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="px-4 py-4 text-right">
                           <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mb-0.5">{t("inventaire.achat")}</span>
-                          <span className="font-bold text-brand-black dark:text-white">{formaterDA(p.prix_achat)}</span>
+                          <span className="font-bold text-brand-black dark:text-white font-mono">{formaterDA(p.prix_achat)}</span>
                           {p.cout_reparations > 0 && (
-                            <span className="block text-[10px] text-brand-warm-grey dark:text-brand-grey mt-0.5">
+                            <span className="block text-[10px] text-brand-warm-grey dark:text-brand-grey mt-0.5 font-mono">
                               +{formaterDA(p.cout_reparations)} {t("inventaire.reparationsAbr")}
                             </span>
                           )}
                         </td>
                       )}
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-4 text-right">
                         <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-orange/80 mb-0.5">{t("inventaire.vente")}</span>
                         {prixVenteAffiche(p) !== null ? (
-                          <span className="font-extrabold text-brand-orange text-sm">
+                          <span className="font-extrabold text-brand-orange text-sm font-mono">
                             {formaterDA(prixVenteAffiche(p)!)}
                             {p.statut === "vendu" && (
                               <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey mt-0.5">
@@ -2504,8 +2504,8 @@ export default function Inventaire({ role }: { role: Role }) {
                           <span className="text-brand-warm-grey dark:text-brand-grey font-medium">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-right text-brand-warm-grey dark:text-brand-warm-grey font-medium">{p.jours_stock}</td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-4 py-4 text-right text-brand-warm-grey dark:text-brand-warm-grey font-bold">{p.jours_stock}</td>
+                      <td className="px-3 py-4">
                         {peutModifier && (
                           <div
                             className="flex items-center justify-end gap-1"

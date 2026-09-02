@@ -21,7 +21,7 @@ export interface DefinitionStatut {
   transitionsSuivantes: readonly StatutProduit[];
   badge: string;
   couleurHex: string;
-  couleurNom: "bleu" | "orange" | "vert" | "rouge" | "sky" | "violet" | "indigo" | "zinc";
+  couleurNom: "bleu" | "orange" | "vert" | "rouge" | "sky" | "violet" | "indigo" | "zinc" | "teal";
   estFinal: boolean;
   necessiteCoutReparation?: boolean;
 }
@@ -71,8 +71,8 @@ export const REGLES_MACHINE_ETATS: Record<StatutProduit, DefinitionStatut> = {
   ok: {
     statut: "ok",
     libelle: "OK (Testé)",
-    description: "Appareil fonctionnel validé, prêt pour fixation du prix",
-    transitionsSuivantes: ["en_vente"],
+    description: "Appareil fonctionnel validé, prêt pour fixation du prix ou assemblage",
+    transitionsSuivantes: ["en_vente", "assemble"],
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300",
     couleurHex: "#059669",
     couleurNom: "vert",
@@ -82,7 +82,7 @@ export const REGLES_MACHINE_ETATS: Record<StatutProduit, DefinitionStatut> = {
     statut: "en_vente",
     libelle: "En Vente",
     description: "Prix fixé, disponible en vitrine et au catalogue POS",
-    transitionsSuivantes: ["vendu", "produit_commande"],
+    transitionsSuivantes: ["vendu", "produit_commande", "assemble"],
     badge: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300",
     couleurHex: "#0284c7",
     couleurNom: "sky",
@@ -117,6 +117,16 @@ export const REGLES_MACHINE_ETATS: Record<StatutProduit, DefinitionStatut> = {
     couleurHex: "#27272a",
     couleurNom: "zinc",
     estFinal: true,
+  },
+  assemble: {
+    statut: "assemble",
+    libelle: "Assemblé (BOM)",
+    description: "Composant intégré dans un produit parent",
+    transitionsSuivantes: ["ok"],
+    badge: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300",
+    couleurHex: "#0d9488",
+    couleurNom: "teal",
+    estFinal: false,
   },
 };
 

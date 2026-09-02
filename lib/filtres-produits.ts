@@ -112,8 +112,8 @@ export function construireFiltresProduits(
     if (statuts.length > 0) {
       clauses.push({ statut: { in: statuts } });
     } else {
-      // Si aucun statut spécifique n'est demandé, on masque les vendus et jetés par défaut
-      clauses.push({ statut: { notIn: ["vendu", "hs"] } });
+      // Si aucun statut spécifique n'est demandé, on masque les vendus, jetés et composants assemblés par défaut
+      clauses.push({ statut: { notIn: ["vendu", "hs", "assemble"] } });
     }
   }
 

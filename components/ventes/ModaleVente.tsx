@@ -74,7 +74,8 @@ export default function ModaleVente({
   // Prix par unité (ajustable à la volée, 0 DA permis)
   const [prixMap, setPrixMap] = useState<{ [id: number]: number }>({});
 
-  const [typeFacture, setTypeFacture] = useState("normale");
+  const [typeFacture, setTypeFacture] = useState<"FACTURE_TVA" | "PROFORMA" | "DEVIS">("FACTURE_TVA");
+  const [numeroManuel, setNumeroManuel] = useState("");
   const [modePaiement, setModePaiement] = useState("especes");
   const [especesRecues, setEspecesRecues] = useState("");
   const [clientNom, setClientNom] = useState("");
@@ -235,6 +236,8 @@ export default function ModaleVente({
         client_ai: clientAi.trim() || undefined,
         client_nis: clientNis.trim() || undefined,
         type_facture: typeFacture,
+        type_document: typeFacture,
+        numero_manuel: numeroManuel.trim() || undefined,
         mode_paiement: modePaiement,
         etiquette_imprimee: etiquetteValidee || undefined,
         confirmer: confirmer || undefined,
@@ -538,21 +541,35 @@ export default function ModaleVente({
         </div>
 
         {/* ===================== SECTION 2 : FACTURATION & PAIEMENT ===================== */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           <div>
             <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="type-facture-unifie">
-              Type de Facture
+              Type de Document
             </label>
             <select
               id="type-facture-unifie"
               value={typeFacture}
-              onChange={(e) => setTypeFacture(e.target.value)}
+              onChange={(e) => setTypeFacture(e.target.value as any)}
               className="select w-full h-10 text-xs font-bold bg-white border-slate-200 rounded-xl"
             >
-              <option value="normale">Facture Normale (Standard / Ticket)</option>
-              <option value="tva">Facture avec TVA (19%)</option>
-              <option value="proforma">Devis / Facture Proforma</option>
+              <option value="FACTURE_TVA">Facture TVA (Document fiscal)</option>
+              <option value="PROFORMA">Facture Proforma</option>
+              <option value="DEVIS">Devis Client</option>
             </select>
+          </div>
+
+          <div>
+            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="numero-manuel-unifie">
+              N° Personnalisé (Optionnel)
+            </label>
+            <input
+              id="numero-manuel-unifie"
+              type="text"
+              value={numeroManuel}
+              onChange={(e) => setNumeroManuel(e.target.value)}
+              placeholder="Auto (ex: FA-2026-...)"
+              className="input w-full h-10 text-xs font-mono font-bold bg-white border-slate-200 rounded-xl"
+            />
           </div>
 
           <div>

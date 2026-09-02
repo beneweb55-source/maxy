@@ -8,7 +8,8 @@ const TREE = {
     "Disques Durs Mécaniques (HDD)": [
       "Disques Durs SAS 2,5\" (10K / 15K RPM)",
       "Disques Durs SAS 3,5\" (7.2K / 15K RPM)",
-      "Disques Durs SATA 3,5\" (Bureautique / NAS)"
+      "Disques Durs SATA 3,5\" (Bureautique / NAS)",
+      "Disques Durs SATA 2,5\""
     ],
     "Disques Flash (SSD)": [
       "Disques SSD 2,5\" SATA",
@@ -171,19 +172,50 @@ async function main() {
 
   console.log("Arbre de catégories créé / vérifié avec succès.");
 
-  // 2. Fetch all products
+  // 2. Load original categories from CSV (to bypass DB pollution)
+  const fs = require('fs');
+  const csvContent = fs.readFileSync('scratch/snapshot_produits.csv', 'utf8');
+  const lines = csvContent.split(/\\r?\\n/).filter(Boolean);
+  const originalCategories = new Map<number, string>();
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const match = line.match(/^(\\d+),"(.*)","(.*)"$/);
+    if (match) {
+      originalCategories.set(parseInt(match[1], 10), match[3].replace(/""/g, '"'));
+    } else {
+      const parts = line.split(',');
+      if (parts.length >= 3) {
+        originalCategories.set(parseInt(parts[0], 10), parts[parts.length - 1].replace(/^"|"$/g, '').replace(/""/g, '"'));
+      }
+    }
+  }
+
+  // 3. Fetch all products (only required fields to prevent schema mismatch errors)
   const dbProducts = await prisma.produit.findMany({
-    include: { modele: true }
+    select: {
+      id: true,
+      reference: true,
+      categorie: true,
+      categorie_id: true,
+      modele_id: true,
+      modele: {
+        select: {
+          id: true,
+          categorie_id: true
+        }
+      }
+    }
   });
 
   console.log(`${dbProducts.length} produits trouvés en base.`);
   let updatedCount = 0;
 
   for (const p of dbProducts) {
+    const originalCat = originalCategories.get(p.id) || p.categorie;
     const classif = classifyProduct({
       id: p.id,
       reference: p.reference,
-      categorie: p.categorie
+      categorie: originalCat
     });
 
     const targetScId = categoryMap.get(`${classif.famille}|${classif.categorie}|${classif.sousCategorie}`);
@@ -197,7 +229,8 @@ async function main() {
       if (p.modele.categorie_id !== targetScId) {
         await prisma.modele.update({
           where: { id: modele_id },
-          data: { categorie_id: targetScId }
+          data: { categorie_id: targetScId },
+          select: { id: true }
         });
       }
     } else {
@@ -206,7 +239,8 @@ async function main() {
         data: {
           nom: p.reference,
           categorie_id: targetScId
-        }
+        },
+        select: { id: true }
       });
       modele_id = newModele.id;
     }
@@ -219,7 +253,8 @@ async function main() {
           categorie_id: targetScId,
           categorie: classif.sousCategorie,
           modele_id: modele_id
-        }
+        },
+        select: { id: true }
       });
       updatedCount++;
     }

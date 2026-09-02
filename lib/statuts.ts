@@ -12,6 +12,7 @@ export const STATUTS_PRODUIT: readonly StatutProduit[] = [
   "en_vente",
   "produit_commande",
   "vendu",
+  "assemble",
 ];
 
 interface InfosStatut {
@@ -30,6 +31,7 @@ export const INFOS_STATUT: Record<StatutProduit, InfosStatut> = {
   en_vente: { libelle: "En vente", badge: "bg-sky-50 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300", hex: "#1770E5" },
   produit_commande: { libelle: "Produit Commandé / Réservé", badge: "bg-indigo-50 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300", hex: "#6366f1" },
   vendu: { libelle: "Vendu", badge: "bg-brand-smooth text-white dark:bg-zinc-700 dark:text-zinc-100", hex: "#2E2D2D" },
+  assemble: { libelle: "Assemblé (BOM)", badge: "bg-teal-50 text-teal-800 dark:bg-teal-500/20 dark:text-teal-300", hex: "#0d9488" },
 };
 
 export const INFOS_STATUT_LOT: Record<StatutLot, { libelle: string; badge: string }> = {

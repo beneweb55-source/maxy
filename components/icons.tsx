@@ -545,6 +545,7 @@ export const ICONES_STATUT: Record<StatutProduit, ReturnType<typeof creerIcone>>
   en_vente: IconeEtiquette,
   produit_commande: IconePaquet,
   vendu: IconeBillet,
+  assemble: IconePiece,
 };
 
 
