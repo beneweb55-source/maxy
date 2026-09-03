@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
+import { StockService } from "@/lib/stock-service";
 
 /**
  * API Produits Composés (BOM - Bill of Materials)
@@ -91,7 +92,7 @@ export async function POST(
       // Vérifier que le composant existe et est disponible
       const composant = await tx.produit.findUnique({
         where: { id: composantId },
-        select: { id: true, reference: true, statut: true, parent_id: true },
+        select: { id: true, reference: true, statut: true, parent_id: true, modele_id: true },
       });
       if (!composant) throw new Error("Composant introuvable.");
       if (composant.parent_id !== null) {
@@ -127,6 +128,11 @@ export async function POST(
           note: `Intégré comme composant dans "${parent.reference}" (ID #${parentId})`,
         },
       });
+
+      // Mettre à jour la quantité du Modèle si le composant y est lié
+      if (composant.modele_id) {
+        await StockService.synchroniserCompteModele(composant.modele_id, tx);
+      }
     });
 
     return NextResponse.json({ ok: true, message: "Composant intégré avec succès." });
@@ -167,7 +173,7 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       const composant = await tx.produit.findUnique({
         where: { id: composantId },
-        select: { id: true, reference: true, parent_id: true, statut: true },
+        select: { id: true, reference: true, parent_id: true, statut: true, modele_id: true },
       });
       if (!composant) throw new Error("Composant introuvable.");
       if (composant.parent_id !== parentId) {
@@ -193,6 +199,11 @@ export async function DELETE(
           note: `Retiré du produit composé (ID #${parentId}) — Retour en stock`,
         },
       });
+
+      // Mettre à jour la quantité du Modèle si le composant y est lié
+      if (composant.modele_id) {
+        await StockService.synchroniserCompteModele(composant.modele_id, tx);
+      }
     });
 
     return NextResponse.json({ ok: true, message: "Composant retiré et remis en stock." });

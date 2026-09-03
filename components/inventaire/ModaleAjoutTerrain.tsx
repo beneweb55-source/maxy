@@ -105,6 +105,7 @@ export default function ModaleAjoutTerrain({
   const [lotId, setLotId] = useState<string>("");
   const [gradeGlobal, setGradeGlobal] = useState<string>("Grade A");
   const [emplacementGlobal, setEmplacementGlobal] = useState<"reserve" | "vitrine">("reserve");
+  const [estCompose, setEstCompose] = useState<boolean>(false);
   const [imprimerDirect, setImprimerDirect] = useState<boolean>(true);
 
   // Scanner douchette S/N
@@ -980,6 +981,41 @@ export default function ModaleAjoutTerrain({
                   </select>
                 </div>
               )}
+
+              {/* Type de produit (Simple / Composé) */}
+              <div>
+                <label className="block text-xs font-extrabold text-brand-black dark:text-white mb-1.5 uppercase tracking-wider">
+                  Type de Produit
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEstCompose(false)}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1 ${
+                      !estCompose
+                        ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-transparent shadow-xs"
+                        : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey"
+                    }`}
+                  >
+                    <Package className="w-4 h-4 mb-0.5" />
+                    <span>Produit Simple</span>
+                    <span className="text-[9px] font-medium opacity-80 text-center">Vendu tel quel</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEstCompose(true)}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1 ${
+                      estCompose
+                        ? "bg-brand-orange text-white border-brand-orange shadow-xs"
+                        : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey"
+                    }`}
+                  >
+                    <Layers className="w-4 h-4 mb-0.5" />
+                    <span>Produit Composé</span>
+                    <span className="text-[9px] font-medium opacity-80 text-center">Assemblé avec composants</span>
+                  </button>
+                </div>
+              </div>
 
               {/* SCAN DOUCHETTE EN CONTINU (S/N) */}
               <div className="p-4 rounded-2xl bg-brand-orange/5 dark:bg-brand-orange/10 border border-brand-orange/20 space-y-3">

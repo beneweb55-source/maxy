@@ -28,6 +28,7 @@ export async function POST(
       en_vitrine = false,
       reference,
       categorie,
+      est_compose = false,
     } = body;
 
     const resultat = await StockService.createExemplaires(user.id, {
@@ -43,6 +44,7 @@ export async function POST(
       numeros_serie,
       statut,
       en_vitrine: en_vitrine === true || emplacement === "vitrine",
+      est_compose: est_compose === true,
     });
 
     return NextResponse.json(

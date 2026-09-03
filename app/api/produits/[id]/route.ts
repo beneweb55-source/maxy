@@ -55,6 +55,7 @@ export async function GET(
         etiquette_imprimee: true,
         date_vente: true,
         created_at: true,
+        est_compose: true,
         modele: {
           select: {
             id: true,
@@ -130,6 +131,7 @@ export async function GET(
           },
         },
         images: { orderBy: { position: "asc" }, select: { id: true } },
+        _count: { select: { composants: true } },
       },
     });
     if (!p) return erreur(404, "Produit introuvable.");
@@ -200,10 +202,12 @@ export async function GET(
       statut: p.statut,
       a_jeter: p.a_jeter,
       en_vitrine: p.en_vitrine,
+      est_compose: p.est_compose,
       notes: p.notes,
       image_url: urlCouvertureProduit,
       images: galerie,
       decision_rapport: p.decision_rapport,
+      nb_composants: p._count.composants,
       ids_modele,
       quantite: ids_modele.length,
       exemplaires: exemplairesRaw.map(ex => ({

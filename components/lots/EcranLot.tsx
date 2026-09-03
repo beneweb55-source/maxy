@@ -126,6 +126,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [nouvPrixVente, setNouvPrixVente] = useState("");
   const [nouvQuantite, setNouvQuantite] = useState("1");
   const [nouvPhotos, setNouvPhotos] = useState<string[]>([]);
+  const [nouvEstCompose, setNouvEstCompose] = useState(false);
 
   const [modalEdit, setModalEdit] = useState<ProduitDto[] | null>(null);
   const [editRef, setEditRef] = useState("");
@@ -134,6 +135,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
   const [editQuantite, setEditQuantite] = useState("");
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
   const [editPhotosModifiees, setEditPhotosModifiees] = useState(false);
+  const [editEstCompose, setEditEstCompose] = useState(false);
   const [modalSuppr, setModalSuppr] = useState<ProduitDto[] | null>(null);
 
   const peutAgir = role === "technicien" || role === "gerant";
@@ -371,6 +373,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
           prix_achat: Number(nouvPrix),
           prix_vente_fixe: nouvPrixVente.trim() ? Number(nouvPrixVente) : null,
           images: nouvPhotos,
+          est_compose: nouvEstCompose,
         },
       ],
       quantite,
@@ -382,6 +385,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
       setNouvPrixVente("");
       setNouvQuantite("1");
       setNouvPhotos([]);
+      setNouvEstCompose(false);
       setAjoutOuvert(false);
     }
   }
@@ -702,6 +706,12 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
                 <div>
                   <label className="libelle mb-1.5">{t("ecranLot.quantite")}</label>
                   <input type="number" inputMode="numeric" min="1" step="1" className="champ" value={nouvQuantite} onChange={e => setNouvQuantite(e.target.value.replace(/[^\d]/g, ""))} />
+                </div>
+                <div>
+                  <label className="libelle mb-1.5 flex items-center gap-2">
+                    <input type="checkbox" checked={nouvEstCompose} onChange={e => setNouvEstCompose(e.target.checked)} className="checkbox" />
+                    Produit Composé (BOM)
+                  </label>
                 </div>
                 <div className="md:col-span-2">
                   <label className="libelle mb-1.5">{t("ecranLot.photos")}</label>

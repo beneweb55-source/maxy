@@ -57,10 +57,17 @@ interface LigneFactureListe {
   nb_articles_total?: number;
 }
 
+interface StatsCaisses {
+  comptoir: { nombre: number; total: number };
+  yalidine: { nombre: number; total: number };
+  total_global: number;
+}
+
 interface ReponseFactures {
   total: number;
   page: number;
   pages: number;
+  stats_caisses?: StatsCaisses;
   factures: LigneFactureListe[];
 }
 
@@ -314,10 +321,23 @@ export default function ListeFactures({ role }: { role?: string }) {
         </div>
 
         {donnees && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {donnees.stats_caisses && (
+              <>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold shadow-xs">
+                  <Store className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Comptoir ({donnees.stats_caisses.comptoir.nombre}) :</span>
+                  <span className="font-mono font-black">{formaterDA(donnees.stats_caisses.comptoir.total)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold shadow-xs">
+                  <Truck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Yalidine ({donnees.stats_caisses.yalidine.nombre}) :</span>
+                  <span className="font-mono font-black">{formaterDA(donnees.stats_caisses.yalidine.total)}</span>
+                </div>
+              </>
+            )}
             <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700">
-              <strong className="font-bold text-slate-900 dark:text-white">{donnees.total}</strong> document
-              {donnees.total > 1 ? "s" : ""}
+              <strong className="font-bold text-slate-900 dark:text-white">{donnees.total}</strong> facture{donnees.total > 1 ? "s" : ""}
             </span>
           </div>
         )}

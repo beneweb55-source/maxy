@@ -53,6 +53,7 @@ export interface OptionsCreationExemplaires {
   numeros_serie?: string[];
   image_url?: string | null;
   images?: string[];
+  est_compose?: boolean;
 }
 
 export interface ResultatMutationStock {
@@ -138,6 +139,7 @@ export class StockService {
           prix_vente_fixe: prixVente,
           image_url: coverImg || undefined,
           images: extraImgs,
+          est_compose: options.est_compose ?? false,
         }));
 
         // Insertion haute performance via creerProduitsGroupes

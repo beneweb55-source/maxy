@@ -233,6 +233,7 @@ model Produit {
 
   // === Produits Composés (BOM - Bill of Materials) ===
   // Un PC assemblé peut contenir des composants issus du stock
+  est_compose  Boolean              @default(false)      // Indique si le produit a vocation à avoir des composants
   parent_id    Int?                 // Si non-null : ce produit est assemblé dans le produit parent
   parent       Produit?             @relation("ComposantParent", fields: [parent_id], references: [id])
   composants   Produit[]            @relation("ComposantParent")

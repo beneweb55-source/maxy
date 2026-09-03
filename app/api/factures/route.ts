@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.FactureWhereInput = clauses.length > 0 ? { AND: clauses } : {};
     const page = Math.max(1, Number(params.get("page")) || 1);
 
-    const [total, factures] = await Promise.all([
+    const [total, factures, totauxParType] = await Promise.all([
       prisma.facture.count({ where }),
       prisma.facture.findMany({
         where,
@@ -162,30 +162,50 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               numero: true,
-              lignes: {
-                select: { designation: true },
-              },
+              lignes: { select: { designation: true } },
             },
           },
-          lignes: { select: { designation: true, prix: true, vente_id: true } },
+          lignes: {
+            select: {
+              prix: true,
+              vente_id: true,
+              designation: true,
+            },
+          },
         },
+      }),
+      prisma.facture.groupBy({
+        by: ["type_vente"],
+        where: { annulee: false },
+        _sum: { total: true },
+        _count: { id: true },
       }),
     ]);
 
-    const venteIds = new Set<number>();
-    for (const f of factures) {
-      for (const l of f.lignes) {
-        if (l.vente_id !== null) venteIds.add(l.vente_id);
-      }
-    }
+    const comptoirStats = totauxParType.find((t) => t.type_vente === "COMPTOIR");
+    const yalidineStats = totauxParType.find((t) => t.type_vente === "YALIDINE");
+
+    const stats_caisses = {
+      comptoir: {
+        nombre: comptoirStats?._count.id ?? 0,
+        total: comptoirStats?._sum.total ?? 0,
+      },
+      yalidine: {
+        nombre: yalidineStats?._count.id ?? 0,
+        total: yalidineStats?._sum.total ?? 0,
+      },
+      total_global: (comptoirStats?._sum.total ?? 0) + (yalidineStats?._sum.total ?? 0),
+    };
+
+    // Récupérer les ventes associées aux lignes pour vérifier si l'une d'elles a été annulée
+    const venteIds = factures
+      .flatMap((f) => f.lignes.map((l) => l.vente_id))
+      .filter((id): id is number => id !== null);
 
     const ventesAnnulees = new Set(
       (
         await prisma.vente.findMany({
-          where: {
-            id: { in: Array.from(venteIds) },
-            annulee: true,
-          },
+          where: { id: { in: venteIds }, annulee: true },
           select: { id: true },
         })
       ).map((v) => v.id)
@@ -195,6 +215,7 @@ export async function GET(request: NextRequest) {
       total,
       page,
       pages: Math.max(1, Math.ceil(total / PAR_PAGE)),
+      stats_caisses,
       factures: factures.map((f) => {
         const totalNet = f.lignes.reduce(
           (s, l) => (l.vente_id !== null && ventesAnnulees.has(l.vente_id) ? s : s + l.prix),

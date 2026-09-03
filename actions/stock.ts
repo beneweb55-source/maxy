@@ -32,6 +32,7 @@ export async function actionSetStockQuantity(
     // Revalidation des chemins sensibles
     revalidatePath("/inventaire");
     revalidatePath("/produits");
+    revalidatePath("/vitrine");
 
     return { succes: true, donnees: resultat };
   } catch (err: any) {
@@ -64,6 +65,7 @@ export async function actionCreateExemplaires(
 
     revalidatePath("/inventaire");
     revalidatePath("/produits");
+    revalidatePath("/vitrine");
 
     return { succes: true, donnees: resultat };
   } catch (err: any) {
@@ -89,6 +91,7 @@ export async function actionAdjustStock(
 
     revalidatePath("/inventaire");
     revalidatePath("/produits");
+    revalidatePath("/vitrine");
 
     return { succes: true, donnees: resultat };
   } catch (err: any) {

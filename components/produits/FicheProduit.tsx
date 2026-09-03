@@ -55,6 +55,7 @@ import ModaleVente from "@/components/ventes/ModaleVente";
 import { useToast } from "@/components/toast";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
+import { STATUTS_HORS_STOCK } from "@/lib/stock-service";
 import PanneauComposants from "@/components/inventaire/PanneauComposants";
 import { 
   determinerProfilEquipement, 
@@ -100,6 +101,8 @@ export interface ProduitDetailDto {
   image_url: string | null;
   images: string[];
   en_vitrine: boolean;
+  est_compose: boolean;
+  nb_composants: number;
   etiquette_imprimee: boolean;
   decision_rapport: DecisionRapport | null;
   prix_achat: number;
@@ -284,15 +287,15 @@ export default function FicheProduit({
     return entries;
   }, [produit, profilEquipement]);
 
-  // Calcul du stock disponible (non vendu, non au rebut)
+  // Calcul du stock disponible (non vendu, non au rebut, non assemblé)
   const stockDisponible = React.useMemo(() => {
     if (!produit?.exemplaires) return 0;
-    return produit.exemplaires.filter((e) => e.statut !== "vendu" && !e.a_jeter).length;
+    return produit.exemplaires.filter((e) => !STATUTS_HORS_STOCK.includes(e.statut) && !e.a_jeter).length;
   }, [produit]);
 
   const stockEnVitrine = React.useMemo(() => {
     if (!produit?.exemplaires) return 0;
-    return produit.exemplaires.filter((e) => e.en_vitrine && e.statut !== "vendu").length;
+    return produit.exemplaires.filter((e) => e.en_vitrine && !STATUTS_HORS_STOCK.includes(e.statut)).length;
   }, [produit]);
 
   // Basculer la vitrine pour une unité
@@ -795,18 +798,21 @@ export default function FicheProduit({
                   Ventes ({produit.ventes?.length || 0})
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setOngletActif("composants")}
-                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all ${
-                    ongletActif === "composants"
-                      ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
-                      : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5 text-brand-orange" />
-                  Composants BOM
-                </button>
+                {/* Onglet Composants BOM uniquement si le produit a vocation à en avoir ou en a déjà */}
+                {(produit.est_compose || produit.nb_composants > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => setOngletActif("composants")}
+                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-black transition-all ${
+                      ongletActif === "composants"
+                        ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
+                        : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5 text-brand-orange" />
+                    Composants BOM
+                  </button>
+                )}
               </div>
 
               {ongletActif === "exemplaires" && peutModifier && (

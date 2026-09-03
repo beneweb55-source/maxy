@@ -25,6 +25,7 @@ export async function GET() {
         prix_vente_fixe: true,
         prix_vente_reel: true,
         etiquette_imprimee: true,
+        modele_id: true,
         images: { orderBy: { position: "asc" }, select: { id: true } },
       },
     });
@@ -60,6 +61,7 @@ export async function GET() {
         numero_serie: true,
         grade: true,
         etiquette_imprimee: true,
+        modele_id: true,
       },
     });
     const stockParModele = new Map<string, typeof stock>();
@@ -81,6 +83,9 @@ export async function GET() {
         // Exemplaires réellement vendables depuis la vitrine : statut
         // « en vente » (prix fixé), les plus anciens d'abord.
         const vendables = memeModele.filter((p) => p.statut === "en_vente");
+        // Trouver le modele_id commun (tous les exemplaires du même modèle)
+        const modeleId = rep.modele_id ?? memeModele.find((p) => p.modele_id)?.modele_id ?? null;
+
         return {
           id: rep.id,
           code_interne: rep.code_interne,
@@ -89,6 +94,7 @@ export async function GET() {
           statut: rep.statut,
           prix_vente_fixe: rep.prix_vente_fixe,
           prix_vente_reel: rep.prix_vente_reel,
+          modele_id: modeleId,
           image_url: couvertureRep,
           images: [
             ...(couvertureRep ? [couvertureRep] : []),

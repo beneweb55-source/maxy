@@ -36,10 +36,13 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(modeles);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur GET /api/modeles:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la récupération des modèles" },
+      { 
+        error: "Erreur lors de la récupération des modèles",
+        details: error?.message || String(error),
+      },
       { status: 500 }
     );
   }
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
     if (acces.reponse) return acces.reponse;
 
     const body = await request.json();
-    const { nom, categorie_id, attributs } = body;
+    const { nom, categorie_id, attributs, prix_vente_conseille } = body;
 
     if (!nom || nom.trim() === "") {
       return NextResponse.json({ error: "Le nom est obligatoire" }, { status: 400 });
@@ -87,14 +90,18 @@ export async function POST(request: Request) {
         nom: nom.trim(),
         categorie_id: Number(categorie_id),
         attributs: attributs || {},
+        prix_vente_conseille: prix_vente_conseille ? Number(prix_vente_conseille) : null,
       }
     });
 
     return NextResponse.json(modele);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur POST /api/modeles:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la création du modèle" },
+      { 
+        error: "Erreur lors de la création du modèle",
+        details: error?.message || String(error),
+      },
       { status: 500 }
     );
   }

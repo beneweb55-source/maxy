@@ -50,6 +50,7 @@ interface CarteVitrine {
   statut: StatutProduit;
   prix_vente_fixe: number | null;
   prix_vente_reel: number | null;
+  modele_id: number | null;
   image_url: string | null;
   images: string[];
   quantite: number;
@@ -259,6 +260,7 @@ export default function Vitrine({ role }: { role: Role }) {
                     <div className="flex items-center gap-1">
                       <GestionnaireQuantite
                         produitId={p.id}
+                        modeleId={p.modele_id}
                         quantiteActuelle={p.quantite}
                         unitesIds={p.ids_en_vitrine}
                         peutModifier={peutRetirer}

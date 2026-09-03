@@ -82,6 +82,7 @@ export default function UniversalStockManager({
   const [afficherSn, setAfficherSn] = useState(false);
   const [snListe, setSnListe] = useState<string[]>([]);
   const [inputSn, setInputSn] = useState("");
+  const [estCompose, setEstCompose] = useState(false);
 
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -154,6 +155,7 @@ export default function UniversalStockManager({
         lot_id: cible?.lot_id ?? null,
         image_url: cible?.image_url ?? null,
         numeros_serie: snListe.length > 0 ? snListe : undefined,
+        est_compose: cible?.produitId ? undefined : estCompose, // if from existing product, use its value, otherwise allow new ones to be composed
       });
 
       if (!res.succes || !res.donnees) {
@@ -329,6 +331,38 @@ export default function UniversalStockManager({
               </div>
             </div>
           </div>
+
+          {!cible?.produitId && (
+            <div className="mb-4">
+              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1.5 block">
+                Type de Produit
+              </label>
+              <div className="grid grid-cols-2 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+                <button
+                  type="button"
+                  onClick={() => setEstCompose(false)}
+                  className={`flex items-center justify-center py-2 gap-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                    !estCompose
+                      ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-2xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Produit Simple
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEstCompose(true)}
+                  className={`flex items-center justify-center py-2 gap-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                    estCompose
+                      ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-2xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Produit Composé (BOM)
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* PRIX (Achat & Vente) */}
           <div className="grid grid-cols-2 gap-3">

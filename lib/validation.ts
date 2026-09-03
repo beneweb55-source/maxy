@@ -16,6 +16,7 @@ export interface LigneProduitEntree {
   emplacement?: string | null;
   prix_achat: number;
   prix_vente_fixe?: number | null;
+  est_compose?: boolean;
   /** Photo de couverture (= images[0]), conservée pour la rétro-compatibilité. */
   image_url?: string;
   /** Galerie complète et ordonnée ; le premier élément est la couverture. */
@@ -64,12 +65,14 @@ export function validerLignesProduits(
       prix_vente_fixe?: unknown;
       image_url?: unknown;
       images?: unknown;
+      est_compose?: unknown;
     };
 
     const reference = typeof ligne?.reference === "string" ? ligne.reference.trim() : "";
     const categorie = typeof ligne?.categorie === "string" ? ligne.categorie.trim() : "";
     const prix = ligne?.prix_achat;
     const prixVente = typeof ligne?.prix_vente_fixe === "number" ? ligne.prix_vente_fixe : null;
+    const estCompose = ligne?.est_compose === true;
 
     if (!reference) {
       return { erreur: `Ligne ${i + 1} : la référence est obligatoire.` };
@@ -90,6 +93,7 @@ export function validerLignesProduits(
       prix_vente_fixe: prixVente,
       image_url: resImages.images[0],
       images: resImages.images,
+      est_compose: estCompose,
     });
   }
 
