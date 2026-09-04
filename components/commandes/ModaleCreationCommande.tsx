@@ -112,11 +112,15 @@ export default function ModaleCreationCommande({
 
   const estExpedition = canal === "YALIDINE" || wilaya.length > 0;
 
-  // Ajout d'un article au panier
+  // Ajout d'un article au panier (ou incrémenter quantité si déjà présent)
   const ajouterAuPanier = (p: any) => {
     const existeIndex = panier.findIndex((item) => item.produit_id === p.id);
     if (existeIndex >= 0) {
-      afficher("Cet exemplaire physique est déjà dans le panier.", "info");
+      // Incrémenter la quantité
+      setPanier((prev) => prev.map((item, i) =>
+        i === existeIndex ? { ...item, quantite: item.quantite + 1 } : item
+      ));
+      afficher(`Quantité mise à jour : ${(panier[existeIndex]?.quantite ?? 0) + 1}x`, "info");
       return;
     }
 
@@ -139,6 +143,13 @@ export default function ModaleCreationCommande({
   const modifierPrixLigne = (index: number, nouveauPrix: number) => {
     setPanier((prev) =>
       prev.map((item, i) => (i === index ? { ...item, prix_unitaire: Math.max(0, nouveauPrix) } : item))
+    );
+  };
+
+  const modifierQuantite = (index: number, nouvelleQte: number) => {
+    const qte = Math.max(1, Math.floor(nouvelleQte || 1));
+    setPanier((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, quantite: qte } : item))
     );
   };
 
@@ -521,6 +532,7 @@ export default function ModaleCreationCommande({
                     <tr>
                       <th className="py-2 px-3">Article</th>
                       <th className="py-2 px-3">Code / S/N</th>
+                      <th className="py-2 px-3 text-center w-16">Qté</th>
                       <th className="py-2 px-3 text-right">Prix Unitaire (DA)</th>
                       <th className="py-2 px-3 text-center w-10">Action</th>
                     </tr>
@@ -533,6 +545,15 @@ export default function ModaleCreationCommande({
                         </td>
                         <td className="py-2.5 px-3 font-mono text-[11px] text-brand-warm-grey">
                           {item.code_interne} {item.numero_serie && `· ${item.numero_serie}`}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <input
+                            type="number"
+                            min={1}
+                            value={item.quantite}
+                            onChange={(e) => modifierQuantite(idx, Number(e.target.value))}
+                            className="w-14 text-center rounded-lg border border-brand-light-grey bg-transparent px-1 py-1 text-xs font-bold focus:outline-none focus:border-brand-orange"
+                          />
                         </td>
                         <td className="py-2.5 px-3 text-right">
                           <input
