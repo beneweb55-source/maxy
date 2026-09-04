@@ -1,14 +1,16 @@
 /**
  * Génération PDF WYSIWYG d'une facture.
  *
- * Approche : on capture le DOM rendu (template React) via html2canvas,
+ * Approche : on capture le DOM rendu (template React) via html-to-image,
  * puis on le découpe en pages A4 via jsPDF.
  *
+ * html-to-image utilise SVG ForeignObject → supporte nativement
+ * les couleurs CSS modernes (oklch, etc.) utilisées par Tailwind v4.
+ *
  * SEULE source de vérité pour le rendu PDF : le composant TemplateFactureA4.
- * Ce module ne contient PAS de template alternatif.
  */
 
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 
 /** Largeur utile d'une page A4 paysage en mm (après margins 10mm) */
@@ -21,32 +23,41 @@ const A4_HEIGHT_MM = 210 - 20;
  *
  * @param element  - L'élément HTML à capturer (doit être rendu et visible)
  * @param nomFichier - Nom du fichier PDF à télécharger
- * @param options  - Options optionnelles (échelle, fond transparent, margins)
+ * @param options  - Options optionnelles
  */
 export async function telechargerElementEnPdf(
   element: HTMLElement,
   nomFichier: string,
   options?: {
     echelle?: number;
-    fondTransparent?: boolean;
     margins?: { top: number; right: number; bottom: number; left: number };
   }
 ): Promise<void> {
   const echelle = options?.echelle ?? 3;
-  const fondTransparent = options?.fondTransparent ?? false;
 
   try {
-    // 1. Capture du DOM rendu via html2canvas
-    const canvas = await html2canvas(element, {
-      scale: echelle,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: fondTransparent ? null : "#ffffff",
-      logging: false,
+    // 1. Capture du DOM rendu via html-to-image (SVG ForeignObject → PNG)
+    const dataUrl = await toPng(element, {
+      pixelRatio: echelle,
+      backgroundColor: "#ffffff",
+      skipFonts: true, // Les polices système sont déjà rendues par le navigateur
+      cacheBust: true,
+      style: {
+        // Forcer les couleurs pour éviter tout problème de computed styles
+        color: "#000000",
+      },
     });
 
-    // 2. Conversion en image
-    const imageData = canvas.toDataURL("image/png");
+    // 2. Charger l'image dans un canvas pour mesurer
+    const img = new Image();
+    img.src = dataUrl;
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Impossible de charger l'image capturée"));
+    });
+
+    const imgWidthPx = img.naturalWidth;
+    const imgHeightPx = img.naturalHeight;
 
     // 3. Calcul de la disposition multi-pages A4
     const pdf = new jsPDF({
@@ -60,18 +71,14 @@ export async function telechargerElementEnPdf(
     const usableWidth = A4_WIDTH_MM;
     const usableHeight = A4_HEIGHT_MM;
 
-    const imgWidthPx = canvas.width;
-    const imgHeightPx = canvas.height;
-
     // Ratio pixels → mm pour la largeur utile
     const pxPerMm = imgWidthPx / usableWidth;
-
     const imgHeightMm = imgHeightPx / pxPerMm;
 
     // Nombre de pages nécessaires
-    const nbPages = Math.ceil(imgHeightMm / usableHeight);
+    const nbPages = Math.max(1, Math.ceil(imgHeightMm / usableHeight));
 
-    // Calcul de la hauteur par page en pixels (pour le découpage du canvas)
+    // Hauteur par page en pixels (pour le découpage)
     const hauteurPagePx = imgHeightPx / nbPages;
 
     // 4. Découpage du canvas en pages A4
@@ -80,7 +87,7 @@ export async function telechargerElementEnPdf(
         pdf.addPage();
       }
 
-      // Offset vertical en pixels sur le canvas source
+      // Offset vertical en pixels sur l'image source
       const srcY = i * hauteurPagePx;
 
       // Créer un canvas temporaire pour cette page
@@ -93,19 +100,19 @@ export async function telechargerElementEnPdf(
 
       // Dessiner la portion de l'image originale
       ctx.drawImage(
-        canvas,
-        0, srcY,                // Source x, y
-        imgWidthPx, pageCanvas.height,  // Source width, height
-        0, 0,                   // Dest x, y
-        imgWidthPx, pageCanvas.height   // Dest width, height
+        img,
+        0, srcY,
+        imgWidthPx, pageCanvas.height,
+        0, 0,
+        imgWidthPx, pageCanvas.height
       );
 
       const pageData = pageCanvas.toDataURL("image/png");
 
-      // Calculer la hauteur de cette page en mm (dernière page = hauteur restante)
-      const pageHeightMm = (pageCanvas.height / pxPerMm);
+      // Hauteur de cette page en mm (dernière page = hauteur restante)
+      const pageHeightMm = pageCanvas.height / pxPerMm;
 
-      // Centrer verticalement si la page est plus courte que A4
+      // Position verticale avec marge
       const yOffset = margins.top;
 
       pdf.addImage(pageData, "PNG", margins.left, yOffset, usableWidth, pageHeightMm);
