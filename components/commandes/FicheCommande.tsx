@@ -15,7 +15,6 @@ import {
 import { formaterDA } from "@/lib/caisse";
 import { montantEnLettres } from "@/lib/nombres";
 import { useToast } from "@/components/toast";
-import { genererFacturePdf } from "@/lib/facture-pdf";
 
 interface FicheCommandeProps {
   commandeId: number;
@@ -179,20 +178,14 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
 
           <button
             type="button"
-            onClick={async () => {
-              if (!commande) return;
-              try {
-                await genererFacturePdf({ numero: commande.numero });
-                afficher("Téléchargement du PDF 1:1 terminé !", "succes");
-              } catch (e: any) {
-                window.print();
-              }
+            onClick={() => {
+              window.print();
             }}
             className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold cursor-pointer"
-            title="Télécharger la Facture (PDF WYSIWYG)"
+            title="Imprimer la commande"
           >
             <Download className="w-4 h-4" />
-            <span>Télécharger (PDF)</span>
+            <span>Imprimer (PDF)</span>
           </button>
 
           <button

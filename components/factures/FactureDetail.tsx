@@ -20,6 +20,7 @@ import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
 import { Download } from "lucide-react";
 import { telechargerElementEnPdf } from "@/lib/facture-pdf";
+import TemplateFactureA4 from "@/components/factures/TemplateFactureA4";
 
 interface LigneFactureDto {
   id: number;
@@ -406,180 +407,15 @@ export default function FactureDetail({
         </div>
       )}
 
-      {/* Document imprimable WYSIWYG 1:1 */}
+      {/* Document imprimable WYSIWYG 1:1 — Template partagé unique */}
       {!formatTicket && (
-        <div
-          id="facture-print-area"
-          ref={invoiceRef}
-          className="carte w-full max-w-[210mm] mx-auto bg-white p-8 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-slate-200"
-        >
-        
-        {/* En-tête : Info entreprise à gauche, Logo à droite */}
-        <div className="flex justify-between items-start gap-4 mb-6">
-          <div className="bg-[#e5e7eb] p-4 rounded-xl rounded-tl-none w-[45%] text-xs border border-[#d1d5db] relative">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-brand-black mb-1.5">{facture.entreprise?.nom || "Solution Maxi"}</h2>
-            <p className="mb-2 font-medium">{facture.entreprise?.adresse || "Alger, Algérie"}</p>
-            <div className="grid grid-cols-[30px_1fr] gap-x-2 gap-y-0.5">
-              <span className="font-semibold">{t("factures.rc")}:</span> <span>{facture.entreprise?.rc || "RC XXXXXXXXX"}</span>
-              <span className="font-semibold">{t("factures.nif")}:</span> <span>{facture.entreprise?.nif || "NIF XXXXXXXXX"}</span>
-              <span className="font-semibold">{t("factures.nis")}:</span> <span>{facture.entreprise?.nis || "NIS XXXXXXXXX"}</span>
-              <span className="font-semibold">{t("factures.art")}:</span> <span>{facture.entreprise?.art || "ART XXXXXXXXX"}</span>
-              <span className="font-semibold">{t("factures.rib")}:</span> <span>{facture.entreprise?.rib || "0000 00 00 00 00"}</span>
-            </div>
-            {/* Petit coin stylisé en haut à gauche */}
-            <div className="absolute top-0 left-0 -mt-[1px] -ml-[1px] w-4 h-4 bg-white rounded-br-xl"></div>
-          </div>
-
-          <div className="flex flex-col items-end flex-shrink-0">
-            <div className="flex items-center gap-1.5 mb-8 whitespace-nowrap">
-              <img
-                src="/brand/solutionmaxi-icone.svg"
-                alt="Logo"
-                crossOrigin="anonymous"
-                className="h-10 w-auto object-contain"
-              />
-              <div className="flex flex-col justify-center">
-                <h1 className="text-xl font-black uppercase text-brand-black leading-none">{facture.entreprise?.nom || "SOLUTION MAXI"}</h1>
-                <p className="text-[10px] font-bold italic mt-0.5 tracking-tighter">Plus de temps à perdre !</p>
-              </div>
-            </div>
-            
-            <div className="bg-[#e5e7eb] px-4 py-1.5 rounded-lg border border-[#d1d5db] text-xs font-bold w-fit">
-              Le : {dateFr(facture.date_emission)}
-            </div>
-          </div>
-        </div>
-
-        {/* Titre facture */}
-        <div className="text-center mb-5">
-          <h2 className="text-lg font-bold">
-            {facture.type_facture === "proforma" ? "Facture proforma" : "Facture"} n°: {facture.numero}
-          </h2>
-        </div>
-
-        {/* Informations du client */}
-        <div className="mb-6 w-full sm:w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
-          <p className="mb-2"><span className="font-bold">{t("factures.doit")}</span> {facture.client_nom || "Particulier"}</p>
-          <p><span className="font-bold">Adresse:</span> {facture.client_adresse || ""}</p>
-          <p><span className="font-bold">RC:</span> {facture.client_rc || ""}</p>
-          <p><span className="font-bold">NIF:</span> {facture.client_nif || ""}</p>
-          <p><span className="font-bold">AI:</span> {facture.client_ai || ""}</p>
-          <p><span className="font-bold">NIS:</span> {facture.client_nis || ""}</p>
-        </div>
-
-        {/* Tableau des articles */}
-        <div className="mb-6 w-full overflow-x-auto">
-          <table className="w-full min-w-[500px] border-collapse border border-black text-xs text-center">
-            <thead>
-              <tr className="bg-[#d1d5db]">
-                <th className="border border-black py-1.5 px-2 font-bold w-12">Art N°</th>
-                <th className="border border-black py-1.5 px-2 font-bold text-left">{t("factures.designation")}</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-12">{t("factures.um")}</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-16">{t("factures.qtt")}</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-24">{t("factures.prixUHT")}</th>
-                <th className="border border-black py-1.5 px-2 font-bold w-28">{t("factures.montantHT")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(() => {
-                const groupes = facture.lignes.reduce((acc, ligne) => {
-                  if (ligne.annulee) return acc;
-                  const existant = acc.find(g => g.designation === ligne.designation && g.prix === ligne.prix);
-                  if (existant) {
-                    existant.qtt += 1;
-                  } else {
-                    acc.push({ ...ligne, qtt: 1 });
-                  }
-                  return acc;
-                }, [] as (LigneFactureDto & { qtt: number })[]);
-
-                return (
-                  <>
-                    {groupes.map((l, idx) => (
-                      <tr key={idx} className="h-8">
-                        <td className="border border-black px-2">{idx + 1}</td>
-                        <td className="border border-black px-2 text-left font-bold">{l.designation}</td>
-                        <td className="border border-black px-2">{t("factures.um")}</td>
-                        <td className="border border-black px-2">{l.qtt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                        <td className="border border-black px-2 text-right">{l.prix.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                        <td className="border border-black px-2 text-right">{(l.prix * l.qtt).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                      </tr>
-                    ))}
-                  </>
-                );
-              })()}
-            </tbody>
-            <tfoot>
-              {facture.type_facture === "tva" ? (
-                <>
-                  <tr className="font-bold">
-                    <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
-                    <td className="border border-black px-2 py-1.5 text-right">{t("factures.totalHT")}</td>
-                    <td className="border border-black px-2 py-1.5 text-right bg-white">{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                  <tr className="font-bold">
-                    <td colSpan={4} className="border-r border-transparent"></td>
-                    <td className="border border-black px-2 py-1.5 text-right">TVA 19%</td>
-                    <td className="border border-black px-2 py-1.5 text-right bg-white">{(facture.total_net * 0.19).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                  <tr className="font-bold">
-                    <td colSpan={4} className="border-r border-transparent"></td>
-                    <td className="border border-black px-2 py-1.5 text-right">Droit Timbre 1%</td>
-                    <td className="border border-black px-2 py-1.5 text-right bg-white">{Math.min(10000, facture.total_net * 1.19 * 0.01).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                  <tr className="font-bold">
-                    <td colSpan={4} className="border-r border-transparent"></td>
-                    <td className="border border-black px-2 py-1.5 text-right">{t("factures.totalTTC")}</td>
-                    <td className="border border-black px-2 py-1.5 text-right bg-white">
-                      {(facture.total_net * 1.19 + Math.min(10000, facture.total_net * 1.19 * 0.01)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </>
-              ) : (
-                <tr className="font-bold">
-                  <td colSpan={4} className="border-t border-black border-r border-r-transparent"></td>
-                  <td className="border border-black px-2 py-1.5 text-right">{t("factures.totalHT")}</td>
-                  <td className="border border-black px-2 py-1.5 text-right bg-white">{facture.total_net.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
-                </tr>
-              )}
-            </tfoot>
-          </table>
-        </div>
-
-        {/* Cachet et signature */}
-        <div className="flex justify-end mr-12 mt-12 mb-16">
-          <div className="relative w-64 h-32">
-            {(facture.entreprise?.cachet || "/brand/cachet.png") && (
-              <img 
-                src={facture.entreprise?.cachet || "/brand/cachet.png"} 
-                alt="Cachet" 
-                className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Pied de page */}
-        <div className="bg-[#e5e7eb] py-3 px-6 text-xs text-brand-black mt-20">
-          <div className="text-center font-semibold mb-2 underline underline-offset-2">
-            Pour toutes informations, n&apos;hésitez pas de nous contacter
-          </div>
-          <div className="flex justify-between font-bold">
-            <div>
-              <p>Mobile :</p>
-              <p className="font-normal mt-0.5">{facture.entreprise?.tel || "0000 00 00 00"}</p>
-            </div>
-            <div>
-              <p>Courriel :</p>
-              <p className="font-normal mt-0.5">contact@{facture.entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
-            </div>
-            <div className="text-right">
-              <p>Site :</p>
-              <p className="font-normal mt-0.5">www.{facture.entreprise?.nom?.toLowerCase().replace(/\s+/g, '') || "solutionmaxi"}.dz</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        <TemplateFactureA4
+          facture={facture}
+          innerRef={invoiceRef}
+          showHeader={true}
+          showCachet={true}
+          showActions={false}
+        />
       )}
 
       {formatTicket && (
@@ -646,7 +482,7 @@ export default function FactureDetail({
 
           {/* Total Ticket */}
           <div className="border-t border-black border-dashed pt-2 mb-6">
-            {facture.type_facture === "tva" ? (
+            {facture.type_facture === "FACTURE_TVA" ? (
               <>
                 <div className="flex justify-between font-bold mb-1">
                   <span>{t("factures.totalHT")}</span>

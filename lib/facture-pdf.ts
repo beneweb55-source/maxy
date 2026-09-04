@@ -1,99 +1,121 @@
+/**
+ * Génération PDF WYSIWYG d'une facture.
+ *
+ * Approche : on capture le DOM rendu (template React) via html2canvas,
+ * puis on le découpe en pages A4 via jsPDF.
+ *
+ * SEULE source de vérité pour le rendu PDF : le composant TemplateFactureA4.
+ * Ce module ne contient PAS de template alternatif.
+ */
+
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
+/** Largeur utile d'une page A4 paysage en mm (après margins 10mm) */
+const A4_WIDTH_MM = 297 - 20;
+/** Hauteur utile d'une page A4 paysage en mm (après margins 10mm) */
+const A4_HEIGHT_MM = 210 - 20;
+
 /**
- * Capture haute définition WYSIWYG (1:1) d'un élément DOM et export PDF A4.
- * Gère la pagination automatique pour les factures longues (multi-pages).
- * Le rendu PDF est identique à ce qui est affiché à l'écran (WYSIWYG).
+ * Génère un PDF WYSIWYG à partir d'un élément DOM affiché à l'écran.
+ *
+ * @param element  - L'élément HTML à capturer (doit être rendu et visible)
+ * @param nomFichier - Nom du fichier PDF à télécharger
+ * @param options  - Options optionnelles (échelle, fond transparent, margins)
  */
 export async function telechargerElementEnPdf(
   element: HTMLElement,
-  nomFichier: string = "facture.pdf"
-): Promise<void> {
-  if (typeof window === "undefined" || !element) return;
-
-  // Attendre que les polices web soient stabilisées
-  if (document.fonts) {
-    await document.fonts.ready;
+  nomFichier: string,
+  options?: {
+    echelle?: number;
+    fondTransparent?: boolean;
+    margins?: { top: number; right: number; bottom: number; left: number };
   }
+): Promise<void> {
+  const echelle = options?.echelle ?? 3;
+  const fondTransparent = options?.fondTransparent ?? false;
 
-  // Capture Canvas HD avec scale: 3 pour une qualité d'impression 300 DPI
-  const canvas = await html2canvas(element, {
-    scale: 3,
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: "#ffffff",
-    logging: false,
-    windowWidth: 1200,
-  });
+  try {
+    // 1. Capture du DOM rendu via html2canvas
+    const canvas = await html2canvas(element, {
+      scale: echelle,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: fondTransparent ? null : "#ffffff",
+      logging: false,
+    });
 
-  const imgData = canvas.toDataURL("image/jpeg", 0.98);
+    // 2. Conversion en image
+    const imageData = canvas.toDataURL("image/png");
 
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
+    // 3. Calcul de la disposition multi-pages A4
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
 
-  const pdfWidth = pdf.internal.pageSize.getWidth(); // 210 mm
-  const pdfHeight = pdf.internal.pageSize.getHeight(); // 297 mm
+    const margins = options?.margins ?? { top: 10, right: 10, bottom: 10, left: 10 };
 
-  // Calculer la hauteur de l'image dans les unités PDF
-  const imgPdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const usableWidth = A4_WIDTH_MM;
+    const usableHeight = A4_HEIGHT_MM;
 
-  if (imgPdfHeight <= pdfHeight) {
-    // L'image tient sur une seule page
-    pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, imgPdfHeight, undefined, "FAST");
-  } else {
-    // Pagination : découper l'image en tranches de la hauteur d'une page PDF
-    const pageCanvasHeight = (pdfHeight / imgPdfHeight) * canvas.height;
+    const imgWidthPx = canvas.width;
+    const imgHeightPx = canvas.height;
 
-    let yOffset = 0;
-    let isFirstPage = true;
+    // Ratio pixels → mm pour la largeur utile
+    const pxPerMm = imgWidthPx / usableWidth;
 
-    while (yOffset < canvas.height) {
-      if (!isFirstPage) {
+    const imgHeightMm = imgHeightPx / pxPerMm;
+
+    // Nombre de pages nécessaires
+    const nbPages = Math.ceil(imgHeightMm / usableHeight);
+
+    // Calcul de la hauteur par page en pixels (pour le découpage du canvas)
+    const hauteurPagePx = imgHeightPx / nbPages;
+
+    // 4. Découpage du canvas en pages A4
+    for (let i = 0; i < nbPages; i++) {
+      if (i > 0) {
         pdf.addPage();
       }
 
-      // Extraire la tranche courante du canvas
-      const sliceCanvas = document.createElement("canvas");
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = Math.min(pageCanvasHeight, canvas.height - yOffset);
+      // Offset vertical en pixels sur le canvas source
+      const srcY = i * hauteurPagePx;
 
-      const ctx = sliceCanvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(
-          canvas,
-          0, yOffset, canvas.width, sliceCanvas.height,
-          0, 0, canvas.width, sliceCanvas.height
-        );
+      // Créer un canvas temporaire pour cette page
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = imgWidthPx;
+      pageCanvas.height = Math.min(hauteurPagePx, imgHeightPx - srcY);
 
-        const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.98);
-        const slicePdfHeight = (sliceCanvas.height * pdfWidth) / canvas.width;
+      const ctx = pageCanvas.getContext("2d");
+      if (!ctx) continue;
 
-        pdf.addImage(sliceData, "JPEG", 0, 0, pdfWidth, slicePdfHeight, undefined, "FAST");
-      }
+      // Dessiner la portion de l'image originale
+      ctx.drawImage(
+        canvas,
+        0, srcY,                // Source x, y
+        imgWidthPx, pageCanvas.height,  // Source width, height
+        0, 0,                   // Dest x, y
+        imgWidthPx, pageCanvas.height   // Dest width, height
+      );
 
-      yOffset += pageCanvasHeight;
-      isFirstPage = false;
+      const pageData = pageCanvas.toDataURL("image/png");
+
+      // Calculer la hauteur de cette page en mm (dernière page = hauteur restante)
+      const pageHeightMm = (pageCanvas.height / pxPerMm);
+
+      // Centrer verticalement si la page est plus courte que A4
+      const yOffset = margins.top;
+
+      pdf.addImage(pageData, "PNG", margins.left, yOffset, usableWidth, pageHeightMm);
     }
-  }
 
-  pdf.save(nomFichier);
-}
-
-/**
- * Rétrocompatibilité legacy : capture directement l'élément #facture-print-area
- */
-export async function genererFacturePdf(data?: any): Promise<void> {
-  if (typeof window === "undefined") return;
-
-  const el = document.getElementById("facture-print-area");
-  if (el) {
-    const num = data?.numero || "document";
-    await telechargerElementEnPdf(el, `facture-${num}.pdf`);
-  } else {
+    // 5. Téléchargement
+    pdf.save(nomFichier);
+  } catch (err) {
+    console.error("Erreur génération PDF:", err);
+    // Fallback : impression navigateur
     window.print();
   }
 }

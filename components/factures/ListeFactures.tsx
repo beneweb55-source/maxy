@@ -29,7 +29,6 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import { genererFacturePdf } from "@/lib/facture-pdf";
 
 type TypeDocument = "FACTURE_TVA" | "PROFORMA" | "DEVIS";
 type OngletType = "tous" | "FACTURE_TVA" | "PROFORMA" | "DEVIS";
@@ -264,40 +263,11 @@ export default function ListeFactures({ role }: { role?: string }) {
     setEnvoi(false);
   }
 
-  async function telechargerPdfDirect(f: LigneFactureListe, ev: React.MouseEvent) {
+  function telechargerPdfDirect(f: LigneFactureListe, ev: React.MouseEvent) {
     ev.stopPropagation();
-    try {
-      const res = await fetch(`/api/factures/${f.id}`);
-      if (!res.ok) throw new Error();
-      const fullFacture = await res.json();
-      await genererFacturePdf({
-        numero: fullFacture.numero,
-        date: fullFacture.date_emission,
-        vendeur: fullFacture.vendeur,
-        type_paiement: fullFacture.mode_paiement,
-        garantie_mois: 6,
-        client: {
-          nom: fullFacture.client_nom,
-          telephone: fullFacture.client_tel,
-          adresse: fullFacture.client_adresse,
-          rc: fullFacture.client_rc,
-          nif: fullFacture.client_nif,
-          nis: fullFacture.client_nis,
-          ai: fullFacture.client_ai,
-        },
-        lignes: (fullFacture.lignes || []).map((l: any) => ({
-          code_interne: l.code_interne,
-          designation: l.designation,
-          quantite: 1,
-          prix_unitaire: l.prix,
-          total_ligne: l.prix,
-        })),
-        total_ttc: fullFacture.total,
-      });
-      afficher("Téléchargement du PDF lancé.", "succes");
-    } catch {
-      afficher("Erreur lors de la génération du PDF.", "erreur");
-    }
+    // Naviguer vers la page détail qui utilise le template partagé unique
+    // Le bouton "Télécharger PDF" de la page détail génère le PDF via le même template
+    router.push(`/factures/${f.id}`);
   }
 
   return (
