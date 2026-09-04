@@ -69,7 +69,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { nom, parent_id, description, image_url, attributs_schema } = body;
+    const { nom, parent_id, description, image_url } = body;
 
     // Éviter les boucles infinies (une catégorie ne peut pas être son propre parent)
     if (parent_id === id) {
@@ -79,6 +79,27 @@ export async function PUT(
       );
     }
 
+    // Limiter la profondeur de l'arbre à 3 niveaux
+    if (parent_id) {
+      const parentIdNum = Number(parent_id);
+      const parent = await prisma.categorie.findUnique({
+        where: { id: parentIdNum },
+        select: { parent_id: true },
+      });
+      if (parent && parent.parent_id) {
+        const grandParent = await prisma.categorie.findUnique({
+          where: { id: parent.parent_id },
+          select: { parent_id: true },
+        });
+        if (grandParent && grandParent.parent_id) {
+          return NextResponse.json(
+            { error: "Profondeur maximale atteinte (3 niveaux : Famille > Catégorie > Sous-catégorie)." },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     const categorie = await prisma.categorie.update({
       where: { id },
       data: {
@@ -86,7 +107,6 @@ export async function PUT(
         ...(parent_id !== undefined && { parent_id: parent_id ? Number(parent_id) : null }),
         ...(description !== undefined && { description: description?.trim() || null }),
         ...(image_url !== undefined && { image_url: image_url?.trim() || null }),
-        ...(attributs_schema !== undefined && { attributs_schema })
       }
     });
 

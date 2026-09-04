@@ -614,6 +614,15 @@ export async function DELETE(
       );
     }
 
+    // Guard : un produit composé ne peut être supprimé que si tous ses composants sont détachés
+    const nbComposants = await prisma.produit.count({ where: { parent_id: produitId } });
+    if (nbComposants > 0) {
+      return erreur(
+        400,
+        `Impossible de supprimer : ${nbComposants} composant(s) encore rattaché(s). Détachez-les d'abord.`
+      );
+    }
+
     await prisma.$transaction(async (tx) => {
       // 1. Détacher les mouvements de caisse
       await tx.mouvementCaisse.updateMany({
@@ -647,6 +656,9 @@ export async function DELETE(
       // 6. Supprimer images, historiques et réparations
       await tx.produitImage.deleteMany({ where: { produit_id: produitId } });
       await tx.historiqueStatut.deleteMany({ where: { produit_id: produitId } });
+      await tx.compositionHistorique.deleteMany({
+        where: { OR: [{ produit_id: produitId }, { produit_parent_id: produitId }] },
+      });
       await tx.reparation.deleteMany({ where: { produit_id: produitId } });
 
       // 7. Supprimer le produit

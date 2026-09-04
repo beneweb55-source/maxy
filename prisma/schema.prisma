@@ -105,6 +105,7 @@ model User {
   factures      Facture[]
   journal       JournalActivite[]
   carnets       CarnetEntree[]
+  composition_operations CompositionHistorique[]
 
   @@map("users")
 }
@@ -248,6 +249,8 @@ model Produit {
   ventes      Vente[]
   lignes_commande LigneCommande[]
   images      ProduitImage[]
+  composition_historique CompositionHistorique[] @relation("CompositionHistoriqueProduit")
+  composition_parent_historique CompositionHistorique[] @relation("CompositionParentHistorique")
 
   @@index([lot_id])
   @@index([modele_id])
@@ -326,6 +329,26 @@ model HistoriqueStatut {
 
   @@index([produit_id])
   @@map("historique_statuts")
+}
+
+model CompositionHistorique {
+  id                  Int       @id @default(autoincrement())
+  produit_id          Int       // L'exemplaire physique concerné (composant)
+  produit_parent_id   Int?      // Le parent (null si désassemblé)
+  user_id             Int       // Qui a fait l'opération
+  action              String    // "assemblage" | "désassemblage" | "remplacement" | "vente_composant"
+  composant_remplace_id Int?    // Si remplacement : l'ancien composant
+  note                String?
+  created_at          DateTime  @default(now())
+
+  produit             Produit   @relation("CompositionHistoriqueProduit", fields: [produit_id], references: [id])
+  produit_parent      Produit?  @relation("CompositionParentHistorique", fields: [produit_parent_id], references: [id])
+  user                User      @relation(fields: [user_id], references: [id])
+
+  @@index([produit_id])
+  @@index([produit_parent_id])
+  @@index([created_at])
+  @@map("composition_historique")
 }
 
 model MouvementCaisse {

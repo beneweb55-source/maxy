@@ -9,6 +9,7 @@ import { idsParRole, notifier } from "@/lib/notifs";
 import { creerFacture } from "@/lib/factures";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 import { entierPositif, entierPositifOuNul, validerTypeVente } from "@/lib/validation";
+import { StockService } from "@/lib/stock-service";
 
 export async function GET(request: NextRequest) {
   const acces = await exigerUtilisateur();
@@ -166,6 +167,15 @@ export async function POST(request: NextRequest) {
       return erreur(400, `Ce produit est ${produit.statut === "vendu" ? "déjà vendu" : "hors service (HS)"} et ne peut être facturé.`);
     }
 
+    // Blocage : un composant intégré ne peut pas être vendu séparément
+    if (produit.parent_id !== null) {
+      const parent = await prisma.produit.findUnique({
+        where: { id: produit.parent_id },
+        select: { code_interne: true, reference: true },
+      });
+      return erreur(400, `Ce composant est intégré dans l'équipement ${parent?.code_interne || parent?.reference || `#${produit.parent_id}`} et ne peut pas être vendu séparément.`);
+    }
+
     const parametres = await prisma.parametres.findUnique({ where: { id: 1 } });
     const margePct = parametres?.marge_minimum_pct ?? 20;
     const coutRep = produit.reparations.reduce((s, r) => s + r.cout, 0);
@@ -216,6 +226,48 @@ export async function POST(request: NextRequest) {
         where: { id: produit.id },
         data: updateData,
       });
+
+      // ── Cascade BOM : vente d'un produit composé → tous les composants passent en "vendu" ──
+      if (produit.est_compose) {
+        const composants = await tx.produit.findMany({
+          where: { parent_id: produit.id },
+          select: { id: true, statut: true, reference: true, code_interne: true },
+        });
+        for (const comp of composants) {
+          if (comp.statut === "assemble") {
+            await tx.produit.update({
+              where: { id: comp.id },
+              data: { statut: "vendu", prix_vente_reel: 0, date_vente: quand },
+            });
+            await tx.historiqueStatut.create({
+              data: {
+                produit_id: comp.id,
+                user_id: user.id,
+                statut_avant: "assemble",
+                statut_apres: "vendu",
+                note: `Vendu avec l'équipement ${produit.code_interne} (vente composé)`,
+              },
+            });
+            await tx.compositionHistorique.create({
+              data: {
+                produit_id: comp.id,
+                produit_parent_id: produit.id,
+                user_id: user.id,
+                action: "vente_composant",
+                note: `Composant vendu avec l'équipement ${produit.code_interne}`,
+              },
+            });
+            // Resync du modèle du composant
+            const modeleComp = await tx.produit.findUnique({
+              where: { id: comp.id },
+              select: { modele_id: true },
+            });
+            if (modeleComp?.modele_id) {
+              await StockService.synchroniserCompteModele(modeleComp.modele_id, tx);
+            }
+          }
+        }
+      }
 
       // Vitrine par modèle : si l'unité vendue représentait le modèle en
       // vitrine, transférer le drapeau à un autre exemplaire identique en

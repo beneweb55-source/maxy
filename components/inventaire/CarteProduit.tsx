@@ -14,6 +14,7 @@ import {
   IconeCodeBarres,
   IconeCoche,
 } from "@/components/icons";
+import { Layers, Boxes } from "lucide-react";
 import BoutonImpression from "@/components/BoutonImpression";
 import { useToast } from "@/components/toast";
 
@@ -46,6 +47,9 @@ export interface LigneProduit {
   image_url: string | null;
   nb_images: number;
   etiquette_imprimee: boolean;
+  nb_composants?: number;
+  est_compose?: boolean;
+  parent_id?: number | null;
 }
 
 interface CarteProduitProps {
@@ -167,6 +171,18 @@ export default function CarteProduit({
           {produit.en_vitrine && (
             <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
               <IconeVitrine taille={12} /> {t("inventaire.vitrine")}
+            </span>
+          )}
+          {produit.est_compose && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+              <Layers className="w-3 h-3" />
+              COMPOSÉ{produit.nb_composants ? ` (${produit.nb_composants})` : ""}
+            </span>
+          )}
+          {produit.parent_id !== undefined && produit.parent_id !== null && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-600/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+              <Boxes className="w-3 h-3" />
+              INTÉGRÉ
             </span>
           )}
         </div>

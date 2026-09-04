@@ -8,6 +8,7 @@ import { margeVente, seuilMargeMinimum } from "@/lib/finances";
 import { idsParRole, notifier } from "@/lib/notifs";
 import { entierPositif, entierPositifOuNul, validerTypeVente } from "@/lib/validation";
 import { creerFacture, type LigneFacture } from "@/lib/factures";
+import { StockService } from "@/lib/stock-service";
 
 /**
  * Vente groupée (bundle / multi-sélection) : prix total ou prix par produit.
@@ -97,6 +98,15 @@ export async function POST(request: NextRequest) {
       return erreur(
         400,
         `Produit indisponible à la vente (déjà vendu ou HS) : ${nonDispo.map((p) => p.code_interne).join(", ")}.`
+      );
+    }
+
+    // Blocage : un composant intégré ne peut pas être vendu séparément
+    const composantsIntegres = produits.filter((p) => p.parent_id !== null);
+    if (composantsIntegres.length > 0) {
+      return erreur(
+        400,
+        `Composant(s) intégré(s) ne pouvant être vendu(s) séparément : ${composantsIntegres.map((p) => p.code_interne).join(", ")}.`
       );
     }
 
@@ -221,6 +231,43 @@ export async function POST(request: NextRequest) {
           where: { id: produit.id },
           data: updateProduitData,
         });
+
+        // ── Cascade BOM : vente d'un produit composé → tous les composants passent en "vendu" ──
+        if (produit.est_compose) {
+          const composants = await tx.produit.findMany({
+            where: { parent_id: produit.id },
+            select: { id: true, statut: true, reference: true, code_interne: true, modele_id: true },
+          });
+          for (const comp of composants) {
+            if (comp.statut === "assemble") {
+              await tx.produit.update({
+                where: { id: comp.id },
+                data: { statut: "vendu", prix_vente_reel: 0, date_vente: quand },
+              });
+              await tx.historiqueStatut.create({
+                data: {
+                  produit_id: comp.id,
+                  user_id: user.id,
+                  statut_avant: "assemble",
+                  statut_apres: "vendu",
+                  note: `Vendu avec l'équipement ${produit.code_interne} (vente groupée composé)`,
+                },
+              });
+              await tx.compositionHistorique.create({
+                data: {
+                  produit_id: comp.id,
+                  produit_parent_id: produit.id,
+                  user_id: user.id,
+                  action: "vente_composant",
+                  note: `Composant vendu avec l'équipement ${produit.code_interne}`,
+                },
+              });
+              if (comp.modele_id) {
+                await StockService.synchroniserCompteModele(comp.modele_id, tx);
+              }
+            }
+          }
+        }
 
         // Vitrine par modèle : transférer le drapeau à un exemplaire identique restant
         if (produit.en_vitrine) {

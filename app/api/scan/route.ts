@@ -62,11 +62,28 @@ export async function GET(request: NextRequest) {
 
     if (produit.statut === "produit_commande") {
       return NextResponse.json(
-        { 
+        {
           error: `L'exemplaire ${produit.code_interne} est actuellement réservé sur une commande client.`,
           statutActuel: produit.statut,
           bloque: true,
-          produit 
+          produit
+        },
+        { status: 400 }
+      );
+    }
+
+    // 1b. Cas Bloqué : Composant intégré dans un produit composé
+    if (produit.parent_id !== null) {
+      const parent = await prisma.produit.findUnique({
+        where: { id: produit.parent_id },
+        select: { code_interne: true, reference: true },
+      });
+      return NextResponse.json(
+        {
+          error: `Ce composant est intégré dans l'équipement ${parent?.code_interne || parent?.reference || `#${produit.parent_id}`} et ne peut pas être vendu séparément.`,
+          statutActuel: produit.statut,
+          bloque: true,
+          produit
         },
         { status: 400 }
       );

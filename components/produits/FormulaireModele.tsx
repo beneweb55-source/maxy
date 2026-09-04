@@ -24,13 +24,14 @@ import {
   UploadCloud,
   Trash2
 } from "lucide-react";
-import { 
-  determinerProfilEquipement, 
-  genererDesignationAutomatique, 
+import {
+  determinerProfilEquipement,
+  genererDesignationAutomatique,
   MATRICE_EQUIPEMENTS,
-  type ProfilEquipement 
+  type ProfilEquipement
 } from "@/lib/matrice-specifications";
 import { devinerCategorie, type SuggestionCategorie } from "@/lib/category-guesser";
+import { getMarquesPourCategorie } from "@/lib/marques";
 
 interface FormulaireModeleProps {
   ouvert: boolean;
@@ -50,8 +51,8 @@ interface FormulaireModeleProps {
 }
 
 const MARQUES_FREQUENTES = [
-  "Lenovo", "HP", "Dell", "Apple", "Asus", "Acer", 
-  "Samsung", "Intel", "AMD", "NVIDIA", "Kingston", 
+  "Lenovo", "HP", "Dell", "Apple", "Asus", "Acer",
+  "Samsung", "Intel", "AMD", "NVIDIA", "Kingston",
   "Crucial", "Seagate", "Western Digital", "Cisco", "Epson", "Canon", "Autre"
 ];
 

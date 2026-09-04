@@ -38,6 +38,7 @@ import {
   type ProfilEquipement 
 } from "@/lib/matrice-specifications";
 import { devinerCategorie, type SuggestionCategorie } from "@/lib/category-guesser";
+import { getMarquesPourCategorie } from "@/lib/marques";
 
 interface SousCategorieOption {
   id: number;
@@ -597,7 +598,7 @@ export default function ModaleAjoutTerrain({
                       Marque / Constructeur
                     </label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      {["HP", "Dell", "Lenovo", "Apple", "Samsung", "Asus", "Acer", "Cisco", "Epson", "Zebra", "AURES"].map((m) => (
+                      {getMarquesPourCategorie(sousCatSelectionnee?.nom || "").map((m) => (
                         <button
                           key={m}
                           type="button"
