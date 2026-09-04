@@ -246,7 +246,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
       {!formatTicket && (
         <div 
           id="commande-print-area"
-          className="carte w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-slate-200"
+          className="carte w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-slate-200 print:break-inside-avoid"
         >
           
           {/* En-tête : Info entreprise à gauche, Logo à droite */}

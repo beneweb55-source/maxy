@@ -155,9 +155,30 @@
     color: var(--color-brand-orange);
   }
   @media print {
+    @page {
+      size: A4;
+      margin: 0;
+    }
     body {
       background-color: var(--color-brand-white);
       background-image: none;
+      margin: 0;
+      padding: 0;
+    }
+    /* Masquer navigation, header, sidebar, boutons d'action */
+    nav, aside, header, [role="complementary"], [role="banner"],
+    .no-print, button[class*="print"], .print\:hidden {
+      display: none !important;
+    }
+    /* Pas de sauts de page parasites */
+    .carte {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    /* Impression sans ombres ni bordures */
+    * {
+      box-shadow: none !important;
+      text-shadow: none !important;
     }
   }
 }
