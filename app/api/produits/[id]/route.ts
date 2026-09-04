@@ -591,6 +591,43 @@ export async function PUT(
   }
 }
 
+/** PATCH : mises à jour partielles (ex: toggle est_compose) */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
+  if (acces.reponse) return acces.reponse;
+
+  const { id } = await params;
+  const produitId = Number(id);
+  if (!Number.isInteger(produitId)) return erreur(400, "Identifiant invalide.");
+
+  let corps: unknown;
+  try {
+    corps = await request.json();
+  } catch {
+    return erreur(400, "Requête invalide.");
+  }
+
+  const { est_compose } = (corps ?? {}) as { est_compose?: boolean };
+
+  if (typeof est_compose !== "boolean") {
+    return erreur(400, "Champ est_compose requis (boolean).");
+  }
+
+  try {
+    const produit = await prisma.produit.update({
+      where: { id: produitId },
+      data: { est_compose },
+      select: { id: true, est_compose: true },
+    });
+    return NextResponse.json(produit);
+  } catch {
+    return erreur(500, "Erreur lors de la mise à jour.");
+  }
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

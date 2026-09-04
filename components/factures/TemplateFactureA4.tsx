@@ -377,7 +377,7 @@ export default function TemplateFactureA4({
             Arrêtée la présente facture à la somme de :
           </div>
           <div className="italic font-medium text-slate-800">
-            {montantEnLettres(totaux.totalNet)} Dinars Algériens
+            {montantEnLettres(totaux.totalNet)}
           </div>
           <div className="pt-2 text-[11px] text-slate-600">
             Mode de règlement :{" "}

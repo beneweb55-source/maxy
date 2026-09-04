@@ -393,7 +393,7 @@ export default function ImpressionMasseCommandes() {
               {/* Arrêté de facture */}
               <div className="p-3 bg-slate-50 border border-black rounded-xl text-xs space-y-1 mb-8">
                 <div className="font-bold">Arrêtée la présente facture à la somme de :</div>
-                <div className="italic font-medium text-slate-800">{montantEnLettres(cmd.total_ttc)} Dinars Algériens</div>
+                <div className="italic font-medium text-slate-800">{montantEnLettres(cmd.total_ttc)}</div>
                 <div className="pt-1 text-[11px] text-slate-600">
                   Mode de règlement : <strong className="uppercase">{cmd.type_paiement || "Espèces"}</strong> · Garantie : <strong>{cmd.garantie_mois} Mois</strong>
                 </div>

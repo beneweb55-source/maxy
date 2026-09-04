@@ -579,6 +579,38 @@ export default function FicheProduit({
               className="btn btn-secondaire text-xs py-2.5 px-3.5 rounded-md font-bold flex items-center gap-1.5"
             />
 
+            {/* Toggle Produit Composé / BOM */}
+            {peutModifier && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const nouveauStatut = !produit.est_compose;
+                  const label = nouveauStatut ? "marquer comme composé" : "retirer le statut composé";
+                  if (!window.confirm(`Voulez-vous ${label} ce produit ?`)) return;
+                  try {
+                    const res = await fetch(`/api/produits/${produit.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ est_compose: nouveauStatut }),
+                    });
+                    if (!res.ok) throw new Error();
+                    window.location.reload();
+                  } catch {
+                    alert("Erreur lors de la mise à jour.");
+                  }
+                }}
+                className={`btn text-xs py-2.5 px-3.5 rounded-md font-bold flex items-center gap-1.5 ${
+                  produit.est_compose
+                    ? "bg-brand-orange/20 text-brand-orange border border-brand-orange/30"
+                    : "btn-secondaire"
+                }`}
+                title={produit.est_compose ? "Ce produit est un assemblage. Cliquer pour retirer." : "Marquer ce produit comme un assemblage (BOM)"}
+              >
+                <Layers className="w-4 h-4" />
+                {produit.est_compose ? "Composé" : "Assemblage"}
+              </button>
+            )}
+
             {/* Modifier le Modèle */}
             {peutModifier && (
               <button

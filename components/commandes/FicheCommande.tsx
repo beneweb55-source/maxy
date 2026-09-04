@@ -374,7 +374,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
           {/* Arrêté de facture */}
           <div className="p-3 bg-slate-50 border border-black rounded-xl text-xs space-y-1 mb-8">
             <div className="font-bold">Arrêtée la présente facture à la somme de :</div>
-            <div className="italic font-medium text-slate-800">{montantEnLettres(commande.total_ttc)} Dinars Algériens</div>
+            <div className="italic font-medium text-slate-800">{montantEnLettres(commande.total_ttc)}</div>
             <div className="pt-1 text-[11px] text-slate-600">
               Mode de règlement : <strong className="uppercase">{commande.type_paiement || "Espèces"}</strong> · Garantie : <strong>{commande.garantie_mois} Mois</strong>
             </div>
