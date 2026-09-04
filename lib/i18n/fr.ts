@@ -65,6 +65,7 @@ export const fr = {
     factures: "Factures",
     caisse: "Caisse",
     administration: "Administration",
+    notifications: "Notifications",
     carnet: "Carnet de travail",
   },
   dashboard: {
@@ -570,6 +571,7 @@ export const fr = {
       retrait_parts: "Retrait des parts",
       transfert_reserve: "Transfert réserve",
       reinvest: "Réinvestissement",
+      sortie: "Vidage de caisse",
     }
   },
   ficheProduit: {

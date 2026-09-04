@@ -1,27 +1,19 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { exigerUtilisateur } from "@/lib/api";
 
+/**
+ * DÉSACTIVÉ — Cet endpoint contenait une logique de backdoor hardcodée.
+ * Supprimé pour des raisons de sécurité.
+ */
 export async function GET() {
-  const acces = await exigerUtilisateur(["gerant"]);
-  if (acces.reponse) return acces.reponse;
+  return NextResponse.json(
+    { error: "Endpoint désactivé." },
+    { status: 410 }
+  );
+}
 
-  try {
-    const imed = await prisma.user.findFirst({
-      where: { username: { equals: "imed", mode: "insensitive" } },
-    });
-    
-    if (!imed) {
-      return NextResponse.json({ success: false, error: "Imed not found" });
-    }
-    
-    const update = await prisma.user.updateMany({
-      where: { username: { in: ["samy", "raouf"], mode: "insensitive" } },
-      data: { role: imed.role },
-    });
-    
-    return NextResponse.json({ success: true, count: update.count, role: imed.role });
-  } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message });
-  }
+export async function POST() {
+  return NextResponse.json(
+    { error: "Endpoint désactivé." },
+    { status: 410 }
+  );
 }

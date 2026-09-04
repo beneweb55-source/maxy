@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 
 export async function GET(request: Request) {
+  const acces = await exigerUtilisateur();
+  if (acces.reponse) return acces.reponse;
   try {
     const { searchParams } = new URL(request.url);
     const parentIdParam = searchParams.get("parent_id");
@@ -73,6 +76,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     const body = await request.json();
     const { nom, parent_id, description, image_url, attributs_schema } = body;

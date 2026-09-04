@@ -62,11 +62,19 @@ export async function POST(
           note: `Vente annulée : ${motif.trim()}`,
         },
       });
+      // Déterminer la caisse de destination depuis la facture liée
+      const ligneFacture = await tx.factureLigne.findFirst({
+        where: { vente_id: vente.id },
+        select: { facture: { select: { caisse_destination: true } } },
+      });
+      const caisseCible = ligneFacture?.facture?.caisse_destination ?? "CAISSE_PHYSIQUE";
+
       await ajouterMouvement(tx, {
         montant: vente.prix_vente_reel,
         type: "annulation_vente",
         user_id: user.id,
         produit_id: vente.produit.id,
+        caisse: caisseCible,
         description: `Annulation vente ${vente.produit.reference} — ${motif.trim()}`,
       });
       const tous = await tx.user.findMany({ select: { id: true } });

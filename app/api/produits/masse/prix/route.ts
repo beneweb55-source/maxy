@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { formaterDA } from "@/lib/caisse";
 import { entierPositif } from "@/lib/validation";
+import { seuilMargeMinimum } from "@/lib/finances";
 
 export async function POST(request: NextRequest) {
   const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
@@ -34,6 +35,21 @@ export async function POST(request: NextRequest) {
     
     if (produits.some(p => p.statut === "vendu" || p.statut === "hs")) {
       return erreur(400, "Un ou plusieurs produits sont vendus ou hors service.");
+    }
+
+    // ── Vérification marge minimum par produit ──
+    const parametres = await prisma.parametres.findUnique({ where: { id: 1 } });
+    const margePct = parametres?.marge_minimum_pct ?? 20;
+    const sousSeuil = produits.filter((p) => {
+      const coutRep = 0; // pas de coût réparation dans ce contexte
+      const seuil = seuilMargeMinimum(p.prix_achat, coutRep, margePct);
+      return prix < seuil;
+    });
+    if (sousSeuil.length > 0) {
+      return erreur(
+        400,
+        `Prix ${formaterDA(prix)} sous la marge minimum (${margePct} %) pour ${sousSeuil.length} produit(s) : ${sousSeuil.map((p) => `${p.code_interne} (coût ${formaterDA(p.prix_achat)})`).join(", ")}.`
+      );
     }
 
     await prisma.$transaction(async (tx) => {

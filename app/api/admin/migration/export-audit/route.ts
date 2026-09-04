@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 
 export async function GET() {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     const data = {
       produits: await prisma.produit.findMany({

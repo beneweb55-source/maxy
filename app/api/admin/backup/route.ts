@@ -27,7 +27,15 @@ export async function GET() {
       pushSubscriptions,
       fcmTokens
     ] = await Promise.all([
-      prisma.user.findMany(),
+      prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          langue: true,
+          // Sécurité : exclure password_hash, login_attempts, locked_until, tokens push
+        }
+      }),
       prisma.parametres.findFirst(),
       prisma.lot.findMany(),
       prisma.produit.findMany(),

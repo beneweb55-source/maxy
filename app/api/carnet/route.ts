@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 export async function GET(request: NextRequest) {
   const acces = await exigerUtilisateur();
   if (acces.reponse) return acces.reponse;
+  const user = acces.user;
 
   const url = new URL(request.url);
   const search = url.searchParams.get("q") || "";
@@ -13,7 +14,11 @@ export async function GET(request: NextRequest) {
   const categorie = url.searchParams.get("categorie") || "";
   const periode = url.searchParams.get("periode") || ""; // "aujourdhui", "semaine", "mois"
 
+  // SEC-02/03 : les techniciens ne voient que leurs propres entrées
   const conditions: Prisma.CarnetEntreeWhereInput = {};
+  if (!["gerant", "dev"].includes(user.role)) {
+    conditions.user_id = user.id;
+  }
 
   if (search.trim()) {
     conditions.OR = [

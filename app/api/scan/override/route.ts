@@ -4,6 +4,8 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 import { estEligibleOverrideVente } from "@/lib/state-machine";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 import { entierPositifOuNul } from "@/lib/validation";
+import { seuilMargeMinimum } from "@/lib/finances";
+import { formaterDA } from "@/lib/caisse";
 
 export async function POST(request: NextRequest) {
   const acces = await exigerUtilisateur(["gerant", "technicien", "dev", "social_media"]);
@@ -49,6 +51,19 @@ export async function POST(request: NextRequest) {
         throw new Error(
           `Impossible de forcer la mise en vente : l'article est actuellement « ${produit.statut} » (seuls les statuts de stock atelier sont éligibles).`
         );
+      }
+
+      // ── Vérification marge minimum (sécurité financière) ──
+      if (nouveauPrix > 0) {
+        const parametres = await tx.parametres.findUnique({ where: { id: 1 } });
+        const margePct = parametres?.marge_minimum_pct ?? 20;
+        const coutReparations = 0; // pas de réparation connue au moment de l'override
+        const seuil = seuilMargeMinimum(produit.prix_achat, coutReparations, margePct);
+        if (nouveauPrix < seuil) {
+          throw new Error(
+            `Prix inférieur à la marge minimum (${margePct} %) : seuil ${formaterDA(seuil)}, prix proposé ${formaterDA(nouveauPrix)}.`
+          );
+        }
       }
 
       const statutAvant = produit.statut;

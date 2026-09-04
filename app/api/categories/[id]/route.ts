@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const acces = await exigerUtilisateur();
+  if (acces.reponse) return acces.reponse;
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam);
@@ -56,6 +59,8 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam);
@@ -99,6 +104,8 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam);
@@ -106,12 +113,12 @@ export async function DELETE(
       return NextResponse.json({ error: "ID invalide" }, { status: 400 });
     }
 
-    // Vérifier s'il y a des enfants ou des modèles attachés
+    // Vérifier s'il y a des enfants, modèles ou produits attachés
     const cat = await prisma.categorie.findUnique({
       where: { id },
       include: {
         _count: {
-          select: { enfants: true, modeles: true }
+          select: { enfants: true, modeles: true, produits: true }
         }
       }
     });
@@ -130,6 +137,13 @@ export async function DELETE(
     if (cat._count.modeles > 0) {
       return NextResponse.json(
         { error: "Impossible de supprimer une catégorie contenant des modèles" },
+        { status: 400 }
+      );
+    }
+
+    if (cat._count.produits > 0) {
+      return NextResponse.json(
+        { error: `Impossible de supprimer : cette catégorie contient encore ${cat._count.produits} produit(s). Reclassifiez-les d'abord.` },
         { status: 400 }
       );
     }

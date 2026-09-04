@@ -83,11 +83,24 @@ export default function ImprimerEtiquettes() {
         @media print {
           body { margin: 0; padding: 0; background: white; }
           .no-print { display: none !important; }
-          .page-break { page-break-after: always; }
-          @page { margin: 0; size: 58mm 43mm; } /* Format standard pour étiquettes */
+          .etiquettes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 58mm);
+            gap: 0;
+            page-break-after: auto;
+          }
+          .etiquette {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          @page {
+            margin: 5mm;
+            size: A4;
+          }
         }
         @media screen {
           .print-container { padding: 2rem; background: #f0f0f0; min-height: 100dvh; max-width: 100%; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+          .etiquettes-grid { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
           .etiquette { border: 1px dashed #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         }
       `}} />
@@ -136,10 +149,11 @@ export default function ImprimerEtiquettes() {
         )}
       </div>
 
+      <div className="etiquettes-grid">
       {etiquettes.map((etiquette, index) => (
-        <div 
-          key={`${etiquette.id}-${index}`} 
-          className="etiquette flex flex-col items-center justify-between bg-white w-[58mm] h-[43mm] overflow-hidden page-break p-1.5 text-center"
+        <div
+          key={`${etiquette.id}-${index}`}
+          className="etiquette flex flex-col items-center justify-between bg-white w-[58mm] h-[43mm] overflow-hidden p-1.5 text-center"
         >
           <div className="w-full">
             <div className="text-[10px] font-extrabold leading-tight truncate w-full px-1 text-slate-900">
@@ -177,6 +191,7 @@ export default function ImprimerEtiquettes() {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

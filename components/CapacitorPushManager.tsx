@@ -38,7 +38,6 @@ export default function CapacitorPushManager() {
     const addListeners = async () => {
       await PushNotifications.addListener("registration", async (token) => {
         if (!isMounted) return;
-        console.log("FCM Token:", token.value);
         try {
           await fetch("/api/notifications/fcm/subscribe", {
             method: "POST",

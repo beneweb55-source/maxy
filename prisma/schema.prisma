@@ -61,6 +61,7 @@ enum TypeMouvement {
   retrait_parts
   transfert_reserve
   reinvest
+  sortie
 }
 
 enum DecisionRapport {

@@ -8,6 +8,7 @@ export const TYPES_MOUVEMENT = [
   "retrait_parts",
   "transfert_reserve",
   "reinvest",
+  "sortie",
 ] as const;
 
 export type TypeMouvementCaisse = (typeof TYPES_MOUVEMENT)[number];
@@ -24,6 +25,7 @@ const SENS_PAR_TYPE: Record<TypeMouvementCaisse, SensMouvement> = {
   retrait_parts: "sortie",
   transfert_reserve: "neutre",
   reinvest: "neutre",
+  sortie: "sortie",
 };
 
 export const TYPES_SYSTEME: readonly TypeMouvementCaisse[] = [

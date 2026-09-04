@@ -14,14 +14,14 @@ export default function ScannerGlobal() {
   useBarcodeScanner((code) => {
     // Ne pas rediriger si on est déjà au POS ou dans l'inventaire
     // (ces pages gèrent leur propre logique de scan dédiée).
-    if (pathname === "/pos" || pathname === "/inventaire") {
+    if (pathname.startsWith("/commandes") || pathname === "/inventaire") {
       return;
     }
     afficher(t("scannerGlobal.redirection", { code }));
     const searchParams = new URLSearchParams();
     searchParams.set("scan_code", code);
     searchParams.set("t", Date.now().toString());
-    router.push(`/pos?${searchParams.toString()}`);
+    router.push(`/commandes/nouveau?${searchParams.toString()}`);
   });
 
   return null;

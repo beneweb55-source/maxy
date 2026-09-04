@@ -129,8 +129,8 @@ export default async function CarnetPage(
                     </h3>
                     
                     <p className="text-xs text-brand-warm-grey mb-4 line-clamp-3 overflow-hidden text-ellipsis h-[3.6em] relative">
-                      {/* Extraction très basique de texte du HTML sans Regex complexes qui casseraient côté client */}
-                      <span dangerouslySetInnerHTML={{ __html: e.contenu.replace(/<[^>]+>/g, ' ').substring(0, 150) + '...' }} />
+                      {/* Sécurité SEC-01 : extraction texte brut sans dangerouslySetInnerHTML */}
+                      {e.contenu.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 150)}…
                     </p>
 
                     <div className="mt-auto pt-3 flex items-center justify-between border-t border-brand-light-grey/30">

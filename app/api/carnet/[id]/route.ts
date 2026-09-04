@@ -24,6 +24,11 @@ export async function GET(
 
     if (!entree) return erreur(404, "Entrée introuvable.");
 
+    // SEC-02/03 : seul l'auteur ou un gerant/dev peut voir l'entrée
+    if (entree.user_id !== acces.user.id && !["gerant", "dev"].includes(acces.user.role)) {
+      return erreur(403, "Accès refusé.");
+    }
+
     return NextResponse.json(entree);
   } catch (e) {
     console.error("GET /api/carnet/[id]", e);
@@ -54,8 +59,8 @@ export async function PUT(
     const existant = await prisma.carnetEntree.findUnique({ where: { id: entreeId } });
     if (!existant) return erreur(404, "Entrée introuvable.");
 
-    // Sécurité : Seul l'auteur peut modifier son propre rapport
-    if (existant.user_id !== user.id) {
+    // Sécurité : Seul l'auteur ou un gerant/dev peut modifier
+    if (existant.user_id !== user.id && !["gerant", "dev"].includes(user.role)) {
       return erreur(403, "Vous n'avez pas le droit de modifier ce rapport.");
     }
 
@@ -93,7 +98,7 @@ export async function DELETE(
     const existant = await prisma.carnetEntree.findUnique({ where: { id: entreeId } });
     if (!existant) return erreur(404, "Entrée introuvable.");
 
-    if (existant.user_id !== user.id) {
+    if (existant.user_id !== user.id && !["gerant", "dev"].includes(user.role)) {
       return erreur(403, "Vous n'avez pas le droit de supprimer ce rapport.");
     }
 

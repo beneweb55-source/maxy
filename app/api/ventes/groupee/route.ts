@@ -116,6 +116,27 @@ export async function POST(request: NextRequest) {
         const val = mapPrix[p.id];
         return typeof val === "number" && val >= 0 ? val : (p.prix_vente_fixe ?? 0);
       });
+
+      // ── Validation sécurité : les prix unitaires doivent correspondre au prix total ──
+      const sommeMapPrix = parts.reduce((s, v) => s + v, 0);
+      if (sommeMapPrix !== prixTotal) {
+        return NextResponse.json(
+          {
+            error: `Incohérence de prix : la somme des prix unitaires (${sommeMapPrix.toLocaleString("fr-DZ")} DA) ne correspond pas au prix total déclaré (${prixTotal.toLocaleString("fr-DZ")} DA).`,
+          },
+          { status: 400 }
+        );
+      }
+      // Refuser tout prix unitaire à 0 DA (vecteur de fraude)
+      const prixNul = ordonnes.filter((p) => parts[ordonnes.indexOf(p)] === 0);
+      if (prixNul.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Prix unitaire à 0 DA interdit pour : ${prixNul.map((p) => `${p.reference} (#${p.id})`).join(", ")}. Chaque produit doit avoir un prix de vente.`,
+          },
+          { status: 400 }
+        );
+      }
     } else {
       // Répartition du prix total au prorata du prix de vente fixé (sinon équirépartition).
       const poids = ordonnes.map((p) => p.prix_vente_fixe ?? 0);

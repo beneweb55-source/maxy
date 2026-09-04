@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 import crypto from "crypto";
 
-const prisma = new PrismaClient();
-
 export async function POST(request: Request) {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     const body = await request.json();
     const { propositionIds } = body;

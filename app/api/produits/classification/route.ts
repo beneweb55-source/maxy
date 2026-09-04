@@ -64,12 +64,21 @@ export async function PUT(request: Request) {
         throw new Error("Certains produits n'existent pas");
       }
 
-      // Mise à jour chirurgicale: QUE categorie_id et modele_id
+      // Résoudre le nom de la catégorie cible pour synchroniser le champ texte
+      const catCible = await tx.categorie.findUnique({
+        where: { id: target_categorie_id },
+        select: { nom: true }
+      });
+      const nomCategorie = catCible?.nom || "";
+
+      // Mise à jour chirurgicale: categorie_id, modele_id ET categorie texte
       await tx.produit.updateMany({
         where: { id: { in: produit_ids.map(Number) } },
         data: {
           categorie_id: target_categorie_id,
           modele_id: modele_id ? Number(modele_id) : null,
+          // Synchroniser le champ texte legacy avec le nom de la catégorie cible
+          ...(nomCategorie ? { categorie: nomCategorie } : {}),
         }
       });
 

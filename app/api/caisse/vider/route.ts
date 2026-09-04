@@ -1,22 +1,44 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { utilisateurCourant } from "@/lib/session";
+import { exigerUtilisateur } from "@/lib/api";
+import { ajouterMouvement } from "@/lib/caisse-db";
 
 export async function POST() {
-  const user = await utilisateurCourant();
-  if (!user || (user.role !== "gerant" && user.role !== "dev")) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-  }
+  const acces = await exigerUtilisateur(["gerant"]);
+  if (acces.reponse) return acces.reponse;
+  const user = acces.user;
 
   try {
-    await prisma.parametres.update({
-      where: { id: 1 },
-      data: { caisse_vide_a: new Date() },
+    // Calculer le solde actuel de la caisse physique
+    const dernierMouvement = await prisma.mouvementCaisse.findFirst({
+      where: { caisse: "CAISSE_PHYSIQUE" },
+      orderBy: { id: "desc" },
+      select: { solde_apres: true },
+    });
+    const soldeActuel = dernierMouvement?.solde_apres ?? 0;
+
+    await prisma.$transaction(async (tx) => {
+      // Créer un mouvement de sortie pour vider la caisse
+      if (soldeActuel > 0) {
+        await ajouterMouvement(tx, {
+          montant: soldeActuel,
+          type: "sortie",
+          user_id: user.id,
+          caisse: "CAISSE_PHYSIQUE",
+          description: `Vidage de caisse — Solde transféré (${soldeActuel.toLocaleString("fr-DZ")} DA)`,
+        });
+      }
+
+      // Enregistrer le timestamp de vidage
+      await tx.parametres.update({
+        where: { id: 1 },
+        data: { caisse_vide_a: new Date() },
+      });
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, solde: soldeActuel });
   } catch (error) {
-    console.error("Erreur lors de la réinitialisation de la caisse :", error);
+    console.error("Erreur lors du vidage de caisse :", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

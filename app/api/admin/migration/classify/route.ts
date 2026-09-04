@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 
 /**
  * Route unique d'application de la classification.
@@ -173,6 +174,8 @@ async function getOrCreateCategorie(
 }
 
 export async function POST() {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     // 1. Construire l'arbre de catégories (idempotent)
     const catIds: Record<string, number> = {};
@@ -234,9 +237,11 @@ export async function POST() {
         if (cible.sousCategorie) path += `>${cible.sousCategorie}`;
         const catId = catIds[path];
         if (catId) {
+          // Synchroniser le texte legacy avec le nom de la catégorie cible
+          const nomCible = cible.sousCategorie || cible.categorie;
           await prisma.produit.update({
             where: { id: p.id },
-            data: { categorie_id: catId },
+            data: { categorie_id: catId, categorie: nomCible },
           });
           mapped++;
         }

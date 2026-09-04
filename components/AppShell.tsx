@@ -33,6 +33,8 @@ import {
   IconeTableauDeBord,
   IconeVitrine,
   IconeRecherche,
+  IconeCloche,
+  IconeNote,
   type ProprietesIcone,
 } from "./icons";
 
@@ -79,6 +81,8 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     icone: IconePortefeuille,
     sousChemins: [],
   },
+  { href: "/notifications", cle: "nav.notifications", icone: IconeCloche, sousChemins: [] },
+  { href: "/carnet", cle: "nav.carnet", icone: IconeNote, sousChemins: [] },
 
   {
     href: "/administration",

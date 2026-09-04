@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 import { analyserGroupe } from "@/lib/migration/moteur";
 
-const prisma = new PrismaClient();
-
 export async function POST() {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     const groupes = await prisma.produit.groupBy({
       by: ['categorie', 'reference'],
@@ -66,10 +67,9 @@ export async function POST() {
             modele_id: null
           },
           data: {
-            modele_id: modele.id
-            // ON GARDE INTACTES LES VALEURS TEXTES D'ORIGINE POUR L'INVENTAIRE :
-            // categorie: analyse.cible_categorie_nom!
-            // reference: analyse.cible_modele_nom!
+            modele_id: modele.id,
+            // Lier aussi au nouvel arbre de catégories
+            categorie_id: categorie.id,
           }
         });
       });

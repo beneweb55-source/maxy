@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 import { analyserGroupe } from "@/lib/migration/moteur";
 
-const prisma = new PrismaClient();
-
 export async function POST() {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     // 1. Ingestion : Trouver tous les groupes uniques non migrés
     // On utilise Prisma groupBy pour obtenir les combinaisons de categorie et reference

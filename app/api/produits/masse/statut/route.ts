@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { STATUTS_PRODUIT } from "@/lib/statuts";
 import { STATUTS_NOTE_OBLIGATOIRE } from "@/lib/transitions";
+import { verifierTransition } from "@/lib/state-machine";
 
 export async function POST(request: NextRequest) {
   const acces = await exigerUtilisateur(["technicien", "gerant"]);
@@ -49,9 +50,30 @@ export async function POST(request: NextRequest) {
       return erreur(404, "Certains produits sont introuvables.");
     }
 
-    const aMettreAJour = produits.filter((p) => p.statut !== cible);
-    if (aMettreAJour.length === 0) {
-      return NextResponse.json({ ok: true, message: "Les produits sont déjà dans ce statut." });
+    // ── Vérification de la machine à états ──
+    const bloquees: { id: number; code_interne: string; motif: string }[] = [];
+    const aMettreAJour = produits.filter((p) => {
+      if (p.statut === cible) return false; // déjà au bon statut
+      const res = verifierTransition(p.statut, cible);
+      if (!res.valide) {
+        bloquees.push({
+          id: p.id,
+          code_interne: p.code_interne,
+          motif: res.erreur || "Transition non autorisée.",
+        });
+        return false;
+      }
+      return true;
+    });
+
+    if (bloquees.length > 0 && aMettreAJour.length === 0) {
+      return NextResponse.json(
+        {
+          error: "Aucun produit ne peut être modifié.",
+          bloquees,
+        },
+        { status: 400 }
+      );
     }
 
     await prisma.$transaction(async (tx) => {
@@ -70,7 +92,11 @@ export async function POST(request: NextRequest) {
       await tx.historiqueStatut.createMany({ data: historiques });
     });
 
-    return NextResponse.json({ ok: true, ajournes: aMettreAJour.length });
+    return NextResponse.json({
+      ok: true,
+      ajournes: aMettreAJour.length,
+      ...(bloquees.length > 0 ? { bloquees } : {}),
+    });
   } catch (e) {
     console.error("POST /api/produits/masse/statut", e);
     return erreur(500, "Erreur lors du changement de statut en masse.");

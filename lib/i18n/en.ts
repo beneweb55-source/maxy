@@ -64,6 +64,7 @@ export const en = {
     factures: "Invoices",
     caisse: "Cash register",
     administration: "Administration",
+    notifications: "Notifications",
     carnet: "Work Journal",
   },
   dashboard: {
@@ -569,6 +570,7 @@ export const en = {
       retrait_parts: "Shares withdrawal",
       transfert_reserve: "Reserve transfer",
       reinvest: "Reinvestment",
+      sortie: "Cash register emptying",
     }
   },
   ficheProduit: {

@@ -55,6 +55,7 @@ export const LIBELLES_TYPE: Record<TypeMouvement, string> = {
   retrait_parts: "caisseDashboard.types.retrait_parts",
   transfert_reserve: "caisseDashboard.types.transfert_reserve",
   reinvest: "caisseDashboard.types.reinvest",
+  sortie: "caisseDashboard.types.sortie",
 };
 
 export default function CaisseDashboard({ role }: { role: Role }) {

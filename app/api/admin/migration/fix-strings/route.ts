@@ -1,44 +1,20 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { exigerUtilisateur } from "@/lib/api";
 
-const prisma = new PrismaClient();
-
+/**
+ * Route de synchronisation des champs texte legacy avec les FK classification.
+ * DÉSACTIVÉ — Cette route ne fait rien tant qu'elle n'est pas réactivée délibérément.
+ * La synchronisation `categorie` ↔ `categorie_id` doit être gérée par les routes
+ * de classification, pas par un batch séparé.
+ */
 export async function POST() {
-  try {
-    const produits = await prisma.produit.findMany({
-      where: { modele_id: { not: null } },
-      include: { modele: { include: { categorie: true } } }
-    });
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
 
-    let up = 0;
-    // DÉSACTIVÉ PAR SÉCURITÉ POUR NE PAS PERDRE L'APPELLATION D'ORIGINE
-    /*
-    for (const p of produits) {
-      if (p.modele && p.modele.categorie) {
-        const nouveauCat = p.modele.categorie.nom;
-        const nouvelleRef = p.modele.nom;
-
-        if (p.categorie !== nouveauCat || p.reference !== nouvelleRef) {
-          await prisma.produit.update({
-            where: { id: p.id },
-            data: {
-              categorie: nouveauCat,
-              reference: nouvelleRef
-            }
-          });
-          up++;
-        }
-      }
-    }
-    */
-
-    return NextResponse.json({
-      success: true,
-      message: `Correction terminée. ${up} produits mis à jour.`,
-      mis_a_jour: up
-    });
-  } catch (error) {
-    console.error("Erreur lors de la correction:", error);
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
-  }
+  return NextResponse.json({
+    success: true,
+    message: "Route désactivée. La synchronisation est gérée par les routes de classification.",
+    mis_a_jour: 0
+  });
 }

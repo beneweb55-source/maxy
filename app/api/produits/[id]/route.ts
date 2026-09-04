@@ -7,7 +7,9 @@ import {
   validerPhoto,
 } from "@/lib/images";
 import { remplacerImagesSupplementaires, resoudreGalerie } from "@/lib/produit-images-db";
+import { StockService } from "@/lib/stock-service";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
+import { verifierTransition } from "@/lib/state-machine";
 import {
   couvertureProduit,
   galerieProduit,
@@ -331,6 +333,7 @@ export async function PUT(
   const donnees: {
     reference?: string;
     categorie?: string;
+    categorie_id?: number;
     prix_achat?: number;
     image_url?: string | null;
     prix_vente_fixe?: number | null;
@@ -354,6 +357,14 @@ export async function PUT(
       return erreur(400, "La catégorie est obligatoire.");
     }
     donnees.categorie = categorie.trim();
+    // Résolution du categorie_id FK depuis le nom texte (cohérence classification)
+    const catMatch = await prisma.categorie.findFirst({
+      where: { nom: { equals: categorie.trim(), mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (catMatch) {
+      donnees.categorie_id = catMatch.id;
+    }
   }
   if (prix_achat !== undefined) {
     if (typeof prix_achat !== "number" || !Number.isInteger(prix_achat) || prix_achat < 0) {
@@ -449,6 +460,24 @@ export async function PUT(
       return erreur(400, "Un produit vendu ne peut pas être mis en vitrine.");
     }
 
+    // ── Verrouillage produit vendu ──
+    if (produit.statut === "vendu" && Object.keys(donnees).length > 0) {
+      // Seules les notes sont modifiables sur un produit vendu
+      const clesPermissibles = new Set(["notes"]);
+      const clesInterdites = Object.keys(donnees).filter((k) => !clesPermissibles.has(k));
+      if (clesInterdites.length > 0) {
+        return erreur(400, "Produit vendu verrouillé. Seules les notes peuvent être modifiées.");
+      }
+    }
+
+    // ── Vérification machine à états pour changement de statut ──
+    if (donnees.statut !== undefined && donnees.statut !== produit.statut) {
+      const res = verifierTransition(produit.statut, donnees.statut);
+      if (!res.valide) {
+        return erreur(400, res.erreur || "Transition non autorisée.");
+      }
+    }
+
     const maj = await prisma.$transaction(async (tx) => {
       // Mise à jour des attributs techniques du modèle si spécifiés
       const targetModeleId = donnees.modele_id !== undefined ? donnees.modele_id : produit.modele_id;
@@ -481,6 +510,7 @@ export async function PUT(
       const donneesCommunes: any = {};
       if (donnees.reference !== undefined) donneesCommunes.reference = donnees.reference;
       if (donnees.categorie !== undefined) donneesCommunes.categorie = donnees.categorie;
+      if (donnees.categorie_id !== undefined) donneesCommunes.categorie_id = donnees.categorie_id;
       if (donnees.prix_achat !== undefined) donneesCommunes.prix_achat = donnees.prix_achat;
       if (modifPrixVente) donneesCommunes.prix_vente_fixe = donnees.prix_vente_fixe;
       if (donnees.image_url !== undefined) donneesCommunes.image_url = donnees.image_url;
@@ -621,6 +651,11 @@ export async function DELETE(
 
       // 7. Supprimer le produit
       await tx.produit.delete({ where: { id: produitId } });
+
+      // 8. Resynchroniser le compteur du modèle parent (C-INV5)
+      if (produit.modele_id) {
+        await StockService.synchroniserCompteModele(produit.modele_id, tx);
+      }
 
       await enregistrerActivite(tx, acces.user.id, ACTIONS_JOURNAL.PRODUIT_SUPPRIMER, "produit", produitId, {
         reference: produit.reference,
