@@ -193,6 +193,20 @@ export default function DashboardCommandes() {
           `Commande ${modalSuppression.numero} supprimée et stocks réajustés.`,
           "succes"
         );
+      } else if (modalSuppression.type === "selection") {
+        const ids = Array.from(selection);
+        const res = await fetch("/api/commandes/masse/suppression", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        });
+        if (!res.ok) {
+          const corps = await res.json().catch(() => null);
+          throw new Error(corps?.error || "Erreur lors de la suppression en masse.");
+        }
+        const data = await res.json();
+        setSelection(new Set());
+        afficher(`${data.supprimes} commande(s) supprimée(s) et stocks réajustés.`, "succes");
       }
 
       setModalSuppression(null);
@@ -311,12 +325,47 @@ export default function DashboardCommandes() {
         </div>
       </div>
 
+      {/* Barre d'actions de masse */}
+      {selection.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-brand-orange/10 border border-brand-orange/20 text-xs font-bold">
+          <span className="text-brand-orange">{selection.size} sélectionnée(s)</span>
+          <button
+            type="button"
+            onClick={() => setModalSuppression({ type: "selection", numero: `${selection.size} commande(s)` })}
+            className="px-3 py-1.5 rounded-lg bg-danger text-white hover:bg-danger/90 text-xs"
+          >
+            🗑 Supprimer la sélection
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelection(new Set())}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs"
+          >
+            Désélectionner
+          </button>
+        </div>
+      )}
+
       {/* Tableau des Commandes */}
       <div className="bg-white dark:bg-brand-paper rounded-2xl border border-brand-light-grey/80 dark:border-white/10 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/20 dark:bg-black/20 text-brand-warm-grey font-bold uppercase text-[11px] tracking-wider">
+                <th className="py-3 px-2 text-center w-10">
+                  <input
+                    type="checkbox"
+                    checked={commandes.length > 0 && commandes.every(cmd => selection.has(cmd.id))}
+                    onChange={() => {
+                      if (commandes.every(cmd => selection.has(cmd.id))) {
+                        setSelection(new Set());
+                      } else {
+                        setSelection(new Set(commandes.map(cmd => cmd.id)));
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                  />
+                </th>
                 <th className="py-3 px-4">Réf</th>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Client & Destination</th>
@@ -329,13 +378,13 @@ export default function DashboardCommandes() {
             <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
               {chargement ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
                     Chargement des commandes...
                   </td>
                 </tr>
               ) : commandes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
                     Aucune commande trouvée pour ces critères.
                   </td>
                 </tr>
@@ -351,10 +400,23 @@ export default function DashboardCommandes() {
                   const nomClient = cmd.client?.nom || cmd.client_nom || "Client Comptoir";
 
                   return (
-                    <tr 
-                      key={cmd.id} 
+                    <tr
+                      key={cmd.id}
                       className="hover:bg-brand-light-grey/20 dark:hover:bg-white/5 transition-colors"
                     >
+                      <td className="py-3.5 px-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selection.has(cmd.id)}
+                          onChange={() => {
+                            const next = new Set(selection);
+                            if (next.has(cmd.id)) next.delete(cmd.id);
+                            else next.add(cmd.id);
+                            setSelection(next);
+                          }}
+                          className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
+                        />
+                      </td>
                       <td className="py-3.5 px-4">
                         <div className="font-mono font-bold text-xs text-brand-black dark:text-white">
                           {cmd.numero}
@@ -461,8 +523,12 @@ export default function DashboardCommandes() {
               <h3 className="text-base font-bold">Confirmer la suppression</h3>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Êtes-vous sûr de vouloir supprimer la commande <strong>{modalSuppression.numero}</strong> ?
-              Les articles réservés seront automatiquement remis en stock disponible.
+              {modalSuppression.type === "unique" ? (
+                <>Êtes-vous sûr de vouloir supprimer la commande <strong>{modalSuppression.numero}</strong> ?</>
+              ) : (
+                <>Êtes-vous sûr de vouloir supprimer les <strong>{selection.size} commande(s) sélectionnée(s)</strong> ?</>
+              )}
+              {" "}Les articles réservés seront automatiquement remis en stock disponible.
             </p>
             <div className="flex justify-end gap-3 pt-2">
               <button

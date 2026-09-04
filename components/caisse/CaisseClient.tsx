@@ -981,6 +981,32 @@ export default function CaisseClient({ role }: { role: Role }) {
         </div>
       </header>
 
+      {/* Onglets Catalogue / Historique */}
+      <div className="flex gap-1 px-2 sm:px-4 pt-2">
+        <button
+          type="button"
+          onClick={() => setOnglet("en_vente")}
+          className={`px-4 py-2 text-xs font-bold rounded-t-lg transition ${
+            onglet === "en_vente"
+              ? "bg-brand-orange text-white shadow-sm"
+              : "text-brand-warm-grey hover:text-brand-black hover:bg-white/10"
+          }`}
+        >
+          🛒 Catalogue
+        </button>
+        <button
+          type="button"
+          onClick={() => setOnglet("historique")}
+          className={`px-4 py-2 text-xs font-bold rounded-t-lg transition ${
+            onglet === "historique"
+              ? "bg-brand-orange text-white shadow-sm"
+              : "text-brand-warm-grey hover:text-brand-black hover:bg-white/10"
+          }`}
+        >
+          📋 Historique
+        </button>
+      </div>
+
       <div className="flex-1 overflow-hidden flex flex-col p-2 sm:p-4">
         {onglet === "en_vente" && (
         <div className="flex flex-col lg:flex-row gap-4 items-start h-full overflow-hidden">

@@ -390,9 +390,8 @@ export default function Inventaire({ role }: { role: Role }) {
   const [formVitrine, setFormVitrine] = useState(false);
   const [formMettreEnVente, setFormMettreEnVente] = useState(false);
 
-  const vueGroupee = true; // Mode groupé activé par défaut (vue propre)
+  const [vueGroupee, setVueGroupee] = useState(true);
   const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
-  const [afficherPlusFiltres, setAfficherPlusFiltres] = useState(false);
   const [afficherFamilles, setAfficherFamilles] = useState(true);
   
   const vueActuelle = searchParams?.get("vue");
@@ -1499,8 +1498,8 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
         )}
 
-          {/* Tiroir de filtres avancés */}
-          {vue !== "cockpit" && afficherPlusFiltres && (
+          {/* Filtres rapides : statut, période, raccourcis */}
+          {vue !== "cockpit" && (
             <div className="carte !p-4 bg-white/50 dark:bg-black/10 animate-entree">
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-2 flex-1">

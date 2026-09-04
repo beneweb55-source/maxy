@@ -165,7 +165,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
             <span>Modifier Statut</span>
           </button>
 
-          {commande.statut === "payee" && (
+          {commande.payee === true && (
             <button
               type="button"
               onClick={() => setModalAction("remboursement")}
@@ -178,11 +178,15 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
 
           <button
             type="button"
-            onClick={() => {
-              window.print();
+            onClick={async () => {
+              const el = document.getElementById("commande-print-area");
+              if (el) {
+                const { telechargerElementEnPdf } = await import("@/lib/facture-pdf");
+                await telechargerElementEnPdf(el, `commande-${commande.numero}`);
+              }
             }}
             className="btn bg-brand-orange/15 text-brand-orange hover:bg-brand-orange/25 font-bold cursor-pointer"
-            title="Imprimer la commande"
+            title="Télécharger en PDF"
           >
             <Download className="w-4 h-4" />
             <span>Imprimer (PDF)</span>
@@ -232,9 +236,9 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
       </div>
 
       {/* Alerte si annulée */}
-      {(commande.statut === "annulee" || commande.statut === "remboursee") && (
+      {commande.statut === "ANNULEE" && (
         <div className="alerte-erreur print:border print:border-danger" role="alert">
-          Commande {commande.statut === "remboursee" ? "remboursée" : "annulée"} — les matériels ont été réintégrés en stock.
+          Commande annulée — les matériels ont été réintégrés en stock.
         </div>
       )}
 
@@ -540,7 +544,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
                 <button
                   type="button"
                   disabled={envoiAction}
-                  onClick={() => executerChangementStatut("remboursee")}
+                  onClick={() => executerChangementStatut("ANNULEE")}
                   className="w-full h-12 rounded-xl bg-red-600 text-white font-black text-xs uppercase"
                 >
                   Confirmer le Remboursement & Remise en Stock
@@ -549,16 +553,22 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
             ) : (
               <div className="space-y-4 text-xs">
                 <div className="grid grid-cols-2 gap-2">
-                  {["payee", "en_attente", "devis", "annulee"].map((st) => (
+                  {[
+                    { key: "EN_ATTENTE", label: "En Attente" },
+                    { key: "CONFIRMEE", label: "Confirmée" },
+                    { key: "EN_LIVRAISON", label: "En Livraison" },
+                    { key: "TERMINEE", label: "Terminée" },
+                    { key: "ANNULEE", label: "Annulée" },
+                  ].map(({ key, label }) => (
                     <button
-                      key={st}
+                      key={key}
                       type="button"
-                      onClick={() => executerChangementStatut(st)}
-                      className={`p-3 rounded-xl border font-bold uppercase ${
-                        commande.statut === st ? "border-brand-orange bg-brand-orange/10 text-brand-orange" : "border-slate-200"
+                      onClick={() => executerChangementStatut(key)}
+                      className={`p-3 rounded-xl border font-bold ${
+                        commande.statut === key ? "border-brand-orange bg-brand-orange/10 text-brand-orange" : "border-slate-200"
                       }`}
                     >
-                      {st}
+                      {label}
                     </button>
                   ))}
                 </div>
