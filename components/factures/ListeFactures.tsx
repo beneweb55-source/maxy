@@ -7,6 +7,7 @@ import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
 import { useConfirmation } from "@/hooks/useConfirmation";
 import ConfirmerAction from "@/components/ConfirmerAction";
+import EtatVide from "@/components/EtatVide";
 import {
   Download,
   FileText,
@@ -513,35 +514,18 @@ export default function ListeFactures({ role }: { role?: string }) {
         </div>
       ) : factures.length === 0 ? (
         /* État Vide Professionnel */
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 p-12 text-center bg-white dark:bg-zinc-900/50">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-3">
-            <FileSearch className="w-6 h-6" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-            Aucune facture trouvée
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
-            {estFiltreActif
-              ? "Aucun document ne correspond à vos critères de filtrage. Essayez de réinitialiser vos filtres."
-              : "Aucune facture enregistrée pour le moment. Chaque vente génère automatiquement sa facture."}
-          </p>
-          {estFiltreActif ? (
-            <button
-              type="button"
-              onClick={reinitialiserFiltres}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 transition cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Réinitialiser les filtres
-            </button>
-          ) : (
-            <Link
-              href="/vitrine"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-orange hover:bg-brand-orange/90 transition shadow-xs"
-            >
-              Accéder au point de vente
-            </Link>
-          )}
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/50">
+          <EtatVide
+            icone={<FileSearch className="w-12 h-12 text-brand-warm-grey/50" />}
+            titre="Aucune facture trouvée"
+            description={
+              estFiltreActif
+                ? "Aucun document ne correspond à vos critères de filtrage. Essayez de réinitialiser vos filtres."
+                : "Aucune facture enregistrée pour le moment. Chaque vente génère automatiquement sa facture."
+            }
+            actionLabel={estFiltreActif ? "Réinitialiser les filtres" : "Accéder au point de vente"}
+            onAction={estFiltreActif ? reinitialiserFiltres : () => router.push("/pos")}
+          />
         </div>
       ) : (
         <div className="space-y-4">

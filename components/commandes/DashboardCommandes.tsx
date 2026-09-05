@@ -26,6 +26,7 @@ import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
 import { useConfirmation } from "@/hooks/useConfirmation";
 import ConfirmerAction from "@/components/ConfirmerAction";
+import EtatVide from "@/components/EtatVide";
 import { LABELS_STATUT_COMMANDE } from "@/lib/constantes";
 import ModaleCreationCommande from "./ModaleCreationCommande";
 import type { CanalVente, StatutCommande, CaisseDestination } from "@prisma/client";
@@ -399,8 +400,21 @@ export default function DashboardCommandes() {
                 </tr>
               ) : commandes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
-                    Aucune commande trouvée pour ces critères.
+                  <td colSpan={8} className="py-0">
+                    <EtatVide
+                      titre="Aucune commande"
+                      description={
+                        statutActuel !== "tous" || canalActuel !== "tous" || recherche
+                          ? "Aucune commande ne correspond à vos critères de filtrage."
+                          : "Aucune commande enregistrée. Créez votre première commande depuis l'inventaire ou le POS."
+                      }
+                      actionLabel={statutActuel !== "tous" || canalActuel !== "tous" || recherche ? "Réinitialiser les filtres" : "Nouvelle commande"}
+                      onAction={
+                        statutActuel !== "tous" || canalActuel !== "tous" || recherche
+                          ? () => majUrl({ statut: "tous", canal: null, q: null })
+                          : () => setModaleOuverte(true)
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
