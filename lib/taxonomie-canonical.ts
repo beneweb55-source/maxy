@@ -75,13 +75,29 @@ export const REGLES_CLASSIFICATION: RegleClassification[] = [
     regex: /\b(pos|caisse|tiroir[\s-]*caisse|douchette|lecteur\s*code[\s-]*barre|terminal\s*tactile|afficheur\s*client|aures|tm-t20|tm-t88|bixolon|xprinter|sunmi)\b/i,
     poids: 88,
   },
-  // Mémoire RAM
+  // Mémoire RAM — Mini PC & PC Portable (SODIMM)
+  {
+    famille: FAMILLES.MEMOIRE,
+    categorie: "RAM PORTABLE",
+    sousCategorie: "Mini PC & PC Portable (SODIMM)",
+    regex: /\b(sodimm|laptop\s*ram|ram\s*laptop|ram\s*mini\s*pc|ddr[345]\s*sodimm)\b/i,
+    poids: 95,
+  },
+  // Mémoire RAM — PC Bureau (UDIMM/DIMM)
   {
     famille: FAMILLES.MEMOIRE,
     categorie: "RAM DESKTOP",
-    sousCategorie: "RAM PC Fixe (DIMM)",
-    regex: /\b(ddr3|ddr4|ddr5|sodimm|udimm|rdimm|lrdimm|ecc\s*reg|ram\s*\d+g|\d+go?\s*ddr|\d+gb\s*ddr|kingston\s*fury|corsair\s*vengeance|crucial\s*ram|g\.skill)\b/i,
-    poids: 90,
+    sousCategorie: "PC Bureau (UDIMM)",
+    regex: /\b(udimm|dimm|desktop\s*ram|ram\s*pc\s*(bureau|fixe)|rdimm|lrdimm|ecc\s*reg|kingston\s*fury|corsair\s*vengeance|crucial\s*ram|g\.skill)\b/i,
+    poids: 93,
+  },
+  // Mémoire RAM — générique (fallback)
+  {
+    famille: FAMILLES.MEMOIRE,
+    categorie: "RAM DESKTOP",
+    sousCategorie: "PC Bureau (UDIMM)",
+    regex: /\b(ddr[345]|ram\s*\d+g|\d+go?\s*ddr|\d+gb\s*ddr)\b/i,
+    poids: 85,
   },
   // Serveurs
   {
