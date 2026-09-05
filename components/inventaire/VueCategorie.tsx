@@ -125,11 +125,8 @@ export default function VueCategorie({
     );
   }
 
-  // Filtrer les sous-catégories : Masquage strict des impasses (0 produit) et filtre de recherche
+  // Filtrer les sous-catégories : afficher toutes les sous-catégories + filtre de recherche
   const sousCatsFiltrees = (categorie.sousCategories || []).filter((sc) => {
-    // Règle stricte anti-impasse : Ne jamais afficher un sous-type avec 0 produit
-    if ((sc._count?.produits || 0) === 0) return false;
-
     if (!q.trim()) return true;
     return sc.nom.toLowerCase().includes(q.toLowerCase());
   });

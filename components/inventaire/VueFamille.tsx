@@ -135,13 +135,9 @@ export default function VueFamille({
     );
   }
 
-  // Filtrer les catégories : Masquage strict des impasses (0 produit) et filtre de recherche
+  // Filtrer les catégories : afficher toutes les catégories (même vides) pour la navigation
+  // + filtre de recherche
   const categoriesFiltrees = (famille.categories || []).filter((cat) => {
-    const totalDirect = cat._count?.produits || 0;
-    const totalEnfants = (cat.enfants || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
-    const totalCat = totalDirect + totalEnfants;
-    if (totalCat === 0) return false;
-
     if (!q.trim()) return true;
     const qLower = q.toLowerCase();
     return (
