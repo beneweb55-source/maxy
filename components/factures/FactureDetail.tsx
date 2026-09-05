@@ -222,7 +222,20 @@ export default function FactureDetail({
       </div>
     );
   }
-  if (!facture) return <p className="p-4 text-sm text-brand-warm-grey">Chargement de la facture…</p>;
+  if (!facture) return (
+    <div className="space-y-4 p-4 animate-pulse">
+      <div className="flex gap-3">
+        <div className="h-8 w-32 bg-brand-light-grey/40 rounded-lg" />
+        <div className="h-8 w-24 bg-brand-light-grey/30 rounded-lg" />
+      </div>
+      <div className="carte space-y-3">
+        <div className="h-6 w-48 bg-brand-light-grey/40 rounded" />
+        <div className="h-4 w-64 bg-brand-light-grey/30 rounded" />
+        <div className="h-4 w-40 bg-brand-light-grey/30 rounded" />
+        <div className="h-32 w-full bg-brand-light-grey/20 rounded-lg mt-4" />
+      </div>
+    </div>
+  );
 
   if (vueGarantie) {
     return (
