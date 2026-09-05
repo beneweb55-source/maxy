@@ -1093,11 +1093,13 @@ export default function CaisseClient({ role }: { role: Role }) {
             </p>
           )}
           {cartes !== null && groupesFiltres.length === 0 && (
-            <p className="carte border-dashed p-6 text-sm text-brand-warm-grey">
-              Aucun produit ne correspond à la recherche.
+            <p className="carte border-dashed p-6 text-sm text-brand-warm-grey text-center">
+              {rechercheEnVente.trim() || filtreCategorie
+                ? "Aucun produit ne correspond aux filtres."
+                : "Aucun produit en vente. Le gérant fixe les prix des produits « OK » pour les mettre en vente."}
             </p>
           )}
-          {cartes !== null && groupesFiltres.length > 0 && rechercheEnVente.trim() !== "" && (
+          {cartes !== null && groupesFiltres.length > 0 && (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {groupesFiltres.map((g) => {
                 const qtySelected = selection.get(g.cle)?.size ?? 0;
