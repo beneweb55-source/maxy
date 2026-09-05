@@ -85,7 +85,7 @@ export default function PageAuditCategories() {
   });
 
   return (
-    <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-bg dark:bg-brand-black text-brand-black dark:text-white p-4 sm:p-8 space-y-6">
+    <div className="min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-paper dark:bg-zinc-950 text-brand-black dark:text-white p-4 sm:p-8 space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-brand-light-grey/60 dark:border-white/10">

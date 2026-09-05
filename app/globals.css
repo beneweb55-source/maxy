@@ -129,9 +129,55 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Commandement 5 : Règle universelle anti-zoom iOS Safari */
+  /* Commandement 5 : Règle universelle anti-zoom iOS Safari + Dark mode base */
   input, select, textarea {
     font-size: 16px !important;
+    color: var(--color-brand-black);
+  }
+  /* Dark mode defaults for ALL native form elements */
+  :root[data-theme="dark"] input,
+  :root[data-theme="dark"] select,
+  :root[data-theme="dark"] textarea {
+    color: #e4e4e7;
+  }
+  :root[data-theme="dark"] input::placeholder,
+  :root[data-theme="dark"] select::placeholder,
+  :root[data-theme="dark"] textarea::placeholder {
+    color: #71717a;
+  }
+  /* Dark mode autofill override — prevents white autofill on dark backgrounds */
+  :root[data-theme="dark"] input:-webkit-autofill,
+  :root[data-theme="dark"] input:-webkit-autofill:hover,
+  :root[data-theme="dark"] input:-webkit-autofill:focus,
+  :root[data-theme="dark"] select:-webkit-autofill,
+  :root[data-theme="dark"] select:-webkit-autofill:hover,
+  :root[data-theme="dark"] select:-webkit-autofill:focus,
+  :root[data-theme="dark"] textarea:-webkit-autofill,
+  :root[data-theme="dark"] textarea:-webkit-autofill:hover,
+  :root[data-theme="dark"] textarea:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e4e4e7;
+    -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset;
+    box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+  /* Dark mode select arrow fix — override browser defaults */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+  }
+  :root[data-theme="dark"] select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  }
+  /* Select option styling for dark mode */
+  :root[data-theme="dark"] select option {
+    background-color: #18181b;
+    color: #e4e4e7;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-outfit);
@@ -313,8 +359,8 @@
     width: 100%;
     min-height: 44px;
     border-radius: 0.5rem;
-    border: 1px solid #cbd5e1;
-    background-color: #ffffff;
+    border: 1px solid var(--color-brand-light-grey);
+    background-color: var(--color-brand-white);
     padding: 0.5rem 0.875rem;
     font-size: 14px;
     outline: none;
@@ -324,10 +370,43 @@
   .champ:focus {
     border-color: var(--color-brand-orange);
     box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
-    background-color: #ffffff;
+    background-color: var(--color-brand-white);
   }
   .champ::placeholder {
-    color: #94a3b8;
+    color: var(--color-brand-grey);
+  }
+
+  /* Aliases for .champ used across components as .input, .select, .textarea */
+  .input, .select, .textarea {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-brand-light-grey);
+    background-color: var(--color-brand-white);
+    padding: 0.5rem 0.875rem;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    color: var(--color-brand-black);
+  }
+  .input:focus, .select:focus, .textarea:focus {
+    border-color: var(--color-brand-orange);
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+    background-color: var(--color-brand-white);
+  }
+  .input::placeholder, .textarea::placeholder {
+    color: var(--color-brand-grey);
+  }
+  /* Size variants for .input/.select/.textarea */
+  .input-xs, .select-xs, .textarea-xs {
+    min-height: 36px;
+    padding: 0.25rem 0.5rem;
+    font-size: 12px;
+  }
+  .input-sm, .select-sm, .textarea-sm {
+    min-height: 40px;
+    padding: 0.375rem 0.75rem;
+    font-size: 13px;
   }
 
   /* Masquage universel des flèches/spinners natifs sur TOUS les champs numériques financiers */

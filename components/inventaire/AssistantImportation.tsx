@@ -608,7 +608,7 @@ export default function AssistantImportation({
                     onClick={() => setModeSaisie("fichier")}
                     className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
                       modeSaisie === "fichier"
-                        ? "bg-white dark:bg-brand-black text-brand-orange shadow-xs"
+                        ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs"
                         : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
                     }`}
                   >
@@ -619,7 +619,7 @@ export default function AssistantImportation({
                     onClick={() => setModeSaisie("presse_papier")}
                     className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
                       modeSaisie === "presse_papier"
-                        ? "bg-white dark:bg-brand-black text-brand-orange shadow-xs"
+                        ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs"
                         : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
                     }`}
                   >
@@ -794,7 +794,7 @@ export default function AssistantImportation({
                       <select
                         value={colonneAssignee}
                         onChange={(e) => setMapping({ ...mapping, [cible.cleCible]: e.target.value })}
-                        className="select w-full h-11 rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold text-brand-black dark:text-white shadow-xs"
+                        className="select w-full h-11 rounded-xl bg-white dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs font-bold text-brand-black dark:text-white shadow-xs"
                       >
                         <option value="">-- Ignorer / Non présent dans le fichier --</option>
                         {enTetesFichier.map((h) => (
@@ -903,7 +903,7 @@ export default function AssistantImportation({
                       value={valeurPrixAchatMasse}
                       onChange={(e) => setValeurPrixAchatMasse(e.target.value)}
                       placeholder="Prix Achat par défaut (DA)"
-                      className="input input-sm h-10 flex-1 rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold"
+                      className="input input-sm h-10 flex-1 rounded-xl bg-white dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs font-bold"
                     />
                     <button
                       type="button"
@@ -924,7 +924,7 @@ export default function AssistantImportation({
                         value={pourcentageMargeMasse}
                         onChange={(e) => setPourcentageMargeMasse(e.target.value)}
                         placeholder="Marge %"
-                        className="input input-sm h-10 pl-8 w-full rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold"
+                        className="input input-sm h-10 pl-8 w-full rounded-xl bg-white dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs font-bold"
                       />
                     </div>
                     <button
@@ -942,7 +942,7 @@ export default function AssistantImportation({
                       <select
                         value={lotGlobalId}
                         onChange={(e) => setLotGlobalId(e.target.value)}
-                        className="select select-sm h-10 w-full rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold"
+                        className="select select-sm h-10 w-full rounded-xl bg-white dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs font-bold"
                       >
                         <option value="">Rattacher à un Arrivage / Lot</option>
                         {lots.map((l) => (
@@ -1012,9 +1012,9 @@ export default function AssistantImportation({
                                 value={l.categorie_id_selectionnee}
                                 onChange={(e) => changerCategorieLigne(l.id, Number(e.target.value))}
                                 className={`select select-xs rounded-lg font-bold border max-w-[200px] ${
-                                  estDoute 
-                                    ? "border-amber-400 bg-amber-50 dark:bg-brand-black text-amber-800 dark:text-amber-300"
-                                    : "border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-brand-black"
+                                  estDoute
+                                    ? "border-amber-400 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300"
+                                    : "border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-white/5"
                                 }`}
                               >
                                 {categoriesPlates.map((cat) => (

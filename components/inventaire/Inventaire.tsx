@@ -1084,7 +1084,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 onChange={(e) =>
                   setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
                 }
-                className="champ dark:bg-brand-black dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
+                className="champ dark:bg-white/5 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
               />
             </div>
 
@@ -1102,7 +1102,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 onChange={(e) =>
                   setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
                 }
-                className="champ dark:bg-brand-black !border-brand-orange/40 text-right font-black text-sm sm:text-base text-brand-orange"
+                className="champ dark:bg-white/5 !border-brand-orange/40 text-right font-black text-sm sm:text-base text-brand-orange"
                 placeholder="Non fixé"
               />
             </div>
@@ -1122,7 +1122,7 @@ export default function Inventaire({ role }: { role: Role }) {
               onChange={(e) =>
                 setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
               }
-              className="champ dark:bg-brand-black dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
+              className="champ dark:bg-white/5 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
             />
             {modalEdition !== null && Number(formulaire.quantite) !== modalEdition.unites.length && (
               <div className="mt-2 text-[11px] font-bold leading-tight text-brand-orange bg-brand-orange/10 p-2.5 rounded-xl border border-brand-orange/20 flex items-center gap-1.5">
@@ -1730,7 +1730,7 @@ export default function Inventaire({ role }: { role: Role }) {
       {/* Barre d'actions groupées flottante si sélection active */}
       {selection.length > 0 && (
         <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-entree max-w-[95vw]">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-brand-black/95 dark:bg-brand-black/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-brand-black/95 dark:bg-brand-smooth/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
             <div className="flex items-center gap-2 pr-3 border-r border-white/20">
               <span className="w-7 h-7 rounded-full bg-brand-orange text-white font-black text-xs flex items-center justify-center shadow-md">
                 {selection.length}
@@ -1966,7 +1966,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     }
                   }}
                   disabled={envoi || cibleStatut !== null}
-                  className="select w-full sm:w-auto h-11 rounded-lg bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+                  className="select w-full sm:w-auto h-11 rounded-lg bg-white dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
                 >
                   <option value="">{t("inventaire.changerStatut")}</option>
                   {(() => {
