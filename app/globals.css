@@ -237,6 +237,34 @@
     box-shadow: none !important;
   }
 
+  /* Cible tactile minimale 44×44px pour icônes et boutons compacts */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .touch-target-sm {
+    min-height: 36px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Règle globale : tout bouton < 44px reçoit un padding minimum */
+  @media (pointer: coarse) {
+    button:not(.btn):not([class*="touch-target"]):not([class*="min-h-[4"]) {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    /* Augmenter les padding des boutons icones sur tactile */
+    button[class*="p-1"]:not(.btn) {
+      padding: 0.5rem;
+    }
+  }
+
   .btn-primaire {
     background-color: var(--color-brand-orange);
     color: var(--color-brand-white);
