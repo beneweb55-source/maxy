@@ -1084,7 +1084,21 @@ export default function CaisseClient({ role }: { role: Role }) {
             </div>
           )}
           {!erreurCartes && cartes === null && (
-            <p className="text-sm text-brand-warm-grey">{t("commun.chargement")}</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-brand-light-grey bg-brand-white/80 overflow-hidden animate-pulse">
+                  <div className="aspect-[4/3] bg-brand-light-grey/30" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3 w-20 bg-brand-light-grey/40 rounded" />
+                    <div className="h-4 w-full bg-brand-light-grey/30 rounded" />
+                    <div className="flex justify-between">
+                      <div className="h-6 w-24 bg-brand-light-grey/50 rounded" />
+                      <div className="h-4 w-16 bg-brand-light-grey/30 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
           {cartes !== null && cartes.length === 0 && (
             <p className="carte border-dashed p-6 text-sm text-brand-warm-grey">

@@ -209,7 +209,23 @@ export default function CaisseDashboard({ role }: { role: Role }) {
     );
   }
   if (!donnees)
-    return <p className="p-4 text-sm text-brand-warm-grey">Chargement de la caisse…</p>;
+    return (
+      <div className="space-y-6 animate-entree p-4">
+        <div className="space-y-2">
+          <div className="h-8 w-64 bg-brand-light-grey/40 rounded-lg animate-pulse" />
+          <div className="h-4 w-48 bg-brand-light-grey/30 rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="carte p-4 space-y-2">
+              <div className="h-4 w-24 bg-brand-light-grey/40 rounded animate-pulse" />
+              <div className="h-8 w-32 bg-brand-light-grey/50 rounded-lg animate-pulse" />
+              <div className="h-3 w-full bg-brand-light-grey/30 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
 
   const { soldes, parametres, repartition } = donnees;
   const pctAtteintReserve =

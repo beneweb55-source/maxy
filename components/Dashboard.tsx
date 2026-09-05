@@ -6,6 +6,7 @@ import type { ReponseDashboard } from "@/lib/dashboard/types";
 import { RenduWidget, widgetSansCarte } from "./dashboard/widgets";
 import { IconeActualiser } from "./icons";
 import { useT } from "@/lib/i18n/contexte";
+import { SkeletonPage } from "@/components/Skeleton";
 
 const INTERVALLE_RAFRAICHISSEMENT_MS = 5_000;
 
@@ -59,7 +60,7 @@ export default function Dashboard() {
     );
   }
   if (!reponse) {
-    return <p className="p-4 text-sm text-brand-warm-grey">{t("dashboard.chargement")}</p>;
+    return <SkeletonPage />;
   }
 
   const { config, donnees } = reponse;
