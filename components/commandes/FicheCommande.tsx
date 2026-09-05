@@ -15,6 +15,7 @@ import {
 import { formaterDA } from "@/lib/caisse";
 import { montantEnLettres } from "@/lib/nombres";
 import { useToast } from "@/components/toast";
+import { LABELS_STATUT_COMMANDE } from "@/lib/constantes";
 
 interface FicheCommandeProps {
   commandeId: number;
@@ -553,13 +554,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
             ) : (
               <div className="space-y-4 text-xs">
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { key: "EN_ATTENTE", label: "En Attente" },
-                    { key: "CONFIRMEE", label: "Confirmée" },
-                    { key: "EN_LIVRAISON", label: "En Livraison" },
-                    { key: "TERMINEE", label: "Terminée" },
-                    { key: "ANNULEE", label: "Annulée" },
-                  ].map(({ key, label }) => (
+                  {Object.entries(LABELS_STATUT_COMMANDE).map(([key, label]) => (
                     <button
                       key={key}
                       type="button"

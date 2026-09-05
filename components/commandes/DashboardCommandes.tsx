@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
+import { LABELS_STATUT_COMMANDE } from "@/lib/constantes";
 import ModaleCreationCommande from "./ModaleCreationCommande";
 import type { CanalVente, StatutCommande, CaisseDestination } from "@prisma/client";
 
@@ -156,6 +157,11 @@ export default function DashboardCommandes() {
   };
 
   const changerStatutRapide = async (id: number, nouveauStatut: StatutCommande) => {
+    // Confirmation pour les transitions destructrices
+    if (nouveauStatut === "ANNULEE") {
+      const ok = window.confirm("Annuler cette commande remettra tous les articles en stock. Continuer ?");
+      if (!ok) return void chargerCommandes(); // recharger pour reset le select
+    }
     try {
       const res = await fetch(`/api/commandes/${id}`, {
         method: "PATCH",
@@ -167,7 +173,7 @@ export default function DashboardCommandes() {
         throw new Error(d.message || d.error || "Erreur lors de la transition de statut.");
       }
       afficher(
-        `Statut de la commande mis à jour vers « ${nouveauStatut} ». Stocks et caisses synchronisés.`,
+        `Statut mis à jour : ${nouveauStatut}. Stocks et caisses synchronisés.`,
         "succes"
       );
       void chargerCommandes();
@@ -462,11 +468,9 @@ export default function DashboardCommandes() {
                                     : "bg-red-50 text-red-800 border-red-300 dark:bg-red-950/60 dark:text-red-300"
                           }`}
                         >
-                          <option value="EN_ATTENTE">En attente</option>
-                          <option value="CONFIRMEE">Confirmée</option>
-                          <option value="EN_LIVRAISON">En livraison</option>
-                          <option value="TERMINEE">Terminée</option>
-                          <option value="ANNULEE">Annulée</option>
+                          {Object.entries(LABELS_STATUT_COMMANDE).map(([val, lbl]) => (
+                            <option key={val} value={val}>{lbl}</option>
+                          ))}
                         </select>
                       </td>
 
@@ -506,6 +510,33 @@ export default function DashboardCommandes() {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {pagesTotales > 1 && (
+        <div className="flex items-center justify-between text-xs text-brand-warm-grey px-2">
+          <span>
+            {totalCommandes} commande{(totalCommandes || 0) > 1 ? "s" : ""} — Page {page} / {pagesTotales}
+          </span>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => { setPage(page - 1); majUrl({ page: String(page - 1) }); }}
+              className="px-3 py-1.5 rounded-lg border border-brand-light-grey font-bold disabled:opacity-40 hover:bg-brand-light-grey/30 transition"
+            >
+              ← Préc
+            </button>
+            <button
+              type="button"
+              disabled={page >= pagesTotales}
+              onClick={() => { setPage(page + 1); majUrl({ page: String(page + 1) }); }}
+              className="px-3 py-1.5 rounded-lg border border-brand-light-grey font-bold disabled:opacity-40 hover:bg-brand-light-grey/30 transition"
+            >
+              Suiv →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modale de création de commande */}
       <ModaleCreationCommande
