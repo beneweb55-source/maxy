@@ -393,11 +393,19 @@ export default function DashboardCommandes() {
             </thead>
             <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
               {chargement ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
-                    Chargement des commandes...
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={8} className="px-4 py-3">
+                      <div className="flex items-center gap-4">
+                        <div className="h-4 w-24 bg-brand-light-grey/40 rounded" />
+                        <div className="h-4 w-40 bg-brand-light-grey/30 rounded" />
+                        <div className="h-4 w-20 bg-brand-light-grey/30 rounded" />
+                        <div className="h-4 w-32 bg-brand-light-grey/30 rounded" />
+                        <div className="h-4 w-16 bg-brand-light-grey/30 rounded ml-auto" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : commandes.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-0">

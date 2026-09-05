@@ -128,11 +128,29 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
   };
 
   if (chargement) {
-    return <div className="p-8 text-center text-slate-400 font-bold">Chargement du document...</div>;
+    return (
+      <div className="space-y-4 p-4 animate-pulse">
+        <div className="h-8 w-48 bg-brand-light-grey/40 rounded-lg" />
+        <div className="carte space-y-3">
+          <div className="h-4 w-64 bg-brand-light-grey/30 rounded" />
+          <div className="h-4 w-48 bg-brand-light-grey/30 rounded" />
+          <div className="h-4 w-80 bg-brand-light-grey/30 rounded" />
+          <div className="h-20 w-full bg-brand-light-grey/20 rounded-lg mt-4" />
+        </div>
+      </div>
+    );
   }
 
   if (!commande) {
-    return <div className="p-8 text-center text-red-500 font-bold">Document introuvable.</div>;
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+        <div className="rounded-full bg-danger/10 p-4">
+          <svg className="w-8 h-8 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </div>
+        <p className="text-sm font-bold text-danger">Commande introuvable.</p>
+        <p className="text-xs text-brand-warm-grey">Ce document n'existe pas ou a été supprimé.</p>
+      </div>
+    );
   }
 
   const nomClient = commande.client?.nom || commande.client_nom || "Particulier";
