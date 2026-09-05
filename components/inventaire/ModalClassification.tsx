@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Modale from "@/components/Modale";
 import { IconeRecherche, IconePlus } from "@/components/icons";
+import { useToast } from "@/components/toast";
 
 interface ProduitClassification {
   id: number;
@@ -113,7 +114,7 @@ export default function ModalClassification({
         else setSousCategorieId(data.id);
       }
     } catch (err: any) {
-      alert(err.message);
+      setErreur(err.message);
     }
   };
 

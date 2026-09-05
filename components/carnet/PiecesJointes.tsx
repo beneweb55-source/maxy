@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { IconeNote, IconeCorbeille, IconeActualiser, IconeUpload } from "@/components/icons";
+import { useToast } from "@/components/toast";
 
 interface PieceJointe {
   id: number;
@@ -18,6 +19,7 @@ interface PiecesJointesProps {
 }
 
 export function PiecesJointes({ entreeId, piecesJointesInitiales, lectureSeule }: PiecesJointesProps) {
+  const { afficher } = useToast();
   const [pieces, setPieces] = useState<PieceJointe[]>(piecesJointesInitiales);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -70,7 +72,7 @@ export function PiecesJointes({ entreeId, piecesJointesInitiales, lectureSeule }
       if (!res.ok) throw new Error("Erreur serveur");
       setPieces((prev) => prev.filter((p) => p.id !== id));
     } catch (e) {
-      alert("Erreur lors de la suppression.");
+      afficher("Erreur lors de la suppression.", "erreur");
     }
   };
 

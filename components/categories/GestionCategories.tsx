@@ -184,7 +184,7 @@ export default function GestionCategories() {
       setModalOuverte(false);
       notifier("Modifications enregistrées avec succès.");
     } catch (e: any) {
-      alert(e.message);
+      setErreur(e.message);
     } finally {
       setEnvoi(false);
     }
@@ -196,11 +196,11 @@ export default function GestionCategories() {
     const totalModeles = item._count?.modeles || 0;
 
     if (totalEnfants > 0) {
-      alert(`Impossible de supprimer "${item.nom}" : elle contient ${totalEnfants} élément(s) rattaché(s).`);
+      setErreur(`Impossible de supprimer "${item.nom}" : elle contient ${totalEnfants} élément(s) rattaché(s).`);
       return;
     }
     if (totalProduits > 0 || totalModeles > 0) {
-      alert(`Impossible de supprimer "${item.nom}" : des produits (${totalProduits}) ou modèles (${totalModeles}) y sont rattachés.`);
+      setErreur(`Impossible de supprimer "${item.nom}" : des produits (${totalProduits}) ou modèles (${totalModeles}) y sont rattachés.`);
       return;
     }
 
@@ -215,7 +215,7 @@ export default function GestionCategories() {
       await chargerDonnees();
       notifier(`"${item.nom}" supprimé.`);
     } catch (e: any) {
-      alert(e.message);
+      setErreur(e.message);
     }
   }
 
