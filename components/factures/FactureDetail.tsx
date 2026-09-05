@@ -15,6 +15,8 @@ import {
   IconeCorbeille,
 } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import ConfirmerAction from "@/components/ConfirmerAction";
 import GarantieCertificat from "@/components/factures/GarantieCertificat";
 import { naviguerRetourInterne } from "@/hooks/useHistoriqueNavigation";
 import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
@@ -89,6 +91,7 @@ export default function FactureDetail({
   const router = useRouter();
   const searchParams = useSearchParams();
   const autoPrint = searchParams.get("print") === "ticket" || searchParams.get("print") === "auto";
+  const { confirmer, propsModal } = useConfirmation();
   const { afficher } = useToast();
   const { t } = useLangue();
   const [facture, setFacture] = useState<FactureDto | null>(null);
@@ -184,7 +187,13 @@ export default function FactureDetail({
   }
 
   async function supprimerFacture() {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette facture ? Cela annulera également les ventes et les mouvements de caisse associés.")) return;
+    const ok = await confirmer({
+      titre: "Supprimer cette facture",
+      message: "Êtes-vous sûr de vouloir supprimer cette facture ? Cela annulera également les ventes et les mouvements de caisse associés.",
+      labelConfirmer: "Supprimer",
+      variante: "danger",
+    });
+    if (!ok) return;
     setEnvoi(true);
     try {
       const res = await fetch(`/api/factures/${factureId}`, { method: "DELETE" });
@@ -226,6 +235,7 @@ export default function FactureDetail({
 
   return (
     <div className="mx-auto max-w-3xl w-full space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-[100dvh] p-4 sm:p-6 rounded-2xl">
+      <ConfirmerAction {...propsModal} />
       {/* Barre d'actions — masquée à l'impression */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50 print:hidden">
         <a

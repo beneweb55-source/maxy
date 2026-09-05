@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DecisionRapport, Role, StatutLot, StatutProduit } from "@prisma/client";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import ConfirmerAction from "@/components/ConfirmerAction";
 import { 
   Laptop, 
   Server, 
@@ -183,6 +185,7 @@ export default function FicheProduit({
   const router = useRouter();
   const { afficher } = useToast();
   const peutModifier = ["gerant", "technicien", "dev"].includes(role);
+  const { confirmer, propsModal } = useConfirmation();
   const estGerant = ["gerant", "dev"].includes(role);
 
   const [produit, setProduit] = useState<ProduitDetailDto | null>(null);
@@ -453,6 +456,7 @@ export default function FicheProduit({
 
   return (
     <div className="space-y-6 animate-entree max-w-7xl mx-auto pb-12">
+      <ConfirmerAction {...propsModal} />
       
       {/* 1. Bouton Retour & Breadcrumb de Navigation */}
       <div className="flex items-center justify-between gap-4">
@@ -586,7 +590,13 @@ export default function FicheProduit({
                 onClick={async () => {
                   const nouveauStatut = !produit.est_compose;
                   const label = nouveauStatut ? "marquer comme composé" : "retirer le statut composé";
-                  if (!window.confirm(`Voulez-vous ${label} ce produit ?`)) return;
+                  const ok = await confirmer({
+                    titre: nouveauStatut ? "Activer le mode composé" : "Désactiver le mode composé",
+                    message: `Voulez-vous ${label} ce produit ?${nouveauStatut ? " Vous pourrez ensuite ajouter des composants." : ""}`,
+                    labelConfirmer: "Confirmer",
+                    variante: nouveauStatut ? "info" : "warning",
+                  });
+                  if (!ok) return;
                   try {
                     const res = await fetch(`/api/produits/${produit.id}`, {
                       method: "PATCH",
@@ -596,7 +606,7 @@ export default function FicheProduit({
                     if (!res.ok) throw new Error();
                     window.location.reload();
                   } catch {
-                    alert("Erreur lors de la mise à jour.");
+                    afficher("Erreur lors de la mise à jour.", "erreur");
                   }
                 }}
                 className={`btn text-xs py-2.5 px-3.5 rounded-md font-bold flex items-center gap-1.5 ${

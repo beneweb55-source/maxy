@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import ConfirmerAction from "@/components/ConfirmerAction";
 import {
   Cpu,
   HardDrive,
@@ -93,6 +95,7 @@ export default function PanneauComposants({
   onMiseAJour,
 }: PanneauComposantsProps) {
   const { afficher } = useToast();
+  const { confirmer, propsModal } = useConfirmation();
   const [composants, setComposants] = useState<ComposantProduit[]>([]);
   const [historique, setHistorique] = useState<HistoriqueOperation[]>([]);
   const [stats, setStats] = useState<StatsComposants | null>(null);
@@ -185,7 +188,13 @@ export default function PanneauComposants({
 
   // 4. Détacher un composant
   const detacherComposant = async (composantId: number, nom: string) => {
-    if (!window.confirm(`Détacher « ${nom} » ? Le composant sera remis en stock.`)) return;
+    const ok = await confirmer({
+      titre: "Détacher le composant",
+      message: `Détacher « ${nom} » ? Le composant sera remis en stock.`,
+      labelConfirmer: "Détacher",
+      variante: "warning",
+    });
+    if (!ok) return;
     if (enAction) return;
     setEnAction(true);
     try {
@@ -212,6 +221,7 @@ export default function PanneauComposants({
 
   return (
     <div className="space-y-4 animate-entree">
+      <ConfirmerAction {...propsModal} />
       {/* En-tête de la section Nomenclature */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-brand-light-grey/25 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10">
         <div>

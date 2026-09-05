@@ -78,7 +78,7 @@ export const REGLES_CLASSIFICATION: RegleClassification[] = [
   // Mémoire RAM — Mini PC & PC Portable (SODIMM)
   {
     famille: FAMILLES.MEMOIRE,
-    categorie: "RAM PORTABLE",
+    categorie: "RAM DESKTOP",
     sousCategorie: "Mini PC & PC Portable (SODIMM)",
     regex: /\b(sodimm|laptop\s*ram|ram\s*laptop|ram\s*mini\s*pc|ddr[345]\s*sodimm)\b/i,
     poids: 95,

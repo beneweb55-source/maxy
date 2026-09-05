@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import ConfirmerAction from "@/components/ConfirmerAction";
 import { LABELS_STATUT_COMMANDE } from "@/lib/constantes";
 import ModaleCreationCommande from "./ModaleCreationCommande";
 import type { CanalVente, StatutCommande, CaisseDestination } from "@prisma/client";
@@ -58,6 +60,7 @@ export default function DashboardCommandes() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { afficher } = useToast();
+  const { confirmer, propsModal } = useConfirmation();
 
   const [commandes, setCommandes] = useState<LigneCommandeDashboard[]>([]);
   const [totalCommandes, setTotalCommandes] = useState(0);
@@ -159,7 +162,12 @@ export default function DashboardCommandes() {
   const changerStatutRapide = async (id: number, nouveauStatut: StatutCommande) => {
     // Confirmation pour les transitions destructrices
     if (nouveauStatut === "ANNULEE") {
-      const ok = window.confirm("Annuler cette commande remettra tous les articles en stock. Continuer ?");
+      const ok = await confirmer({
+        titre: "Annuler la commande",
+        message: "Annuler cette commande remettra tous les articles en stock. Continuer ?",
+        labelConfirmer: "Annuler la commande",
+        variante: "warning",
+      });
       if (!ok) return void chargerCommandes(); // recharger pour reset le select
     }
     try {
@@ -267,6 +275,7 @@ export default function DashboardCommandes() {
 
   return (
     <div className="p-4 sm:p-8 space-y-6 max-w-7xl mx-auto font-sans">
+      <ConfirmerAction {...propsModal} />
       {/* Header & Bouton Nouvelle Commande */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

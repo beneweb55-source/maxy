@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import ConfirmerAction from "@/components/ConfirmerAction";
 import {
   Download,
   FileText,
@@ -148,6 +150,7 @@ export default function ListeFactures({ role }: { role?: string }) {
   const [envoi, setEnvoi] = useState(false);
   const [onglet, setOnglet] = useState<OngletType>("tous");
   const [filtreTypeVente, setFiltreTypeVente] = useState<FiltreTypeVente>("TOUTES");
+  const { confirmer, propsModal } = useConfirmation();
 
   // Debounce automatique de la recherche
   useEffect(() => {
@@ -221,7 +224,13 @@ export default function ListeFactures({ role }: { role?: string }) {
 
   async function supprimerFacture(id: number, ev?: React.MouseEvent) {
     if (ev) ev.stopPropagation();
-    if (!window.confirm("Supprimer cette facture ? Ses ventes associées seront annulées.")) return;
+    const ok = await confirmer({
+      titre: "Supprimer la facture",
+      message: "Supprimer cette facture ? Ses ventes associées seront annulées.",
+      labelConfirmer: "Supprimer",
+      variante: "danger",
+    });
+    if (!ok) return;
     setEnvoi(true);
     try {
       const res = await fetch(`/api/factures/${id}`, { method: "DELETE" });
@@ -242,7 +251,13 @@ export default function ListeFactures({ role }: { role?: string }) {
 
   async function supprimerSelection() {
     if (selection.size === 0) return;
-    if (!window.confirm(`Supprimer ces ${selection.size} factures ? Les ventes associées seront annulées.`)) return;
+    const ok = await confirmer({
+      titre: `Supprimer ${selection.size} facture(s)`,
+      message: `Supprimer ces ${selection.size} factures ? Les ventes associées seront annulées.`,
+      labelConfirmer: "Tout supprimer",
+      variante: "danger",
+    });
+    if (!ok) return;
     setEnvoi(true);
     let erreurs = 0;
     for (const id of selection) {
@@ -272,6 +287,7 @@ export default function ListeFactures({ role }: { role?: string }) {
 
   return (
     <div className="space-y-5 animate-entree">
+      <ConfirmerAction {...propsModal} />
       {/* ===================== EN-TÊTE ERP ===================== */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
         <div>
