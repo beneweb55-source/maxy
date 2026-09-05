@@ -939,7 +939,7 @@ export default function CaisseClient({ role }: { role: Role }) {
       />
       <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-10">
         <div className="flex items-center gap-3">
-          <Link href="/caisse" className="btn min-h-[44px] py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
+          <Link href="/" className="btn min-h-[44px] py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
             ← Retour au Tableau de Bord
           </Link>
           <div className="font-black text-base sm:text-lg tracking-wide uppercase flex items-center gap-2">
