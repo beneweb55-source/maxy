@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Recherche en parallèle sur les 3 entités
-    const [produits, lots, factures] = await Promise.all([
+    const [produits, lots, factures, commandes] = await Promise.all([
       prisma.produit.findMany({
         where: {
           AND: [
@@ -84,6 +84,26 @@ export async function GET(request: NextRequest) {
         take: LIMITE,
         orderBy: { date_emission: "desc" },
       }),
+      prisma.commande.findMany({
+        where: {
+          OR: [
+            { numero: { contains: q, mode: "insensitive" } },
+            { client_nom: { contains: q, mode: "insensitive" } },
+            { client_tel: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        select: {
+          id: true,
+          numero: true,
+          client_nom: true,
+          total_ttc: true,
+          statut: true,
+          payee: true,
+          created_at: true,
+        },
+        take: LIMITE,
+        orderBy: { created_at: "desc" },
+      }),
     ]);
 
     return NextResponse.json({
@@ -114,6 +134,16 @@ export async function GET(request: NextRequest) {
         date_emission: f.date_emission,
         annulee: f.annulee,
         href: `/factures/${f.id}`,
+      })),
+      commandes: commandes.map((c) => ({
+        id: c.id,
+        numero: c.numero,
+        client_nom: c.client_nom,
+        total: c.total_ttc,
+        statut: c.statut,
+        payee: c.payee,
+        date: c.created_at,
+        href: `/commandes/${c.id}`,
       })),
     });
   } catch (e) {

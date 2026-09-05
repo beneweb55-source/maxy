@@ -46,10 +46,22 @@ interface ResultatFacture {
   href: string;
 }
 
+interface ResultatCommande {
+  id: number;
+  numero: string;
+  client_nom: string | null;
+  total: number;
+  statut: string;
+  payee: boolean;
+  date: string;
+  href: string;
+}
+
 interface ResultatsRecherche {
   produits: ResultatProduit[];
   lots: ResultatLot[];
   factures: ResultatFacture[];
+  commandes: ResultatCommande[];
 }
 
 interface ActionRapide {
@@ -80,12 +92,13 @@ export default function RechercheGlobale({
   useLayer("recherche-globale", ouverte, onFermer, LAYER_PRIORITY.MODALE);
 
   const actionsRapides: ActionRapide[] = [
-    { label: t("rechercheGlobale.nouveauLot"), href: "/arrivages/nouveau", icone: <IconePlus taille={16} />, roles: ["gerant"] },
-    { label: t("rechercheGlobale.inventaire"), href: "/inventaire", icone: <IconeArchive taille={16} /> },
-    { label: t("rechercheGlobale.arrivages"), href: "/arrivages", icone: <IconeCamion taille={16} />, roles: ["gerant", "technicien", "dev"] },
-    { label: t("rechercheGlobale.caisse"), href: "/caisse", icone: <IconePortefeuille taille={16} />, roles: ["gerant", "dev"] },
     { label: t("rechercheGlobale.dashboard"), href: "/", icone: <IconeTableauDeBord taille={16} /> },
+    { label: t("rechercheGlobale.inventaire"), href: "/inventaire", icone: <IconeArchive taille={16} /> },
+    { label: t("rechercheGlobale.caisse"), href: "/pos", icone: <IconePortefeuille taille={16} /> },
+    { label: "Commandes", href: "/commandes", icone: <IconeCamion taille={16} /> },
     { label: t("rechercheGlobale.factures"), href: "/factures", icone: <IconeBillet taille={16} /> },
+    { label: t("rechercheGlobale.nouveauLot"), href: "/arrivages/nouveau", icone: <IconePlus taille={16} />, roles: ["gerant"] },
+    { label: t("rechercheGlobale.arrivages"), href: "/arrivages", icone: <IconeCamion taille={16} />, roles: ["gerant", "technicien", "dev"] },
   ].filter((a) => !a.roles || a.roles.includes(role));
 
   useEffect(() => {
@@ -131,6 +144,7 @@ export default function RechercheGlobale({
       for (const p of resultats.produits) liens.push({ href: p.href, label: p.reference });
       for (const l of resultats.lots) liens.push({ href: l.href, label: l.fournisseur });
       for (const f of resultats.factures) liens.push({ href: f.href, label: f.numero });
+      for (const c of resultats.commandes) liens.push({ href: c.href, label: c.numero });
     }
     if (!recherche.trim()) {
       for (const a of actionsRapides) liens.push({ href: a.href, label: a.label });
@@ -207,7 +221,7 @@ export default function RechercheGlobale({
 
           {!chargement && recherche.length >= 2 && resultats && (
             <>
-              {resultats.produits.length === 0 && resultats.lots.length === 0 && resultats.factures.length === 0 && (
+              {resultats.produits.length === 0 && resultats.lots.length === 0 && resultats.factures.length === 0 && resultats.commandes.length === 0 && (
                 <div className="px-4 py-8 text-center text-sm text-brand-warm-grey">
                   {t("rechercheGlobale.aucunResultat")}
                 </div>
@@ -303,6 +317,40 @@ export default function RechercheGlobale({
                           <span className="text-xs text-brand-warm-grey">
                             {formaterDA(f.total)}
                             {f.annulee ? " · Annulée" : ""}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {resultats.commandes.length > 0 && (
+                <div className="border-t border-brand-light-grey/50 py-2">
+                  <p className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-brand-grey">
+                    Commandes
+                  </p>
+                  {resultats.commandes.map((c) => {
+                    const idx = indexCompteur++;
+                    return (
+                      <button
+                        key={`cmd-${c.id}`}
+                        type="button"
+                        onClick={() => naviguer(c.href)}
+                        className={`flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors ${
+                          idx === indexActif ? "bg-brand-orange/10" : "hover:bg-brand-light-grey/30"
+                        }`}
+                      >
+                        <IconeCamion taille={16} className="shrink-0 text-brand-orange" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium text-brand-black">
+                            {c.numero}
+                            {c.client_nom ? ` — ${c.client_nom}` : ""}
+                          </span>
+                          <span className="text-xs text-brand-warm-grey">
+                            {formaterDA(c.total)}
+                            {c.payee ? " · Payée" : ""}
+                            {` · ${c.statut}`}
                           </span>
                         </span>
                       </button>
