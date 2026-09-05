@@ -564,7 +564,7 @@ export default function ModaleAjoutTerrain({
                     setCategorieModifieeManuellement(true);
                     setModeleSelectionne(null);
                   }}
-                  className="select w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-bold text-sm h-12"
+                  className="champ"
                 >
                   <option value="">-- Sélectionnez la catégorie --</option>
                   {sousCategories.map((sc) => (
@@ -618,7 +618,7 @@ export default function ModaleAjoutTerrain({
                       value={marque}
                       onChange={(e) => setMarque(e.target.value)}
                       placeholder="Ou saisissez une autre marque..."
-                      className="input input-sm w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 text-xs"
+                      className="champ"
                     />
                   </div>
 
@@ -632,7 +632,7 @@ export default function ModaleAjoutTerrain({
                       value={nomBase}
                       onChange={(e) => setNomBase(e.target.value)}
                       placeholder="ex: ProBook 450 G8, OptiPlex 7070 SFF, 90W Type-C..."
-                      className="input w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-bold text-sm h-12"
+                      className="champ"
                     />
                   </div>
 
@@ -650,7 +650,7 @@ export default function ModaleAjoutTerrain({
                       type="text"
                       value={designationComplete}
                       onChange={(e) => setDesignationComplete(e.target.value)}
-                      className="input w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-extrabold text-sm"
+                      className="champ"
                     />
                   </div>
 
@@ -668,7 +668,7 @@ export default function ModaleAjoutTerrain({
                           setPrixVenteFixe(e.target.value);
                         }}
                         placeholder="ex: 45000"
-                        className="input w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-bold text-sm h-12 pr-12"
+                        className="champ pr-12"
                       />
                       <span className="absolute right-4 top-3.5 text-xs font-black text-brand-warm-grey">
                         DA
@@ -689,7 +689,7 @@ export default function ModaleAjoutTerrain({
                       value={rechercheModele}
                       onChange={(e) => setRechercheModele(e.target.value)}
                       placeholder="Rechercher par nom de modèle ou référence..."
-                      className="input w-full pl-11 rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-bold text-sm h-12"
+                      className="champ pl-11"
                     />
                   </div>
 
@@ -822,7 +822,7 @@ export default function ModaleAjoutTerrain({
                                 value={valeurActuelle}
                                 onChange={(e) => setSpecs({ ...specs, [attr.cle]: e.target.value })}
                                 placeholder={attr.placeholder || `Saisir ${attr.label}...`}
-                                className="input w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 text-xs font-bold"
+                                className="champ"
                               />
                             )}
                           </div>
@@ -878,7 +878,7 @@ export default function ModaleAjoutTerrain({
                       value={prixAchat}
                       onChange={(e) => setPrixAchat(e.target.value)}
                       placeholder="ex: 15000"
-                      className="input w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-black text-sm h-12 pr-12"
+                      className="champ pr-12"
                     />
                     <span className="absolute right-4 top-3.5 text-xs font-black text-brand-warm-grey">
                       DA
@@ -897,7 +897,7 @@ export default function ModaleAjoutTerrain({
                       value={prixVenteFixe}
                       onChange={(e) => setPrixVenteFixe(e.target.value)}
                       placeholder={prixVenteConseille || "ex: 22000"}
-                      className="input w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-black text-sm h-12 pr-12 text-brand-green"
+                      className="champ pr-12 text-brand-green"
                     />
                     <span className="absolute right-4 top-3.5 text-xs font-black text-brand-warm-grey">
                       DA
@@ -918,7 +918,7 @@ export default function ModaleAjoutTerrain({
                   <select
                     value={gradeGlobal}
                     onChange={(e) => setGradeGlobal(e.target.value)}
-                    className="select w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-bold text-xs h-11"
+                    className="champ"
                   >
                     <option value="Neuf">Neuf / Emballé</option>
                     <option value="Grade A+">Grade A+ (Impeccable)</option>
@@ -971,7 +971,7 @@ export default function ModaleAjoutTerrain({
                   <select
                     value={lotId}
                     onChange={(e) => setLotId(e.target.value)}
-                    className="select w-full rounded-2xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-bold text-xs h-11"
+                    className="champ"
                   >
                     <option value="">Hors-lot (Arrivage direct unitaire)</option>
                     {lotsDisponibles.map((l) => (
@@ -1045,7 +1045,7 @@ export default function ModaleAjoutTerrain({
                       }
                     }}
                     placeholder="Scannez avec la douchette ou tapez le S/N puis Entrée..."
-                    className="input flex-1 rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/15 font-mono text-xs h-11"
+                    className="champ flex-1 font-mono"
                   />
                   <button
                     type="button"
@@ -1064,7 +1064,7 @@ export default function ModaleAjoutTerrain({
                     min={Math.max(1, numerosSerie.length)}
                     value={quantite}
                     onChange={(e) => setQuantite(Math.max(numerosSerie.length, Number(e.target.value) || 1))}
-                    className="input input-sm w-24 rounded-xl text-center font-black text-xs"
+                    className="champ w-24 text-center font-black"
                   />
                 </div>
 

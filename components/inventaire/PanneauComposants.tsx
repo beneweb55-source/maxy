@@ -240,7 +240,7 @@ export default function PanneauComposants({
           <button
             type="button"
             onClick={() => setModalAjoutOuvert(true)}
-            className="btn btn-primaire text-xs py-2 px-3.5 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
+            className="btn btn-primaire text-xs font-bold flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             Intégrer un composant
@@ -413,7 +413,7 @@ export default function PanneauComposants({
               <button
                 type="button"
                 onClick={() => { setModalAjoutOuvert(false); setRecherche(""); setFiltreCategorie(null); }}
-                className="text-brand-warm-grey hover:text-brand-black dark:hover:text-white text-sm font-bold"
+                className="h-9 w-9 flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/40 dark:hover:bg-white/5 transition-colors"
               >
                 Fermer
               </button>
@@ -506,7 +506,7 @@ export default function PanneauComposants({
                       type="button"
                       onClick={() => attacherComposant(p.id)}
                       disabled={enAction}
-                      className="btn btn-primaire text-xs py-1.5 px-3 rounded-lg font-bold shrink-0"
+                      className="btn btn-primaire text-xs font-bold shrink-0"
                     >
                       Intégrer
                     </button>
@@ -519,7 +519,7 @@ export default function PanneauComposants({
               <button
                 type="button"
                 onClick={() => { setModalAjoutOuvert(false); setRecherche(""); setFiltreCategorie(null); }}
-                className="btn btn-secondaire text-xs py-2 px-4 rounded-xl font-bold"
+                className="btn btn-secondaire text-xs font-bold"
               >
                 Annuler
               </button>

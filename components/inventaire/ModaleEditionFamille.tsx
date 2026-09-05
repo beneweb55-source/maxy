@@ -18,7 +18,7 @@ export default function ModaleEditionFamille({
   onSucces
 }: {
   familleInfo: FamilleInfo | null;
-  cleFamille: string; // reference|categorie
+  cleFamille: string;
   fermer: () => void;
   onSucces: (nouvelleInfo: FamilleInfo) => void;
 }) {
@@ -45,14 +45,14 @@ export default function ModaleEditionFamille({
     }
     setErreur(null);
     setFichier(file);
-    
+
     const reader = new FileReader();
     reader.onload = (event) => setPreviewUrl(event.target?.result as string);
     reader.readAsDataURL(file);
   };
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  
+
   const [reference, categorie] = cleFamille.split("|");
 
   const sauvegarder = async (e: React.FormEvent) => {
@@ -69,9 +69,9 @@ export default function ModaleEditionFamille({
       const res = await fetch(`/api/familles/${encodeURIComponent(id)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          nom: nom.trim() || null, 
-          image_url: payloadImageUrl.trim() || null, 
+        body: JSON.stringify({
+          nom: nom.trim() || null,
+          image_url: payloadImageUrl.trim() || null,
           description: description.trim() || null,
           prix_vente: prixVente ? parseInt(prixVente) : undefined,
           prix_achat: prixAchat ? parseInt(prixAchat) : undefined
@@ -95,15 +95,19 @@ export default function ModaleEditionFamille({
   return (
     <Modale ouverte={true} onFermer={fermer} titre={`Modifier la catégorie: ${reference}`}>
       <form onSubmit={sauvegarder} className="space-y-6">
-        {erreur && <div className="text-sm text-red-600 p-3 bg-red-50 dark:bg-red-900/30 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800/50">{erreur}</div>}
-        
+        {erreur && (
+          <div className="rounded-2xl bg-danger/10 border border-danger/30 text-danger text-xs font-bold flex items-center gap-2 p-3">
+            {erreur}
+          </div>
+        )}
+
         <div>
-          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-white">Nom d'affichage personnalisé</label>
+          <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">Nom personnalisé (optionnel)</label>
           <input
             type="text"
             value={nom}
             onChange={e => setNom(e.target.value)}
-            className="w-full px-4 py-2 bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange text-brand-black dark:text-white"
+            className="champ w-full"
             placeholder={`Par défaut: ${reference}`}
           />
           <p className="text-xs text-brand-warm-grey mt-1">Laissez vide pour utiliser la référence d'origine.</p>
@@ -111,25 +115,25 @@ export default function ModaleEditionFamille({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-white">Appliquer un prix de vente (DA)</label>
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">Appliquer un prix de vente (DA)</label>
             <input
               type="number"
               min="0"
               value={prixVente}
               onChange={e => setPrixVente(e.target.value)}
-              className="w-full px-4 py-2 bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange text-brand-black dark:text-white"
+              className="champ w-full"
               placeholder="Ex: 5000"
             />
             <p className="text-xs text-brand-warm-grey mt-1">S'applique à TOUS les produits de cette fiche.</p>
           </div>
           <div>
-            <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-white">Appliquer un prix d'achat (DA)</label>
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">Appliquer un prix d'achat (DA)</label>
             <input
               type="number"
               min="0"
               value={prixAchat}
               onChange={e => setPrixAchat(e.target.value)}
-              className="w-full px-4 py-2 bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange text-brand-black dark:text-white"
+              className="champ w-full"
               placeholder="Ex: 3000"
             />
             <p className="text-xs text-brand-warm-grey mt-1">Modifie le coût d'achat de TOUS ces produits.</p>
@@ -137,9 +141,9 @@ export default function ModaleEditionFamille({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2 text-brand-black dark:text-white">Image de la Catégorie</label>
+          <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-2 block">Image de la Catégorie</label>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div 
+            <div
               className="w-24 h-24 rounded-xl border-2 border-dashed border-brand-light-grey dark:border-white/20 flex flex-col items-center justify-center bg-brand-light-grey/10 dark:bg-brand-paper cursor-pointer overflow-hidden group relative hover:border-brand-smooth transition-colors shrink-0"
               onClick={() => inputRef.current?.click()}
             >
@@ -158,17 +162,17 @@ export default function ModaleEditionFamille({
               )}
             </div>
             <div className="flex-1 space-y-2 w-full">
-              <input 
-                type="file" 
-                ref={inputRef} 
-                onChange={gererChoixFichier} 
+              <input
+                type="file"
+                ref={inputRef}
+                onChange={gererChoixFichier}
                 accept="image/*"
-                className="hidden" 
+                className="hidden"
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                className="btn bg-white hover:bg-brand-light-grey/20 dark:bg-brand-paper dark:hover:bg-white/5 border border-brand-light-grey dark:border-white/10 text-sm py-1.5 px-3 shadow-none w-full sm:w-auto"
+                className="btn btn-secondaire text-xs"
               >
                 Parcourir mon appareil...
               </button>
@@ -180,20 +184,9 @@ export default function ModaleEditionFamille({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-warm-grey">Nom personnalisé de la catégorie</label>
-          <input
-            type="text"
-            className="champ w-full"
-            placeholder="Laisser vide pour utiliser la référence"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold mb-1 text-brand-black dark:text-brand-warm-grey">Description</label>
+          <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">Description</label>
           <textarea
-            className="champ w-full"
+            className="champ w-full min-h-[100px] resize-y"
             rows={3}
             placeholder="Informations spécifiques à ce modèle..."
             value={description}
@@ -201,8 +194,8 @@ export default function ModaleEditionFamille({
           />
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-brand-light-grey/50">
-          <button type="button" onClick={fermer} className="btn btn-secondaire mr-2" disabled={loading}>
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-4 border-t border-brand-light-grey/50 dark:border-white/10">
+          <button type="button" onClick={fermer} className="btn btn-secondaire" disabled={loading}>
             Annuler
           </button>
           <button type="submit" className="btn btn-primaire" disabled={loading}>

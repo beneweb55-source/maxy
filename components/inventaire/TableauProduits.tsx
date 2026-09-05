@@ -9,6 +9,7 @@ import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
 import { IconeBillet, IconeCrayon, IconeCorbeille, IconeVitrine } from "@/components/icons";
 import { Plus, Boxes, ChevronDown, SlidersHorizontal } from "lucide-react";
+import RubanVitrine from "./RubanVitrine";
 import type { GroupeProduits, ReponseInventaire } from "./types";
 
 interface TableauProduitsProps {
@@ -161,11 +162,6 @@ export default function TableauProduits({
                               {r.n}× {INFOS_STATUT[r.statut].libelle}
                             </span>
                           ))}
-                          {g.enVitrine > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-brand-orange/15 text-[10px] font-bold text-brand-orange">
-                              <IconeVitrine taille={10} /> Vitrine ({g.enVitrine})
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -206,8 +202,16 @@ export default function TableauProduits({
                       : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
                   </td>
 
-                  {/* Actions Rapides Modèle */}
-                  <td className="py-4 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  {/* Actions Rapides Modèle — avec Ruban superposé */}
+                  <td className="py-4 px-4 text-right whitespace-nowrap relative" onClick={(e) => e.stopPropagation()}>
+                    {/* Ruban Vitrine / Inventaire — superposé sur le coin supérieur-droit de la ligne */}
+                    <div className="absolute pointer-events-none z-20" style={{ top: 0, right: 0 }}>
+                      {g.enVitrine > 0 ? (
+                        <RubanVitrine type="vitrine" taille="row" />
+                      ) : (
+                        <RubanVitrine type="inventaire" taille="row" />
+                      )}
+                    </div>
                     <div className="inline-flex items-center gap-1 justify-end">
                       {/* Bouton (+) Arrivage Rapide Universel */}
                       {peutModifier && (

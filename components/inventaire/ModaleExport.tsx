@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  Download, 
-  X, 
-  CheckSquare, 
-  Square, 
-  FileSpreadsheet, 
-  FileText, 
-  SlidersHorizontal, 
-  Filter, 
-  Layers, 
+import {
+  Download,
+  X,
+  CheckSquare,
+  Square,
+  FileSpreadsheet,
+  FileText,
+  SlidersHorizontal,
+  Filter,
+  Layers,
   Sparkles,
   Check
 } from "lucide-react";
@@ -133,7 +133,7 @@ export default function ModaleExport({
       params.set("scope", scopeExport);
 
       const url = `/api/produits/export?${params.toString()}`;
-      
+
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Erreur lors de la génération du fichier d'export.");
@@ -143,7 +143,7 @@ export default function ModaleExport({
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      
+
       const extension = formatFichier === "xlsx" ? "xlsx" : "csv";
       a.download = `inventaire_${scopeExport === "filtres" ? "filtre" : "complet"}_${new Date().toISOString().slice(0, 10)}.${extension}`;
       document.body.appendChild(a);
@@ -163,9 +163,9 @@ export default function ModaleExport({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
       <div className="relative w-11/12 max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
-        
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-brand-orange/15 text-brand-orange">
               <Download className="w-6 h-6" />
@@ -183,7 +183,7 @@ export default function ModaleExport({
           <button
             type="button"
             onClick={onFermer}
-            className="p-2 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            className="p-2 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/40 dark:hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -191,21 +191,21 @@ export default function ModaleExport({
 
         {/* Corps */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
+
           {/* 1. Périmètre de l'export */}
           <div className="space-y-2">
             <label className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white flex items-center gap-1.5">
               <Filter className="w-4 h-4 text-brand-orange" />
               1. Périmètre des produits à exporter
             </label>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
                 onClick={() => setScopeExport("filtres")}
                 className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
                   scopeExport === "filtres"
                     ? "border-brand-orange bg-brand-orange/10 shadow-xs"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 hover:border-slate-300"
+                    : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 hover:border-brand-light-grey dark:hover:border-white/20"
                 }`}
               >
                 <div>
@@ -224,7 +224,7 @@ export default function ModaleExport({
                 className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
                   scopeExport === "tous"
                     ? "border-brand-orange bg-brand-orange/10 shadow-xs"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 hover:border-slate-300"
+                    : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 hover:border-brand-light-grey dark:hover:border-white/20"
                 }`}
               >
                 <div>
@@ -256,21 +256,21 @@ export default function ModaleExport({
               <button
                 type="button"
                 onClick={() => appliquerPreset("pos")}
-                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
+                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
               >
                 🎯 Standard POS
               </button>
               <button
                 type="button"
                 onClick={() => appliquerPreset("compta")}
-                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
+                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
               >
                 💼 Comptabilité & Marge
               </button>
               <button
                 type="button"
                 onClick={() => appliquerPreset("public")}
-                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
+                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
               >
                 🏷️ Public (Sans prix d'achat)
               </button>
@@ -296,14 +296,14 @@ export default function ModaleExport({
                     className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2.5 cursor-pointer transition-all ${
                       estCoche
                         ? "bg-slate-900 text-white dark:bg-white dark:text-brand-black border-slate-900 dark:border-white shadow-xs"
-                        : "bg-slate-50/60 dark:bg-white/2 border-slate-200 dark:border-white/10 text-brand-warm-grey hover:border-slate-300"
+                        : "bg-brand-light-grey/15 dark:bg-white/3 border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
                     }`}
                   >
                     <div className="shrink-0">
                       {estCoche ? (
                         <CheckSquare className="w-4 h-4 text-brand-orange" />
                       ) : (
-                        <Square className="w-4 h-4 text-slate-400" />
+                        <Square className="w-4 h-4 text-brand-warm-grey" />
                       )}
                     </div>
                     <span className="truncate">{col.label}</span>
@@ -326,7 +326,7 @@ export default function ModaleExport({
                 className={`p-3 rounded-xl border cursor-pointer text-xs font-bold flex items-center gap-2 transition-all ${
                   formatFichier === "csv_excel"
                     ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 text-brand-warm-grey hover:border-slate-300"
+                    : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
                 }`}
               >
                 <FileText className="w-4 h-4 shrink-0" />
@@ -341,7 +341,7 @@ export default function ModaleExport({
                 className={`p-3 rounded-xl border cursor-pointer text-xs font-bold flex items-center gap-2 transition-all ${
                   formatFichier === "xlsx"
                     ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 text-brand-warm-grey hover:border-slate-300"
+                    : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
                 }`}
               >
                 <FileSpreadsheet className="w-4 h-4 shrink-0" />
@@ -356,7 +356,7 @@ export default function ModaleExport({
                 className={`p-3 rounded-xl border cursor-pointer text-xs font-bold flex items-center gap-2 transition-all ${
                   formatFichier === "csv_standard"
                     ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 text-brand-warm-grey hover:border-slate-300"
+                    : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
                 }`}
               >
                 <FileText className="w-4 h-4 shrink-0" />
@@ -371,11 +371,11 @@ export default function ModaleExport({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/2">
+        <div className="flex justify-between items-center px-6 py-4 border-t border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/3">
           <button
             type="button"
             onClick={onFermer}
-            className="btn btn-secondaire text-xs h-11 px-5 rounded-xl font-bold"
+            className="btn btn-secondaire text-xs font-bold"
           >
             Annuler
           </button>
@@ -384,7 +384,7 @@ export default function ModaleExport({
             type="button"
             onClick={lancerExport}
             disabled={telechargementEnCours || colonnesSelectionnees.length === 0}
-            className="btn btn-primaire text-xs h-11 px-6 rounded-xl font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
+            className="btn btn-primaire text-xs font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
           >
             {telechargementEnCours ? (
               <span>Génération du fichier...</span>

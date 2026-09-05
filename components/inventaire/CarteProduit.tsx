@@ -15,6 +15,7 @@ import {
   IconeCoche,
 } from "@/components/icons";
 import { Layers, Boxes } from "lucide-react";
+import RubanVitrine from "./RubanVitrine";
 import BoutonImpression from "@/components/BoutonImpression";
 import { useToast } from "@/components/toast";
 import type { LigneProduit } from "./types";
@@ -92,7 +93,7 @@ export default function CarteProduit({
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative flex flex-col carte !p-0 !hover:transform-none overflow-hidden h-full cursor-pointer ${
+      className={`group relative flex flex-col carte !p-0 !hover:transform-none overflow-visible h-full cursor-pointer ${
         estCoche
           ? "!border-brand-orange ring-2 ring-brand-orange/30"
           : "!border-brand-light-grey dark:!border-white/10 hover:!border-brand-smooth"
@@ -119,6 +120,10 @@ export default function CarteProduit({
         </div>
       )}
 
+      {/* Ruban Vitrine / Inventaire — superposé sur le coin supérieur-droit */}
+      {produit.en_vitrine && <RubanVitrine type="vitrine" />}
+      {!produit.en_vitrine && produit.statut !== "vendu" && <RubanVitrine type="inventaire" />}
+
       {/* Zone Image */}
       <div className="relative aspect-video sm:aspect-square bg-brand-light-grey/20 dark:bg-black/20 overflow-hidden">
         {produit.image_url ? (
@@ -137,11 +142,6 @@ export default function CarteProduit({
         {/* Badges Overlay */}
         <div className="absolute top-2 left-2 flex flex-col gap-1.5 items-start pointer-events-none">
           <BadgeStatut statut={produit.statut} aJeter={produit.a_jeter} />
-          {produit.en_vitrine && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-              <IconeVitrine taille={12} /> {t("inventaire.vitrine")}
-            </span>
-          )}
           {produit.est_compose && (
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
               <Layers className="w-3 h-3" />

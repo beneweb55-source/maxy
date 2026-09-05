@@ -3,6 +3,7 @@
 import Modale from "@/components/Modale";
 import { IconeCorbeille } from "@/components/icons";
 import { useT } from "@/lib/i18n/contexte";
+import { AlertCircle } from "lucide-react";
 
 interface LigneProduitSimple {
   code_interne: string;
@@ -83,12 +84,14 @@ export default function ModalSuppression({
           {modalSuppression.unites.length > 0 &&
             modalSuppression.vendusExclus > 0 &&
             (modalSuppression.type === "modele" ? (
-              <p className="mt-2 rounded-lg bg-brand-light-grey/30 px-3 py-2 text-xs text-brand-warm-grey">
+              <p className="mt-2 rounded-2xl bg-brand-glow/20 dark:bg-white/5 border border-brand-orange/20 p-3 text-xs text-brand-warm-grey flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-brand-orange shrink-0 mt-0.5" />
                 Les exemplaires déjà vendus de ce modèle sont conservés (historique de vente
                 préservé).
               </p>
             ) : (
-              <p className="mt-2 rounded-lg bg-brand-light-grey/30 px-3 py-2 text-xs text-brand-warm-grey">
+              <p className="mt-2 rounded-2xl bg-brand-glow/20 dark:bg-white/5 border border-brand-orange/20 p-3 text-xs text-brand-warm-grey flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-brand-orange shrink-0 mt-0.5" />
                 {modalSuppression.vendusExclus} exemplaire
                 {modalSuppression.vendusExclus > 1 ? "s" : ""} vendu
                 {modalSuppression.vendusExclus > 1 ? "s" : ""} conservé
@@ -96,7 +99,7 @@ export default function ModalSuppression({
               </p>
             ))}
 
-          <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
+          <div className="mt-4 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-4">
             <button
               type="button"
               onClick={onFermer}
@@ -108,7 +111,7 @@ export default function ModalSuppression({
               <button
                 type="submit"
                 disabled={envoi}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:opacity-50 flex items-center justify-center gap-1.5 w-full sm:w-auto"
+                className="btn btn-danger min-h-[48px] rounded-xl font-bold flex items-center justify-center gap-1.5 w-full sm:w-auto"
               >
                 <IconeCorbeille taille={15} />
                 Supprimer définitivement

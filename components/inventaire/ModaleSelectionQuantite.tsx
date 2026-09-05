@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { 
-  Layers, 
-  X, 
-  CheckCircle2, 
-  Hash, 
-  ListFilter, 
+import {
+  Layers,
+  X,
+  CheckCircle2,
+  Hash,
+  ListFilter,
   SlidersHorizontal,
   ChevronRight,
   ShieldCheck,
@@ -117,19 +117,19 @@ export default function ModaleSelectionQuantite({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden text-slate-900 dark:text-white">
-        
+      <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden text-brand-black dark:text-white">
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-brand-orange/15 text-brand-orange shrink-0">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-black font-outfit text-slate-900 dark:text-white">
+              <h2 className="text-base font-black font-outfit text-brand-black dark:text-white">
                 {titre || (action === "facturer" ? "Facturer des Exemplaires" : action === "statut" ? "Modifier le Statut" : "Supprimer des Exemplaires")}
               </h2>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-xs text-brand-warm-grey font-medium">
                 {reference} · <span className="text-brand-orange font-bold">{unitesDisponibles.length} disponible(s)</span>
               </p>
             </div>
@@ -138,21 +138,21 @@ export default function ModaleSelectionQuantite({
           <button
             type="button"
             onClick={onFermer}
-            className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+            className="h-9 w-9 flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/40 dark:hover:bg-white/5 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Stepper / Onglets : Quantité vs N° de Série */}
-        <div className="flex border-b border-slate-100 dark:border-zinc-800 px-4 bg-slate-50/30 dark:bg-zinc-900">
+        <div className="flex border-b border-brand-light-grey/40 dark:border-white/10 px-4 bg-brand-light-grey/15 dark:bg-white/3">
           <button
             type="button"
             onClick={() => setMode("quantite")}
             className={`flex items-center gap-2 py-3 px-4 text-xs font-black border-b-2 transition-all ${
               mode === "quantite"
                 ? "border-brand-orange text-brand-orange"
-                : "border-transparent text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "border-transparent text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -164,7 +164,7 @@ export default function ModaleSelectionQuantite({
             className={`flex items-center gap-2 py-3 px-4 text-xs font-black border-b-2 transition-all ${
               mode === "sn"
                 ? "border-brand-orange text-brand-orange"
-                : "border-transparent text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "border-transparent text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
             }`}
           >
             <ListFilter className="w-3.5 h-3.5" />
@@ -174,19 +174,19 @@ export default function ModaleSelectionQuantite({
 
         {/* Corps du dialogue */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          
+
           {/* Mode 1 : Quantité Rapide */}
           {mode === "quantite" && (
             <div className="space-y-4 animate-entree">
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-400">
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey">
                 Combien d'exemplaires souhaitez-vous traiter ?
               </label>
 
-              <div className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200 dark:border-zinc-700">
+              <div className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-brand-light-grey/15 dark:bg-white/3 border border-brand-light-grey/60 dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setQuantiteVoulue((q) => Math.max(1, q - 1))}
-                  className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-lg font-black text-slate-700 dark:text-white hover:bg-slate-100 active:scale-95 shadow-xs"
+                  className="w-11 h-11 rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey/60 dark:border-white/10 flex items-center justify-center text-lg font-black text-brand-black dark:text-white hover:bg-brand-light-grey/40 active:scale-95 shadow-xs"
                 >
                   -
                 </button>
@@ -196,12 +196,12 @@ export default function ModaleSelectionQuantite({
                   max={unitesDisponibles.length}
                   value={quantiteVoulue}
                   onChange={(e) => setQuantiteVoulue(Number(e.target.value) || 1)}
-                  className="w-24 h-12 text-center text-2xl font-black font-mono rounded-xl bg-white dark:bg-zinc-900 border-2 border-brand-orange text-slate-900 dark:text-white focus:outline-none"
+                  className="w-24 h-12 text-center text-2xl font-black font-mono rounded-xl bg-white dark:bg-brand-paper border-2 border-brand-orange text-brand-black dark:text-white focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setQuantiteVoulue((q) => Math.min(unitesDisponibles.length, q + 1))}
-                  className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-lg font-black text-slate-700 dark:text-white hover:bg-slate-100 active:scale-95 shadow-xs"
+                  className="w-11 h-11 rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey/60 dark:border-white/10 flex items-center justify-center text-lg font-black text-brand-black dark:text-white hover:bg-brand-light-grey/40 active:scale-95 shadow-xs"
                 >
                   +
                 </button>
@@ -219,7 +219,7 @@ export default function ModaleSelectionQuantite({
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                         quantiteVoulue === nb
                           ? "bg-brand-orange text-white"
-                          : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                          : "bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-brand-light-grey/50 dark:hover:bg-white/10"
                       }`}
                     >
                       {nb === unitesDisponibles.length ? `Tout (${nb})` : `${nb} ex.`}
@@ -228,7 +228,7 @@ export default function ModaleSelectionQuantite({
                 })}
               </div>
 
-              <p className="text-[11px] text-slate-400 text-center font-medium">
+              <p className="text-[11px] text-brand-warm-grey text-center font-medium">
                 Les {quantiteVoulue} premiers exemplaires disponibles de ce modèle seront sélectionnés.
               </p>
             </div>
@@ -238,7 +238,7 @@ export default function ModaleSelectionQuantite({
           {mode === "sn" && (
             <div className="space-y-3 animate-entree">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey">
                   Exemplaires physiques ({snSelectionnes.size} / {unitesDisponibles.length})
                 </span>
                 <button
@@ -250,7 +250,7 @@ export default function ModaleSelectionQuantite({
                 </button>
               </div>
 
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100 dark:divide-zinc-800 border border-slate-200 dark:border-zinc-800 rounded-2xl p-2 bg-slate-50/50 dark:bg-zinc-900/50">
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1 divide-y divide-brand-light-grey/30 dark:divide-white/5 border border-brand-light-grey/60 dark:border-white/10 rounded-2xl p-2 bg-brand-light-grey/10 dark:bg-white/3">
                 {unitesDisponibles.map((u) => {
                   const estCoche = snSelectionnes.has(u.id);
                   return (
@@ -260,7 +260,7 @@ export default function ModaleSelectionQuantite({
                       className={`pt-2 first:pt-0 p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-all ${
                         estCoche
                           ? "bg-brand-orange/10 border border-brand-orange/30"
-                          : "hover:bg-slate-100 dark:hover:bg-zinc-800 border border-transparent"
+                          : "hover:bg-brand-light-grey/30 dark:hover:bg-white/5 border border-transparent"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -272,11 +272,11 @@ export default function ModaleSelectionQuantite({
                         />
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                            <span className="font-mono text-xs font-bold text-brand-black dark:text-white">
                               {u.code_interne}
                             </span>
                             {u.grade && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-slate-300">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-white">
                                 {u.grade}
                               </span>
                             )}
@@ -290,7 +290,7 @@ export default function ModaleSelectionQuantite({
                       <div className="text-right">
                         <BadgeStatut statut={u.statut} aJeter={u.a_jeter} />
                         {u.prix_vente_fixe && (
-                          <div className="text-[11px] font-mono font-bold text-slate-600 dark:text-slate-400 mt-0.5">
+                          <div className="text-[11px] font-mono font-bold text-brand-warm-grey mt-0.5">
                             {formaterDA(u.prix_vente_fixe)}
                           </div>
                         )}
@@ -304,8 +304,8 @@ export default function ModaleSelectionQuantite({
 
           {/* Section Supplémentaire pour Action "Statut" */}
           {action === "statut" && (
-            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-3">
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-400">
+            <div className="pt-3 border-t border-brand-light-grey/40 dark:border-white/10 space-y-3">
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey">
                 Nouveau Statut Cible
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -317,7 +317,7 @@ export default function ModaleSelectionQuantite({
                     className={`py-2 px-3 rounded-xl text-xs font-bold border text-left transition-all ${
                       statutCible === st.valeur
                         ? "border-brand-orange bg-brand-orange/15 text-brand-orange font-black shadow-xs"
-                        : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                        : "border-brand-light-grey/60 dark:border-white/10 bg-white dark:bg-brand-paper text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
                     }`}
                   >
                     {st.libelle}
@@ -326,7 +326,7 @@ export default function ModaleSelectionQuantite({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 mb-1">
+                <label className="block text-[11px] font-bold text-brand-warm-grey mb-1">
                   Note d'historique (Optionnel)
                 </label>
                 <input
@@ -334,7 +334,7 @@ export default function ModaleSelectionQuantite({
                   value={noteStatut}
                   onChange={(e) => setNoteStatut(e.target.value)}
                   placeholder="Ex: Contrôlé en atelier, prêt à la vente"
-                  className="input w-full rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs"
+                  className="champ text-xs"
                 />
               </div>
             </div>
@@ -343,7 +343,7 @@ export default function ModaleSelectionQuantite({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 flex items-center justify-between gap-3">
+        <div className="p-4 border-t border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/3 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={onFermer}
