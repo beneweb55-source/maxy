@@ -14,7 +14,7 @@ import {
   IconeTelechargement,
   IconeStore,
 } from "@/components/icons";
-import { Store, Truck, Layers, Wallet, ArrowRightLeft } from "lucide-react";
+import { Store, Truck, Layers, Wallet, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Banknote } from "lucide-react";
 import { useT } from "@/lib/i18n/contexte";
 
 interface MouvementDto {
@@ -473,9 +473,61 @@ export default function CaisseDashboard({ role }: { role: Role }) {
       </div>
 
       {estGerant && (
-        <section className="carte">
-          <h2 className="libelle text-brand-smooth">{t("caisseDashboard.nouveauMouvementManuel")}</h2>
-          <div className="mt-3 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
+        <section className="carte space-y-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-xl ${
+              sensMouvement(typeMouvement) === "entree"
+                ? "bg-emerald-100 text-emerald-600"
+                : sensMouvement(typeMouvement) === "sortie"
+                ? "bg-red-100 text-red-600"
+                : "bg-brand-orange/10 text-brand-orange"
+            }`}>
+              {sensMouvement(typeMouvement) === "entree"
+                ? <ArrowDownToLine className="w-5 h-5" />
+                : sensMouvement(typeMouvement) === "sortie"
+                ? <ArrowUpFromLine className="w-5 h-5" />
+                : <ArrowRightLeft className="w-5 h-5" />
+              }
+            </div>
+            <div>
+              <h2 className="libelle text-brand-smooth">{t("caisseDashboard.nouveauMouvementManuel")}</h2>
+              <p className="text-[11px] text-brand-warm-grey mt-0.5">
+                {sensMouvement(typeMouvement) === "entree"
+                  ? "Ajouter de l'argent dans une caisse"
+                  : sensMouvement(typeMouvement) === "sortie"
+                  ? "Retirer de l'argent d'une caisse"
+                  : "Transfert ou opération interne"}
+              </p>
+            </div>
+          </div>
+
+          {/* Raccourcis rapides pour les types les plus courants */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { type: "apport_associe" as TypeMouvement, label: "Ajouter", icon: <ArrowDownToLine className="w-3.5 h-3.5" />, color: "emerald" },
+              { type: "retrait_parts" as TypeMouvement, label: "Retirer", icon: <ArrowUpFromLine className="w-3.5 h-3.5" />, color: "red" },
+              { type: "frais" as TypeMouvement, label: "Frais", icon: <Wallet className="w-3.5 h-3.5" />, color: "red" },
+              { type: "achat_piece" as TypeMouvement, label: "Achat pièce", icon: <Banknote className="w-3.5 h-3.5" />, color: "red" },
+            ].map(({ type, label, icon, color }) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setTypeMouvement(type)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+                  typeMouvement === type
+                    ? color === "emerald"
+                      ? "bg-emerald-500 text-white shadow-md"
+                      : "bg-danger text-white shadow-md"
+                    : "bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-brand-light-grey/60 dark:hover:bg-white/10"
+                }`}
+              >
+                {icon}
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
             <div>
               <label className="libelle mb-1.5" htmlFor="type-mvt">
                 Type de mouvement
@@ -488,6 +540,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               >
                 {TYPES_MANUELS.map((typeMvt) => (
                   <option key={typeMvt} value={typeMvt}>
+                    {sensMouvement(typeMvt) === "entree" ? "↓ " : sensMouvement(typeMvt) === "sortie" ? "↑ " : ""}
                     {t(LIBELLES_TYPE[typeMvt])}
                   </option>
                 ))}
@@ -504,8 +557,27 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                 step={1}
                 value={montant}
                 onChange={(e) => setMontant(e.target.value)}
-                className="champ w-full sm:w-36"
+                placeholder="0"
+                className={`champ w-full sm:w-40 text-lg font-bold ${
+                  sensMouvement(typeMouvement) === "entree"
+                    ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/20"
+                    : sensMouvement(typeMouvement) === "sortie"
+                    ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+                    : ""
+                }`}
               />
+              <div className="flex gap-1.5 mt-1.5">
+                {[1000, 5000, 10000, 25000, 50000].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setMontant(String(v))}
+                    className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-brand-light-grey/60 dark:hover:bg-white/10"
+                  >
+                    {v >= 1000 ? `${v / 1000}K` : v} DA
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="min-w-0 sm:min-w-48 flex-1">
               <label className="libelle mb-1.5" htmlFor="desc-mvt">
@@ -516,7 +588,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ex. Achat clavier de remplacement"
+                placeholder="Ex. Achat clavier, remboursement..."
                 className="champ"
               />
             </div>
@@ -530,7 +602,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
                 onChange={(e) => setCaisseCibleMouvement(e.target.value as any)}
                 className="champ w-full sm:w-auto font-bold text-xs"
               >
-                <option value="CAISSE_PHYSIQUE">Caisse Normale (Magasin)</option>
+                <option value="CAISSE_PHYSIQUE">Caisse Physique (Magasin)</option>
                 <option value="CAISSE_YALIDINE">Caisse Yalidine (Expéditions)</option>
               </select>
             </div>
@@ -538,12 +610,23 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               type="button"
               disabled={envoi || !montant.trim()}
               onClick={() => void enregistrerMouvement(false)}
-              className="btn btn-primaire"
+              className={`btn flex items-center gap-2 ${
+                sensMouvement(typeMouvement) === "entree"
+                  ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                  : sensMouvement(typeMouvement) === "sortie"
+                  ? "bg-danger hover:bg-danger/90 text-white"
+                  : "btn-primaire"
+              }`}
             >
-              Enregistrer
+              {sensMouvement(typeMouvement) === "entree"
+                ? <><ArrowDownToLine className="w-4 h-4" /> Ajouter</>
+                : sensMouvement(typeMouvement) === "sortie"
+                ? <><ArrowUpFromLine className="w-4 h-4" /> Retirer</>
+                : "Enregistrer"
+              }
             </button>
           </div>
-          <p className="mt-2 text-xs text-brand-warm-grey">
+          <p className="text-xs text-brand-warm-grey">
             Les mouvements achat de lot, vente et annulation de vente sont créés automatiquement
             par le système. Rien ne se supprime jamais.
           </p>
