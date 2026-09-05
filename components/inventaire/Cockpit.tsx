@@ -78,80 +78,123 @@ import {
   ChevronRight 
 } from "lucide-react";
 
-// Thèmes visuels épurés pour les 9 Grandes Familles (Palette POS tactile moderne)
-const FAMILLE_THEMES: Record<string, { bgSoft: string; iconBg: string; IconComponent: React.ComponentType<{ className?: string }>; textAccent: string; badgeBg: string }> = {
-  "ORDINATEURS": {
-    bgSoft: "hover:border-blue-400/80 dark:hover:border-blue-500/80",
-    iconBg: "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
-    IconComponent: Laptop,
-    textAccent: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
-    badgeBg: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
-  },
-  "STOCKAGE": {
-    bgSoft: "hover:border-cyan-400/80 dark:hover:border-cyan-500/80",
-    iconBg: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/15 dark:text-cyan-300",
-    IconComponent: HardDrive,
-    textAccent: "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
-    badgeBg: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300",
-  },
-  "SERVEURS": {
-    bgSoft: "hover:border-purple-400/80 dark:hover:border-purple-500/80",
-    iconBg: "bg-purple-500/10 text-purple-600 dark:bg-purple-400/15 dark:text-purple-300",
-    IconComponent: Server,
-    textAccent: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
-    badgeBg: "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300",
-  },
-  "ALIMENTATION & CÂBLES": {
-    bgSoft: "hover:border-amber-400/80 dark:hover:border-amber-500/80",
-    iconBg: "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
-    IconComponent: Zap,
-    textAccent: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
-    badgeBg: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
-  },
-  "MÉMOIRE": {
-    bgSoft: "hover:border-emerald-400/80 dark:hover:border-emerald-500/80",
-    iconBg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
-    IconComponent: Cpu,
-    textAccent: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
-    badgeBg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
-  },
-  "IMPRESSION": {
-    bgSoft: "hover:border-rose-400/80 dark:hover:border-rose-500/80",
-    iconBg: "bg-rose-500/10 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300",
-    IconComponent: Printer,
-    textAccent: "group-hover:text-rose-600 dark:group-hover:text-rose-400",
-    badgeBg: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
-  },
-  "PÉRIPHÉRIQUES": {
-    bgSoft: "hover:border-sky-400/80 dark:hover:border-sky-500/80",
-    iconBg: "bg-sky-500/10 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
-    IconComponent: Monitor,
-    textAccent: "group-hover:text-sky-600 dark:group-hover:text-sky-400",
-    badgeBg: "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
-  },
-  "COMPOSANTS INTERNES": {
-    bgSoft: "hover:border-violet-400/80 dark:hover:border-violet-500/80",
-    iconBg: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
-    IconComponent: CircuitBoard,
-    textAccent: "group-hover:text-violet-600 dark:group-hover:text-violet-400",
-    badgeBg: "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
-  },
-  "RÉSEAU & INFRASTRUCTURE": {
-    bgSoft: "hover:border-teal-400/80 dark:hover:border-teal-500/80",
-    iconBg: "bg-teal-500/10 text-teal-600 dark:bg-teal-400/15 dark:text-teal-300",
-    IconComponent: Globe,
-    textAccent: "group-hover:text-teal-600 dark:group-hover:text-teal-400",
-    badgeBg: "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300",
-  },
-};
+// Thèmes visuels pour les Grandes Familles — lookup par mot-clé inclus dans le nom DB
+type FamilleTheme = { bgSoft: string; iconBg: string; IconComponent: React.ComponentType<{ className?: string }>; textAccent: string; badgeBg: string };
 
-const THEME_DEFAUT = {
+const FAMILLE_THEMES: { keywords: string[]; theme: FamilleTheme }[] = [
+  {
+    keywords: ["ordinateur"],
+    theme: {
+      bgSoft: "hover:border-blue-400/80 dark:hover:border-blue-500/80",
+      iconBg: "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
+      IconComponent: Laptop,
+      textAccent: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+      badgeBg: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+    },
+  },
+  {
+    keywords: ["stockage", "disque", "dd", "ssd", "hdd"],
+    theme: {
+      bgSoft: "hover:border-cyan-400/80 dark:hover:border-cyan-500/80",
+      iconBg: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/15 dark:text-cyan-300",
+      IconComponent: HardDrive,
+      textAccent: "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
+      badgeBg: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300",
+    },
+  },
+  {
+    keywords: ["serveur", "baie"],
+    theme: {
+      bgSoft: "hover:border-purple-400/80 dark:hover:border-purple-500/80",
+      iconBg: "bg-purple-500/10 text-purple-600 dark:bg-purple-400/15 dark:text-purple-300",
+      IconComponent: Server,
+      textAccent: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
+      badgeBg: "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300",
+    },
+  },
+  {
+    keywords: ["alimentation", "câble", "cable", "chargeur"],
+    theme: {
+      bgSoft: "hover:border-amber-400/80 dark:hover:border-amber-500/80",
+      iconBg: "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
+      IconComponent: Zap,
+      textAccent: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+      badgeBg: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
+    },
+  },
+  {
+    keywords: ["mémoire", "memoire", "processeur", "cpu", "ram"],
+    theme: {
+      bgSoft: "hover:border-emerald-400/80 dark:hover:border-emerald-500/80",
+      iconBg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
+      IconComponent: Cpu,
+      textAccent: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
+      badgeBg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+    },
+  },
+  {
+    keywords: ["impression", "consommable", "imprimante", "cartouche"],
+    theme: {
+      bgSoft: "hover:border-rose-400/80 dark:hover:border-rose-500/80",
+      iconBg: "bg-rose-500/10 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300",
+      IconComponent: Printer,
+      textAccent: "group-hover:text-rose-600 dark:group-hover:text-rose-400",
+      badgeBg: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
+    },
+  },
+  {
+    keywords: ["écran", "ecran", "périphérique", "peripherique", "monitor", "écrans"],
+    theme: {
+      bgSoft: "hover:border-sky-400/80 dark:hover:border-sky-500/80",
+      iconBg: "bg-sky-500/10 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
+      IconComponent: Monitor,
+      textAccent: "group-hover:text-sky-600 dark:group-hover:text-sky-400",
+      badgeBg: "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
+    },
+  },
+  {
+    keywords: ["composant", "carte", "extension", "interne"],
+    theme: {
+      bgSoft: "hover:border-violet-400/80 dark:hover:border-violet-500/80",
+      iconBg: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
+      IconComponent: CircuitBoard,
+      textAccent: "group-hover:text-violet-600 dark:group-hover:text-violet-400",
+      badgeBg: "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
+    },
+  },
+  {
+    keywords: ["réseau", "reseau", "infrastructure", "commutation", "switch", "routeur"],
+    theme: {
+      bgSoft: "hover:border-teal-400/80 dark:hover:border-teal-500/80",
+      iconBg: "bg-teal-500/10 text-teal-600 dark:bg-teal-400/15 dark:text-teal-300",
+      IconComponent: Globe,
+      textAccent: "group-hover:text-teal-600 dark:group-hover:text-teal-400",
+      badgeBg: "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300",
+    },
+  },
+];
+
+const THEME_DEFAUT: FamilleTheme = {
   bgSoft: "hover:border-slate-400",
   iconBg: "bg-slate-500/10 text-slate-700 dark:bg-slate-400/15 dark:text-slate-200",
   IconComponent: Package,
   textAccent: "group-hover:text-brand-orange",
   badgeBg: "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
 };
+
+/** Résout le thème visuel d'une famille par matching de mots-clés (insensible à la casse/accents) */
+function resolverThemeFamille(nomFamille: string): FamilleTheme {
+  const lower = nomFamille
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+  for (const entry of FAMILLE_THEMES) {
+    if (entry.keywords.some((kw) => lower.includes(kw))) {
+      return entry.theme;
+    }
+  }
+  return THEME_DEFAUT;
+}
 
 export default function Cockpit({ 
   majUrl, 
@@ -459,7 +502,7 @@ export default function Cockpit({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {famillesAffichees.map((famille) => {
-              const theme = FAMILLE_THEMES[famille.nom] || THEME_DEFAUT;
+              const theme = resolverThemeFamille(famille.nom);
               const nonZeroCategories = famille.categories.filter(c => c.total > 0);
 
               return (
