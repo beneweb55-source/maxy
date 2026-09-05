@@ -344,7 +344,7 @@ export default function Cockpit({
             <button 
               type="button"
               onClick={() => majUrl({ vue: "atraiter", a_tarifer: "1", statuts: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="carte group border border-red-200 dark:border-red-900/40 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+              className="carte group border border-red-200 dark:border-red-900/40 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
@@ -362,7 +362,7 @@ export default function Cockpit({
             <button 
               type="button"
               onClick={() => majUrl({ vue: "atraiter", statuts: "en_test", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="carte group border border-amber-200 dark:border-amber-900/40 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+              className="carte group border border-amber-200 dark:border-amber-900/40 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
@@ -380,7 +380,7 @@ export default function Cockpit({
             <button 
               type="button"
               onClick={() => majUrl({ vue: "atraiter", statuts: "a_reparer", a_tarifer: null, sans_photo: null, sans_etiquette: null, a_jeter: null })}
-              className="carte group border border-orange-200 dark:border-orange-900/40 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+              className="carte group border border-orange-200 dark:border-orange-900/40 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1.5">
@@ -398,7 +398,7 @@ export default function Cockpit({
             <button 
               type="button"
               onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
-              className="carte group border border-slate-200 dark:border-slate-800 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+              className="carte group border border-slate-200 dark:border-slate-800 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
@@ -416,7 +416,7 @@ export default function Cockpit({
             <button 
               type="button"
               onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
-              className="carte group border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-brand-paper !p-4 rounded-xl shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+              className="carte group border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
@@ -446,7 +446,7 @@ export default function Cockpit({
           <button
             type="button"
             onClick={() => majUrl({ vue: "tableau", famille_id: null, categorie_id: null, sous_categorie_id: null })}
-            className="btn btn-secondaire text-xs py-1.5 px-3 rounded-lg font-semibold bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 shadow-xs hover:text-brand-orange"
+            className="btn btn-secondaire text-xs py-1.5 px-3 font-semibold bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 shadow-xs hover:text-brand-orange"
           >
             Voir tout l'inventaire ({stats.summary.total})
           </button>

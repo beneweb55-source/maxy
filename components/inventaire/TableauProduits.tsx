@@ -49,7 +49,7 @@ export default function TableauProduits({
   onCharger,
 }: TableauProduitsProps) {
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine">
+    <div className="w-full overflow-x-auto carte !p-0 !hover:transform-none relative scrollbar-fine">
       <table className="w-full min-w-[900px] text-[13px] relative border-collapse">
         <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md border-b border-brand-light-grey dark:border-white/10">
           <tr>

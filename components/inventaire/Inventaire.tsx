@@ -978,7 +978,7 @@ export default function Inventaire({ role }: { role: Role }) {
             value={formulaire.reference}
             onChange={(e) => setFormulaire({ ...formulaire, reference: e.target.value })}
             placeholder="Ex. Lenovo ThinkPad T480 i5 8Go 256Go SSD"
-            className="input w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
+            className="champ dark:bg-white/5 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs"
           />
         </div>
 
@@ -993,7 +993,7 @@ export default function Inventaire({ role }: { role: Role }) {
               const val = e.target.value;
               setFormulaire({ ...formulaire, categorie: val });
             }}
-            className="select w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
+            className="select w-full h-12 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
           >
             <option value="">Sélectionner une catégorie…</option>
             {categoriesTree.map((famille) => (
@@ -1022,7 +1022,7 @@ export default function Inventaire({ role }: { role: Role }) {
             id="lot-produit"
             value={formulaire.lot_id}
             onChange={(e) => setFormulaire({ ...formulaire, lot_id: e.target.value })}
-            className="select w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+            className="select w-full h-12 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
           >
             <option value="">{t("inventaire.stockIndependant")}</option>
             {(donnees?.lots ?? []).map((l) => (
@@ -1058,7 +1058,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 onChange={(e) =>
                   setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
                 }
-                className="input w-full h-12 rounded-xl bg-white dark:bg-brand-black border border-slate-200 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
+                className="champ dark:bg-brand-black dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
               />
             </div>
 
@@ -1076,7 +1076,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 onChange={(e) =>
                   setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
                 }
-                className="input w-full h-12 rounded-xl bg-white dark:bg-brand-black border border-brand-orange/40 text-right font-black text-sm sm:text-base text-brand-orange"
+                className="champ dark:bg-brand-black !border-brand-orange/40 text-right font-black text-sm sm:text-base text-brand-orange"
                 placeholder="Non fixé"
               />
             </div>
@@ -1096,7 +1096,7 @@ export default function Inventaire({ role }: { role: Role }) {
               onChange={(e) =>
                 setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
               }
-              className="input w-full h-12 rounded-xl bg-white dark:bg-brand-black border border-slate-200 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
+              className="champ dark:bg-brand-black dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
             />
             {modalEdition !== null && Number(formulaire.quantite) !== modalEdition.unites.length && (
               <div className="mt-2 text-[11px] font-bold leading-tight text-brand-orange bg-brand-orange/10 p-2.5 rounded-xl border border-brand-orange/20 flex items-center gap-1.5">
@@ -1191,7 +1191,7 @@ export default function Inventaire({ role }: { role: Role }) {
               <button
                 type="button"
                 onClick={() => setModalImportation(true)}
-                className="btn bg-brand-orange/15 hover:bg-brand-orange/25 text-brand-orange border border-brand-orange/30 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+                className="btn btn-secondaire !bg-brand-orange/15 hover:!bg-brand-orange/25 !text-brand-orange !border-brand-orange/30 font-black text-xs sm:text-sm"
               >
                 <UploadCloud className="w-4 h-4 text-brand-orange shrink-0" />
                 <span>Importer Excel / CSV</span>
@@ -1469,7 +1469,7 @@ export default function Inventaire({ role }: { role: Role }) {
                       setQLoc("");
                       router.replace("/inventaire");
                     }}
-                    className="ml-auto text-sm font-bold text-danger hover:bg-danger/10 px-3 py-1.5 rounded-md transition flex items-center gap-1.5 border border-transparent hover:border-danger/20"
+                    className="ml-auto text-sm font-bold text-danger hover:bg-danger/10 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-transparent hover:border-danger/20"
                   >
                     Effacer tous les filtres
                   </button>
@@ -1639,7 +1639,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   key={p}
                   type="button"
                   onClick={() => majUrl({ page: String(p) })}
-                  className={`flex h-8 w-8 items-center justify-center rounded-md transition ${
+                  className={`flex min-h-[36px] min-w-[36px] items-center justify-center rounded-xl transition ${
                     currentPage === p
                       ? "bg-brand-black text-brand-white font-bold"
                       : "text-brand-warm-grey hover:bg-brand-light-grey/50 hover:text-brand-black"
@@ -1695,7 +1695,7 @@ export default function Inventaire({ role }: { role: Role }) {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-entree max-w-[95vw]">
           <div className="flex flex-wrap items-center gap-3 px-5 py-3 rounded-2xl bg-brand-black/95 dark:bg-zinc-900/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
             <div className="flex items-center gap-2 pr-3 border-r border-white/20">
-              <span className="w-7 h-7 rounded-xl bg-brand-orange text-white font-black text-xs flex items-center justify-center shadow-md">
+              <span className="w-7 h-7 rounded-full bg-brand-orange text-white font-black text-xs flex items-center justify-center shadow-md">
                 {selection.length}
               </span>
               <span className="text-xs font-bold whitespace-nowrap">
@@ -1865,9 +1865,9 @@ export default function Inventaire({ role }: { role: Role }) {
         onFermer={() => setModalEdition(null)}
       >
         {brouillonDisponible && (
-          <div className="mb-4 rounded-lg bg-brand-orange/10 p-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-brand-orange/20 animate-entree">
+          <div className="mb-4 rounded-2xl bg-brand-orange/10 p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-brand-orange/20 animate-entree">
             <div className="text-sm">
-              <p className="font-semibold text-brand-orange">Un brouillon non enregistré est disponible.</p>
+              <p className="font-bold text-brand-orange">Un brouillon non enregistré est disponible.</p>
               <p className="text-xs text-brand-orange/80">Sauvegardé {new Date(brouillonDisponible.timestamp).toLocaleTimeString()}</p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -1929,7 +1929,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     }
                   }}
                   disabled={envoi || cibleStatut !== null}
-                  className="select w-full sm:w-auto h-11 rounded-xl bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+                  className="select w-full sm:w-auto h-11 rounded-lg bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
                 >
                   <option value="">{t("inventaire.changerStatut")}</option>
                   {(() => {
@@ -1964,7 +1964,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     rows={2}
                     autoFocus
                     placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? t("inventaire.precisezRaison")}
-                    className="textarea w-full rounded-xl bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-xs font-medium"
+                    className="textarea w-full rounded-lg bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-xs font-medium"
                   />
                   <div className="flex flex-col sm:flex-row justify-end gap-2 mt-2">
                     <button

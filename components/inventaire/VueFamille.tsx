@@ -2,14 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { 
-  IconeChevronGauche, 
-  IconeChevronDroite, 
-  IconeArchive, 
-  IconeRecherche, 
+import {
+  IconeChevronGauche,
+  IconeChevronDroite,
+  IconeArchive,
+  IconeRecherche,
   IconeAlerte,
   IconePlus
 } from "@/components/icons";
+import { Layers, Tag } from "lucide-react";
+
+/** Palette de couleurs pour les icônes de catégorie (rotation par index) */
+const CAT_COLORS = [
+  { bg: "bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300", ring: "ring-blue-200 dark:ring-blue-800/40" },
+  { bg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300", ring: "ring-emerald-200 dark:ring-emerald-800/40" },
+  { bg: "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300", ring: "ring-amber-200 dark:ring-amber-800/40" },
+  { bg: "bg-purple-500/10 text-purple-600 dark:bg-purple-400/15 dark:text-purple-300", ring: "ring-purple-200 dark:ring-purple-800/40" },
+  { bg: "bg-rose-500/10 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300", ring: "ring-rose-200 dark:ring-rose-800/40" },
+  { bg: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/15 dark:text-cyan-300", ring: "ring-cyan-200 dark:ring-cyan-800/40" },
+  { bg: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300", ring: "ring-violet-200 dark:ring-violet-800/40" },
+  { bg: "bg-teal-500/10 text-teal-600 dark:bg-teal-400/15 dark:text-teal-300", ring: "ring-teal-200 dark:ring-teal-800/40" },
+  { bg: "bg-sky-500/10 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300", ring: "ring-sky-200 dark:ring-sky-800/40" },
+];
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 
 interface SousCategorieNode {
@@ -178,7 +192,7 @@ export default function VueFamille({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categoriesFiltrees.map((cat) => {
+            {categoriesFiltrees.map((cat, idx) => {
               const totalDirect = cat._count?.produits || 0;
               const totalEnfants = (cat.enfants || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
               const totalCat = totalDirect + totalEnfants;
@@ -192,16 +206,23 @@ export default function VueFamille({
                   className="carte group !p-5 border border-brand-light-grey/60 dark:border-white/10 bg-white dark:bg-brand-paper rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-[0.985] min-h-[140px] hover:border-brand-orange/60"
                 >
                   <div>
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className="font-bold text-base sm:text-lg font-outfit text-brand-black dark:text-white group-hover:text-brand-orange transition-colors leading-snug">
-                        {cat.nom}
-                      </h3>
-                      <span className="bg-brand-light-grey/40 dark:bg-white/10 text-brand-black dark:text-white px-2.5 py-1 rounded-lg text-xs font-black shrink-0">
-                        {totalCat}
-                      </span>
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${CAT_COLORS[idx % CAT_COLORS.length]!.bg}`}>
+                        <Tag className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-base sm:text-lg font-outfit text-brand-black dark:text-white group-hover:text-brand-orange transition-colors leading-snug">
+                            {cat.nom}
+                          </h3>
+                          <span className="bg-brand-light-grey/40 dark:bg-white/10 text-brand-black dark:text-white px-2.5 py-1 rounded-lg text-xs font-black shrink-0">
+                            {totalCat}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="text-xs text-brand-warm-grey">
+                    <div className="text-xs text-brand-warm-grey mt-1">
                       {sousCatsNonZero.length} sous-catégorie{sousCatsNonZero.length > 1 ? "s" : ""} · {totalModeles} modèle{totalModeles > 1 ? "s" : ""}
                     </div>
 

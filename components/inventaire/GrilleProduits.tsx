@@ -44,10 +44,10 @@ export default function GrilleProduits({
         return (
           <div
             key={g.cle}
-            className={`group flex flex-col rounded-2xl border bg-white dark:bg-brand-paper shadow-xs transition-all hover:shadow-md overflow-hidden ${
+            className={`group flex flex-col carte !p-0 !hover:transform-none overflow-hidden ${
               tousCoches
-                ? "border-brand-orange ring-2 ring-brand-orange/30"
-                : "border-slate-200 dark:border-white/10 hover:border-brand-orange/40"
+                ? "!border-brand-orange ring-2 ring-brand-orange/30"
+                : "!border-slate-200 dark:!border-white/10 hover:!border-brand-orange/40"
             }`}
           >
             {/* Image / Header de la Carte */}
@@ -89,7 +89,7 @@ export default function GrilleProduits({
                       onSelection(prev => Array.from(new Set([...prev, ...idsGroupe])));
                     }
                   }}
-                  className="accent-brand-orange w-5 h-5 rounded border-white shadow-md cursor-pointer"
+                  className="accent-brand-orange w-5 h-5 rounded border-2 border-white/80 shadow-sm bg-white/95 dark:bg-zinc-800/95 cursor-pointer transition-transform hover:scale-110"
                 />
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function GrilleProduits({
                 {/* Statuts */}
                 <div className="flex flex-wrap gap-1 mt-2">
                   {g.resumeStatuts.map((r) => (
-                    <span key={r.statut} className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
+                    <span key={r.statut} className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
                       {r.n}× {INFOS_STATUT[r.statut].libelle}
                     </span>
                   ))}
@@ -209,7 +209,7 @@ export default function GrilleProduits({
                 <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5 max-h-44 overflow-y-auto pr-1">
                   <span className="text-[10px] font-black uppercase text-slate-400 block">Exemplaires :</span>
                   {g.unites.map((u) => (
-                    <div key={u.id} className="p-1.5 rounded-lg bg-slate-50 dark:bg-zinc-800/50 flex items-center justify-between text-xs">
+                    <div key={u.id} className="p-1.5 rounded-xl bg-slate-50 dark:bg-zinc-800/50 flex items-center justify-between text-xs">
                       <div>
                         <span className="font-mono font-bold text-brand-orange">{u.code_interne}</span>
                         <span className="text-[10px] text-slate-500 block">{u.numero_serie ? `S/N: ${u.numero_serie}` : "Sans S/N"}</span>

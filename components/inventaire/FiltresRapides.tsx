@@ -96,7 +96,7 @@ export default function FiltresRapides({
           <button
             type="button"
             onClick={onClearAll}
-            className="ml-auto text-sm font-bold text-danger hover:bg-danger/10 px-3 py-1.5 rounded-md transition flex items-center gap-1.5 border border-transparent hover:border-danger/20"
+            className="ml-auto text-sm font-bold text-danger hover:bg-danger/10 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-transparent hover:border-danger/20"
           >
             Effacer tous les filtres
           </button>

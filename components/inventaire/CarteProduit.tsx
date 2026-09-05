@@ -92,10 +92,10 @@ export default function CarteProduit({
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative flex flex-col rounded-xl border bg-white dark:bg-brand-paper shadow-sm transition-all hover:border-brand-smooth hover:shadow-md overflow-hidden h-full cursor-pointer ${
+      className={`group relative flex flex-col carte !p-0 !hover:transform-none overflow-hidden h-full cursor-pointer ${
         estCoche
-          ? "border-brand-orange ring-2 ring-brand-orange/50 bg-brand-orange/[0.02]"
-          : "border-brand-light-grey dark:border-white/10"
+          ? "!border-brand-orange ring-2 ring-brand-orange/30"
+          : "!border-brand-light-grey dark:!border-white/10 hover:!border-brand-smooth"
       }`}
     >
       {/* Checkbox de sélection (Absolute Top-Right) */}
