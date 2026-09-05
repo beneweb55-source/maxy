@@ -10,7 +10,6 @@ import type { Role, StatutProduit } from "@prisma/client";
 import { INFOS_STATUT } from "@/lib/statuts";
 import { REGLES_MACHINE_ETATS } from "@/lib/state-machine";
 import Modale from "@/components/Modale";
-import ModalAjusterCaisse from "@/components/caisse/ModalAjusterCaisse";
 import VisionneusePhotos from "@/components/VisionneusePhotos";
 import { useToast } from "@/components/toast";
 import { useLayer, LAYER_PRIORITY } from "@/hooks/useLayerStack";
@@ -30,7 +29,7 @@ import {
   IconeMoins,
   IconeFermer,
 } from "@/components/icons";
-import { Store, Truck } from "lucide-react";
+import { Store, Truck, ShoppingCart, Clock } from "lucide-react";
 
 interface CarteEnVente {
   id: number;
@@ -208,7 +207,6 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [envoi, setEnvoi] = useState(false);
   const [statsJour, setStatsJour] = useState<{ total: number; nombre: number } | null>(null);
   const [statsJourErreur, setStatsJourErreur] = useState<string | null>(null);
-  const [modalAjusterOuvert, setModalAjusterOuvert] = useState(false);
 
   const chargerStatsJour = useCallback(async () => {
     try {
@@ -932,14 +930,9 @@ export default function CaisseClient({ role }: { role: Role }) {
 
   return (
     <div className="flex flex-col min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-brand-light-grey/10">
-      <ModalAjusterCaisse
-        ouverte={modalAjusterOuvert}
-        onFermer={() => setModalAjusterOuvert(false)}
-        onTermine={chargerStatsJour}
-      />
       <header className="bg-[var(--color-sidebar-bg)] text-white p-3 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-10">
         <div className="flex items-center gap-3">
-          <Link href="/" className="btn min-h-[44px] py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
+          <Link href="/caisse" className="btn min-h-[44px] py-1 px-3 bg-white/10 text-white hover:bg-white/20 border border-white/20">
             ← Retour au Tableau de Bord
           </Link>
           <div className="font-black text-base sm:text-lg tracking-wide uppercase flex items-center gap-2">
@@ -968,26 +961,18 @@ export default function CaisseClient({ role }: { role: Role }) {
                 </>
               ) : null}
               {peutVendre && (
-                <>
-                  <button
-                    onClick={() => setModalAjusterOuvert(true)}
-                    className="min-h-[44px] px-3 py-1.5 bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5"
-                  >
-                    <span className="text-base leading-none">+</span> Ajouter / Retirer
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (window.confirm("Êtes-vous sûr de vouloir vider la caisse ? Les compteurs de la journée repartiront à 0.")) {
-                        fetch('/api/caisse/vider', { method: 'POST' })
-                          .then(() => chargerStatsJour())
-                          .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
-                      }
-                    }}
-                    className="min-h-[44px] px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-xl shadow-sm transition flex items-center"
-                  >
-                    Vider la Caisse
-                  </button>
-                </>
+                <button
+                  onClick={() => {
+                    if (window.confirm("Êtes-vous sûr de vouloir vider la caisse ? Les compteurs de la journée repartiront à 0.")) {
+                      fetch('/api/caisse/vider', { method: 'POST' })
+                        .then(() => chargerStatsJour())
+                        .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
+                    }
+                  }}
+                  className="min-h-[44px] px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-xl shadow-sm transition flex items-center"
+                >
+                  Vider la Caisse
+                </button>
               )}
             </div>
           )}
@@ -1007,7 +992,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               : "text-brand-warm-grey hover:text-brand-black hover:bg-white/10"
           }`}
         >
-          🛒 Catalogue
+          <span className="flex items-center gap-1.5"><ShoppingCart className="w-3.5 h-3.5" /> Catalogue</span>
         </button>
         <button
           type="button"
@@ -1018,7 +1003,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               : "text-brand-warm-grey hover:text-brand-black hover:bg-white/10"
           }`}
         >
-          📋 Historique
+          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Historique</span>
         </button>
       </div>
 
