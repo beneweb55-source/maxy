@@ -30,6 +30,7 @@ import {
   IconeFermer,
 } from "@/components/icons";
 import { Store, Truck, ShoppingCart, Clock } from "lucide-react";
+import ConfirmerAction from "@/components/ConfirmerAction";
 
 interface CarteEnVente {
   id: number;
@@ -276,6 +277,7 @@ export default function CaisseClient({ role }: { role: Role }) {
   const [etiquetteVenteValidee, setEtiquetteVenteValidee] = useState(false);
   const [etiquetteBundleValidee, setEtiquetteBundleValidee] = useState(false);
   const [impressionAuto, setImpressionAuto] = useState(false);
+  const [modalViderCaisse, setModalViderCaisse] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem("impressionAuto");
     if (saved) setImpressionAuto(saved === "true");
@@ -902,6 +904,17 @@ export default function CaisseClient({ role }: { role: Role }) {
     }
   }, [initTermine, chargerCartes, chargerHistorique, chargerStatsJour]);
 
+  async function viderCaisse() {
+    setModalViderCaisse(false);
+    try {
+      await fetch('/api/caisse/vider', { method: 'POST' });
+      chargerStatsJour();
+      afficher("Les compteurs de la journée ont été réinitialisés.", "succes");
+    } catch {
+      afficher("Erreur lors de la réinitialisation de la caisse.", "erreur");
+    }
+  }
+
   async function annulerVente() {
     if (envoi) return;
     if (!modalAnnulation) return;
@@ -962,13 +975,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               ) : null}
               {peutVendre && (
                 <button
-                  onClick={() => {
-                    if (window.confirm("Êtes-vous sûr de vouloir vider la caisse ? Les compteurs de la journée repartiront à 0.")) {
-                      fetch('/api/caisse/vider', { method: 'POST' })
-                        .then(() => chargerStatsJour())
-                        .catch(() => alert("Erreur lors de la réinitialisation de la caisse."));
-                    }
-                  }}
+                  onClick={() => setModalViderCaisse(true)}
                   className="min-h-[44px] px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-xl shadow-sm transition flex items-center"
                 >
                   Vider la Caisse
@@ -2496,6 +2503,17 @@ export default function CaisseClient({ role }: { role: Role }) {
           titre={apercuPhotos.titre}
         />
       )}
+
+      <ConfirmerAction
+        ouverte={modalViderCaisse}
+        onConfirmer={viderCaisse}
+        onAnnuler={() => setModalViderCaisse(false)}
+        titre="Vider la caisse"
+        message="Êtes-vous sûr de vouloir réinitialiser la caisse ? Les compteurs de la journée repartiront à 0."
+        labelConfirmer="Oui, vider"
+        labelAnnuler="Annuler"
+        variante="danger"
+      />
 
       <Modale
         titre={modalRetrait ? `Retirer — ${modalRetrait.unites[0]!.code_interne}` : ""}
