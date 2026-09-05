@@ -50,6 +50,20 @@ export function useRaccourcis({ role, onOuvrirRecherche, onOuvrirGuide }: Raccou
         return;
       }
 
+      // Ctrl+O ou Cmd+O (Commandes)
+      if ((e.ctrlKey || e.metaKey) && e.key === "o") {
+        e.preventDefault();
+        router.push("/commandes");
+        return;
+      }
+
+      // Ctrl+Shift+F → Nouvelle facture (Ctrl+F reste le browser)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "F") {
+        e.preventDefault();
+        router.push("/factures");
+        return;
+      }
+
       // Ctrl+H ou Cmd+H (Guide des raccourcis)
       if ((e.ctrlKey || e.metaKey) && e.key === "h") {
         e.preventDefault();

@@ -340,6 +340,14 @@ export default function AppShell({
             <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + I</kbd>
           </div>
           <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
+            <span>Aller aux commandes</span>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + O</kbd>
+          </div>
+          <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
+            <span>Aller aux factures</span>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + Shift + F</kbd>
+          </div>
+          <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
             <span>Nouveau lot (Gérant)</span>
             <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + N</kbd>
           </div>
