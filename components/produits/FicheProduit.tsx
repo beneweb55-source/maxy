@@ -338,7 +338,14 @@ export default function FicheProduit({
 
   // Supprimer une unité physique
   const supprimerUnite = async (uniteId: number, codeInterne: string) => {
-    if (!confirm(`Confirmer la suppression définitive de l'exemplaire ${codeInterne} ?`)) return;
+    const ok = await confirmer({
+      titre: "Supprimer l'exemplaire",
+      message: `Confirmer la suppression définitive de l'exemplaire ${codeInterne} ? Cette action est irréversible.`,
+      labelConfirmer: "Supprimer",
+      labelAnnuler: "Annuler",
+      variante: "danger",
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/produits/${uniteId}`, { method: "DELETE" });
       if (!res.ok) {

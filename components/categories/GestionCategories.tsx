@@ -25,6 +25,8 @@ import {
   CircuitBoard,
   Globe
 } from "lucide-react";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import ConfirmerAction from "@/components/ConfirmerAction";
 
 interface SousCategorie {
   id: number;
@@ -59,6 +61,7 @@ interface Famille {
 }
 
 export default function GestionCategories() {
+  const { confirmer, propsModal } = useConfirmation();
   const [familles, setFamilles] = useState<Famille[]>([]);
   const [familleActiveId, setFamilleActiveId] = useState<number | null>(null);
   const [categorieActiveId, setCategorieActiveId] = useState<number | null>(null);
@@ -204,7 +207,14 @@ export default function GestionCategories() {
       return;
     }
 
-    if (!confirm(`Confirmez-vous la suppression définitive de "${item.nom}" ?`)) return;
+    const ok = await confirmer({
+      titre: "Supprimer la catégorie",
+      message: `Confirmez-vous la suppression définitive de "${item.nom}" ? Cette action est irréversible.`,
+      labelConfirmer: "Supprimer",
+      labelAnnuler: "Annuler",
+      variante: "danger",
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/categories/${item.id}`, { method: "DELETE" });
@@ -638,6 +648,7 @@ export default function GestionCategories() {
           </div>
         </div>
       )}
+      <ConfirmerAction {...propsModal} />
     </div>
   );
 }

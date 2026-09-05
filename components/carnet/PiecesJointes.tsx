@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { IconeNote, IconeCorbeille, IconeActualiser, IconeUpload } from "@/components/icons";
 import { useToast } from "@/components/toast";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import ConfirmerAction from "@/components/ConfirmerAction";
 
 interface PieceJointe {
   id: number;
@@ -20,6 +22,7 @@ interface PiecesJointesProps {
 
 export function PiecesJointes({ entreeId, piecesJointesInitiales, lectureSeule }: PiecesJointesProps) {
   const { afficher } = useToast();
+  const { confirmer, propsModal } = useConfirmation();
   const [pieces, setPieces] = useState<PieceJointe[]>(piecesJointesInitiales);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -63,7 +66,14 @@ export function PiecesJointes({ entreeId, piecesJointesInitiales, lectureSeule }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Voulez-vous vraiment supprimer cette pièce jointe ?")) return;
+    const ok = await confirmer({
+      titre: "Supprimer la pièce jointe",
+      message: "Voulez-vous vraiment supprimer cette pièce jointe ? Cette action est irréversible.",
+      labelConfirmer: "Supprimer",
+      labelAnnuler: "Annuler",
+      variante: "danger",
+    });
+    if (!ok) return;
     
     try {
       const res = await fetch(`/api/carnet/${entreeId}/fichiers?fileId=${id}`, {
@@ -152,6 +162,7 @@ export function PiecesJointes({ entreeId, piecesJointesInitiales, lectureSeule }
           </label>
         </div>
       )}
+      <ConfirmerAction {...propsModal} />
     </div>
   );
 }
