@@ -9,6 +9,7 @@ import { validerLignesProduits, MAX_QUANTITE_PRODUITS } from "@/lib/validation";
 import { creerProduitsGroupes } from "@/lib/creation-produits";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 import { StockService } from "@/lib/stock-service";
+import type { StatutProduit } from "@prisma/client";
 
 const PAR_PAGE = 50;
 const JOUR_MS = 24 * 60 * 60 * 1000;
@@ -34,26 +35,23 @@ export async function GET(request: NextRequest) {
     const orderBy = construireTriProduits(params);
     const page = Math.max(1, Number(params.get("page")) || 1);
 
-    if (params.get("reference_exacte")) {
-      console.log("=== DEBUG API PRODUITS ===");
-      console.log("Params:", params.toString());
-      console.log("Where:", JSON.stringify(where, null, 2));
-      console.log("==========================");
-    }
-
     const grouper = params.get("grouper") === "1";
 
     let totalProduits = 0;
     let sommeAchatResult = { _sum: { prix_achat: 0 as number | null } };
     let sommeReparationsResult = { _sum: { cout: 0 as number | null } };
-    let categoriesResult: any[] = [];
+    let categoriesResult: { nom: string }[] = [];
     let lotsResult: { id: number; fournisseur: string; date_entree: Date }[] = [];
     let produits: {
       id: number;
       code_interne: string;
       reference: string;
       categorie: string;
-      statut: string;
+      categorie_id: number | null;
+      categorie_rel?: { nom: string; parent: { nom: string; parent: { nom: string } | null } | null } | null;
+      modele_id?: number | null;
+      modele?: { id: number; nom: string; image_url: string | null } | null;
+      statut: string | StatutProduit;
       a_jeter: boolean;
       en_vitrine: boolean;
       prix_achat: number;
@@ -61,10 +59,15 @@ export async function GET(request: NextRequest) {
       prix_vente_reel: number | null;
       created_at: Date;
       etiquette_imprimee: boolean;
+      numero_serie?: string | null;
+      grade?: string | null;
+      emplacement?: string | null;
       lot: { id: number; fournisseur: string; date_entree: Date } | null;
       reparations: { cout: number }[];
-      _count: { images: number };
-    }[] | any[] = [];
+      _count: { images: number; composants: number };
+      est_compose?: boolean;
+      parent_id?: number | null;
+    }[] = [];
     let totalPages = 1;
 
     if (grouper) {
@@ -159,12 +162,12 @@ export async function GET(request: NextRequest) {
       pages: totalPages,
       page,
       valeur: (sommeAchatResult?._sum?.prix_achat ?? 0) + (sommeReparationsResult?._sum?.cout ?? 0),
-      categories: (categoriesResult || []).map((c: any) => c.nom || c.categorie).filter(Boolean).sort(),
+      categories: (categoriesResult || []).map((c) => c.nom).filter(Boolean).sort(),
       lots: (lotsResult || []).map((l) => ({
         id: l.id,
         libelle: `n°${l.id} — ${l.fournisseur || "Fournisseur"} (${l.date_entree ? new Date(l.date_entree).toLocaleDateString("fr-FR") : "-"})`,
       })),
-      produits: (produits || []).map((p: any) => {
+      produits: (produits || []).map((p) => {
         const dateRef = p.lot?.date_entree ? new Date(p.lot.date_entree) : (p.created_at ? new Date(p.created_at) : new Date());
         return {
           id: p.id,

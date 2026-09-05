@@ -154,38 +154,44 @@ export async function GET(
 
     const coutReparations = p.reparations.reduce((s, r) => s + r.cout, 0);
     
-    // Récupérer l'intégralité des exemplaires physiques de ce modèle / référence
-    const exemplairesRaw = await prisma.produit.findMany({
-      where: p.modele_id 
-        ? { modele_id: p.modele_id }
-        : { reference: p.reference, categorie: p.categorie },
-      select: {
-        id: true,
-        code_interne: true,
-        reference: true,
-        numero_serie: true,
-        grade: true,
-        emplacement: true,
-        statut: true,
-        a_jeter: true,
-        en_vitrine: true,
-        prix_achat: true,
-        prix_vente_fixe: true,
-        prix_vente_reel: true,
-        date_vente: true,
-        etiquette_imprimee: true,
-        lot_id: true,
-        created_at: true,
-        lot: {
-          select: {
-            id: true,
-            fournisseur: true,
-            date_entree: true,
+    // Récupérer les exemplaires physiques de ce modèle / référence (limité à 200)
+    const exemplairesWhere = p.modele_id
+      ? { modele_id: p.modele_id }
+      : { reference: p.reference, categorie: p.categorie };
+    const MAX_EXEMPLAIRES = 200;
+    const [exemplairesRaw, totalExemplaires] = await Promise.all([
+      prisma.produit.findMany({
+        where: exemplairesWhere,
+        take: MAX_EXEMPLAIRES,
+        select: {
+          id: true,
+          code_interne: true,
+          reference: true,
+          numero_serie: true,
+          grade: true,
+          emplacement: true,
+          statut: true,
+          a_jeter: true,
+          en_vitrine: true,
+          prix_achat: true,
+          prix_vente_fixe: true,
+          prix_vente_reel: true,
+          date_vente: true,
+          etiquette_imprimee: true,
+          lot_id: true,
+          created_at: true,
+          lot: {
+            select: {
+              id: true,
+              fournisseur: true,
+              date_entree: true,
+            }
           }
-        }
-      },
-      orderBy: [{ statut: "asc" }, { id: "asc" }]
-    });
+        },
+        orderBy: [{ statut: "asc" }, { id: "asc" }],
+      }),
+      prisma.produit.count({ where: exemplairesWhere }),
+    ]);
 
     const ids_modele = exemplairesRaw.map(pi => pi.id);
 
@@ -211,7 +217,7 @@ export async function GET(
       decision_rapport: p.decision_rapport,
       nb_composants: p._count.composants,
       ids_modele,
-      quantite: ids_modele.length,
+      quantite: totalExemplaires,
       exemplaires: exemplairesRaw.map(ex => ({
         ...ex,
         created_at: ex.created_at.toISOString(),
@@ -532,16 +538,19 @@ export async function PUT(
           // Produit ciblé explicitement
           const d = { ...donneesUnite };
           if (modifPrixVente && donnees.prix_vente_fixe !== null && p.statut === "ok") {
-            d.statut = "en_vente";
-            await tx.historiqueStatut.create({
-              data: {
-                produit_id: p.id,
-                user_id: user.id,
-                statut_avant: "ok",
-                statut_apres: "en_vente",
-                note: "Prix fixé depuis l'inventaire",
-              },
-            });
+            const verif = verifierTransition(p.statut, "en_vente");
+            if (verif.valide) {
+              d.statut = "en_vente";
+              await tx.historiqueStatut.create({
+                data: {
+                  produit_id: p.id,
+                  user_id: user.id,
+                  statut_avant: p.statut,
+                  statut_apres: "en_vente",
+                  note: "Prix fixé depuis l'inventaire",
+                },
+              });
+            }
           }
           m = await tx.produit.update({ where: { id: p.id }, data: d });
           if (extrasARemplacer !== null) {
@@ -553,16 +562,19 @@ export async function PUT(
 
           const d = { ...donneesCommunes };
           if (modifPrixVente && donnees.prix_vente_fixe !== null && p.statut === "ok") {
-            d.statut = "en_vente";
-            await tx.historiqueStatut.create({
-              data: {
-                produit_id: p.id,
-                user_id: user.id,
-                statut_avant: "ok",
-                statut_apres: "en_vente",
-                note: "Prix fixé en cascade (produits identiques du lot)",
-              },
-            });
+            const verif = verifierTransition(p.statut, "en_vente");
+            if (verif.valide) {
+              d.statut = "en_vente";
+              await tx.historiqueStatut.create({
+                data: {
+                  produit_id: p.id,
+                  user_id: user.id,
+                  statut_avant: p.statut,
+                  statut_apres: "en_vente",
+                  note: "Prix fixé en cascade (produits identiques du lot)",
+                },
+              });
+            }
           }
           if (Object.keys(d).length > 0) {
              await tx.produit.update({ where: { id: p.id }, data: d });

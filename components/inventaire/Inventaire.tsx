@@ -15,6 +15,7 @@ import {
   STATUTS_NOTE_OBLIGATOIRE,
   TRANSITIONS_MANUELLES,
 } from "@/lib/transitions";
+import { transitionsPossibles } from "@/lib/state-machine";
 import {
   IconeChevronBas,
   IconeChevronGauche,
@@ -56,6 +57,7 @@ import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
 import AssistantImportation from "./AssistantImportation";
 import ModaleExport from "./ModaleExport";
 import ModaleVenteInventaire from "./ModaleVenteInventaire";
+import { SkeletonCarteProduit, SkeletonTable } from "@/components/Skeleton";
 import ModaleSelectionQuantite from "./ModaleSelectionQuantite";
 import UniversalStockManager, { type TargetStockSource } from "@/components/produits/UniversalStockManager";
 import GestionnaireQuantite from "@/components/produits/GestionnaireQuantite";
@@ -63,171 +65,25 @@ import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import RechercheMultiModal from "./RechercheMultiModal";
 import FilterDrawer from "./FilterDrawer";
 import ActiveFilterBadges from "./ActiveFilterBadges";
-import { 
-  Filter as IconFilter, 
+import GrilleProduits from "./GrilleProduits";
+import TableauProduits from "./TableauProduits";
+import FiltresRapides from "./FiltresRapides";
+import ToolbarInventaire from "./ToolbarInventaire";
+import {
   UploadCloud,
-  Layers,
   SlidersHorizontal,
-  ChevronRight,
-  ChevronDown,
   CheckCircle2,
-  PackagePlus,
-  Hash,
+  Plus,
   X,
-  Sparkles,
-  Barcode,
-  Tag,
-  Boxes,
-  Plus
+  Filter as IconFilter,
+  LayoutGrid,
+  Table2,
 } from "lucide-react";
+import type { LigneProduit, GroupeProduits, ReponseInventaire, CategorieNoeud, FormulaireProduit } from "./types";
+import { FORMULAIRE_VIDE, COLONNES_TRI } from "./types";
+import { formatCategoriePath, prixVenteAffiche, grouperDoublons } from "./utils";
 
-export interface LigneProduit {
-  id: number;
-  code_interne: string;
-  reference: string;
-  categorie: string;
-  categorie_id?: number | null;
-  categorie_rel?: {
-    nom: string;
-    parent: { nom: string; parent: { nom: string } | null } | null;
-  } | null;
-  modele_id?: number | null;
-  modele?: { id: number; nom: string; image_url?: string | null } | null;
-  statut: StatutProduit;
-  a_jeter: boolean;
-  en_vitrine: boolean;
-  prix_achat: number;
-  cout_reparations: number;
-  prix_vente_fixe: number | null;
-  prix_vente_reel: number | null;
-  numero_serie?: string | null;
-  grade?: string | null;
-  emplacement?: string | null;
-  lot_id: number | null;
-  fournisseur: string | null;
-  date_entree: string;
-  jours_stock: number;
-  image_url: string | null;
-  nb_images: number;
-  etiquette_imprimee: boolean;
-}
-
-function formatCategoriePath(p: LigneProduit): string {
-  if (p.categorie_rel) {
-    const parts = [];
-    if (p.categorie_rel.parent?.parent?.nom) parts.push(p.categorie_rel.parent.parent.nom);
-    if (p.categorie_rel.parent?.nom) parts.push(p.categorie_rel.parent.nom);
-    parts.push(p.categorie_rel.nom);
-    return parts.join(" > ");
-  }
-  return p.categorie || "Non classé";
-}
-
-interface ReponseInventaire {
-  total: number;
-  pages: number;
-  page: number;
-  valeur: number;
-  categories: string[];
-  lots: { id: number; libelle: string }[];
-  produits: LigneProduit[];
-}
-
-const COLONNES_TRI = [
-  { cle: "code_interne", libelle: "inventaire.colCode" },
-  { cle: "reference", libelle: "inventaire.colReference" },
-  { cle: "categorie", libelle: "inventaire.colCategorie" },
-  { cle: "statut", libelle: "inventaire.colStatut" },
-  { cle: "date_entree", libelle: "inventaire.colJours" },
-  { cle: "prix_achat", libelle: "inventaire.colPrixAchat" },
-  { cle: "prix_vente_fixe", libelle: "inventaire.colPrixVente" },
-] as const;
-
-interface FormulaireProduit {
-  reference: string;
-  categorie: string;
-  prix_achat: string;
-  lot_id: string;
-  prix_vente_fixe: string;
-  quantite?: string;
-}
-
-const FORMULAIRE_VIDE: FormulaireProduit = {
-  reference: "",
-  categorie: "",
-  prix_achat: "",
-  lot_id: "",
-  prix_vente_fixe: "",
-  quantite: "1",
-};
-
-// Prix de vente affiché pour une unité : le prix réel si elle est vendue,
-// sinon le prix de vente fixé (null si aucun des deux).
-function prixVenteAffiche(p: LigneProduit): number | null {
-  if (p.statut === "vendu" && p.prix_vente_reel !== null) return p.prix_vente_reel;
-  return p.prix_vente_fixe;
-}
-
-export interface GroupeProduits {
-  cle: string;
-  reference: string;
-  categorie: string;
-  modele_id: number | null;
-  categorie_id: number | null;
-  image_url: string | null;
-  nbImages: number;
-  enVitrine: number;
-  unites: LigneProduit[];
-  prixMin: number;
-  prixMax: number;
-  venteMin: number | null;
-  venteMax: number | null;
-  resumeStatuts: { statut: StatutProduit; n: number }[];
-  totalDisponibles: number;
-}
-
-function grouperDoublons(produits: LigneProduit[]): GroupeProduits[] {
-  // Exclure formellement les produits vendus, hors-service et composants assemblés de l'inventaire actif
-  const produitsActifs = produits.filter(
-    (p) => p.statut !== "vendu" && p.statut !== "hs" && p.statut !== "assemble"
-  );
-  const groupes = new Map<string, LigneProduit[]>();
-  for (const p of produitsActifs) {
-    const catFormatee = formatCategoriePath(p);
-    const cle = p.modele_id
-      ? `mod-${p.modele_id}`
-      : `${p.reference.trim().toLowerCase()}|${catFormatee.trim().toLowerCase()}`;
-    const existant = groupes.get(cle);
-    if (existant) existant.push(p);
-    else groupes.set(cle, [p]);
-  }
-  return Array.from(groupes.entries()).map(([cle, unites]) => {
-    const prix = unites.map((u) => u.prix_achat);
-    const vente = unites
-      .map(prixVenteAffiche)
-      .filter((v): v is number => v !== null);
-    const parStatut = new Map<StatutProduit, number>();
-    for (const u of unites) parStatut.set(u.statut, (parStatut.get(u.statut) ?? 0) + 1);
-    const premier = unites[0]!;
-    return {
-      cle,
-      reference: premier.reference,
-      categorie: formatCategoriePath(premier),
-      modele_id: premier.modele_id || null,
-      categorie_id: premier.categorie_id || null,
-      image_url: unites.find((u) => u.image_url)?.image_url ?? premier.modele?.image_url ?? null,
-      nbImages: Math.max(...unites.map((u) => u.nb_images || 0), 0),
-      enVitrine: unites.filter((u) => u.en_vitrine).length,
-      unites,
-      prixMin: Math.min(...prix),
-      prixMax: Math.max(...prix),
-      venteMin: vente.length > 0 ? Math.min(...vente) : null,
-      venteMax: vente.length > 0 ? Math.max(...vente) : null,
-      resumeStatuts: Array.from(parStatut.entries()).map(([statut, n]) => ({ statut, n })),
-      totalDisponibles: unites.length,
-    };
-  });
-}
+export type { LigneProduit, GroupeProduits, ReponseInventaire, CategorieNoeud } from "./types";
 
 export default function Inventaire({ role }: { role: Role }) {
   const router = useRouter();
@@ -242,34 +98,35 @@ export default function Inventaire({ role }: { role: Role }) {
   const [envoi, setEnvoi] = useState(false);
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
-  const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
+  const [categoriesTree, setCategoriesTree] = useState<CategorieNoeud[]>([]);
+
+  const chargerCategories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/categories");
+      if (res.ok) {
+        const data = await res.json();
+        setCategoriesTree(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Error loading categories in Inventaire:", err);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadCats() {
-      try {
-        const res = await fetch("/api/categories");
-        if (res.ok) {
-          const data = await res.json();
-          setCategoriesTree(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        console.error("Error loading categories in Inventaire:", err);
-      }
-    }
-    void loadCats();
-  }, []);
+    void chargerCategories();
+  }, [chargerCategories]);
 
   const familleIdActif = searchParams?.get("famille_id");
   const categorieIdActif = searchParams?.get("categorie_id");
   const sousCategorieIdActif = searchParams?.get("sous_categorie_id");
 
-  const familleActive = categoriesTree.find((f: any) => String(f.id) === familleIdActif);
-  let categorieActive: any = null;
+  const familleActive = categoriesTree.find((f) => String(f.id) === familleIdActif);
+  let categorieActive: CategorieNoeud | null = null;
   if (familleActive && categorieIdActif) {
-    categorieActive = (familleActive.enfants || []).find((c: any) => String(c.id) === categorieIdActif);
+    categorieActive = (familleActive.enfants || []).find((c) => String(c.id) === categorieIdActif) ?? null;
   } else if (categorieIdActif) {
     for (const f of categoriesTree) {
-      const found = (f.enfants || []).find((c: any) => String(c.id) === categorieIdActif);
+      const found = (f.enfants || []).find((c) => String(c.id) === categorieIdActif);
       if (found) {
         categorieActive = found;
         break;
@@ -277,11 +134,11 @@ export default function Inventaire({ role }: { role: Role }) {
     }
   }
 
-  let sousCategorieActive: any = null;
+  let sousCategorieActive: CategorieNoeud | null = null;
   if (sousCategorieIdActif) {
     for (const f of categoriesTree) {
       for (const c of f.enfants || []) {
-        const foundSc = (c.enfants || []).find((sc: any) => String(sc.id) === sousCategorieIdActif);
+        const foundSc = (c.enfants || []).find((sc) => String(sc.id) === sousCategorieIdActif);
         if (foundSc) {
           sousCategorieActive = foundSc;
           if (!categorieActive) categorieActive = c;
@@ -373,15 +230,20 @@ export default function Inventaire({ role }: { role: Role }) {
       lot_id: produitSourceDuplication.lot_id ? String(produitSourceDuplication.lot_id) : "",
       prix_vente_fixe: produitSourceDuplication.prix_vente_fixe !== null ? String(produitSourceDuplication.prix_vente_fixe) : "",
       quantite: "1",
-    } : {
-      ...FORMULAIRE_VIDE,
-      categorie: searchParams?.get("cle")
-        ? decodeBase64Url(searchParams.get("cle")!).substring(decodeBase64Url(searchParams.get("cle")!).lastIndexOf("|") + 1)
-        : searchParams?.get("categorie") || "",
-      reference: searchParams?.get("cle") 
-        ? decodeBase64Url(searchParams.get("cle")!).substring(0, decodeBase64Url(searchParams.get("cle")!).lastIndexOf("|")) 
-        : "",
-    },
+    } : (() => {
+      const cleBrute = searchParams?.get("cle");
+      const cleDecodée = cleBrute ? decodeBase64Url(cleBrute) : null;
+      const sepIdx = cleDecodée?.lastIndexOf("|") ?? -1;
+      return {
+        ...FORMULAIRE_VIDE,
+        categorie: sepIdx !== -1
+          ? cleDecodée!.substring(sepIdx + 1)
+          : searchParams?.get("categorie") || "",
+        reference: sepIdx !== -1
+          ? cleDecodée!.substring(0, sepIdx)
+          : "",
+      };
+    })(),
     modalAjout || modalEdition !== null || produitSourceDuplication !== null
   );
 
@@ -412,63 +274,39 @@ export default function Inventaire({ role }: { role: Role }) {
   const [cibleStatut, setCibleStatut] = useState<StatutProduit | null>(null);
   const [noteStatut, setNoteStatut] = useState("");
 
-  // Sélection multi-produits (Bulk Actions unifiées)
-  const [idsSelectionnes, setIdsSelectionnes] = useState<Set<number>>(new Set());
-
   // Modale changement de statut en masse
   const [modalStatutMasse, setModalStatutMasse] = useState<boolean>(false);
   const [statutMasseCible, setStatutMasseCible] = useState<StatutProduit | "">("");
   const [statutMasseNote, setStatutMasseNote] = useState<string>("");
 
-  function basculerSelection(id: number) {
-    setIdsSelectionnes((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function toutSelectionner() {
-    if (!donneesFiltrees) return;
-    const tousIds = donneesFiltrees.produits.map((p) => p.id);
-    const tousCoches = tousIds.length > 0 && tousIds.every((id) => idsSelectionnes.has(id));
-    if (tousCoches) {
-      setIdsSelectionnes(new Set());
-    } else {
-      setIdsSelectionnes(new Set(tousIds));
-    }
-  }
-
-  function deselectionnerTout() {
-    setIdsSelectionnes(new Set());
-  }
-
-  function ouvrirAjoutRapide(source?: LigneProduit | any) {
+  // Source pour l'ajout rapide : peut venir d'un produit, groupe, ou composant Cockpit (camelCase)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function ouvrirAjoutRapide(source?: LigneProduit | GroupeProduits | Record<string, any>) {
     if (!source) {
       ouvrirAjout();
       return;
     }
+    const s = source as Record<string, any>;
     setCibleStockManager({
-      modeleId: source.modele_id ?? source.modeleId ?? null,
-      produitId: source.id ?? null,
-      reference: source.reference ?? source.modeleNom ?? "Article",
-      categorie: source.categorie ?? "Matériel",
-      categorie_id: source.categorie_id ?? source.categorieId ?? null,
-      prix_achat: source.prix_achat ?? source.prixAchatDefaut ?? source.prixMin ?? 0,
-      prix_vente_fixe: source.prix_vente_fixe ?? source.prixVenteDefaut ?? source.venteMin ?? null,
-      image_url: source.image_url ?? null,
-      grade: source.grade ?? "Grade A",
-      emplacement: source.emplacement ?? "reserve",
-      lot_id: source.lot_id ?? null,
+      modeleId: s.modele_id ?? s.modeleId ?? null,
+      produitId: s.id ?? null,
+      reference: s.reference ?? s.modeleNom ?? "Article",
+      categorie: s.categorie ?? "Matériel",
+      categorie_id: s.categorie_id ?? s.categorieId ?? null,
+      prix_achat: s.prix_achat ?? s.prixAchatDefaut ?? s.prixMin ?? 0,
+      prix_vente_fixe: s.prix_vente_fixe ?? s.prixVenteDefaut ?? s.venteMin ?? null,
+      image_url: s.image_url ?? null,
+      grade: s.grade ?? "Grade A",
+      emplacement: s.emplacement ?? "reserve",
+      lot_id: s.lot_id ?? null,
     });
   }
 
   async function appliquerStatutMasse() {
-    if (!statutMasseCible || idsSelectionnes.size === 0 || envoi) return;
+    if (!statutMasseCible || selection.length === 0 || envoi) return;
     setEnvoi(true);
     try {
-      const ids = Array.from(idsSelectionnes);
+      const ids = selection;
       const res = await fetch("/api/produits/masse/statut", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -487,7 +325,7 @@ export default function Inventaire({ role }: { role: Role }) {
       setModalStatutMasse(false);
       setStatutMasseCible("");
       setStatutMasseNote("");
-      setIdsSelectionnes(new Set());
+      setSelection([]);
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -562,11 +400,12 @@ export default function Inventaire({ role }: { role: Role }) {
     (searchParams?.get("au") ? 1 : 0) +
     (searchParams?.get("plus30j") ? 1 : 0) +
     (searchParams?.get("a_tarifer") ? 1 : 0) +
+    (searchParams?.get("a_classer") ? 1 : 0) +
     (searchParams?.get("sans_photo") ? 1 : 0) +
     (searchParams?.get("sans_etiquette") ? 1 : 0) +
     (searchParams?.get("a_jeter") ? 1 : 0) +
-    statutsActifs.length +
-    (searchParams?.get("tri") ? 1 : 0);
+    (searchParams?.get("en_vitrine") ? 1 : 0) +
+    statutsActifs.length;
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -1118,7 +957,7 @@ export default function Inventaire({ role }: { role: Role }) {
     }
   }, [donnees, majUrl]);
 
-  const groupes = donneesFiltrees ? grouperDoublons(donneesFiltrees.produits) : [];
+  const groupes = donneesFiltrees ? grouperDoublons(donneesFiltrees.produits, statutsActifs) : [];
 
   const triActuel = searchParams?.get("tri") ?? "code_interne";
   const ordreActuel = searchParams?.get("ordre") ?? "asc";
@@ -1147,20 +986,32 @@ export default function Inventaire({ role }: { role: Role }) {
           <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white mb-1.5" htmlFor="cat-produit">
             Catégorie du Produit *
           </label>
-          <input
+          <select
             id="cat-produit"
-            type="text"
-            list="categories-inventaire"
             value={formulaire.categorie}
-            onChange={(e) => setFormulaire({ ...formulaire, categorie: e.target.value })}
-            placeholder="Sélectionner ou saisir une catégorie..."
-            className="input w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
-          />
-          <datalist id="categories-inventaire">
-            {(donnees?.categories ?? []).map((c) => (
-              <option key={c} value={c} />
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormulaire({ ...formulaire, categorie: val });
+            }}
+            className="select w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
+          >
+            <option value="">Sélectionner une catégorie…</option>
+            {categoriesTree.map((famille) => (
+              <optgroup key={famille.id} label={famille.nom}>
+                {(famille.enfants ?? []).map((cat) => (
+                  <React.Fragment key={cat.id}>
+                    <option value={cat.nom}>{cat.nom}</option>
+                    {(cat.enfants ?? []).map((sc) => (
+                      <option key={sc.id} value={sc.nom}>{`  └ ${sc.nom}`}</option>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </optgroup>
             ))}
-          </datalist>
+            {categoriesTree.length === 0 && (
+              <option value="" disabled>Aucune catégorie disponible</option>
+            )}
+          </select>
         </div>
 
         <div>
@@ -1200,6 +1051,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 id="prix-produit"
                 type="number"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 min={0}
                 step={1}
                 value={formulaire.prix_achat}
@@ -1382,21 +1234,23 @@ export default function Inventaire({ role }: { role: Role }) {
                 {vue !== "cockpit" && vue !== "categorie" && (
                   <div className="flex items-center self-stretch bg-brand-light-grey/20 dark:bg-white/5 rounded-xl p-1 border border-brand-light-grey/50 dark:border-white/10 shrink-0 gap-1">
                     <div className="flex items-center h-full">
-                      <button 
+                      <button
                         type="button"
-                        onClick={() => setModeAffichage("cartes")} 
+                        onClick={() => setModeAffichage("cartes")}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all h-full ${modeAffichage === "cartes" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
                         title="Vue Cartes"
+                        aria-label="Vue Cartes"
                       >
-                        ▦
+                        <LayoutGrid className="w-4 h-4" />
                       </button>
-                      <button 
+                      <button
                         type="button"
-                        onClick={() => setModeAffichage("tableau")} 
+                        onClick={() => setModeAffichage("tableau")}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all h-full ${modeAffichage === "tableau" ? "bg-white dark:bg-brand-paper shadow-sm text-brand-black dark:text-white" : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"}`}
                         title="Vue Tableau"
+                        aria-label="Vue Tableau"
                       >
-                        ☷
+                        <Table2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1662,7 +1516,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 <strong className="text-brand-black dark:text-white">{donneesFiltrees.total}</strong> produit{donneesFiltrees.total > 1 ? "s" : ""}
                 {!estSocial && (
                   <>
-                    {" "}· valeur de la sélection (achat + réparations) :{" "}
+                    {" "}· valeur totale (achat + réparations) :{" "}
                     <strong>{formaterDA(donneesFiltrees.valeur)}</strong>
                   </>
                 )}
@@ -1676,7 +1530,13 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
           {!erreur && donneesFiltrees === null && (
-            <p className="p-4 text-sm text-brand-warm-grey">{t("inventaire.chargement")}</p>
+            <div className="space-y-4">
+              {modeAffichage === "cartes" ? (
+                <SkeletonCarteProduit nombre={8} />
+              ) : (
+                <SkeletonTable lignes={8} colonnes={7} />
+              )}
+            </div>
           )}
           {donneesFiltrees && donneesFiltrees.produits.length === 0 && (
             <div className="carte border-dashed p-10 text-center flex flex-col items-center justify-center space-y-4">
@@ -1717,594 +1577,43 @@ export default function Inventaire({ role }: { role: Role }) {
           {donneesFiltrees && donneesFiltrees.produits.length > 0 && vueGroupee && (
             <div className="space-y-4">
               
-              {/* ===================== VUE CARTES REGROUPÉE PAR MODÈLE ===================== */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${modeAffichage === "cartes" ? "" : "hidden"}`}>
-                {groupes.map((g) => {
-                  const ouvert = groupesOuverts.has(g.cle);
-                  const tousCoches = g.unites.length > 0 && g.unites.every(u => selection.includes(u.id));
-
-                  return (
-                    <div
-                      key={g.cle}
-                      className={`group flex flex-col rounded-2xl border bg-white dark:bg-brand-paper shadow-xs transition-all hover:shadow-md overflow-hidden ${
-                        tousCoches
-                          ? "border-brand-orange ring-2 ring-brand-orange/30"
-                          : "border-slate-200 dark:border-white/10 hover:border-brand-orange/40"
-                      }`}
-                    >
-                      {/* Image / Header de la Carte */}
-                      <div className="relative aspect-video bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-                        {g.image_url ? (
-                          <img 
-                            src={g.image_url}
-                            alt={g.reference}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center w-full h-full text-slate-400 opacity-40">
-                            <Boxes className="w-10 h-10" />
-                          </div>
-                        )}
-
-                        {/* Badges Disponibilité */}
-                        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-black text-xs shadow-md ${
-                            g.totalDisponibles > 0 
-                              ? "bg-emerald-600 text-white" 
-                              : "bg-red-600 text-white"
-                          }`}>
-                            En stock : {g.totalDisponibles}
-                          </span>
-                        </div>
-
-                        {/* Checkbox Sélection Modèle */}
-                        <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
-                          <input 
-                            type="checkbox"
-                            checked={tousCoches}
-                            onChange={() => {
-                              const idsGroupe = g.unites.map(u => u.id);
-                              if (tousCoches) {
-                                setSelection(prev => prev.filter(id => !idsGroupe.includes(id)));
-                              } else {
-                                setSelection(prev => Array.from(new Set([...prev, ...idsGroupe])));
-                              }
-                            }}
-                            className="accent-brand-orange w-5 h-5 rounded border-white shadow-md cursor-pointer"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Corps de la Carte */}
-                      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                        <div>
-                          <p className="text-[11px] font-bold text-brand-orange uppercase tracking-wider truncate">
-                            {g.categorie}
-                          </p>
-                          <h3 
-                            onClick={() => basculerGroupe(g.cle)}
-                            className="font-black text-sm text-slate-900 dark:text-white line-clamp-2 hover:text-brand-orange cursor-pointer mt-0.5"
-                            title={g.reference}
-                          >
-                            {g.reference}
-                          </h3>
-
-                          {/* Statuts */}
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {g.resumeStatuts.map((r) => (
-                              <span key={r.statut} className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
-                                {r.n}× {INFOS_STATUT[r.statut].libelle}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Prix */}
-                        <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-baseline justify-between">
-                          {!estSocial && (
-                            <div>
-                              <span className="text-[10px] text-slate-400 font-bold block uppercase">Achat</span>
-                              <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
-                                {formaterDA(g.prixMin)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="text-right">
-                            <span className="text-[10px] text-brand-orange font-bold block uppercase">Vente</span>
-                            <span className="text-sm font-mono font-black text-brand-orange">
-                              {g.venteMin ? formaterDA(g.venteMin) : "—"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Actions Rapides */}
-                        <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-1">
-                          {/* Bouton (+) Arrivage Rapide Universel */}
-                          {peutModifier && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                ouvrirAjoutRapide({
-                                  modele_id: g.modele_id,
-                                  reference: g.reference,
-                                  categorie: g.categorie,
-                                  categorie_id: g.categorie_id,
-                                  prixMin: g.prixMin,
-                                  venteMin: g.venteMin,
-                                });
-                              }}
-                              className="p-2 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition font-bold cursor-pointer"
-                              title="Ajouter des exemplaires en stock"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          )}
-
-                          {/* Bouton Facturer */}
-                          {g.totalDisponibles > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (g.totalDisponibles === 1) {
-                                  const disponible = g.unites.find(u => u.statut !== "vendu" && u.statut !== "hs") || g.unites[0]!;
-                                  ouvrirVenteInventaire([disponible]);
-                                } else {
-                                  setModalSelectionQuantite({ action: "facturer", groupe: g });
-                                }
-                              }}
-                              className="p-2 rounded-xl text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20 transition"
-                              title="Facturer"
-                            >
-                              <IconeBillet taille={16} />
-                            </button>
-                          )}
-
-                          {/* Bouton Drilldown (Voir exemplaires) */}
-                          <button
-                            type="button"
-                            onClick={() => basculerGroupe(g.cle)}
-                            className={`p-2 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                              ouvert
-                                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                                : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-                            }`}
-                            title="Voir les Numéros de Série"
-                          >
-                            <Hash className="w-3.5 h-3.5" />
-                            <span>{g.unites.length} S/N</span>
-                          </button>
-
-                          {/* Bouton Éditer */}
-                          {peutModifier && (
-                            <button
-                              type="button"
-                              onClick={() => ouvrirEdition(g.unites, g.reference)}
-                              className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-                              title="Éditer le modèle"
-                            >
-                              <IconeCrayon taille={15} />
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Si Déplié dans la carte */}
-                        {ouvert && (
-                          <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5 max-h-44 overflow-y-auto pr-1">
-                            <span className="text-[10px] font-black uppercase text-slate-400 block">Exemplaires :</span>
-                            {g.unites.map((u) => (
-                              <div key={u.id} className="p-1.5 rounded-lg bg-slate-50 dark:bg-zinc-800/50 flex items-center justify-between text-xs">
-                                <div>
-                                  <span className="font-mono font-bold text-brand-orange">{u.code_interne}</span>
-                                  <span className="text-[10px] text-slate-500 block">{u.numero_serie ? `S/N: ${u.numero_serie}` : "Sans S/N"}</span>
-                                </div>
-                                <BadgeStatut statut={u.statut} aJeter={u.a_jeter} />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                      </div>
-                    </div>
-                  );
-                })}
+                            {/* ===================== VUE CARTES ===================== */}
+              <div className={modeAffichage === "cartes" ? "" : "hidden"}>
+                <GrilleProduits
+                  groupes={groupes}
+                  selection={selection}
+                  groupesOuverts={groupesOuverts}
+                  peutModifier={peutModifier}
+                  estSocial={estSocial}
+                  onSelection={setSelection}
+                  onBasculerGroupe={basculerGroupe}
+                  onOuvrirAjoutRapide={ouvrirAjoutRapide}
+                  onOuvrirEdition={ouvrirEdition}
+                  onOuvrirVente={ouvrirVenteInventaire}
+                  onOuvrirSelectionQuantite={setModalSelectionQuantite}
+                />
               </div>
 
-              {/* ===================== VUE TABLEAU REGROUPÉE PAR MODÈLE ===================== */}
-              <div className={`w-full overflow-x-auto rounded-2xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-sm relative scrollbar-fine ${modeAffichage === "tableau" ? "block" : "hidden"}`}>
-                <table className="w-full min-w-[900px] text-[13px] relative border-collapse">
-                  <thead className="bg-brand-light-grey/60 dark:bg-black/60 sticky top-0 z-10 backdrop-blur-md border-b border-brand-light-grey dark:border-white/10">
-                    <tr>
-                      <th className="py-3.5 px-3 w-10 text-center">
-                        <input 
-                          type="checkbox"
-                          checked={donneesFiltrees.produits.length > 0 && donneesFiltrees.produits.every(p => selection.includes(p.id))}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelection(donneesFiltrees.produits.map(p => p.id));
-                            } else {
-                              setSelection([]);
-                            }
-                          }}
-                          className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
-                          title="Tout sélectionner"
-                        />
-                      </th>
-                      <th className="py-3.5 px-2 w-8 text-center"></th>
-                      <th className="py-3.5 px-3 text-left font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
-                        Modèle / Référence
-                      </th>
-                      <th className="py-3.5 px-3 text-left font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
-                        Catégorie
-                      </th>
-                      <th className="py-3.5 px-3 text-center font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
-                        Disponibilité / Stock
-                      </th>
-                      {!estSocial && (
-                        <th className="py-3.5 px-3 text-right font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
-                          Prix Achat Unitaire
-                        </th>
-                      )}
-                      <th className="py-3.5 px-3 text-right font-black text-brand-orange uppercase tracking-wider text-[11px]">
-                        Prix Vente
-                      </th>
-                      <th className="py-3.5 px-4 text-right font-black text-brand-warm-grey dark:text-brand-grey uppercase tracking-wider text-[11px]">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5">
-                    {groupes.map((g) => {
-                      const ouvert = groupesOuverts.has(g.cle);
-                      const tousCoches = g.unites.length > 0 && g.unites.every(u => selection.includes(u.id));
-                      const certainsCoches = g.unites.some(u => selection.includes(u.id)) && !tousCoches;
-
-                      return (
-                        <React.Fragment key={g.cle}>
-                          {/* Ligne Principale du Modèle */}
-                          <tr className={`group transition-colors min-h-[80px] ${tousCoches || certainsCoches ? "bg-brand-orange/5 dark:bg-brand-orange/10" : "hover:bg-brand-light-grey/20 dark:hover:bg-white/2"}`}>
-                            {/* Checkbox Modèle */}
-                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <input 
-                                type="checkbox"
-                                checked={tousCoches}
-                                ref={(el) => {
-                                  if (el) el.indeterminate = certainsCoches;
-                                }}
-                                onChange={() => {
-                                  const idsGroupe = g.unites.map(u => u.id);
-                                  if (tousCoches) {
-                                    setSelection(prev => prev.filter(id => !idsGroupe.includes(id)));
-                                  } else {
-                                    setSelection(prev => Array.from(new Set([...prev, ...idsGroupe])));
-                                  }
-                                }}
-                                className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
-                              />
-                            </td>
-
-                            {/* Chevron Drill-Down */}
-                            <td className="py-4 px-2 text-center">
-                              <button
-                                type="button"
-                                onClick={() => basculerGroupe(g.cle)}
-                                className="p-1 rounded-lg text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10 transition"
-                                title={ouvert ? "Masquer les exemplaires" : "Voir les exemplaires physiques (S/N)"}
-                              >
-                                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${ouvert ? "rotate-180 text-brand-orange" : ""}`} />
-                              </button>
-                            </td>
-
-                            {/* Photo & Référence Modèle */}
-                            <td className="py-4 px-3">
-                              <div className="flex items-center gap-3">
-                                {g.image_url ? (
-                                  <img 
-                                    src={g.image_url}
-                                    alt={g.reference}
-                                    className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0 bg-slate-50"
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-dashed border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-400 shrink-0">
-                                    <Boxes className="w-6 h-6 opacity-40" />
-                                  </div>
-                                )}
-                                <div className="min-w-0">
-                                  <div 
-                                    onClick={() => basculerGroupe(g.cle)}
-                                    className="font-black text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-orange cursor-pointer whitespace-normal break-words max-w-[320px] leading-snug"
-                                    title={g.reference}
-                                  >
-                                    {g.reference}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                    {g.resumeStatuts.map((r) => (
-                                      <span key={r.statut} className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${INFOS_STATUT[r.statut].badge}`}>
-                                        {r.n}× {INFOS_STATUT[r.statut].libelle}
-                                      </span>
-                                    ))}
-                                    {g.enVitrine > 0 && (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-brand-orange/15 text-[10px] font-bold text-brand-orange">
-                                        <IconeVitrine taille={10} /> Vitrine ({g.enVitrine})
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Catégorie */}
-                            <td className="py-4 px-3 text-xs font-semibold text-slate-500 whitespace-normal break-words max-w-[160px]">
-                              {g.categorie}
-                            </td>
-
-                            {/* Saisie Directe Quantité en Stock (Zéro Friction) */}
-                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <GestionnaireQuantite
-                                modeleId={g.modele_id}
-                                quantiteActuelle={g.totalDisponibles}
-                                unitesIds={g.unites.map((u) => u.id)}
-                                peutModifier={peutModifier}
-                                onChangement={() => void charger()}
-                                taille="sm"
-                              />
-                            </td>
-
-                            {/* Prix Achat */}
-                            {!estSocial && (
-                              <td className="py-4 px-3 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
-                                {g.prixMin === g.prixMax
-                                  ? formaterDA(g.prixMin)
-                                  : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
-                              </td>
-                            )}
-
-                            {/* Prix Vente */}
-                            <td className="py-4 px-3 text-right font-mono font-black text-sm text-brand-orange">
-                              {g.venteMin === null
-                                ? "—"
-                                : g.venteMin === g.venteMax
-                                ? formaterDA(g.venteMin)
-                                : `${formaterDA(g.venteMin)} – ${formaterDA(g.venteMax!)}`}
-                            </td>
-
-                            {/* Actions Rapides Modèle */}
-                            <td className="py-4 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                              <div className="inline-flex items-center gap-1 justify-end">
-                                {/* Bouton (+) Arrivage Rapide Universel */}
-                                {peutModifier && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      ouvrirAjoutRapide({
-                                        modele_id: g.modele_id,
-                                        reference: g.reference,
-                                        categorie: g.categorie,
-                                        categorie_id: g.categorie_id,
-                                        prixMin: g.prixMin,
-                                        venteMin: g.venteMin,
-                                      });
-                                    }}
-                                    className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 transition shadow-2xs font-bold cursor-pointer"
-                                    title="Ajouter des exemplaires en stock"
-                                  >
-                                    <Plus className="w-4 h-4" />
-                                  </button>
-                                )}
-
-                                {/* Bouton Facturer / Vendre */}
-                                {g.totalDisponibles > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (g.totalDisponibles === 1) {
-                                        const disponible = g.unites.find(u => u.statut !== "vendu" && u.statut !== "hs") || g.unites[0]!;
-                                        ouvrirVenteInventaire([disponible]);
-                                      } else {
-                                        setModalSelectionQuantite({ action: "facturer", groupe: g });
-                                      }
-                                    }}
-                                    className="p-1.5 rounded-xl text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/20 transition shadow-2xs"
-                                    title="Vendre / Facturer ce modèle"
-                                  >
-                                    <IconeBillet taille={16} />
-                                  </button>
-                                )}
-
-                                {/* Bouton Changer Statut */}
-                                {peutModifier && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setModalSelectionQuantite({ action: "statut", groupe: g });
-                                    }}
-                                    className="p-1.5 rounded-xl text-slate-400 hover:text-brand-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-                                    title="Changer le statut en masse"
-                                  >
-                                    <SlidersHorizontal className="w-4 h-4" />
-                                  </button>
-                                )}
-
-                                {/* Bouton Vitrine */}
-                                {peutModifier && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const exposeIds = g.unites.filter(u => u.en_vitrine).map(u => u.id);
-                                      const nonVendu = g.unites.filter(u => u.statut !== "vendu");
-                                      if (g.enVitrine > 0) {
-                                        void basculerVitrineIds(exposeIds, false, g.reference);
-                                      } else if (nonVendu.length > 0) {
-                                        void basculerVitrineIds([nonVendu[0]!.id], true, g.reference);
-                                      }
-                                    }}
-                                    className={`p-1.5 rounded-xl transition ${
-                                      g.enVitrine > 0
-                                        ? "text-brand-orange bg-brand-orange/15"
-                                        : "text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10"
-                                    }`}
-                                    title={g.enVitrine > 0 ? "Retirer de la vitrine" : "Mettre en vitrine"}
-                                  >
-                                    <IconeVitrine taille={16} />
-                                  </button>
-                                )}
-
-                                {/* Bouton Imprimer */}
-                                <BoutonImpression
-                                  ids={g.unites.map(u => u.id)}
-                                  dejaImprimee={g.unites.every(u => u.etiquette_imprimee)}
-                                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-                                />
-
-                                {/* Bouton Éditer */}
-                                {peutModifier && (
-                                  <button
-                                    type="button"
-                                    onClick={() => ouvrirEdition(g.unites, g.reference)}
-                                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-                                    title="Modifier les informations du modèle"
-                                  >
-                                    <IconeCrayon taille={15} />
-                                  </button>
-                                )}
-
-                                {/* Bouton Supprimer */}
-                                {peutModifier && (
-                                  <button
-                                    type="button"
-                                    onClick={() => ouvrirSuppressionModele(g)}
-                                    className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-                                    title="Supprimer tous les exemplaires"
-                                  >
-                                    <IconeCorbeille taille={15} />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-
-                          {/* Drill-down : Liste des Exemplaires Physiques Dépliée */}
-                          {ouvert && (
-                            <tr>
-                              <td colSpan={8} className="p-0 bg-slate-50/70 dark:bg-zinc-900/60 border-y border-slate-200 dark:border-white/10">
-                                <div className="py-3 px-6 space-y-2">
-                                  <div className="flex items-center justify-between text-xs font-black text-slate-400 uppercase tracking-wider">
-                                    <span>Exemplaires physiques actifs ({g.unites.length})</span>
-                                    <span>S/N & Emplacement</span>
-                                  </div>
-
-                                  <div className="divide-y divide-slate-200/60 dark:divide-white/5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
-                                    {g.unites.map((p) => {
-                                      const estCoche = selection.includes(p.id);
-                                      return (
-                                        <div 
-                                          key={p.id}
-                                          className={`flex items-center justify-between p-3 transition-colors ${
-                                            estCoche ? "bg-brand-orange/10" : "hover:bg-slate-50 dark:hover:bg-zinc-800/50"
-                                          }`}
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <input 
-                                              type="checkbox"
-                                              checked={estCoche}
-                                              onChange={() => {
-                                                setSelection(prev =>
-                                                  prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id]
-                                                );
-                                              }}
-                                              className="accent-brand-orange w-4 h-4 rounded border-slate-300 cursor-pointer"
-                                            />
-
-                                            <div>
-                                              <div className="flex items-center gap-2">
-                                                <Link
-                                                  href={`/produits/${p.id}`}
-                                                  className="font-mono text-xs font-black text-brand-orange hover:underline"
-                                                >
-                                                  {p.code_interne}
-                                                </Link>
-                                                {p.grade && (
-                                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
-                                                    {p.grade}
-                                                  </span>
-                                                )}
-                                                {p.emplacement && (
-                                                  <span className="text-[10px] font-medium text-slate-400">
-                                                    · {p.emplacement === "vitrine" ? "Vitrine" : "Réserve"}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              <div className="text-[11px] font-mono font-bold text-slate-500 mt-0.5">
-                                                {p.numero_serie ? `S/N: ${p.numero_serie}` : "Sans numéro de série"}
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          <div className="flex items-center gap-4">
-                                            <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
-
-                                            <div className="text-right">
-                                              <div className="font-mono font-bold text-xs text-slate-900 dark:text-white">
-                                                {p.prix_vente_fixe ? formaterDA(p.prix_vente_fixe) : "—"}
-                                              </div>
-                                              <div className="text-[10px] font-mono text-slate-400">
-                                                Achat: {formaterDA(p.prix_achat)}
-                                              </div>
-                                            </div>
-
-                                            {peutModifier && (
-                                              <div className="flex items-center gap-1">
-                                                {/* Bouton (+) Scanner Arrivage Universel */}
-                                                <button
-                                                  type="button"
-                                                  onClick={() => ouvrirAjoutRapide(p)}
-                                                  className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold cursor-pointer"
-                                                  title="Ajouter des exemplaires en stock"
-                                                >
-                                                  <Plus className="w-3.5 h-3.5" />
-                                                </button>
-                                                {p.statut !== "vendu" && (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => ouvrirVenteInventaire([p])}
-                                                    className="p-1 rounded-lg text-brand-orange hover:bg-brand-orange/10 transition"
-                                                    title="Facturer cette unité"
-                                                  >
-                                                    <IconeBillet taille={14} />
-                                                  </button>
-                                                )}
-                                                <button
-                                                  type="button"
-                                                  onClick={() => ouvrirEdition([p], p.code_interne, g.unites)}
-                                                  className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
-                                                  title="Éditer cette unité"
-                                                >
-                                                  <IconeCrayon taille={13} />
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => ouvrirSuppressionUnites([p])}
-                                                  className="p-1 rounded-lg text-slate-400 hover:text-red-600 transition"
-                                                  title="Supprimer cette unité"
-                                                >
-                                                  <IconeCorbeille taille={13} />
-                                                </button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            {/* ===================== VUE TABLEAU ===================== */}
+              <div className={modeAffichage === "tableau" ? "block" : "hidden"}>
+                <TableauProduits
+                  groupes={groupes}
+                  donneesFiltrees={donneesFiltrees}
+                  selection={selection}
+                  groupesOuverts={groupesOuverts}
+                  peutModifier={peutModifier}
+                  estSocial={estSocial}
+                  onSelection={setSelection}
+                  onBasculerGroupe={basculerGroupe}
+                  onOuvrirAjoutRapide={ouvrirAjoutRapide}
+                  onOuvrirEdition={ouvrirEdition}
+                  onOuvrirVente={ouvrirVenteInventaire}
+                  onOuvrirSelectionQuantite={setModalSelectionQuantite}
+                  onOuvrirSuppressionModele={ouvrirSuppressionModele}
+                  onOuvrirSuppressionUnites={ouvrirSuppressionUnites}
+                  onBasculerVitrineIds={basculerVitrineIds}
+                  onCharger={charger}
+                />
               </div>
             </div>
           )}
@@ -2414,9 +1723,7 @@ export default function Inventaire({ role }: { role: Role }) {
               <button
                 type="button"
                 onClick={() => {
-                  const selectedProds = donneesFiltrees?.produits.filter(p => selection.includes(p.id)) ?? [];
-                  if (selectedProds.length > 0) {
-                    setIdsSelectionnes(new Set(selection));
+                  if (selection.length > 0) {
                     setStatutMasseCible("");
                     setStatutMasseNote("");
                     setModalStatutMasse(true);
@@ -2625,14 +1932,23 @@ export default function Inventaire({ role }: { role: Role }) {
                   className="select w-full sm:w-auto h-11 rounded-xl bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
                 >
                   <option value="">{t("inventaire.changerStatut")}</option>
-                  {STATUTS_PRODUIT.filter((s) => {
+                  {(() => {
+                    // Si toutes les unités ont le même statut, n'afficher que les transitions valides
                     const tousMemeStatut = modalEdition.unites.every(u => u.statut === modalEdition.unites[0]!.statut);
-                    return tousMemeStatut ? s !== modalEdition.unites[0]!.statut : true;
-                  }).map((s) => (
-                    <option key={s} value={s}>
-                      {INFOS_STATUT[s].libelle}
-                    </option>
-                  ))}
+                    if (tousMemeStatut) {
+                      const statutActuel = modalEdition.unites[0]!.statut;
+                      return transitionsPossibles(statutActuel).map((s) => (
+                        <option key={s} value={s}>{INFOS_STATUT[s].libelle}</option>
+                      ));
+                    }
+                    // Statuts hétérogènes : afficher tous les statuts sauf les finaux
+                    return STATUTS_PRODUIT.filter(s => {
+                      const estFinal = ["vendu", "hs"].includes(s);
+                      return !estFinal && s !== modalEdition.unites[0]!.statut;
+                    }).map((s) => (
+                      <option key={s} value={s}>{INFOS_STATUT[s].libelle}</option>
+                    ));
+                  })()}
                 </select>
               </div>
 
@@ -2673,18 +1989,31 @@ export default function Inventaire({ role }: { role: Role }) {
                 </div>
               )}
 
-              {modalEdition.unites[0]!.statut === "hs" && (
-                <label className="flex items-start gap-2.5 pt-1 text-xs font-bold text-danger cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={modalEdition.unites[0]!.a_jeter}
-                    disabled={envoi}
-                    onChange={(e) => void basculerAJeter(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-danger shrink-0 rounded"
-                  />
-                  <span>{t("inventaire.aJeterNonRecuperable")}</span>
-                </label>
-              )}
+              {(() => {
+                const tousHS = modalEdition.unites.every(u => u.statut === "hs");
+                if (!tousHS) return null;
+                const tousAJeter = modalEdition.unites.every(u => u.a_jeter);
+                return (
+                  <label className="flex items-start gap-2.5 pt-1 text-xs font-bold text-danger cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={tousAJeter}
+                      ref={(el) => { if (el) el.indeterminate = !tousAJeter && modalEdition.unites.some(u => u.a_jeter); }}
+                      disabled={envoi}
+                      onChange={(e) => void basculerAJeter(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-danger shrink-0 rounded"
+                    />
+                    <span>
+                      {t("inventaire.aJeterNonRecuperable")}
+                      {modalEdition.unites.length > 1 && (
+                        <span className="text-brand-warm-grey font-normal ml-1">
+                          ({modalEdition.unites.length} unités HS)
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                );
+              })()}
             </div>
           )}
 
@@ -2720,6 +2049,9 @@ export default function Inventaire({ role }: { role: Role }) {
                   type="button"
                   disabled={envoi || contexteNavigation.indexCourant <= 0}
                   onClick={() => {
+                    if (formulaireModifie || formPhotosModifiees) {
+                      if (!window.confirm("Des modifications non enregistrées seront perdues. Continuer ?")) return;
+                    }
                     const prevIndex = contexteNavigation.indexCourant - 1;
                     const prevProduct = contexteNavigation.produits[prevIndex];
                     if (prevProduct) ouvrirEdition([prevProduct], prevProduct.code_interne, contexteNavigation.produits);
@@ -2732,6 +2064,9 @@ export default function Inventaire({ role }: { role: Role }) {
                   type="button"
                   disabled={envoi || contexteNavigation.indexCourant >= contexteNavigation.produits.length - 1}
                   onClick={() => {
+                    if (formulaireModifie || formPhotosModifiees) {
+                      if (!window.confirm("Des modifications non enregistrées seront perdues. Continuer ?")) return;
+                    }
                     const nextIndex = contexteNavigation.indexCourant + 1;
                     const nextProduct = contexteNavigation.produits[nextIndex];
                     if (nextProduct) ouvrirEdition([nextProduct], nextProduct.code_interne, contexteNavigation.produits);
@@ -2757,16 +2092,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 <button
                   type="button"
                   onClick={() => setModalEdition(null)}
-                  className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center sm:hidden"
-                >
-                  Annuler
-                </button>
-              )}
-              {contexteNavigation && modalEdition?.unites.length === 1 && (
-                <button
-                  type="button"
-                  onClick={() => setModalEdition(null)}
-                  className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center hidden sm:flex"
+                  className="btn btn-secondaire h-12 px-5 rounded-xl font-bold w-full sm:w-auto justify-center"
                 >
                   Annuler
                 </button>
@@ -2820,18 +2146,19 @@ export default function Inventaire({ role }: { role: Role }) {
           onSucces={() => {
             setModalClassification(null);
             void charger();
+            void chargerCategories();
           }}
         />
       )}
       {/* Barre flottante d'actions groupées (Bulk Actions) */}
-      {idsSelectionnes.size > 0 && (
+      {selection.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-3 bg-brand-black text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 animate-entree backdrop-blur-xl max-w-[95vw]">
           <div className="flex items-center gap-2 border-r border-white/20 pr-3">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-orange text-xs font-bold text-white">
-              {idsSelectionnes.size}
+              {selection.length}
             </span>
             <span className="text-sm font-semibold whitespace-nowrap">
-              {idsSelectionnes.size} sélectionné{idsSelectionnes.size > 1 ? "s" : ""}
+              {selection.length} sélectionné{selection.length > 1 ? "s" : ""}
             </span>
           </div>
 
@@ -2840,7 +2167,7 @@ export default function Inventaire({ role }: { role: Role }) {
             <button
               type="button"
               onClick={() => {
-                router.push(`/pos?vendre_ids=${Array.from(idsSelectionnes).join(",")}`);
+                router.push(`/pos?vendre_ids=${selection.join(",")}`);
               }}
               className="btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-2 px-3 shadow-sm flex items-center gap-1.5 font-bold"
               title="Ajouter au panier POS (1 unité par article)"
@@ -2871,7 +2198,7 @@ export default function Inventaire({ role }: { role: Role }) {
               type="button"
               onClick={() => {
                 window.open(
-                  `/imprimer-etiquettes?ids=${Array.from(idsSelectionnes).join(",")}`,
+                  `/imprimer-etiquettes?ids=${selection.join(",")}`,
                   "_blank",
                   "width=400,height=600"
                 );
@@ -2890,9 +2217,9 @@ export default function Inventaire({ role }: { role: Role }) {
                 disabled={envoi}
                 onClick={() => {
                   void basculerVitrineIds(
-                    Array.from(idsSelectionnes),
+                    selection,
                     true,
-                    `${idsSelectionnes.size} produit(s)`
+                    `${selection.length} produit(s)`
                   );
                 }}
                 className="btn bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs py-2 px-3 shadow-sm flex items-center gap-1.5 font-semibold"
@@ -2910,7 +2237,7 @@ export default function Inventaire({ role }: { role: Role }) {
                 onClick={() => {
                   if (donneesFiltrees) {
                     const selectionnes = donneesFiltrees.produits.filter((p) =>
-                      idsSelectionnes.has(p.id)
+                      selection.includes(p.id)
                     );
                     ouvrirSuppressionUnites(selectionnes);
                   }
@@ -2927,7 +2254,7 @@ export default function Inventaire({ role }: { role: Role }) {
           {/* Désélectionner */}
           <button
             type="button"
-            onClick={deselectionnerTout}
+            onClick={() => setSelection([])}
             className="p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10 transition ml-auto"
             title="Désélectionner tout"
           >
@@ -2940,7 +2267,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {/* Modale de changement de statut en masse */}
       <Modale
-        titre={`Changer le statut — ${idsSelectionnes.size} produit(s)`}
+        titre={`Changer le statut — ${selection.length} produit(s)`}
         ouverte={modalStatutMasse}
         onFermer={() => setModalStatutMasse(false)}
       >
@@ -2969,6 +2296,19 @@ export default function Inventaire({ role }: { role: Role }) {
                 </option>
               ))}
             </select>
+            {statutMasseCible && (() => {
+              const selectionneIds = new Set(selection);
+              const produitsSelectionnes = donnees?.produits.filter((p) => selectionneIds.has(p.id)) ?? [];
+              const dejaCible = produitsSelectionnes.filter((p) => p.statut === statutMasseCible).length;
+              const serontModifies = produitsSelectionnes.length - dejaCible;
+              if (dejaCible === 0) return null;
+              return (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+                  {serontModifies} produit(s) seront modifié(s)
+                  {dejaCible > 0 && ` · ${dejaCible} déjà « ${INFOS_STATUT[statutMasseCible as StatutProduit]?.libelle} »`}
+                </p>
+              );
+            })()}
           </div>
 
           {statutMasseCible &&

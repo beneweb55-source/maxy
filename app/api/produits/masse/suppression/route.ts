@@ -51,54 +51,66 @@ export async function DELETE(request: NextRequest) {
     // Seuls les produits non vendus (en stock) sont supprimés.
     // Les produits vendus sont protégés.
     const vendus = cibles.filter((p) => p.statut === "vendu");
-    const aSupprimer = cibles.filter((p) => p.statut !== "vendu").map((p) => p.id);
+    const aSupprimer = cibles.filter((p) => p.statut !== "vendu");
 
     if (aSupprimer.length === 0) {
       return erreur(400, "Ces produits sont déjà marqués comme vendus et ne peuvent être supprimés du stock.");
     }
 
+    // Guard BOM : un produit composé (parent) ne peut être supprimé que si tous ses composants sont détachés
+    const idsASupprimer = aSupprimer.map((p) => p.id);
+    const nbComposants = await prisma.produit.count({
+      where: { parent_id: { in: idsASupprimer } },
+    });
+    if (nbComposants > 0) {
+      return erreur(
+        400,
+        `${nbComposants} composant(s) BOM encore rattaché(s) aux produits sélectionnés. Détachez-les d'abord.`
+      );
+    }
+
     await prisma.$transaction(async (tx) => {
       // 1. Détacher les mouvements de caisse pour préserver l'historique comptable sans bloquer la suppression
       await tx.mouvementCaisse.updateMany({
-        where: { produit_id: { in: aSupprimer } },
+        where: { produit_id: { in: idsASupprimer } },
         data: { produit_id: null },
       });
 
       // 2. Détacher les lignes de factures pour conserver les factures dénormalisées intactes
       await tx.factureLigne.updateMany({
-        where: { produit_id: { in: aSupprimer } },
+        where: { produit_id: { in: idsASupprimer } },
         data: { produit_id: null },
       });
 
       // 3. Détacher les lignes de commande
       await tx.ligneCommande.updateMany({
-        where: { produit_id: { in: aSupprimer } },
+        where: { produit_id: { in: idsASupprimer } },
         data: { produit_id: null },
       });
 
       // 4. Détacher les composants assemblés (BOM)
       await tx.produit.updateMany({
-        where: { parent_id: { in: aSupprimer } },
+        where: { parent_id: { in: idsASupprimer } },
         data: { parent_id: null },
       });
 
       // 5. Supprimer les ventes associées (anciennes ventes/annulations)
       await tx.vente.deleteMany({
-        where: { produit_id: { in: aSupprimer } },
+        where: { produit_id: { in: idsASupprimer } },
       });
 
       // 6. Supprimer les dépendances directes
-      await tx.produitImage.deleteMany({ where: { produit_id: { in: aSupprimer } } });
-      await tx.reparation.deleteMany({ where: { produit_id: { in: aSupprimer } } });
-      await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: aSupprimer } } });
+      await tx.produitImage.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
+      await tx.reparation.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
+      await tx.historiqueStatut.deleteMany({ where: { produit_id: { in: idsASupprimer } } });
 
       // 7. Supprimer les produits
-      await tx.produit.deleteMany({ where: { id: { in: aSupprimer } } });
+      await tx.produit.deleteMany({ where: { id: { in: idsASupprimer } } });
     });
 
     return NextResponse.json({
       ok: true,
-      supprimes: aSupprimer.length,
+      supprimes: idsASupprimer.length,
       vendus_conserves: vendus.length,
     });
   } catch (e) {

@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { ids, reference, categorie, prix_achat, image_url, images, quantite, prix_vente_fixe, a_jeter, mettre_en_vente } = (corps ?? {}) as {
+  const { ids, reference, categorie, prix_achat, image_url, images, quantite, prix_vente_fixe, a_jeter, mettre_en_vente, categorie_id, modele_id, grade, emplacement } = (corps ?? {}) as {
     ids?: unknown;
     reference?: unknown;
     categorie?: unknown;
@@ -29,6 +29,10 @@ export async function PUT(request: NextRequest) {
     prix_vente_fixe?: unknown;
     a_jeter?: unknown;
     mettre_en_vente?: unknown;
+    categorie_id?: unknown;
+    modele_id?: unknown;
+    grade?: unknown;
+    emplacement?: unknown;
   };
 
   if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id) => Number.isInteger(Number(id)))) {
@@ -102,10 +106,26 @@ export async function PUT(request: NextRequest) {
       donnees.a_jeter = a_jeter;
     }
 
-    if ((corps as any).categorie_id) donnees.categorie_id = Number((corps as any).categorie_id);
-    if ((corps as any).modele_id) donnees.modele_id = Number((corps as any).modele_id);
-    if ((corps as any).grade) donnees.grade = String((corps as any).grade);
-    if ((corps as any).emplacement) donnees.emplacement = String((corps as any).emplacement);
+    if (categorie_id !== undefined && categorie_id !== null) {
+      const catId = Number(categorie_id);
+      if (!Number.isInteger(catId) || catId <= 0) return erreur(400, "categorie_id invalide.");
+      donnees.categorie_id = catId;
+    }
+    if (modele_id !== undefined && modele_id !== null) {
+      const mId = Number(modele_id);
+      if (!Number.isInteger(mId) || mId <= 0) return erreur(400, "modele_id invalide.");
+      donnees.modele_id = mId;
+    }
+    if (grade !== undefined && grade !== null) {
+      donnees.grade = String(grade).trim() || null;
+    }
+    if (emplacement !== undefined && emplacement !== null) {
+      const emp = String(emplacement).trim();
+      if (emp && !["reserve", "vitrine", "atelier"].includes(emp)) {
+        return erreur(400, "emplacement invalide. Valeurs autorisées : reserve, vitrine, atelier.");
+      }
+      donnees.emplacement = emp || "reserve";
+    }
 
     let modifPrixVente = false;
     if (prix_vente_fixe !== undefined) {
@@ -122,7 +142,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const diff = targetQuantite - produitIds.length;
+    const diff = targetQuantite - produits.length;
 
     await prisma.$transaction(async (tx) => {
       const idsAUpdate = [...produitIds];

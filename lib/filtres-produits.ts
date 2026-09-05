@@ -53,7 +53,7 @@ export function construireFiltresProduits(
     if (emplacement === "vitrine") {
       clauses.push({ OR: [{ emplacement: "vitrine" }, { en_vitrine: true }] });
     } else if (emplacement === "reserve") {
-      clauses.push({ OR: [{ emplacement: "reserve" }, { en_vitrine: false }] });
+      clauses.push({ emplacement: "reserve" });
     } else {
       clauses.push({ emplacement });
     }

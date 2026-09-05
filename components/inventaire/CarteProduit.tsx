@@ -17,40 +17,9 @@ import {
 import { Layers, Boxes } from "lucide-react";
 import BoutonImpression from "@/components/BoutonImpression";
 import { useToast } from "@/components/toast";
+import type { LigneProduit } from "./types";
 
-export interface LigneProduit {
-  id: number;
-  code_interne: string;
-  reference: string;
-  categorie: string;
-  categorie_id?: number | null;
-  categorie_rel?: {
-    nom: string;
-    parent: { nom: string; parent: { nom: string } | null } | null;
-  } | null;
-  modele_id?: number | null;
-  modele?: { id: number; nom: string; image_url?: string | null } | null;
-  statut: StatutProduit;
-  a_jeter: boolean;
-  en_vitrine: boolean;
-  prix_achat: number;
-  cout_reparations: number;
-  prix_vente_fixe: number | null;
-  prix_vente_reel: number | null;
-  numero_serie?: string | null;
-  grade?: string | null;
-  emplacement?: string | null;
-  lot_id: number | null;
-  fournisseur: string | null;
-  date_entree: string;
-  jours_stock: number;
-  image_url: string | null;
-  nb_images: number;
-  etiquette_imprimee: boolean;
-  nb_composants?: number;
-  est_compose?: boolean;
-  parent_id?: number | null;
-}
+export type { LigneProduit };
 
 interface CarteProduitProps {
   produit: LigneProduit;
