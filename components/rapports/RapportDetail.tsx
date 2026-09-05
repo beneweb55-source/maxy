@@ -147,7 +147,17 @@ export default function RapportDetail({ lotId, role }: { lotId: number; role: Ro
       </div>
     );
   }
-  if (!rapport) return <p className="p-4 text-sm text-brand-warm-grey">Chargement du rapport…</p>;
+  if (!rapport) return (
+    <div className="space-y-4 p-4 animate-pulse">
+      <div className="h-8 w-56 bg-brand-light-grey/40 rounded-lg" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="carte h-20 bg-brand-light-grey/20 rounded-xl" />
+        ))}
+      </div>
+      <div className="carte h-48 bg-brand-light-grey/20 rounded-xl" />
+    </div>
+  );
 
   const enAttente = rapport.lot.statut_lot === "teste";
   const concernes = rapport.produits.filter((p) => STATUTS_DECISION.includes(p.statut));
