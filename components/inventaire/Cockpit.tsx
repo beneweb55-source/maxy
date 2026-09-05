@@ -175,11 +175,11 @@ const FAMILLE_THEMES: { keywords: string[]; theme: FamilleTheme }[] = [
 ];
 
 const THEME_DEFAUT: FamilleTheme = {
-  bgSoft: "hover:border-slate-400",
-  iconBg: "bg-slate-500/10 text-slate-700 dark:bg-slate-400/15 dark:text-slate-200",
+  bgSoft: "hover:border-brand-light-grey",
+  iconBg: "bg-brand-light-grey/30 text-brand-black dark:bg-white/10 dark:text-white",
   IconComponent: Package,
   textAccent: "group-hover:text-brand-orange",
-  badgeBg: "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
+  badgeBg: "bg-brand-light-grey/30 text-brand-black dark:bg-white/10 dark:text-white",
 };
 
 /** Résout le thème visuel d'une famille par matching de mots-clés (insensible à la casse/accents) */
@@ -441,10 +441,10 @@ export default function Cockpit({
             <button 
               type="button"
               onClick={() => majUrl({ vue: "atraiter", sans_photo: "1", a_tarifer: null, statuts: null, sans_etiquette: null, a_jeter: null })}
-              className="carte group border border-slate-200 dark:border-slate-800 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+              className="carte group border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-brand-warm-grey dark:text-brand-warm-grey flex items-center gap-1.5">
                   <IconeImage taille={16} /> Sans photo
                 </span>
                 <span className="text-lg font-black text-brand-black dark:text-white font-outfit">
@@ -459,10 +459,10 @@ export default function Cockpit({
             <button 
               type="button"
               onClick={() => majUrl({ vue: "atraiter", sans_etiquette: "1", a_tarifer: null, statuts: null, sans_photo: null, a_jeter: null })}
-              className="carte group border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
+              className="carte group border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper !p-4 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between active:scale-[0.98] min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
-                <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-brand-warm-grey dark:text-brand-warm-grey flex items-center gap-1.5">
                   <IconeEtiquette taille={16} /> À étiqueter
                 </span>
                 <span className="text-lg font-black text-brand-black dark:text-white font-outfit">

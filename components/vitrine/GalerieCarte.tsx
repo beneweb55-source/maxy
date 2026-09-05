@@ -16,7 +16,7 @@ export default function GalerieCarte({ images, reference }: GalerieCarteProps) {
   // Si pas d'image
   if (!images || images.length === 0) {
     return (
-      <span className="flex h-full w-full items-center justify-center bg-brand-paper text-brand-grey">
+      <span className="flex h-full w-full items-center justify-center bg-brand-paper dark:bg-white/10 text-brand-grey dark:text-brand-warm-grey">
         <IconeImage taille={28} />
       </span>
     );
@@ -99,7 +99,7 @@ export default function GalerieCarte({ images, reference }: GalerieCarteProps) {
 
   return (
     <div
-      className="relative h-full w-full bg-brand-paper"
+      className="relative h-full w-full bg-brand-paper dark:bg-white/10"
       style={{ touchAction: "pan-y" }} // Autorise le scroll vertical mais capture le horizontal
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

@@ -64,6 +64,35 @@ interface ReponseVitrine {
   produits: CarteVitrine[];
 }
 
+/* ─── Skeleton card for loading state ─── */
+function CarteSquelette() {
+  return (
+    <div className="carte !p-0 overflow-hidden animate-pulse">
+      <div className="aspect-[4/3] w-full bg-brand-light-grey/40 dark:bg-white/5" />
+      <div className="flex flex-col gap-3 p-4">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-20 rounded-full bg-brand-light-grey/50 dark:bg-white/10" />
+          <div className="h-4 w-16 rounded bg-brand-light-grey/40 dark:bg-white/5" />
+        </div>
+        <div className="space-y-1.5">
+          <div className="h-4 w-3/4 rounded bg-brand-light-grey/50 dark:bg-white/10" />
+          <div className="h-4 w-1/2 rounded bg-brand-light-grey/40 dark:bg-white/5" />
+        </div>
+        <div className="border-t border-brand-light-grey/50 dark:border-white/10 pt-3">
+          <div className="flex items-center justify-between">
+            <div className="h-5 w-24 rounded bg-brand-light-grey/50 dark:bg-white/10" />
+            <div className="h-7 w-16 rounded-full bg-brand-light-grey/40 dark:bg-white/5" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="h-12 flex-1 rounded-xl bg-brand-light-grey/30 dark:bg-white/5" />
+          <div className="h-12 w-12 rounded-xl bg-brand-light-grey/30 dark:bg-white/5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Vitrine({ role }: { role: Role }) {
   const router = useRouter();
   const { afficher } = useToast();
@@ -161,42 +190,61 @@ export default function Vitrine({ role }: { role: Role }) {
 
   return (
     <div className="space-y-6 animate-entree">
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
+      {/* ─── Header ─── */}
+      <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-light-grey/50 dark:border-white/10 bg-gradient-to-br from-brand-paper to-white dark:from-white/5 dark:to-white/[0.02] px-5 py-4">
         <div>
-          <h1 className="inline-flex items-center gap-2 text-3xl font-extrabold tracking-tight text-brand-black">
-            <IconeVitrine taille={26} />
+          <h1 className="inline-flex items-center gap-2.5 text-3xl font-extrabold tracking-tight text-brand-black dark:text-white">
+            <span className="inline-flex items-center justify-center rounded-xl bg-brand-orange/10 p-1.5">
+              <IconeVitrine taille={24} className="text-brand-orange" />
+            </span>
             {t("vitrine.titre")}
           </h1>
-          <p className="mt-1 text-sm text-brand-warm-grey">
+          <p className="mt-1 text-sm text-brand-warm-grey dark:text-brand-warm-grey">
             {t("vitrine.sousTitre")}
           </p>
         </div>
       </div>
 
+      {/* ─── Error state ─── */}
       {erreur && (
-        <div className="alerte-erreur" role="alert">
+        <div className="rounded-2xl bg-danger/10 border border-danger/30 px-4 py-3 text-xs font-bold text-danger" role="alert">
           {erreur}
         </div>
       )}
 
+      {/* ─── Loading state ─── */}
       {donnees === null && !erreur && (
-        <p className="text-sm text-brand-warm-grey">{t("vitrine.chargement")}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <CarteSquelette key={i} />
+          ))}
+        </div>
       )}
 
+      {/* ─── Empty state ─── */}
       {donnees !== null && produits.length === 0 && (
-        <div className="carte border-dashed p-10 text-center text-sm text-brand-warm-grey">
-          <p className="font-bold text-base text-brand-black">{t("vitrine.videTitre")}</p>
-          <p className="mt-1.5 max-w-md mx-auto text-xs">
+        <div className="carte border-dashed border-brand-light-grey dark:border-white/10 p-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-orange/10">
+            <IconeVitrine taille={32} className="text-brand-orange" />
+          </div>
+          <p className="font-bold text-lg text-brand-black dark:text-white">
+            {t("vitrine.videTitre")}
+          </p>
+          <p className="mt-2 max-w-md mx-auto text-sm text-brand-warm-grey dark:text-brand-warm-grey leading-relaxed">
             {t("vitrine.videDescription")}
           </p>
-          <Link href="/inventaire" className="btn btn-primaire mt-4 inline-flex items-center gap-2">
+          <Link
+            href="/inventaire"
+            className="btn btn-primaire mt-6 inline-flex items-center gap-2 min-h-[48px] rounded-xl"
+          >
             {t("vitrine.allerInventaire")}
           </Link>
         </div>
       )}
 
+      {/* ─── Product grid ─── */}
       {produits.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {produits.map((p) => {
             const dispo = unitesVendables(p);
             const vendable = dispo.length > 0;
@@ -206,9 +254,9 @@ export default function Vitrine({ role }: { role: Role }) {
               <Link
                 key={p.id}
                 href={`/produits/${p.id}`}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition hover:shadow-md hover:border-brand-orange/40 text-left block"
+                className="carte group relative flex flex-col !p-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-brand-orange/40 dark:hover:border-brand-orange/30 hover:-translate-y-0.5 text-left block"
               >
-                {/* Image du produit avec Galerie intégrée */}
+                {/* ─── Image area ─── */}
                 <div
                   onClick={(e) => {
                     if (p.images.length > 0) {
@@ -221,40 +269,44 @@ export default function Vitrine({ role }: { role: Role }) {
                       });
                     }
                   }}
-                  className="relative block h-44 w-full overflow-hidden bg-slate-50 text-left focus:outline-none cursor-pointer"
+                  className="relative block aspect-[4/3] w-full overflow-hidden bg-brand-paper dark:bg-white/5 text-left focus:outline-none cursor-pointer"
                 >
                   <GalerieCarte images={p.images} reference={p.reference} />
 
-                  <span className="absolute left-2 top-2">
+                  <span className="absolute left-2.5 top-2.5">
                     <BadgeStatut statut={p.statut} />
                   </span>
 
                   {p.images.length > 1 && (
-                    <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                    <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
                       <IconeImage taille={11} />
                       {p.images.length}
                     </span>
                   )}
                 </div>
 
-                <div className="flex flex-1 flex-col gap-2 p-3.5">
+                {/* ─── Card body ─── */}
+                <div className="flex flex-1 flex-col gap-2.5 p-4">
+                  {/* Code + Category row */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-xs font-bold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
                       {p.code_interne}
                     </span>
                     {p.categorie && (
-                      <span className="text-[11px] font-semibold text-slate-500 truncate max-w-[120px]">
+                      <span className="text-[11px] font-semibold text-brand-warm-grey dark:text-brand-warm-grey truncate max-w-[120px]">
                         {p.categorie}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="line-clamp-2 text-sm font-bold text-slate-900 leading-snug group-hover:text-brand-orange transition-colors">
+                  {/* Reference */}
+                  <h3 className="line-clamp-2 text-sm font-bold text-brand-black dark:text-white leading-snug group-hover:text-brand-orange dark:group-hover:text-brand-orange transition-colors">
                     {p.reference}
                   </h3>
 
-                  <div className="mt-auto flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-                    <span className="text-base font-black text-slate-900 font-mono">
+                  {/* Price + Quantity manager */}
+                  <div className="mt-auto flex items-center justify-between pt-3 border-t border-brand-light-grey/50 dark:border-white/10 gap-2">
+                    <span className="text-base font-black text-brand-black dark:text-white font-mono">
                       {prix !== null ? formaterDA(prix) : "—"}
                     </span>
                     <div className="flex items-center gap-1">
@@ -270,9 +322,9 @@ export default function Vitrine({ role }: { role: Role }) {
                     </div>
                   </div>
 
-                  {/* Actions Métier : Vendre & Facturer directement / Mettre en vente */}
+                  {/* ─── Primary actions: Vendre & Prix ─── */}
                   {peutVendre && (
-                    <div 
+                    <div
                       className="space-y-1.5 pt-1"
                       onClick={(e) => {
                         e.preventDefault();
@@ -289,7 +341,7 @@ export default function Vitrine({ role }: { role: Role }) {
                               e.stopPropagation();
                               ouvrirVenteDirecte(p);
                             }}
-                            className="btn btn-primaire flex-1 justify-center min-h-[42px] text-xs font-bold gap-1.5 shadow-sm rounded-md"
+                            className="btn btn-primaire flex-1 justify-center min-h-[48px] rounded-xl text-xs font-bold gap-1.5 shadow-sm"
                           >
                             <IconeBillet taille={15} />
                             <span>{t("vitrine.vendre")}</span>
@@ -302,7 +354,7 @@ export default function Vitrine({ role }: { role: Role }) {
                               ouvrirMiseEnVente(p);
                             }}
                             title="Modifier le prix ou mettre en vente"
-                            className="btn btn-secondaire px-2.5 min-h-[42px] text-xs rounded-md"
+                            className="btn btn-secondaire px-2.5 min-h-[48px] rounded-xl"
                           >
                             <IconeEtiquette taille={14} />
                           </button>
@@ -315,7 +367,7 @@ export default function Vitrine({ role }: { role: Role }) {
                             e.stopPropagation();
                             ouvrirMiseEnVente(p);
                           }}
-                          className="btn btn-secondaire w-full justify-center min-h-[42px] text-xs font-bold text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 gap-1.5 rounded-md"
+                          className="btn btn-secondaire w-full justify-center min-h-[48px] rounded-xl text-xs font-bold text-brand-orange border-brand-orange/30 hover:bg-brand-orange/10 gap-1.5"
                         >
                           <IconeEtiquette taille={14} />
                           Mettre en vente
@@ -324,23 +376,25 @@ export default function Vitrine({ role }: { role: Role }) {
                     </div>
                   )}
 
-                  {/* Barre d'outils secondaire : Impression & Retrait */}
-                  <div 
-                    className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs"
+                  {/* ─── Secondary actions: Imprimer & Retirer ─── */}
+                  <div
+                    className="flex items-center justify-between pt-2.5 border-t border-brand-light-grey/50 dark:border-white/10 text-[11px]"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                     }}
                   >
                     {dispo.length > 0 ? (
-                      <BoutonImpression 
-                        ids={dispo.map((v) => v.id)} 
-                        dejaImprimee={dispo.every((v) => v.etiquette_imprimee)} 
-                        className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
+                      <BoutonImpression
+                        ids={dispo.map((v) => v.id)}
+                        dejaImprimee={dispo.every((v) => v.etiquette_imprimee)}
+                        className="flex items-center gap-1 font-semibold text-brand-warm-grey dark:text-brand-warm-grey hover:text-brand-black dark:hover:text-white transition-colors"
                         texte={t("vitrine.imprimer")}
                       />
                     ) : (
-                      <span className="text-[11px] text-amber-600 font-medium">Prix non fixé</span>
+                      <span className="font-medium text-amber-600 dark:text-amber-400">
+                        Prix non fixé
+                      </span>
                     )}
 
                     {peutRetirer && (
@@ -352,7 +406,7 @@ export default function Vitrine({ role }: { role: Role }) {
                           e.stopPropagation();
                           void retirer(p);
                         }}
-                        className="text-[11px] font-semibold text-slate-400 hover:text-red-600 transition"
+                        className="font-semibold text-brand-warm-grey dark:text-brand-warm-grey hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         title="Retirer ce modèle de la vitrine"
                       >
                         {t("vitrine.retirerVitrine")}
@@ -366,7 +420,7 @@ export default function Vitrine({ role }: { role: Role }) {
         </div>
       )}
 
-      {/* ===================== MODALE MISE EN VENTE ===================== */}
+      {/* ═══════════════════ MODALE MISE EN VENTE ═══════════════════ */}
       {modalMiseEnVente && (
         <ModaleMiseEnVente
           ouverte={modalMiseEnVente !== null}
@@ -386,7 +440,7 @@ export default function Vitrine({ role }: { role: Role }) {
         />
       )}
 
-      {/* ===================== MODALE VENTE & FACTURATION (RÉUTILISÉE À L'IDENTIQUE DE L'INVENTAIRE) ===================== */}
+      {/* ═══════════════════ MODALE VENTE & FACTURATION ═══════════════════ */}
       {modalVente && (
         <ModaleVente
           ouverte={modalVente}

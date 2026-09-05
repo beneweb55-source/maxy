@@ -159,7 +159,7 @@ export default function TemplateFactureA4({
     <div
       id="facture-print-area"
       ref={innerRef}
-      className="carte w-full max-w-[210mm] mx-auto bg-white p-8 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-slate-200 print:break-inside-avoid"
+      className="carte w-full max-w-[210mm] mx-auto bg-white dark:bg-brand-paper p-8 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-brand-light-grey print:break-inside-avoid"
     >
       {/* ── En-tête : Info entreprise à gauche, Logo à droite ── */}
       {showHeader && (

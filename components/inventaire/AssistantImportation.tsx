@@ -525,10 +525,10 @@ export default function AssistantImportation({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-full max-w-[95vw] sm:max-w-5xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-[95vw] sm:max-w-5xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl overflow-hidden">
         
         {/* Header de l'Assistant */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/2">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-brand-light-grey dark:border-white/10 bg-brand-paper/60 dark:bg-white/5">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-brand-orange/15 text-brand-orange shrink-0">
               <FileSpreadsheet className="w-7 h-7" />
@@ -551,14 +551,14 @@ export default function AssistantImportation({
           <button
             type="button"
             onClick={onFermer}
-            className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30 dark:hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Stepper Progress Indicator */}
-        <div className="flex border-b border-slate-200/80 dark:border-white/10 px-6 bg-slate-50/40 dark:bg-white/1 overflow-x-auto">
+        <div className="flex border-b border-brand-light-grey dark:border-white/10 px-6 bg-brand-paper/40 dark:bg-white/5 overflow-x-auto">
           
           <div className={`flex items-center gap-2.5 py-3 px-4 text-xs font-black border-b-2 transition-all shrink-0 ${
             etape === 1 ? "border-brand-orange text-brand-orange" : etape > 1 ? "border-emerald-500 text-emerald-600 dark:text-emerald-400" : "border-transparent text-brand-warm-grey"
@@ -602,7 +602,7 @@ export default function AssistantImportation({
               
               {/* Sélecteur Mode : Fichier vs Copier-Coller */}
               <div className="flex items-center justify-between gap-4">
-                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200/80 dark:border-white/10">
+                <div className="flex bg-brand-paper dark:bg-white/5 p-1 rounded-2xl border border-brand-light-grey dark:border-white/10">
                   <button
                     type="button"
                     onClick={() => setModeSaisie("fichier")}
@@ -654,7 +654,7 @@ export default function AssistantImportation({
                   className={`border-2 border-dashed rounded-3xl p-10 sm:p-14 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-4 ${
                     isDragOver
                       ? "border-brand-orange bg-brand-orange/10 scale-101"
-                      : "border-slate-300 dark:border-white/15 hover:border-brand-orange bg-slate-50/50 dark:bg-white/2"
+                      : "border-brand-light-grey dark:border-white/15 hover:border-brand-orange bg-brand-paper/50 dark:bg-white/5"
                   }`}
                 >
                   <input
@@ -702,7 +702,7 @@ export default function AssistantImportation({
                     value={texteColle}
                     onChange={(e) => setTexteColle(e.target.value)}
                     placeholder={`Exemple :\nLenovo ThinkPad T480 i5 8Go 256Go\t3\t35000\t45000\nDell OptiPlex 7070 i7 16Go 512Go\t1\t48000\t62000\nChargeur HP 65W Type-C\t10\t2500\t4000`}
-                    className="textarea w-full rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono font-bold leading-relaxed p-4"
+                    className="textarea w-full rounded-2xl bg-brand-paper dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-mono font-bold leading-relaxed p-4"
                   />
 
                   <div className="flex justify-end">
@@ -719,7 +719,7 @@ export default function AssistantImportation({
               )}
 
               {/* Conseils & Bonnes Pratiques */}
-              <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/3 border border-slate-200/80 dark:border-white/10 space-y-2 text-xs">
+              <div className="p-4 rounded-2xl bg-brand-paper/50 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 space-y-2 text-xs">
                 <div className="font-extrabold text-brand-black dark:text-white flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-brand-orange" /> Conseils pour un import optimal
                 </div>
@@ -737,7 +737,7 @@ export default function AssistantImportation({
           {etape === 2 && (
             <div className="space-y-6 animate-entree">
               
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50/80 dark:bg-white/3 border border-slate-200/80 dark:border-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-brand-paper/50 dark:bg-white/5 border border-brand-light-grey dark:border-white/10">
                 <div>
                   <span className="text-[11px] font-extrabold uppercase text-brand-warm-grey block">Source chargée</span>
                   <div className="text-sm font-black text-brand-black dark:text-white flex items-center gap-2">
@@ -776,8 +776,8 @@ export default function AssistantImportation({
                       key={cible.cleCible}
                       className={`p-4 rounded-2xl border transition-all ${
                         colonneAssignee
-                          ? "bg-slate-50/80 dark:bg-white/3 border-slate-200 dark:border-white/10 shadow-xs"
-                          : "bg-white dark:bg-brand-paper border-slate-200 dark:border-white/10 opacity-80"
+                          ? "bg-brand-paper/50 dark:bg-white/5 border-brand-light-grey dark:border-white/10 shadow-xs"
+                          : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 opacity-80"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -794,7 +794,7 @@ export default function AssistantImportation({
                       <select
                         value={colonneAssignee}
                         onChange={(e) => setMapping({ ...mapping, [cible.cleCible]: e.target.value })}
-                        className="select w-full h-11 rounded-xl bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs font-bold text-brand-black dark:text-white shadow-xs"
+                        className="select w-full h-11 rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold text-brand-black dark:text-white shadow-xs"
                       >
                         <option value="">-- Ignorer / Non présent dans le fichier --</option>
                         {enTetesFichier.map((h) => (
@@ -808,7 +808,7 @@ export default function AssistantImportation({
                 })}
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t border-slate-200/80 dark:border-white/10">
+              <div className="flex justify-between items-center pt-4 border-t border-brand-light-grey dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setEtape(1)}
@@ -841,7 +841,7 @@ export default function AssistantImportation({
                   className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
                     filtreDoute === "tous" 
                       ? "bg-brand-black text-white dark:bg-white dark:text-brand-black shadow-xs" 
-                      : "bg-white dark:bg-brand-paper border-slate-200 dark:border-white/10"
+                      : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10"
                   }`}
                 >
                   <span className="text-[10px] font-extrabold uppercase opacity-70">Total Modèles</span>
@@ -853,7 +853,7 @@ export default function AssistantImportation({
                   className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
                     filtreDoute === "valides" 
                       ? "bg-emerald-600 text-white shadow-xs border-emerald-600" 
-                      : "bg-white dark:bg-brand-paper border-slate-200 dark:border-white/10"
+                      : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10"
                   }`}
                 >
                   <span className="text-[10px] font-extrabold uppercase text-emerald-500">Confiance Haute</span>
@@ -867,7 +867,7 @@ export default function AssistantImportation({
                   className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
                     filtreDoute === "doutes" 
                       ? "bg-amber-600 text-white shadow-xs border-amber-600" 
-                      : "bg-white dark:bg-brand-paper border-slate-200 dark:border-white/10"
+                      : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -888,7 +888,7 @@ export default function AssistantImportation({
               </div>
 
               {/* Barre d'outils de Facilitation Rapide (Prix par défaut, Marge, Arrivage) */}
-              <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/3 border border-slate-200/80 dark:border-white/10 space-y-3">
+              <div className="p-4 rounded-2xl bg-brand-paper/50 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 space-y-3">
                 <span className="text-[11px] font-black uppercase tracking-wider text-brand-orange block">
                   Outils de remplissage rapide en 1 clic
                 </span>
@@ -903,7 +903,7 @@ export default function AssistantImportation({
                       value={valeurPrixAchatMasse}
                       onChange={(e) => setValeurPrixAchatMasse(e.target.value)}
                       placeholder="Prix Achat par défaut (DA)"
-                      className="input input-sm h-10 flex-1 rounded-xl bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs font-bold"
+                      className="input input-sm h-10 flex-1 rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold"
                     />
                     <button
                       type="button"
@@ -924,7 +924,7 @@ export default function AssistantImportation({
                         value={pourcentageMargeMasse}
                         onChange={(e) => setPourcentageMargeMasse(e.target.value)}
                         placeholder="Marge %"
-                        className="input input-sm h-10 pl-8 w-full rounded-xl bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs font-bold"
+                        className="input input-sm h-10 pl-8 w-full rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold"
                       />
                     </div>
                     <button
@@ -942,7 +942,7 @@ export default function AssistantImportation({
                       <select
                         value={lotGlobalId}
                         onChange={(e) => setLotGlobalId(e.target.value)}
-                        className="select select-sm h-10 w-full rounded-xl bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs font-bold"
+                        className="select select-sm h-10 w-full rounded-xl bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs font-bold"
                       >
                         <option value="">Rattacher à un Arrivage / Lot</option>
                         {lots.map((l) => (
@@ -966,16 +966,16 @@ export default function AssistantImportation({
                     value={recherchePrevisu}
                     onChange={(e) => { setRecherchePrevisu(e.target.value); setPageCourante(1); }}
                     placeholder="Filtrer par désignation, S/N ou catégorie..."
-                    className="input w-full pl-9 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-bold h-11"
+                    className="input w-full pl-9 rounded-xl bg-brand-paper dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-11"
                   />
                 </div>
               </div>
 
               {/* Data Grid Interactif de Prévisualisation */}
-              <div className="border border-slate-200/80 dark:border-white/10 rounded-2xl overflow-hidden shadow-xs bg-white dark:bg-brand-paper">
+              <div className="border border-brand-light-grey dark:border-white/10 rounded-2xl overflow-hidden shadow-xs bg-white dark:bg-brand-paper">
                 <div className="w-full overflow-x-auto max-h-[380px]">
                   <table className="w-full min-w-[750px] text-left text-xs border-collapse">
-                    <thead className="sticky top-0 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 z-10">
+                    <thead className="sticky top-0 bg-brand-paper dark:bg-white/5 border-b border-brand-light-grey dark:border-white/10 z-10">
                       <tr className="text-brand-warm-grey font-black uppercase text-[10px] tracking-wider">
                         <th className="py-3 px-3.5">#</th>
                         <th className="py-3 px-3.5">Désignation Produit</th>
@@ -987,7 +987,7 @@ export default function AssistantImportation({
                         <th className="py-3 px-3.5">S/N</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-medium">
+                    <tbody className="divide-y divide-brand-light-grey/40 dark:divide-white/5 font-medium">
                       {lignesAffichees.map((l, index) => {
                         const estDoute = l.classification.doute;
                         return (
@@ -996,7 +996,7 @@ export default function AssistantImportation({
                             className={`transition-colors ${
                               estDoute
                                 ? "bg-amber-50/60 dark:bg-amber-950/20 hover:bg-amber-100/50"
-                                : "hover:bg-slate-50/80 dark:hover:bg-white/2"
+                                : "hover:bg-brand-paper dark:hover:bg-white/5"
                             }`}
                           >
                             <td className="py-3 px-3.5 font-mono text-[11px] text-brand-warm-grey">
@@ -1014,7 +1014,7 @@ export default function AssistantImportation({
                                 className={`select select-xs rounded-lg font-bold border max-w-[200px] ${
                                   estDoute 
                                     ? "border-amber-400 bg-amber-50 dark:bg-brand-black text-amber-800 dark:text-amber-300"
-                                    : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-brand-black"
+                                    : "border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-brand-black"
                                 }`}
                               >
                                 {categoriesPlates.map((cat) => (
@@ -1038,7 +1038,7 @@ export default function AssistantImportation({
                             </td>
 
                             <td className="py-3 px-3.5 text-center font-bold">
-                              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-white/10 font-mono">
+                              <span className="px-2 py-0.5 rounded bg-brand-light-grey/30 dark:bg-white/10 font-mono">
                                 {l.quantite}
                               </span>
                             </td>
@@ -1054,7 +1054,7 @@ export default function AssistantImportation({
                                     prev.map((item) => (item.id === l.id ? { ...item, prix_achat: val } : item))
                                   );
                                 }}
-                                className="input input-xs w-20 text-right font-black rounded-lg border-slate-200 dark:border-white/10"
+                                className="input input-xs w-20 text-right font-black rounded-lg border-brand-light-grey dark:border-white/10"
                               />
                             </td>
 
@@ -1070,7 +1070,7 @@ export default function AssistantImportation({
                                   );
                                 }}
                                 placeholder="—"
-                                className="input input-xs w-20 text-right font-black text-brand-orange rounded-lg border-slate-200 dark:border-white/10"
+                                className="input input-xs w-20 text-right font-black text-brand-orange rounded-lg border-brand-light-grey dark:border-white/10"
                               />
                             </td>
 
@@ -1086,7 +1086,7 @@ export default function AssistantImportation({
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-white/5 border-t border-slate-200 dark:border-white/10">
+                  <div className="flex items-center justify-between px-4 py-3 bg-brand-paper dark:bg-white/5 border-t border-brand-light-grey dark:border-white/10">
                     <span className="text-xs text-brand-warm-grey font-medium">
                       Page {pageCourante} sur {totalPages} ({lignesFiltrees.length} articles)
                     </span>
@@ -1113,7 +1113,7 @@ export default function AssistantImportation({
               </div>
 
               {/* Boutons Finaux */}
-              <div className="flex justify-between items-center pt-4 border-t border-slate-200/80 dark:border-white/10">
+              <div className="flex justify-between items-center pt-4 border-t border-brand-light-grey dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setEtape(2)}

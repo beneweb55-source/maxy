@@ -47,11 +47,11 @@ export default function GrilleProduits({
             className={`group flex flex-col carte !p-0 !hover:transform-none overflow-hidden ${
               tousCoches
                 ? "!border-brand-orange ring-2 ring-brand-orange/30"
-                : "!border-slate-200 dark:!border-white/10 hover:!border-brand-orange/40"
+                : "!border-brand-light-grey dark:!border-white/10 hover:!border-brand-orange/40"
             }`}
           >
             {/* Image / Header de la Carte */}
-            <div className="relative aspect-video bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+            <div className="relative aspect-video bg-brand-light-grey/30 dark:bg-white/5 overflow-hidden">
               {g.image_url ? (
                 <img
                   src={g.image_url}
@@ -60,7 +60,7 @@ export default function GrilleProduits({
                   loading="lazy"
                 />
               ) : (
-                <div className="flex items-center justify-center w-full h-full text-slate-400 opacity-40">
+                <div className="flex items-center justify-center w-full h-full text-brand-warm-grey opacity-40">
                   <Boxes className="w-10 h-10" />
                 </div>
               )}
@@ -89,7 +89,7 @@ export default function GrilleProduits({
                       onSelection(prev => Array.from(new Set([...prev, ...idsGroupe])));
                     }
                   }}
-                  className="accent-brand-orange w-5 h-5 rounded border-2 border-white/80 shadow-sm bg-white/95 dark:bg-zinc-800/95 cursor-pointer transition-transform hover:scale-110"
+                  className="accent-brand-orange w-5 h-5 rounded border-2 border-white/80 shadow-sm bg-white/95 dark:bg-white/5 cursor-pointer transition-transform hover:scale-110"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function GrilleProduits({
                 </p>
                 <h3
                   onClick={() => onBasculerGroupe(g.cle)}
-                  className="font-black text-sm text-slate-900 dark:text-white line-clamp-2 hover:text-brand-orange cursor-pointer mt-0.5"
+                  className="font-black text-sm text-brand-black dark:text-white line-clamp-2 hover:text-brand-orange cursor-pointer mt-0.5"
                   title={g.reference}
                 >
                   {g.reference}
@@ -119,11 +119,11 @@ export default function GrilleProduits({
               </div>
 
               {/* Prix */}
-              <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-baseline justify-between">
+              <div className="pt-2 border-t border-brand-light-grey/40 dark:border-white/5 flex items-baseline justify-between">
                 {!estSocial && (
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase">Achat</span>
-                    <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
+                    <span className="text-[10px] text-brand-warm-grey font-bold block uppercase">Achat</span>
+                    <span className="text-xs font-mono font-bold text-brand-black dark:text-white">
                       {formaterDA(g.prixMin)}
                     </span>
                   </div>
@@ -137,7 +137,7 @@ export default function GrilleProduits({
               </div>
 
               {/* Actions Rapides */}
-              <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-1">
+              <div className="pt-2 border-t border-brand-light-grey/40 dark:border-white/5 flex items-center justify-between gap-1">
                 {/* Bouton (+) Arrivage Rapide Universel */}
                 {peutModifier && (
                   <button
@@ -182,8 +182,8 @@ export default function GrilleProduits({
                   onClick={() => onBasculerGroupe(g.cle)}
                   className={`p-2 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
                     ouvert
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                      : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                      ? "bg-brand-black text-white dark:bg-white dark:text-brand-black"
+                      : "bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-white hover:bg-brand-light-grey/50"
                   }`}
                   title="Voir les Numéros de Série"
                 >
@@ -196,7 +196,7 @@ export default function GrilleProduits({
                   <button
                     type="button"
                     onClick={() => onOuvrirEdition(g.unites, g.reference)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                    className="p-2 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30 dark:hover:bg-white/5 transition"
                     title="Éditer le modèle"
                   >
                     <IconeCrayon taille={15} />
@@ -206,13 +206,13 @@ export default function GrilleProduits({
 
               {/* Si Déplié dans la carte */}
               {ouvert && (
-                <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5 max-h-44 overflow-y-auto pr-1">
-                  <span className="text-[10px] font-black uppercase text-slate-400 block">Exemplaires :</span>
+                <div className="pt-2 border-t border-brand-light-grey/40 dark:border-white/5 space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                  <span className="text-[10px] font-black uppercase text-brand-warm-grey block">Exemplaires :</span>
                   {g.unites.map((u) => (
-                    <div key={u.id} className="p-1.5 rounded-xl bg-slate-50 dark:bg-zinc-800/50 flex items-center justify-between text-xs">
+                    <div key={u.id} className="p-1.5 rounded-xl bg-brand-paper/50 dark:bg-white/5 flex items-center justify-between text-xs">
                       <div>
                         <span className="font-mono font-bold text-brand-orange">{u.code_interne}</span>
-                        <span className="text-[10px] text-slate-500 block">{u.numero_serie ? `S/N: ${u.numero_serie}` : "Sans S/N"}</span>
+                        <span className="text-[10px] text-brand-warm-grey block">{u.numero_serie ? `S/N: ${u.numero_serie}` : "Sans S/N"}</span>
                       </div>
                       <BadgeStatut statut={u.statut} aJeter={u.a_jeter} />
                     </div>

@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  X, 
-  Store, 
-  Truck, 
-  Tag, 
-  Phone, 
-  Share2, 
-  Search, 
-  Plus, 
-  Trash2, 
-  CreditCard, 
-  CheckCircle2, 
+import {
+  X,
+  Store,
+  Truck,
+  Tag,
+  Phone,
+  Share2,
+  Search,
+  Plus,
+  Trash2,
+  CreditCard,
+  CheckCircle2,
   AlertCircle,
   Clock,
   MapPin,
@@ -300,7 +300,7 @@ export default function ModaleCreationCommande({
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-orange text-[10px] text-white">1</span>
                 Source & Canal de Vente
               </label>
-              <span className="text-[11px] font-semibold text-slate-500">
+              <span className="text-[11px] font-semibold text-brand-warm-grey">
                 Caisse affectée : <strong className={caisse === "CAISSE_YALIDINE" ? "text-blue-600" : "text-emerald-600"}>
                   {caisse === "CAISSE_YALIDINE" ? "Caisse Yalidine (Recouvrement)" : "Caisse Physique (Magasin)"}
                 </strong>
@@ -309,7 +309,7 @@ export default function ModaleCreationCommande({
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {[
-                { id: "COMPTOIR", label: "Comptoir", icon: Store, color: "hover:border-slate-400" },
+                { id: "COMPTOIR", label: "Comptoir", icon: Store, color: "hover:border-brand-light-grey" },
                 { id: "YALIDINE", label: "Yalidine", icon: Truck, color: "hover:border-blue-400" },
                 { id: "OUEDKNISS", label: "Ouedkniss", icon: Tag, color: "hover:border-amber-400" },
                 { id: "TELEPHONE", label: "Téléphone", icon: Phone, color: "hover:border-emerald-400" },
@@ -385,7 +385,7 @@ export default function ModaleCreationCommande({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
                       Wilaya <span className="text-danger">*</span>
                     </label>
                     <select
@@ -403,7 +403,7 @@ export default function ModaleCreationCommande({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
                       Commune <span className="text-danger">*</span>
                     </label>
                     <input
@@ -416,7 +416,7 @@ export default function ModaleCreationCommande({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
                       Frais de port (DA)
                     </label>
                     <input
@@ -431,7 +431,7 @@ export default function ModaleCreationCommande({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
                     Adresse complète / Point relais
                   </label>
                   <input
@@ -602,7 +602,7 @@ export default function ModaleCreationCommande({
                   type="button"
                   onClick={() => setEstPayee(!estPayee)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    estPayee ? "bg-emerald-600" : "bg-slate-300 dark:bg-slate-700"
+                    estPayee ? "bg-emerald-600" : "bg-brand-light-grey dark:bg-white/10"
                   }`}
                 >
                   <span

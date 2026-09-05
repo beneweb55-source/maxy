@@ -15,7 +15,7 @@ export default async function PageDetailCommande({
   const commandeId = Number(id);
 
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-400 font-bold">Chargement de la commande...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-brand-warm-grey font-bold">Chargement de la commande...</div>}>
       <FicheCommande commandeId={commandeId} />
     </Suspense>
   );

@@ -627,7 +627,7 @@ export default function GestionCategories() {
                 </div>
               </div>
 
-              <div className="flex-shrink-0 p-4 border-t border-brand-light-grey/30 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-end gap-2">
+              <div className="flex-shrink-0 p-4 border-t border-brand-light-grey/30 dark:border-white/5 bg-brand-light-grey/20 dark:bg-white/5 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setModalOuverte(false)}

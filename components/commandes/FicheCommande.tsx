@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  Printer, 
-  ArrowLeft, 
-  RotateCcw, 
-  X, 
-  Edit3, 
+import {
+  Printer,
+  ArrowLeft,
+  RotateCcw,
+  X,
+  Edit3,
   Trash2,
   Download,
 } from "lucide-react";
@@ -163,7 +163,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
 
   return (
     <div className="mx-auto max-w-3xl w-full space-y-6 animate-entree print:max-w-none print:animate-none force-light-mode bg-brand-paper text-brand-black min-h-[100dvh] p-4 sm:p-6 rounded-2xl">
-      
+
       {/* Barre d'Actions Supérieure (Masquée à l'impression) */}
       <div className="print:hidden flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-brand-light-grey/50">
         <Link
@@ -263,11 +263,11 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
 
       {/* ======================= FORMAT A4 STANDARD WYSIWYG 1:1 ======================= */}
       {!formatTicket && (
-        <div 
+        <div
           id="commande-print-area"
-          className="carte w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-slate-200 print:break-inside-avoid"
+          className="carte w-full max-w-[210mm] min-h-[297mm] mx-auto bg-white p-8 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-brand-light-grey dark:border-white/10 print:break-inside-avoid"
         >
-          
+
           {/* En-tête : Info entreprise à gauche, Logo à droite */}
           <div className="flex justify-between items-start gap-4 mb-6">
             <div className="bg-[#e5e7eb] p-4 rounded-xl rounded-tl-none w-[45%] text-xs border border-[#d1d5db] relative">
@@ -313,7 +313,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
               {commande.statut === "EN_ATTENTE" ? "Bon de Commande / Devis" : "Facture"} n°: {commande.numero}
             </h2>
             <div className="mt-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-slate-300 bg-[#f3f4f6] text-slate-800">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-brand-light-grey bg-[#f3f4f6] text-brand-black dark:text-white">
                 {commande.canal === "YALIDINE"
                   ? "Commande Yalidine — Expédition & Recouvrement"
                   : commande.canal && commande.canal !== "COMPTOIR"
@@ -353,7 +353,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
                     <td className="border border-black px-2">{idx + 1}</td>
                     <td className="border border-black px-2 text-left font-bold">
                       <span>{l.designation}</span>
-                      {l.numero_serie && <span className="block text-[10px] font-mono text-slate-600 font-normal">S/N: {l.numero_serie}</span>}
+                      {l.numero_serie && <span className="block text-[10px] font-mono text-brand-warm-grey font-normal">S/N: {l.numero_serie}</span>}
                     </td>
                     <td className="border border-black px-2">U</td>
                     <td className="border border-black px-2">{Number(l.quantite).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
@@ -395,10 +395,10 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
           </div>
 
           {/* Arrêté de facture */}
-          <div className="p-3 bg-slate-50 border border-black rounded-xl text-xs space-y-1 mb-8">
+          <div className="p-3 bg-brand-paper border border-black rounded-xl text-xs space-y-1 mb-8">
             <div className="font-bold">Arrêtée la présente facture à la somme de :</div>
-            <div className="italic font-medium text-slate-800">{montantEnLettres(commande.total_ttc)}</div>
-            <div className="pt-1 text-[11px] text-slate-600">
+            <div className="italic font-medium text-brand-black">{montantEnLettres(commande.total_ttc)}</div>
+            <div className="pt-1 text-[11px] text-brand-warm-grey">
               Mode de règlement : <strong className="uppercase">{commande.type_paiement || "Espèces"}</strong> · Garantie : <strong>{commande.garantie_mois} Mois</strong>
             </div>
           </div>
@@ -406,9 +406,9 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
           {/* Cachet et signature */}
           <div className="flex justify-end mr-12 mt-8 mb-16">
             <div className="relative w-64 h-32">
-              <img 
-                src={entreprise?.cachet || "/brand/cachet.png"} 
-                alt="Cachet" 
+              <img
+                src={entreprise?.cachet || "/brand/cachet.png"}
+                alt="Cachet"
                 className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
               />
             </div>
@@ -479,7 +479,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
                 <tr key={l.id || idx}>
                   <td className="py-1 pr-1">
                     <div className="font-bold">{l.code_interne}</div>
-                    <div className="text-[10px] text-slate-700">{l.designation}</div>
+                    <div className="text-[10px] text-brand-black">{l.designation}</div>
                   </td>
                   <td className="py-1 text-center">{l.quantite}</td>
                   <td className="py-1 text-right font-mono font-bold">{formaterDA(l.total_ligne)}</td>
@@ -513,24 +513,24 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
       {/* ======================= MODALES D'ACTIONS ======================= */}
       {modalAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree print:hidden">
-          <div className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
-              <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                {modalAction === "remboursement" 
-                  ? "Confirmer le Remboursement" 
-                  : modalAction === "suppression" 
-                    ? "Supprimer la Commande" 
+          <div className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4">
+
+            <div className="flex items-center justify-between border-b border-brand-light-grey/50 dark:border-white/10 pb-3">
+              <h3 className="text-base font-black text-brand-black dark:text-white uppercase tracking-wider">
+                {modalAction === "remboursement"
+                  ? "Confirmer le Remboursement"
+                  : modalAction === "suppression"
+                    ? "Supprimer la Commande"
                     : "Modifier le Statut"}
               </h3>
-              <button onClick={() => setModalAction(null)} className="h-10 w-10 flex items-center justify-center rounded-xl p-1 text-slate-400">
+              <button onClick={() => setModalAction(null)} className="h-10 w-10 flex items-center justify-center rounded-xl p-1 text-brand-warm-grey">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {modalAction === "suppression" ? (
               <div className="space-y-4 text-xs">
-                <p className="text-slate-600 dark:text-slate-300">
+                <p className="text-brand-warm-grey dark:text-brand-warm-grey">
                   Êtes-vous sûr de vouloir supprimer définitivement la commande <strong>{commande.numero}</strong> ?
                   <br />
                   <span className="text-danger font-bold mt-1 block">
@@ -557,7 +557,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
               </div>
             ) : modalAction === "remboursement" ? (
               <div className="space-y-4 text-xs">
-                <p className="text-slate-600 dark:text-slate-300">
+                <p className="text-brand-warm-grey dark:text-brand-warm-grey">
                   Cette action passera la commande en <strong>Remboursée</strong> et remettra <strong>automatiquement en stock</strong> tous les exemplaires physiques vendus.
                 </p>
                 <button
@@ -578,7 +578,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
                       type="button"
                       onClick={() => executerChangementStatut(key)}
                       className={`p-3 rounded-xl border font-bold ${
-                        commande.statut === key ? "border-brand-orange bg-brand-orange/10 text-brand-orange" : "border-slate-200"
+                        commande.statut === key ? "border-brand-orange bg-brand-orange/10 text-brand-orange" : "border-brand-light-grey dark:border-white/10"
                       }`}
                     >
                       {label}

@@ -179,17 +179,17 @@ export default function UniversalStockManager({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-entree font-sans">
       <div 
-        className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh]"
+        className="w-full max-w-lg rounded-3xl bg-white dark:bg-brand-paper shadow-2xl border border-brand-light-grey dark:border-white/10 overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Modal */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-800/30">
+        <div className="flex items-center justify-between p-5 border-b border-brand-light-grey bg-brand-light-grey/30 dark:bg-white/5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-brand-orange/10 flex items-center justify-center text-brand-orange shadow-inner">
               <PackagePlus className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-base font-black text-brand-black dark:text-white flex items-center gap-2">
                 Ajouter des Exemplaires en Stock
               </h2>
               <p className="text-xs text-brand-warm-grey font-medium truncate max-w-[280px]">
@@ -201,7 +201,7 @@ export default function UniversalStockManager({
             type="button"
             onClick={onFermer}
             disabled={enCours}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/50 transition cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/60 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -222,7 +222,7 @@ export default function UniversalStockManager({
               <label htmlFor="input-bulk-quantite" className="text-xs font-black uppercase text-brand-orange tracking-wider">
                 Nombre d&apos;exemplaires à créer *
               </label>
-              <span className="text-[10px] font-bold text-slate-400">
+              <span className="text-[10px] font-bold text-brand-warm-grey">
                 1 à 500 unités
               </span>
             </div>
@@ -232,7 +232,7 @@ export default function UniversalStockManager({
                 type="button"
                 onClick={() => ajusterQuantite(-1)}
                 disabled={enCours || quantite <= 1}
-                className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-100 disabled:opacity-40 transition shadow-xs cursor-pointer"
+                className="w-11 h-11 rounded-xl bg-white dark:bg-white/5 border border-brand-light-grey dark:border-white/10 flex items-center justify-center text-brand-black dark:text-white hover:bg-brand-light-grey/30 disabled:opacity-40 transition shadow-xs cursor-pointer"
                 title="Diminuer (-1)"
               >
                 <Minus className="w-4 h-4" />
@@ -249,7 +249,7 @@ export default function UniversalStockManager({
                   const val = parseInt(e.target.value, 10);
                   setQuantite(isNaN(val) ? 1 : Math.max(1, Math.min(500, val)));
                 }}
-                className="flex-1 h-11 text-center font-mono font-black text-2xl bg-white dark:bg-zinc-800 rounded-xl border border-brand-orange/40 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-orange shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="flex-1 h-11 text-center font-mono font-black text-2xl bg-white dark:bg-white/5 rounded-xl border border-brand-orange/40 text-brand-black dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-orange shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
 
               <button
@@ -273,7 +273,7 @@ export default function UniversalStockManager({
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                     quantite === step
                       ? "bg-brand-orange text-white shadow-2xs"
-                      : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-zinc-700 hover:border-brand-orange"
+                      : "bg-white dark:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey border border-brand-light-grey dark:border-white/10 hover:border-brand-orange"
                   }`}
                 >
                   +{step}
@@ -285,13 +285,13 @@ export default function UniversalStockManager({
           {/* PARAMÈTRES MÉTIER (Statut & Emplacement) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1.5 block">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                 Statut initial
               </label>
               <select
                 value={statut}
                 onChange={(e) => setStatut(e.target.value as StatutProduit)}
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-brand-orange"
+                className="champ w-full h-10 px-3 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 text-xs font-bold text-brand-black dark:text-white focus:outline-none focus:border-brand-orange"
               >
                 <option value="en_vente">En vente (Prêt à facturer)</option>
                 <option value="recu">Reçu (Arrivage / À tester)</option>
@@ -300,17 +300,17 @@ export default function UniversalStockManager({
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1.5 block">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                 Emplacement
               </label>
-              <div className="grid grid-cols-2 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700 h-10">
+              <div className="grid grid-cols-2 bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-xl border border-brand-light-grey dark:border-white/10 h-10">
                 <button
                   type="button"
                   onClick={() => setEmplacement("reserve")}
                   className={`flex items-center justify-center gap-1 text-xs font-bold rounded-lg transition cursor-pointer ${
                     emplacement === "reserve"
-                      ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-2xs"
+                      : "text-brand-warm-grey hover:text-brand-black"
                   }`}
                 >
                   <Warehouse className="w-3 h-3" />
@@ -321,8 +321,8 @@ export default function UniversalStockManager({
                   onClick={() => setEmplacement("vitrine")}
                   className={`flex items-center justify-center gap-1 text-xs font-bold rounded-lg transition cursor-pointer ${
                     emplacement === "vitrine"
-                      ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-white dark:bg-brand-paper text-brand-orange shadow-2xs"
+                      : "text-brand-warm-grey hover:text-brand-black"
                   }`}
                 >
                   <Store className="w-3 h-3" />
@@ -334,17 +334,17 @@ export default function UniversalStockManager({
 
           {!cible?.produitId && (
             <div className="mb-4">
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1.5 block">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                 Type de Produit
               </label>
-              <div className="grid grid-cols-2 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+              <div className="grid grid-cols-2 bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-xl border border-brand-light-grey dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setEstCompose(false)}
                   className={`flex items-center justify-center py-2 gap-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                     !estCompose
-                      ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-2xs"
+                      : "text-brand-warm-grey hover:text-brand-black"
                   }`}
                 >
                   Produit Simple
@@ -354,8 +354,8 @@ export default function UniversalStockManager({
                   onClick={() => setEstCompose(true)}
                   className={`flex items-center justify-center py-2 gap-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                     estCompose
-                      ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-white dark:bg-brand-paper text-brand-orange shadow-2xs"
+                      : "text-brand-warm-grey hover:text-brand-black"
                   }`}
                 >
                   Produit Composé (BOM)
@@ -367,7 +367,7 @@ export default function UniversalStockManager({
           {/* PRIX (Achat & Vente) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1.5 block">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                 Prix d&apos;Achat Unitaire (DA)
               </label>
               <div className="relative">
@@ -378,16 +378,16 @@ export default function UniversalStockManager({
                   placeholder="0"
                   value={prixAchat}
                   onChange={(e) => setPrixAchat(e.target.value.replace(/[^\d]/g, ""))}
-                  className="w-full h-10 pl-3 pr-8 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="champ w-full h-10 pl-3 pr-8 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 text-xs font-bold text-brand-black dark:text-white focus:outline-none focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-warm-grey">
                   DA
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1.5 block">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                 Prix de Vente Fixe (DA)
               </label>
               <div className="relative">
@@ -398,9 +398,9 @@ export default function UniversalStockManager({
                   placeholder="Prix conseillé"
                   value={prixVente}
                   onChange={(e) => setPrixVente(e.target.value.replace(/[^\d]/g, ""))}
-                  className="w-full h-10 pl-3 pr-8 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="champ w-full h-10 pl-3 pr-8 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 text-xs font-bold text-brand-black dark:text-white focus:outline-none focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-warm-grey">
                   DA
                 </span>
               </div>
@@ -408,14 +408,14 @@ export default function UniversalStockManager({
           </div>
 
           {/* SECTION OPTIONNELLE : SCAN NUMÉROS DE SÉRIE (ACCORDÉON DISCRET) */}
-          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/20 overflow-hidden">
+          <div className="rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-light-grey/30 dark:bg-white/5 overflow-hidden">
             <button
               type="button"
               onClick={() => setAfficherSn(!afficherSn)}
-              className="w-full flex items-center justify-between p-3.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-brand-orange transition cursor-pointer"
+              className="w-full flex items-center justify-between p-3.5 text-xs font-bold text-brand-black dark:text-white hover:text-brand-orange transition cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <Scan className="w-3.5 h-3.5 text-slate-400" />
+                <Scan className="w-3.5 h-3.5 text-brand-warm-grey" />
                 <span>Scanner des Numéros de Série (Optionnel)</span>
                 {snListe.length > 0 && (
                   <span className="text-[10px] bg-brand-orange text-white px-2 py-0.5 rounded-full font-black">
@@ -427,8 +427,8 @@ export default function UniversalStockManager({
             </button>
 
             {afficherSn && (
-              <div className="p-3.5 pt-0 space-y-3 border-t border-slate-100 dark:border-zinc-800/50">
-                <p className="text-[11px] text-slate-400 font-normal leading-relaxed">
+              <div className="p-3.5 pt-0 space-y-3 border-t border-brand-light-grey dark:border-white/10">
+                <p className="text-[11px] text-brand-warm-grey font-normal leading-relaxed">
                   Scannez ou saisissez les numéros de série à la douchette puis appuyez sur Entrée. Les S/N non saisis pourront être scannés ultérieurement lors de la vente ou du contrôle.
                 </p>
 
@@ -439,7 +439,7 @@ export default function UniversalStockManager({
                     value={inputSn}
                     onChange={(e) => setInputSn(e.target.value)}
                     onKeyDown={ajouterSnScan}
-                    className="flex-1 h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-mono font-bold focus:outline-none focus:border-brand-orange"
+                    className="champ flex-1 h-9 px-3 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 text-xs font-mono font-bold focus:outline-none focus:border-brand-orange"
                   />
                   <button
                     type="button"
@@ -448,7 +448,7 @@ export default function UniversalStockManager({
                         ajouterSnScan({ key: "Enter", preventDefault: () => {} } as any);
                       }
                     }}
-                    className="px-3 h-9 rounded-xl bg-slate-200 dark:bg-zinc-700 text-xs font-bold hover:bg-slate-300 transition"
+                    className="btn btn-secondaire px-3 h-9 rounded-xl text-xs font-bold transition"
                   >
                     Ajouter
                   </button>
@@ -459,13 +459,13 @@ export default function UniversalStockManager({
                     {snListe.map((sn, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[10px] font-mono font-bold"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-[10px] font-mono font-bold"
                       >
                         {sn}
                         <button
                           type="button"
                           onClick={() => setSnListe(snListe.filter((_, i) => i !== idx))}
-                          className="text-slate-400 hover:text-red-500"
+                          className="text-brand-warm-grey hover:text-red-500"
                         >
                           ×
                         </button>
@@ -478,12 +478,12 @@ export default function UniversalStockManager({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-brand-light-grey dark:border-white/10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onFermer}
               disabled={enCours}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+              className="btn btn-secondaire px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
             >
               Annuler
             </button>

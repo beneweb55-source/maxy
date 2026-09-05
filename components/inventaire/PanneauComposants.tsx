@@ -85,7 +85,7 @@ function getLabelAction(action: string): { label: string; color: string; icon: R
     case "vente_composant":
       return { label: "Vendu", color: "text-purple-600 bg-purple-50", icon: <Coins className="w-3 h-3" /> };
     default:
-      return { label: action, color: "text-slate-600 bg-slate-50", icon: <Clock className="w-3 h-3" /> };
+      return { label: action, color: "text-brand-warm-grey bg-brand-paper", icon: <Clock className="w-3 h-3" /> };
   }
 }
 
@@ -336,7 +336,7 @@ export default function PanneauComposants({
                               {c.reference}
                             </span>
                             {c.grade && (
-                              <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
+                              <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey dark:text-white">
                                 {c.grade}
                               </span>
                             )}
@@ -356,7 +356,7 @@ export default function PanneauComposants({
                             type="button"
                             onClick={() => detacherComposant(c.id, c.reference)}
                             disabled={enAction}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition shrink-0"
+                            className="p-1.5 rounded-lg text-brand-warm-grey hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition shrink-0"
                             title="Retirer du composé et remettre au stock"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

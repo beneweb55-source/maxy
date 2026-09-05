@@ -107,7 +107,7 @@ export default function ImpressionMasseCommandes() {
 
   if (chargement) {
     return (
-      <div className="p-12 text-center text-slate-400 font-bold">
+      <div className="p-12 text-center text-brand-warm-grey font-bold">
         Chargement des factures de commandes en lot...
       </div>
     );
@@ -115,9 +115,9 @@ export default function ImpressionMasseCommandes() {
 
   if (erreur || commandes.length === 0) {
     return (
-      <div className="max-w-xl mx-auto mt-12 p-6 rounded-3xl bg-white border border-slate-200 text-center space-y-4">
+      <div className="max-w-xl mx-auto mt-12 p-6 rounded-3xl bg-white border border-brand-light-grey text-center space-y-4">
         <div className="text-red-500 font-black text-lg">Impression Impossible</div>
-        <p className="text-slate-600 text-sm">{erreur || "Aucune commande trouvée."}</p>
+        <p className="text-brand-warm-grey text-sm">{erreur || "Aucune commande trouvée."}</p>
         <Link href="/commandes" className="btn btn-secondaire text-xs">
           Retour aux Commandes
         </Link>
@@ -127,9 +127,9 @@ export default function ImpressionMasseCommandes() {
 
   return (
     <div className="min-h-screen bg-brand-paper p-4 sm:p-8 force-light-mode text-brand-black">
-      
+
       {/* Barre d'outils (masquée à l'impression) */}
-      <div className="print:hidden max-w-4xl mx-auto mb-8 p-4 rounded-2xl bg-white border border-slate-200 shadow-md flex flex-wrap items-center justify-between gap-4">
+      <div className="print:hidden max-w-4xl mx-auto mb-8 p-4 rounded-2xl bg-white border border-brand-light-grey shadow-md flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/commandes"
@@ -138,18 +138,18 @@ export default function ImpressionMasseCommandes() {
             <IconeFlecheGauche taille={14} />
             <span>Commandes</span>
           </Link>
-          <div className="text-xs font-bold text-slate-600">
-            Lot de <strong className="text-slate-900">{commandes.length}</strong> facture(s)
+          <div className="text-xs font-bold text-brand-warm-grey">
+            Lot de <strong className="text-brand-black">{commandes.length}</strong> facture(s)
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex bg-slate-100 p-1 rounded-xl">
+          <div className="flex bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setFormatTicket(false)}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                !formatTicket ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
+                !formatTicket ? "bg-white text-brand-black shadow-xs" : "text-brand-warm-grey hover:text-brand-black"
               }`}
             >
               A4 Standard
@@ -158,7 +158,7 @@ export default function ImpressionMasseCommandes() {
               type="button"
               onClick={() => setFormatTicket(true)}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                formatTicket ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
+                formatTicket ? "bg-white text-brand-black shadow-xs" : "text-brand-warm-grey hover:text-brand-black"
               }`}
             >
               Ticket (80mm)
@@ -234,7 +234,7 @@ export default function ImpressionMasseCommandes() {
                       <tr key={l.id || idx}>
                         <td className="py-1 pr-1">
                           <div className="font-bold">{l.code_interne}</div>
-                          <div className="text-[10px] text-slate-700">{l.designation}</div>
+                          <div className="text-[10px] text-brand-black">{l.designation}</div>
                         </td>
                         <td className="py-1 text-center">{l.quantite}</td>
                         <td className="py-1 text-right font-mono font-bold">{formaterDA(l.total_ligne)}</td>
@@ -270,7 +270,7 @@ export default function ImpressionMasseCommandes() {
           return (
             <div
               key={cmd.id}
-              className={`facture-feuille carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight bg-white p-8 sm:p-12 rounded-3xl border border-slate-200 shadow-xl ${
+              className={`facture-feuille carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight bg-white p-8 sm:p-12 rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-xl ${
                 !estDerniere ? "page-break-after-always" : ""
               }`}
             >
@@ -349,7 +349,7 @@ export default function ImpressionMasseCommandes() {
                         <td className="border border-black px-2">{idx + 1}</td>
                         <td className="border border-black px-2 text-left font-bold">
                           <span>{l.designation}</span>
-                          {l.numero_serie && <span className="block text-[10px] font-mono text-slate-600 font-normal">S/N: {l.numero_serie}</span>}
+                          {l.numero_serie && <span className="block text-[10px] font-mono text-brand-warm-grey font-normal">S/N: {l.numero_serie}</span>}
                         </td>
                         <td className="border border-black px-2">U</td>
                         <td className="border border-black px-2">{Number(l.quantite).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
@@ -391,10 +391,10 @@ export default function ImpressionMasseCommandes() {
               </div>
 
               {/* Arrêté de facture */}
-              <div className="p-3 bg-slate-50 border border-black rounded-xl text-xs space-y-1 mb-8">
+              <div className="p-3 bg-brand-paper border border-black rounded-xl text-xs space-y-1 mb-8">
                 <div className="font-bold">Arrêtée la présente facture à la somme de :</div>
-                <div className="italic font-medium text-slate-800">{montantEnLettres(cmd.total_ttc)}</div>
-                <div className="pt-1 text-[11px] text-slate-600">
+                <div className="italic font-medium text-brand-black">{montantEnLettres(cmd.total_ttc)}</div>
+                <div className="pt-1 text-[11px] text-brand-warm-grey">
                   Mode de règlement : <strong className="uppercase">{cmd.type_paiement || "Espèces"}</strong> · Garantie : <strong>{cmd.garantie_mois} Mois</strong>
                 </div>
               </div>
@@ -402,9 +402,9 @@ export default function ImpressionMasseCommandes() {
               {/* Cachet et signature */}
               <div className="flex justify-end mr-12 mt-8 mb-16">
                 <div className="relative w-64 h-32">
-                  <img 
-                    src={entreprise?.cachet || "/brand/cachet.png"} 
-                    alt="Cachet" 
+                  <img
+                    src={entreprise?.cachet || "/brand/cachet.png"}
+                    alt="Cachet"
                     className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
                   />
                 </div>

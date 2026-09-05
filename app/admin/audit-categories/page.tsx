@@ -289,7 +289,7 @@ export default function PageAuditCategories() {
                             ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
                             : c.niveau === 2
                             ? "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300"
-                            : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                            : "bg-brand-paper text-brand-black dark:bg-white/5 dark:text-brand-warm-grey"
                         }`}>
                           Niv. {c.niveau}
                         </span>

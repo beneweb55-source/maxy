@@ -113,7 +113,7 @@ export default function ConfirmerAction({
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onAnnuler} />
 
       {/* Boîte de dialogue */}
-      <div className="relative z-10 w-full max-w-md bg-white dark:bg-brand-paper rounded-2xl shadow-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden animate-entree">
+      <div className="relative z-10 w-full max-w-md bg-white dark:bg-brand-paper rounded-2xl shadow-2xl border border-brand-light-grey/80 dark:border-white/10 overflow-hidden animate-entree">
         {/* En-tête */}
         <div className="flex items-center gap-3 p-5 pb-0">
           <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${c.fondIc}`}>

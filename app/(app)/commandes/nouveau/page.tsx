@@ -8,7 +8,7 @@ export default async function PageNouvelleCommande() {
   if (!user) redirect("/connexion");
 
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-400 font-bold">Chargement de la caisse...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-brand-warm-grey font-bold">Chargement de la caisse...</div>}>
       <PosCreationCommande />
     </Suspense>
   );

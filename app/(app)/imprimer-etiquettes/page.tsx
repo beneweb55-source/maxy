@@ -105,7 +105,7 @@ export default function ImprimerEtiquettes() {
         }
       `}} />
 
-      <div className="no-print mb-4 flex w-full max-w-md flex-col gap-4 rounded-lg bg-white p-4 shadow-sm border border-brand-light-grey">
+      <div className="no-print mb-4 flex w-full max-w-md flex-col gap-4 rounded-lg bg-white dark:bg-brand-paper p-4 shadow-sm border border-brand-light-grey dark:border-white/10">
         {!aImprime ? (
           <div className="text-center space-y-4">
             <p className="text-sm text-brand-dark-grey font-medium">
@@ -156,11 +156,11 @@ export default function ImprimerEtiquettes() {
           className="etiquette flex flex-col items-center justify-between bg-white w-[58mm] h-[43mm] overflow-hidden p-1.5 text-center"
         >
           <div className="w-full">
-            <div className="text-[10px] font-extrabold leading-tight truncate w-full px-1 text-slate-900">
+            <div className="text-[10px] font-extrabold leading-tight truncate w-full px-1 text-brand-black">
               {etiquette.reference || etiquette.code_interne}
             </div>
             {etiquette.grade && (
-              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+              <span className="text-[8px] font-bold text-brand-warm-grey uppercase tracking-wider">
                 {etiquette.grade}
               </span>
             )}
@@ -175,16 +175,16 @@ export default function ImprimerEtiquettes() {
             displayValue={true}
           />
 
-          <div className="w-full flex items-center justify-between px-2 text-[10px] font-bold border-t border-slate-200 pt-0.5">
+          <div className="w-full flex items-center justify-between px-2 text-[10px] font-bold border-t border-brand-light-grey pt-0.5">
             {etiquette.numero_serie ? (
-              <span className="font-mono text-[9px] text-slate-600 truncate max-w-[55%]">
+              <span className="font-mono text-[9px] text-brand-warm-grey truncate max-w-[55%]">
                 S/N: {etiquette.numero_serie}
               </span>
             ) : (
-              <span className="text-[8px] text-slate-400">Maxy POS</span>
+              <span className="text-[8px] text-brand-warm-grey">Maxy POS</span>
             )}
             {etiquette.prix_vente !== null && etiquette.prix_vente !== undefined && (
-              <span className="font-mono font-black text-slate-900 text-[11px]">
+              <span className="font-mono font-black text-brand-black text-[11px]">
                 {formaterDA(etiquette.prix_vente)}
               </span>
             )}

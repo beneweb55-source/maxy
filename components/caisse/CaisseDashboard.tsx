@@ -266,7 +266,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           className={`relative overflow-hidden rounded-3xl p-6 border-2 transition-all cursor-pointer shadow-sm ${
             filtreCaisse === "CAISSE_PHYSIQUE"
               ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20"
-              : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-400"
+              : "border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper hover:border-emerald-400"
           }`}
         >
           <div className="flex items-start justify-between">
@@ -276,12 +276,12 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-black text-slate-900 dark:text-white">Caisse Normale</h2>
+                  <h2 className="text-lg font-black text-brand-black dark:text-white">Caisse Normale</h2>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     Magasin &amp; Comptoir
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                <p className="text-xs text-brand-warm-grey dark:text-brand-warm-grey font-medium mt-0.5">
                   Ventes physiques directes, espèces &amp; opérations courantes
                 </p>
               </div>
@@ -293,9 +293,9 @@ export default function CaisseDashboard({ role }: { role: Role }) {
             )}
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex items-end justify-between">
+          <div className="mt-5 pt-4 border-t border-brand-light-grey/50 dark:border-white/10 flex items-end justify-between">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-grey block mb-1">
                 Disponible Caisse Normale
               </span>
               <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
@@ -303,8 +303,8 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               </span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Mouvements</span>
-              <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">
+              <span className="text-[10px] uppercase font-bold text-brand-warm-grey block">Total Mouvements</span>
+              <span className="text-sm font-mono font-bold text-brand-black dark:text-brand-warm-grey">
                 {formaterDA(soldes.physique?.total ?? soldes.total)}
               </span>
             </div>
@@ -320,7 +320,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           className={`relative overflow-hidden rounded-3xl p-6 border-2 transition-all cursor-pointer shadow-sm ${
             filtreCaisse === "CAISSE_YALIDINE"
               ? "border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 ring-2 ring-blue-500/20"
-              : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-400"
+              : "border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper hover:border-blue-400"
           }`}
         >
           <div className="flex items-start justify-between">
@@ -330,12 +330,12 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-black text-slate-900 dark:text-white">Caisse Yalidine</h2>
+                  <h2 className="text-lg font-black text-brand-black dark:text-white">Caisse Yalidine</h2>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     Livraisons &amp; Colis
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                <p className="text-xs text-brand-warm-grey dark:text-brand-warm-grey font-medium mt-0.5">
                   Fonds recouvrés auprès des livreurs et bordereaux Yalidine
                 </p>
               </div>
@@ -347,9 +347,9 @@ export default function CaisseDashboard({ role }: { role: Role }) {
             )}
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex items-end justify-between">
+          <div className="mt-5 pt-4 border-t border-brand-light-grey/50 dark:border-white/10 flex items-end justify-between">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-grey block mb-1">
                 Disponible Caisse Yalidine
               </span>
               <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-blue-600 dark:text-blue-400">
@@ -357,8 +357,8 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               </span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Recouvré</span>
-              <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">
+              <span className="text-[10px] uppercase font-bold text-brand-warm-grey block">Total Recouvré</span>
+              <span className="text-sm font-mono font-bold text-brand-black dark:text-brand-warm-grey">
                 {formaterDA(soldes.yalidine?.total ?? 0)}
               </span>
             </div>
@@ -656,14 +656,14 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           </h2>
 
           {/* Onglets Filtres de Caisse */}
-          <div className="inline-flex rounded-xl bg-slate-100 dark:bg-zinc-800 p-1 border border-slate-200 dark:border-zinc-700 text-xs font-bold">
+          <div className="inline-flex rounded-xl bg-brand-light-grey/30 dark:bg-white/5 p-1 border border-brand-light-grey dark:border-white/10 text-xs font-bold">
             <button
               type="button"
               onClick={() => { setFiltreCaisse("TOUTES"); setPage(1); }}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 filtreCaisse === "TOUTES"
-                  ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-brand-paper text-brand-black dark:text-white shadow-xs"
+                  : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
               }`}
             >
               Toutes les caisses
@@ -674,7 +674,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
                 filtreCaisse === "CAISSE_PHYSIQUE"
                   ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-slate-500 hover:text-emerald-600"
+                  : "text-brand-warm-grey hover:text-emerald-600"
               }`}
             >
               <Store className="w-3.5 h-3.5" />
@@ -686,7 +686,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
                 filtreCaisse === "CAISSE_YALIDINE"
                   ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-500 hover:text-blue-600"
+                  : "text-brand-warm-grey hover:text-blue-600"
               }`}
             >
               <Truck className="w-3.5 h-3.5" />

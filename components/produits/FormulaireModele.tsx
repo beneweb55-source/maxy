@@ -290,10 +290,10 @@ export default function FormulaireModele({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-full max-w-[95vw] sm:max-w-3xl max-h-[85vh] flex flex-col bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden text-slate-900">
+      <div className="relative w-full max-w-[95vw] sm:max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl overflow-hidden text-brand-black dark:text-white">
         
         {/* Header de la Modale */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-brand-light-grey bg-brand-light-grey/30">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-brand-orange/15 text-brand-orange shrink-0">
               <Laptop className="w-6 h-6" />
@@ -389,7 +389,7 @@ export default function FormulaireModele({
                         setCategorieId(null);
                         setSousCategorieId(null);
                       }}
-                      className="select w-full rounded-xl bg-white dark:bg-brand-black border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                      className="champ w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
                     >
                       <option value="">Sélectionner une famille...</option>
                       {categoriesArbre.map((f) => (
@@ -412,7 +412,7 @@ export default function FormulaireModele({
                         setCategorieId(e.target.value ? Number(e.target.value) : null);
                         setSousCategorieId(null);
                       }}
-                      className="select w-full rounded-xl bg-white dark:bg-brand-black border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10 disabled:opacity-40"
+                      className="champ w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10 disabled:opacity-40"
                     >
                       <option value="">Sélectionner une catégorie...</option>
                       {categoriesDisponibles.map((c: any) => (
@@ -432,7 +432,7 @@ export default function FormulaireModele({
                       value={sousCategorieId || ""}
                       disabled={!categorieId || sousCategoriesDisponibles.length === 0}
                       onChange={(e) => setSousCategorieId(e.target.value ? Number(e.target.value) : null)}
-                      className="select w-full rounded-xl bg-white dark:bg-brand-black border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10 disabled:opacity-40"
+                      className="champ w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10 disabled:opacity-40"
                     >
                       <option value="">Aucune sous-catégorie</option>
                       {sousCategoriesDisponibles.map((s: any) => (
@@ -501,7 +501,7 @@ export default function FormulaireModele({
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex: ThinkPad T480 Core i5 8th Gen 16Go RAM 256Go SSD..."
-                  className="input w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-sm font-bold h-12"
+                  className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-sm font-bold h-12"
                 />
               </div>
 
@@ -519,7 +519,7 @@ export default function FormulaireModele({
                       value={prixConseille}
                       onChange={(e) => setPrixConseille(e.target.value)}
                       placeholder="Ex: 45000"
-                      className="input w-full pl-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-11"
+                      className="champ w-full pl-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-11"
                     />
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function FormulaireModele({
                       <img
                         src={imageUrl}
                         alt="Aperçu du modèle"
-                        className="w-14 h-14 rounded-xl object-cover border border-brand-light-grey dark:border-white/10 bg-white dark:bg-zinc-800 shrink-0"
+                        className="w-14 h-14 rounded-xl object-cover border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-brand-black dark:text-white truncate">
@@ -614,7 +614,7 @@ export default function FormulaireModele({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Points forts, compatibilité, connectique spécifique..."
                   rows={2}
-                  className="textarea w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-medium resize-none p-3"
+                  className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-medium resize-none p-3"
                 />
               </div>
 
@@ -675,7 +675,7 @@ export default function FormulaireModele({
                       return (
                         <div 
                           key={attr.cle}
-                          className="p-4 rounded-2xl bg-white dark:bg-brand-black/40 border border-brand-light-grey/80 dark:border-white/10 space-y-2.5"
+                          className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-brand-light-grey/80 dark:border-white/10 space-y-2.5"
                         >
                           <div className="flex items-center justify-between">
                             <label className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white flex items-center gap-1.5">
@@ -717,7 +717,7 @@ export default function FormulaireModele({
                             <select
                               value={valeurCourante}
                               onChange={(e) => setSpecValeur(attr.cle, e.target.value)}
-                              className="select w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                              className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
                             >
                               <option value="">Sélectionner une option...</option>
                               {attr.options.map((opt) => (
@@ -735,7 +735,7 @@ export default function FormulaireModele({
                               value={valeurCourante}
                               onChange={(e) => setSpecValeur(attr.cle, e.target.value)}
                               placeholder={attr.placeholder || `Saisir ${attr.label.toLowerCase()}...`}
-                              className="input w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                              className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
                             />
                           )}
 
@@ -746,7 +746,7 @@ export default function FormulaireModele({
                               value={valeurCourante}
                               onChange={(e) => setSpecValeur(attr.cle, e.target.value ? Number(e.target.value) : "")}
                               placeholder={attr.placeholder || "0"}
-                              className="input w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                              className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
                             />
                           )}
                         </div>

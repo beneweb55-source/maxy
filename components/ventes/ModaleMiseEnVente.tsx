@@ -117,7 +117,7 @@ export default function ModaleMiseEnVente({
 
         {/* Champ Prix Fixe */}
         <div>
-          <label className="libelle mb-1.5" htmlFor="prix-mise-en-vente-unifie">
+          <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="prix-mise-en-vente-unifie">
             Prix de vente unitaire (DA) *
           </label>
           <div className="relative">
@@ -178,11 +178,11 @@ export default function ModaleMiseEnVente({
                   : "Tout sélectionner"}
               </button>
             </div>
-            <div className="max-h-36 overflow-y-auto space-y-1.5 rounded-xl bg-brand-light-grey/20 p-2 text-xs">
+            <div className="max-h-36 overflow-y-auto space-y-1.5 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 p-2 text-xs">
               {unites.map((u) => (
                 <label
                   key={u.id}
-                  className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-brand-white/80"
+                  className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-brand-light-grey/30 dark:hover:bg-white/5"
                 >
                   <input
                     type="checkbox"
@@ -194,7 +194,7 @@ export default function ModaleMiseEnVente({
                         setUnitesSelectionnees(unitesSelectionnees.filter((id) => id !== u.id));
                       }
                     }}
-                    className="rounded text-brand-orange focus:ring-brand-orange h-4 w-4"
+                    className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
                   />
                   <span className="font-mono font-bold text-brand-black">{u.code_interne}</span>
                   {u.prix_vente_fixe && (
@@ -223,7 +223,7 @@ export default function ModaleMiseEnVente({
               unitesSelectionnees.length === 0
             }
             onClick={validerMiseEnVente}
-            className="btn btn-primaire text-xs font-bold shadow-md gap-1.5"
+            className="btn btn-primaire text-xs font-bold gap-1.5"
           >
             <IconeEtiquette taille={15} />
             {envoi ? "Mise en vente..." : "Valider et Mettre en vente"}

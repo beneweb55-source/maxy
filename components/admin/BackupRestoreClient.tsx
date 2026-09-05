@@ -90,7 +90,7 @@ export default function BackupRestoreClient() {
           </div>
         </div>
 
-        <div className="w-full bg-white/80 dark:bg-black/30 rounded p-3 text-sm border border-danger/20">
+        <div className="w-full bg-brand-paper dark:bg-white/5 rounded p-3 text-sm border border-danger/20">
           <p className="text-xs text-danger font-semibold mb-2">Attention : Cette action est irréversible.</p>
           <ul className="list-disc list-inside space-y-1 text-xs text-brand-black dark:text-brand-warm-grey">
             <li>Toutes les données actuelles seront supprimées.</li>
@@ -139,7 +139,7 @@ export default function BackupRestoreClient() {
             Vous êtes sur le point d'effacer <strong className="text-danger">TOUTES LES DONNÉES</strong> actuelles pour y substituer le contenu du fichier <strong className="font-mono">{fichier?.name}</strong>.
           </p>
           
-          <div className="bg-brand-light-grey/20 dark:bg-brand-black/50 p-3 rounded text-sm text-brand-grey dark:text-brand-warm-grey space-y-2">
+          <div className="bg-brand-light-grey/20 dark:bg-white/5 p-3 rounded text-sm text-brand-grey dark:text-brand-warm-grey space-y-2">
             <p>Veuillez taper le mot <strong>RESTAURER</strong> en majuscules pour confirmer votre intention :</p>
             <input 
               type="text" 

@@ -117,7 +117,7 @@ export default function ModaleSelectionQuantite({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden text-brand-black dark:text-white">
+      <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl overflow-hidden text-brand-black dark:text-white">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3">
@@ -268,7 +268,7 @@ export default function ModaleSelectionQuantite({
                           type="checkbox"
                           checked={estCoche}
                           onChange={() => {}}
-                          className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange cursor-pointer"
+                          className="h-4 w-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
                         />
                         <div>
                           <div className="flex items-center gap-2">

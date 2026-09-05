@@ -1413,7 +1413,7 @@ export default function CaisseClient({ role }: { role: Role }) {
             </div>
 
               {/* Mobile Bottom Bar for Panier summary */}
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-light-grey shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 pb-[max(env(safe-area-inset-bottom),12px)] px-4 pt-3 rounded-t-2xl">
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-white dark:bg-brand-paper border-t border-brand-light-grey dark:border-white/10 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 pb-[max(env(safe-area-inset-bottom),12px)] px-4 pt-3 rounded-t-2xl">
                  <div className="flex items-center justify-between mb-3">
                    <button onClick={() => setPanierMobileOuvert(true)} className="flex items-center gap-3">
                      <div className="relative">
@@ -1922,8 +1922,8 @@ export default function CaisseClient({ role }: { role: Role }) {
               </div>
             </div>
             {/* Sélecteur Type de Vente Obligatoire */}
-            <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 p-3 space-y-1.5">
-              <label className="libelle block text-slate-700 dark:text-slate-300 font-bold">
+            <div className="rounded-xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 p-3 space-y-1.5">
+              <label className="libelle block text-brand-warm-grey dark:text-brand-warm-grey font-bold">
                 Type de vente <span className="text-danger">*</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -1933,7 +1933,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
                     typeVente === "COMPTOIR"
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                      : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-emerald-400"
+                      : "bg-white dark:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey border-brand-light-grey dark:border-white/10 hover:border-emerald-400"
                   }`}
                 >
                   <Store className="w-4 h-4" />
@@ -1945,7 +1945,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                   className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
                     typeVente === "YALIDINE"
                       ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                      : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-blue-400"
+                      : "bg-white dark:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey border-brand-light-grey dark:border-white/10 hover:border-blue-400"
                   }`}
                 >
                   <Truck className="w-4 h-4" />
@@ -2226,8 +2226,8 @@ export default function CaisseClient({ role }: { role: Role }) {
           )}
 
           {/* Sélecteur Type de Vente Obligatoire Bundle */}
-          <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 p-3 space-y-1.5">
-            <label className="libelle block text-slate-700 dark:text-slate-300 font-bold">
+          <div className="rounded-xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 p-3 space-y-1.5">
+            <label className="libelle block text-brand-warm-grey dark:text-brand-warm-grey font-bold">
               Type de vente <span className="text-danger">*</span>
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -2237,7 +2237,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
                   typeVenteBundle === "COMPTOIR"
                     ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                    : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-emerald-400"
+                    : "bg-white dark:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey border-brand-light-grey dark:border-white/10 hover:border-emerald-400"
                 }`}
               >
                 <Store className="w-4 h-4" />
@@ -2249,7 +2249,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border cursor-pointer ${
                   typeVenteBundle === "YALIDINE"
                     ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                    : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-blue-400"
+                    : "bg-white dark:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey border-brand-light-grey dark:border-white/10 hover:border-blue-400"
                 }`}
               >
                 <Truck className="w-4 h-4" />
@@ -2586,17 +2586,17 @@ export default function CaisseClient({ role }: { role: Role }) {
       {/* MODALE D'ACTION RAPIDE : AUTO-CORRECTION / OVERRIDE POS */}
       {modalOverride && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-entree">
-          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-300 shadow-2xl p-6 space-y-4 text-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="w-full max-w-md bg-white dark:bg-brand-paper rounded-2xl border border-brand-light-grey dark:border-white/10 shadow-2xl p-6 space-y-4 text-brand-black dark:text-white">
+            <div className="flex items-center justify-between border-b border-brand-light-grey/50 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600">
                   <IconeAlerte taille={22} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black font-outfit text-slate-900">
+                  <h3 className="text-base font-black font-outfit text-brand-black dark:text-white">
                     Mise en Vente Immédiate (Override)
                   </h3>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-brand-warm-grey">
                     Auto-Correction au Comptoir
                   </span>
                 </div>
@@ -2604,18 +2604,18 @@ export default function CaisseClient({ role }: { role: Role }) {
               <button
                 type="button"
                 onClick={() => setModalOverride(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                className="p-1 rounded-lg text-brand-warm-grey hover:text-brand-black"
               >
                 <IconeFermer taille={18} />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                <div className="font-extrabold text-sm text-slate-900">
+              <div className="p-3 bg-brand-paper rounded-xl border border-brand-light-grey space-y-1">
+                <div className="font-extrabold text-sm text-brand-black dark:text-white">
                   {modalOverride.produit.reference}
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px]">
+                <div className="flex items-center gap-2 text-brand-warm-grey font-mono text-[11px]">
                   <span>#{modalOverride.produit.code_interne}</span>
                   {modalOverride.produit.numero_serie && (
                     <span className="text-emerald-700 font-bold">
@@ -2625,7 +2625,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                 </div>
               </div>
 
-              <p className="text-slate-600">
+              <p className="text-brand-warm-grey">
                 L&apos;article est actuellement au statut{" "}
                 <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                   {REGLES_MACHINE_ETATS[modalOverride.statutActuel as StatutProduit]?.libelle || modalOverride.statutActuel}
@@ -2634,7 +2634,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               </p>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold text-brand-black mb-1">
                   Prix de Vente Fixe (DA TTC) *
                 </label>
                 <input
@@ -2644,12 +2644,12 @@ export default function CaisseClient({ role }: { role: Role }) {
                   value={prixOverride}
                   onChange={(e) => setPrixOverride(e.target.value)}
                   placeholder="Ex: 45000"
-                  className="w-full h-11 px-3 bg-white border border-slate-300 rounded-md font-mono font-black text-sm text-slate-900 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/30 outline-none"
+                  className="champ w-full h-11 px-3 font-mono font-black text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/30"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-brand-light-grey/50">
               <button
                 type="button"
                 onClick={() => setModalOverride(null)}

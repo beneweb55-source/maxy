@@ -162,7 +162,7 @@ export default function ModaleExport({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-11/12 max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-2xl overflow-hidden">
+      <div className="relative w-11/12 max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3">
@@ -295,7 +295,7 @@ export default function ModaleExport({
                     onClick={() => toggleColonne(col.id)}
                     className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2.5 cursor-pointer transition-all ${
                       estCoche
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-brand-black border-slate-900 dark:border-white shadow-xs"
+                        ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-brand-black dark:border-white shadow-xs"
                         : "bg-brand-light-grey/15 dark:bg-white/3 border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
                     }`}
                   >
@@ -314,7 +314,7 @@ export default function ModaleExport({
           </div>
 
           {/* 4. Format du fichier */}
-          <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-white/10">
+          <div className="space-y-2 pt-2 border-t border-brand-light-grey dark:border-white/10">
             <label className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white flex items-center gap-1.5">
               <FileSpreadsheet className="w-4 h-4 text-brand-orange" />
               3. Format du fichier de sortie

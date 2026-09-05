@@ -993,7 +993,7 @@ export default function Inventaire({ role }: { role: Role }) {
               const val = e.target.value;
               setFormulaire({ ...formulaire, categorie: val });
             }}
-            className="select w-full h-12 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
+            className="select w-full h-12 rounded-lg bg-brand-paper dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
           >
             <option value="">Sélectionner une catégorie…</option>
             {categoriesTree.map((famille) => (
@@ -1022,7 +1022,7 @@ export default function Inventaire({ role }: { role: Role }) {
             id="lot-produit"
             value={formulaire.lot_id}
             onChange={(e) => setFormulaire({ ...formulaire, lot_id: e.target.value })}
-            className="select w-full h-12 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+            className="select w-full h-12 rounded-lg bg-brand-paper dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
           >
             <option value="">{t("inventaire.stockIndependant")}</option>
             {(donnees?.lots ?? []).map((l) => (
@@ -1037,7 +1037,7 @@ export default function Inventaire({ role }: { role: Role }) {
       {/* COLONNE DROITE : FINANCES & STOCK */}
       <div className="space-y-4">
         
-        <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/3 border border-slate-200/80 dark:border-white/10 space-y-4">
+        <div className="p-4 rounded-2xl bg-brand-paper/50 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 space-y-4">
           <span className="text-[11px] font-black uppercase tracking-wider text-brand-orange block">
             Finances & Exemplaires Physiques
           </span>
@@ -1108,7 +1108,7 @@ export default function Inventaire({ role }: { role: Role }) {
 
         {/* Toggles Tactiles Larges */}
         {modalEdition === null && (
-          <label className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 cursor-pointer transition-all hover:bg-slate-100/80">
+          <label className="flex items-center justify-between p-3.5 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 cursor-pointer transition-all hover:bg-brand-light-grey/30">
             <div className="flex items-center gap-2.5">
               <input
                 type="checkbox"
@@ -1153,7 +1153,7 @@ export default function Inventaire({ role }: { role: Role }) {
       </div>
 
       {/* PLEINE LARGEUR EN BAS : PHOTOS */}
-      <div className="md:col-span-2 pt-2 border-t border-slate-200/80 dark:border-white/10 space-y-2">
+      <div className="md:col-span-2 pt-2 border-t border-brand-light-grey dark:border-white/10 space-y-2">
         <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-warm-grey">
           {t("inventaire.photos")}
         </label>
@@ -1693,7 +1693,7 @@ export default function Inventaire({ role }: { role: Role }) {
       {/* Barre d'actions groupées flottante si sélection active */}
       {selection.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-entree max-w-[95vw]">
-          <div className="flex flex-wrap items-center gap-3 px-5 py-3 rounded-2xl bg-brand-black/95 dark:bg-zinc-900/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
+          <div className="flex flex-wrap items-center gap-3 px-5 py-3 rounded-2xl bg-brand-black/95 dark:bg-brand-black/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
             <div className="flex items-center gap-2 pr-3 border-r border-white/20">
               <span className="w-7 h-7 rounded-full bg-brand-orange text-white font-black text-xs flex items-center justify-center shadow-md">
                 {selection.length}
@@ -1824,7 +1824,7 @@ export default function Inventaire({ role }: { role: Role }) {
           }}
         >
           {champsProduit}
-          <div className="pt-4 border-t border-slate-200/80 dark:border-white/10 flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <div className="pt-4 border-t border-brand-light-grey dark:border-white/10 flex flex-col-reverse sm:flex-row justify-end gap-3">
             <button
               type="button"
               onClick={() => {
@@ -1904,7 +1904,7 @@ export default function Inventaire({ role }: { role: Role }) {
           {champsProduit}
 
           {modalEdition && peutStatut && (
-            <div className="space-y-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-white/3 p-4">
+            <div className="space-y-3 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 p-4">
               <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-2">
                 <span className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white">
                   {t("inventaire.statut")}
@@ -1929,7 +1929,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     }
                   }}
                   disabled={envoi || cibleStatut !== null}
-                  className="select w-full sm:w-auto h-11 rounded-lg bg-white dark:bg-brand-black border-slate-200 dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+                  className="select w-full sm:w-auto h-11 rounded-lg bg-white dark:bg-brand-black border-brand-light-grey dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
                 >
                   <option value="">{t("inventaire.changerStatut")}</option>
                   {(() => {
@@ -1953,7 +1953,7 @@ export default function Inventaire({ role }: { role: Role }) {
               </div>
 
               {cibleStatut && (
-                <div className="space-y-2 rounded-2xl bg-white dark:bg-brand-black p-3.5 border border-slate-200 dark:border-white/10 animate-entree">
+                <div className="space-y-2 rounded-2xl bg-white dark:bg-brand-paper p-3.5 border border-brand-light-grey dark:border-white/10 animate-entree">
                   <label className="block text-xs font-bold text-brand-black dark:text-white" htmlFor="note-statut-inv">
                     {t("inventaire.noteObligatoire", { statut: INFOS_STATUT[cibleStatut].libelle })}
                   </label>
@@ -1964,7 +1964,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     rows={2}
                     autoFocus
                     placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? t("inventaire.precisezRaison")}
-                    className="textarea w-full rounded-lg bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-xs font-medium"
+                    className="textarea w-full rounded-lg bg-brand-paper dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs font-medium"
                   />
                   <div className="flex flex-col sm:flex-row justify-end gap-2 mt-2">
                     <button
@@ -2018,7 +2018,7 @@ export default function Inventaire({ role }: { role: Role }) {
           )}
 
           {modalEdition && peutModifier && modalEdition.unites[0]!.statut !== "vendu" && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-white/3 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 p-4">
               <div className="min-w-0">
                 <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white inline-flex items-center gap-1.5">
                   <IconeVitrine taille={16} className="text-brand-orange" /> {t("inventaire.vitrine")}
@@ -2042,7 +2042,7 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           )}
 
-          <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 border-t border-slate-200/80 dark:border-white/10 pt-5 mt-5">
+          <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 border-t border-brand-light-grey dark:border-white/10 pt-5 mt-5">
             {contexteNavigation && modalEdition?.unites.length === 1 ? (
               <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-start">
                 <button
@@ -2303,7 +2303,7 @@ export default function Inventaire({ role }: { role: Role }) {
               const serontModifies = produitsSelectionnes.length - dejaCible;
               if (dejaCible === 0) return null;
               return (
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+                <p className="text-xs text-brand-warm-grey dark:text-brand-warm-grey mt-1.5">
                   {serontModifies} produit(s) seront modifié(s)
                   {dejaCible > 0 && ` · ${dejaCible} déjà « ${INFOS_STATUT[statutMasseCible as StatutProduit]?.libelle} »`}
                 </p>

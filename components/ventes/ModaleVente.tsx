@@ -1,22 +1,22 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Modale from "@/components/Modale";
 import { formaterDA } from "@/lib/caisse";
 import { useToast } from "@/components/toast";
-import { 
-  IconeBillet, 
-  IconeAlerte, 
-  IconeEtiquette, 
-  IconeCoche 
+import {
+  IconeBillet,
+  IconeAlerte,
+  IconeEtiquette,
+  IconeCoche
 } from "@/components/icons";
-import { 
-  ShieldCheck, 
-  Barcode, 
-  Package, 
-  CheckSquare, 
-  Square, 
-  Plus, 
+import {
+  ShieldCheck,
+  Barcode,
+  Package,
+  CheckSquare,
+  Square,
+  Plus,
   Minus,
   Sparkles,
   Layers,
@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   Download,
   Store,
-  Truck
+  Truck,
+  Keyboard
 } from "lucide-react";
 
 export interface ArticleAVendre {
@@ -64,6 +65,7 @@ export default function ModaleVente({
 }: ModaleVenteProps) {
   const { afficher } = useToast();
   const [envoi, setEnvoi] = useState(false);
+  const modalBodyRef = useRef<HTMLDivElement>(null);
 
   // Filtrer les unités éligibles (exclure formellement 'vendu', 'produit_commande', 'hs')
   const unitesDisponibles = useMemo(() => {
@@ -93,6 +95,7 @@ export default function ModaleVente({
   const [typeVente, setTypeVente] = useState<"COMPTOIR" | "YALIDINE">("COMPTOIR");
   const [etiquetteValidee, setEtiquetteValidee] = useState(false);
   const [avertissement, setAvertissement] = useState<string | null>(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Initialisation à l'ouverture : Quantité par défaut TOUJOURS égale à 1 par référence (Jamais tout le stock)
   useEffect(() => {
@@ -108,7 +111,7 @@ export default function ModaleVente({
             : u.prix_vente_reel !== null && u.prix_vente_reel !== undefined
               ? u.prix_vente_reel
               : (u.prix_achat && u.prix_achat > 0 ? Math.round(u.prix_achat * 1.25) : 0);
-        
+
         // Règle absolue UX POS : pré-sélectionner exactement 1 unité par modèle/référence
         const cleRef = u.reference || `prod-${u.id}`;
         if (!referencesVues.has(cleRef)) {
@@ -167,17 +170,17 @@ export default function ModaleVente({
   }, [unitesChoisies]);
 
   // Bascule de sélection pour une unité sérialisée
-  const basculerUnite = (id: number) => {
+  const basculerUnite = useCallback((id: number) => {
     setSelectionnes((prev) => {
       const suivant = new Set(prev);
       if (suivant.has(id)) suivant.delete(id);
       else suivant.add(id);
       return suivant;
     });
-  };
+  }, []);
 
   // Sélection globale par modèle
-  const selectionnerTousDuGroupe = (items: ArticleAVendre[], tout: boolean) => {
+  const selectionnerTousDuGroupe = useCallback((items: ArticleAVendre[], tout: boolean) => {
     setSelectionnes((prev) => {
       const suivant = new Set(prev);
       for (const item of items) {
@@ -186,10 +189,10 @@ export default function ModaleVente({
       }
       return suivant;
     });
-  };
+  }, []);
 
   // Ajustement de quantité pour les produits génériques (sans S/N)
-  const definirQuantiteGenerique = (items: ArticleAVendre[], quantiteVoulue: number) => {
+  const definirQuantiteGenerique = useCallback((items: ArticleAVendre[], quantiteVoulue: number) => {
     const quantite = Math.max(0, Math.min(quantiteVoulue, items.length));
     setSelectionnes((prev) => {
       const suivant = new Set(prev);
@@ -203,7 +206,50 @@ export default function ModaleVente({
       }
       return suivant;
     });
-  };
+  }, []);
+
+  // ===== RACCOURCIS CLAVIER =====
+  useEffect(() => {
+    if (!ouverte) return;
+    const handler = (e: KeyboardEvent) => {
+      // Ctrl+Enter = Valider la vente
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const btn = document.querySelector<HTMLButtonElement>("[data-action='valider-vente']");
+        if (btn && !btn.disabled) btn.click();
+      }
+      // Ctrl+P = Focus prix total
+      if (e.key === "p" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>("[data-field='prix-total']");
+        if (input) { input.focus(); input.select(); }
+      }
+      // Ctrl+N = Focus nom client
+      if (e.key === "n" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>("[data-field='client-nom']");
+        if (input) input.focus();
+      }
+      // Ctrl+M = Focus espèces reçues
+      if (e.key === "m" && (e.ctrlKey || e.metaKey) && modePaiement === "especes") {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>("[data-field='especes-recues']");
+        if (input) { input.focus(); input.select(); }
+      }
+      // ? = Toggle shortcuts panel
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setShowShortcuts(s => !s);
+      }
+      // Escape = Fermer
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onFermer();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [ouverte, modePaiement, onFermer]);
 
   // Validation et enregistrement de la vente
   async function enregistrerVente(confirmer: boolean) {
@@ -311,16 +357,48 @@ export default function ModaleVente({
       large="4xl"
       onFermer={onFermer}
     >
-      <div className="space-y-5 max-h-[80dvh] overflow-y-auto pr-1 text-slate-900">
-        
+      <div ref={modalBodyRef} className="space-y-5 max-h-[80dvh] overflow-y-auto pr-1 text-brand-black dark:text-white">
+
+        {/* ===================== BANDEAU RACCOURCIS CLAVIER ===================== */}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setShowShortcuts(s => !s)}
+            className="flex items-center gap-1.5 text-[11px] font-bold text-brand-warm-grey hover:text-brand-orange transition-colors"
+          >
+            <Keyboard className="w-3.5 h-3.5" />
+            Raccourcis clavier
+          </button>
+          <span className="text-[10px] text-brand-warm-grey font-mono">
+            <kbd className="px-1 py-0.5 rounded bg-brand-light-grey/40 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-[9px]">Ctrl+Enter</kbd> Valider
+          </span>
+        </div>
+        {showShortcuts && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 animate-entree">
+            {[
+              { keys: "Ctrl+Enter", action: "Valider la vente" },
+              { keys: "Ctrl+P", action: "Focus prix" },
+              { keys: "Ctrl+N", action: "Focus nom client" },
+              { keys: "Ctrl+M", action: "Focus espèces" },
+              { keys: "?", action: "Afficher/masquer raccourcis" },
+              { keys: "Esc", action: "Fermer la modale" },
+            ].map(({ keys, action }) => (
+              <div key={keys} className="flex items-center gap-2 text-[11px]">
+                <kbd className="px-1.5 py-0.5 rounded bg-brand-light-grey/40 dark:bg-white/10 border border-brand-light-grey dark:border-white/10 font-mono font-bold text-[10px] text-brand-black dark:text-white shrink-0">{keys}</kbd>
+                <span className="text-brand-warm-grey">{action}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ===================== SECTION 1 : SÉLECTION INTELLIGENTE S/N & QUANTITÉS ===================== */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between pb-1 border-b border-slate-200">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+          <div className="flex items-center justify-between pb-1 border-b border-brand-light-grey/60 dark:border-white/10">
+            <span className="text-xs font-black uppercase tracking-wider text-brand-warm-grey flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-brand-orange" />
               <span>Choix des Exemplaires & Numéros de Série (S/N)</span>
             </span>
-            <span className="text-xs font-bold text-slate-500">
+            <span className="text-xs font-bold text-brand-warm-grey">
               {unitesChoisies.length} sur {unitesDisponibles.length} disponible{unitesDisponibles.length > 1 ? "s" : ""}
             </span>
           </div>
@@ -333,13 +411,13 @@ export default function ModaleVente({
             return (
               <div
                 key={reference}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3 shadow-xs"
+                className="rounded-2xl border border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/20 dark:bg-white/[0.03] p-4 space-y-3 shadow-xs"
               >
                 {/* En-tête du groupe de produit */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h4 className="font-extrabold text-sm text-slate-900">{reference}</h4>
-                    <span className="text-[11px] text-slate-500 font-medium">
+                    <h4 className="font-extrabold text-sm text-brand-black dark:text-white">{reference}</h4>
+                    <span className="text-[11px] text-brand-warm-grey font-medium">
                       Stock physique : {items.length} unité{items.length > 1 ? "s" : ""}
                     </span>
                   </div>
@@ -357,12 +435,12 @@ export default function ModaleVente({
                     </div>
                   ) : (
                     /* Sélecteur de quantité éditable pour produits génériques sans S/N */
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl p-1 shadow-2xs">
+                    <div className="flex items-center gap-1.5 bg-brand-light-grey/40 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 rounded-xl p-1 shadow-2xs">
                       <button
                         type="button"
                         disabled={nbSelectionnes <= 0}
                         onClick={() => definirQuantiteGenerique(items, nbSelectionnes - 1)}
-                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-30 font-black transition active:scale-95 cursor-pointer"
+                        className="h-10 w-10 flex items-center justify-center rounded-lg text-brand-black dark:text-white hover:bg-brand-light-grey/60 dark:hover:bg-white/10 disabled:opacity-30 font-black transition active:scale-95 cursor-pointer"
                         title="Diminuer la quantité (-1)"
                       >
                         <Minus className="w-4 h-4" />
@@ -377,16 +455,16 @@ export default function ModaleVente({
                             const val = parseInt(e.target.value, 10);
                             definirQuantiteGenerique(items, isNaN(val) ? 0 : val);
                           }}
-                          className="w-14 h-8 text-center font-mono font-black text-sm text-brand-orange bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-14 h-10 text-center font-mono font-black text-sm text-brand-orange bg-brand-light-grey/30 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           title={`Quantité à facturer (Max disponible: ${items.length})`}
                         />
-                        <span className="text-xs font-bold text-slate-400 font-mono">/ {items.length}</span>
+                        <span className="text-xs font-bold text-brand-warm-grey font-mono">/ {items.length}</span>
                       </div>
                       <button
                         type="button"
                         disabled={nbSelectionnes >= items.length}
                         onClick={() => definirQuantiteGenerique(items, nbSelectionnes + 1)}
-                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-30 font-black transition active:scale-95 cursor-pointer"
+                        className="h-10 w-10 flex items-center justify-center rounded-lg text-brand-black dark:text-white hover:bg-brand-light-grey/60 dark:hover:bg-white/10 disabled:opacity-30 font-black transition active:scale-95 cursor-pointer"
                         title="Augmenter la quantité (+1)"
                       >
                         <Plus className="w-4 h-4" />
@@ -409,8 +487,8 @@ export default function ModaleVente({
                           onClick={() => basculerUnite(u.id)}
                           className={`flex flex-col gap-2 p-3 rounded-xl border cursor-pointer transition-all ${
                             estCoche
-                              ? "bg-white dark:bg-zinc-900 border-brand-orange shadow-xs ring-1 ring-brand-orange/30"
-                              : "bg-white/60 dark:bg-zinc-900/60 border-slate-200 dark:border-zinc-800 hover:border-slate-300 opacity-60"
+                              ? "bg-brand-light-grey/40 dark:bg-white/5 border-brand-orange shadow-xs ring-1 ring-brand-orange/30"
+                              : "bg-brand-light-grey/10 dark:bg-white/[0.02] border-brand-light-grey/40 dark:border-white/10 hover:border-brand-light-grey/80 dark:hover:border-white/20 opacity-60"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -418,16 +496,16 @@ export default function ModaleVente({
                               <input
                                 type="checkbox"
                                 checked={estCoche}
-                                onChange={() => {}} // géré par le conteneur onClick
-                                className="checkbox checkbox-xs checkbox-primary rounded"
+                                onChange={() => {}}
+                                className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
                               />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
+                                  <span className="font-mono font-bold text-brand-black dark:text-white text-xs">
                                     {u.code_interne}
                                   </span>
                                   {u.grade && (
-                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-brand-light-grey/40 dark:bg-white/5 text-brand-black dark:text-white">
                                       {u.grade}
                                     </span>
                                   )}
@@ -438,13 +516,13 @@ export default function ModaleVente({
                                     <span>S/N : {u.numero_serie}</span>
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] text-slate-400 italic">Sans S/N</span>
+                                  <span className="text-[10px] text-brand-warm-grey italic">Sans S/N</span>
                                 )}
                               </div>
                             </div>
 
                             {/* Ajustement de prix unitaire */}
-                            <div 
+                            <div
                               className="flex items-center gap-1 shrink-0"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -455,20 +533,20 @@ export default function ModaleVente({
                                 onChange={(e) =>
                                   setPrixMap({ ...prixMap, [u.id]: Number(e.target.value) || 0 })
                                 }
-                                className={`input input-xs h-7 w-24 text-right font-mono font-bold text-xs rounded-lg ${
+                                className={`champ h-7 w-24 text-right font-mono font-bold text-xs ${
                                   estCoche && prixNulOuManquant
                                     ? "bg-red-50 dark:bg-red-950/40 border-red-400 text-red-700 dark:text-red-300 ring-2 ring-red-400/30"
-                                    : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 focus:bg-white dark:focus:bg-zinc-900"
+                                    : ""
                                 }`}
                                 placeholder="Prix obligatoire"
                               />
-                              <span className="text-[10px] font-bold text-slate-500">DA</span>
+                              <span className="text-[10px] font-bold text-brand-warm-grey">DA</span>
                             </div>
                           </div>
 
                           {/* Avertissement Auto-Override si le statut n'est pas en_vente */}
                           {u.statut && u.statut !== "en_vente" && (
-                            <div className="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-[10px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5 animate-entree">
+                            <div className="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[10px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5 animate-entree">
                               <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                               <span>
                                 Ce produit est en statut <strong>{u.statut.toUpperCase()}</strong>. Il sera automatiquement mis en vente et facturé.
@@ -488,8 +566,8 @@ export default function ModaleVente({
                 ) : (
                   /* CAS B : Ajustement de prix unitaire pour le lot générique */
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs">
-                      <span className="text-slate-600 dark:text-slate-300 font-medium">Prix unitaire appliqué :</span>
+                    <div className="flex items-center justify-between p-2.5 bg-brand-light-grey/20 dark:bg-white/[0.03] rounded-xl border border-brand-light-grey/60 dark:border-white/10 text-xs">
+                      <span className="text-brand-warm-grey font-medium">Prix unitaire appliqué :</span>
                       <div className="flex items-center gap-1.5">
                         <input
                           type="number"
@@ -503,10 +581,10 @@ export default function ModaleVente({
                             }
                             setPrixMap(newMap);
                           }}
-                          className={`input input-xs h-8 w-28 text-right font-mono font-bold text-xs rounded-lg ${
+                          className={`champ h-8 w-28 text-right font-mono font-bold text-xs ${
                             (prixMap[items[0]?.id ?? 0] ?? 0) <= 0
                               ? "bg-red-50 dark:bg-red-950/40 border-red-400 text-red-700 dark:text-red-300 ring-2 ring-red-400/30"
-                              : "bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 focus:bg-white dark:focus:bg-zinc-900"
+                              : ""
                           }`}
                           placeholder="Prix obligatoire"
                         />
@@ -516,7 +594,7 @@ export default function ModaleVente({
 
                     {/* Avertissement Auto-Override pour lot générique */}
                     {items.some((i) => i.statut && i.statut !== "en_vente") && (
-                      <div className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-[10px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5 animate-entree">
+                      <div className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[10px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5 animate-entree">
                         <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                         <span>
                           Certains exemplaires sont en statut non-vente (ex: REÇU/OK). Ils seront automatiquement régularisés en vente et facturés.
@@ -533,10 +611,10 @@ export default function ModaleVente({
         {/* ===================== BANDEAU TOTAL À ENCAISSER ===================== */}
         <div className="flex justify-between items-center p-4 rounded-2xl bg-brand-orange/10 border border-brand-orange/30 shadow-xs">
           <div>
-            <span className="text-xs font-black uppercase tracking-wider text-slate-900 block">
+            <span className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white block">
               Total à Encaisser ({unitesChoisies.length} article{unitesChoisies.length > 1 ? "s" : ""})
             </span>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-brand-warm-grey">
               Paiement comptant ou différé
             </span>
           </div>
@@ -546,8 +624,8 @@ export default function ModaleVente({
         </div>
 
         {/* ===================== SECTION TYPE DE VENTE ===================== */}
-        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 p-4 space-y-2">
-          <label className="libelle block text-slate-800 dark:text-slate-200 font-black text-xs uppercase tracking-wider">
+        <div className="rounded-2xl border border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/20 dark:bg-white/[0.03] p-4 space-y-2">
+          <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
             Type de vente <span className="text-danger">*</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -557,7 +635,7 @@ export default function ModaleVente({
               className={`flex items-center justify-center gap-2.5 rounded-xl py-3 px-4 text-xs font-black transition border cursor-pointer ${
                 typeVente === "COMPTOIR"
                   ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                  : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-emerald-400"
+                  : "bg-white dark:bg-white/5 text-brand-black dark:text-white border-brand-light-grey/60 dark:border-white/10 hover:border-emerald-400"
               }`}
             >
               <Store className="w-4 h-4" />
@@ -569,7 +647,7 @@ export default function ModaleVente({
               className={`flex items-center justify-center gap-2.5 rounded-xl py-3 px-4 text-xs font-black transition border cursor-pointer ${
                 typeVente === "YALIDINE"
                   ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                  : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-blue-400"
+                  : "bg-white dark:bg-white/5 text-brand-black dark:text-white border-brand-light-grey/60 dark:border-white/10 hover:border-blue-400"
               }`}
             >
               <Truck className="w-4 h-4" />
@@ -581,14 +659,14 @@ export default function ModaleVente({
         {/* ===================== SECTION 2 : FACTURATION & PAIEMENT ===================== */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           <div>
-            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="type-facture-unifie">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="type-facture-unifie">
               Type de Document
             </label>
             <select
               id="type-facture-unifie"
               value={typeFacture}
               onChange={(e) => setTypeFacture(e.target.value as any)}
-              className="select w-full h-10 text-xs font-bold bg-white border-slate-200 rounded-xl"
+              className="champ"
             >
               <option value="FACTURE_TVA">Facture TVA (Document fiscal)</option>
               <option value="PROFORMA">Facture Proforma</option>
@@ -597,7 +675,7 @@ export default function ModaleVente({
           </div>
 
           <div>
-            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="numero-manuel-unifie">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="numero-manuel-unifie">
               N° Personnalisé (Optionnel)
             </label>
             <input
@@ -606,19 +684,19 @@ export default function ModaleVente({
               value={numeroManuel}
               onChange={(e) => setNumeroManuel(e.target.value)}
               placeholder="Auto (ex: FA-2026-...)"
-              className="input w-full h-10 text-xs font-mono font-bold bg-white border-slate-200 rounded-xl"
+              className="champ font-mono"
             />
           </div>
 
           <div>
-            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="mode-paiement-unifie">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="mode-paiement-unifie">
               Mode de Paiement
             </label>
             <select
               id="mode-paiement-unifie"
               value={modePaiement}
               onChange={(e) => setModePaiement(e.target.value)}
-              className="select w-full h-10 text-xs font-bold bg-white border-slate-200 rounded-xl"
+              className="champ"
             >
               <option value="especes">Espèces</option>
               <option value="carte">Carte Bancaire / CIB</option>
@@ -631,22 +709,23 @@ export default function ModaleVente({
 
         {/* Calcul de Monnaie si Espèces */}
         {modePaiement === "especes" && (
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <label className="libelle text-xs font-bold text-slate-700" htmlFor="especes-recues-unifie">
+          <div className="p-3.5 rounded-2xl bg-brand-light-grey/20 dark:bg-white/[0.03] border border-brand-light-grey/60 dark:border-white/10 space-y-2">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="especes-recues-unifie">
               Montant Reçu en Espèces (DA)
             </label>
             <div className="flex items-center gap-3">
               <input
                 id="especes-recues-unifie"
+                data-field="especes-recues"
                 type="number"
                 value={especesRecues}
                 onChange={(e) => setEspecesRecues(e.target.value)}
                 placeholder={String(total)}
-                className="input flex-1 font-bold font-mono text-base h-11 bg-white border-slate-200 rounded-xl"
+                className="champ flex-1 font-bold font-mono text-base"
               />
               {monnaieARendre > 0 && (
                 <div className="flex flex-col text-right shrink-0">
-                  <span className="text-[10px] font-bold uppercase text-slate-400">Monnaie à rendre</span>
+                  <span className="text-[10px] font-bold uppercase text-brand-warm-grey">Monnaie à rendre</span>
                   <span className="text-base font-black font-mono text-emerald-600">{formaterDA(monnaieARendre)}</span>
                 </div>
               )}
@@ -660,7 +739,7 @@ export default function ModaleVente({
             <div className="flex items-center justify-between gap-2">
               <label
                 htmlFor="toggle-etiquette-unifie"
-                className="text-xs font-bold text-amber-900 cursor-pointer select-none"
+                className="text-xs font-bold text-amber-900 dark:text-amber-200 cursor-pointer select-none"
               >
                 Avez-vous imprimé et collé l&apos;étiquette sur les articles ({articlesSansEtiquette.length}) ?
               </label>
@@ -674,7 +753,7 @@ export default function ModaleVente({
             </div>
             {!etiquetteValidee && (
               <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
-                <span className="text-[11px] text-amber-800">
+                <span className="text-[11px] text-amber-800 dark:text-amber-300">
                   Sans confirmation, l&apos;article sera réservé (Produit Commandé).
                 </span>
                 <button
@@ -684,7 +763,7 @@ export default function ModaleVente({
                     window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
                     setEtiquetteValidee(true);
                   }}
-                  className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
+                  className="btn btn-primaire text-xs font-bold"
                 >
                   Imprimer les étiquettes
                 </button>
@@ -696,20 +775,21 @@ export default function ModaleVente({
         {/* Coordonnées Client & Canal */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="client-nom-unifie">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="client-nom-unifie">
               Nom du client {modePaiement === "credit" ? "*" : ""}
             </label>
             <input
               id="client-nom-unifie"
+              data-field="client-nom"
               type="text"
               value={clientNom}
               onChange={(e) => setClientNom(e.target.value)}
               placeholder="Ex. Karim M. (Particulier)"
-              className="input w-full h-10 text-xs bg-white border-slate-200 rounded-xl"
+              className="champ"
             />
           </div>
           <div>
-            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="client-tel-unifie">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="client-tel-unifie">
               Téléphone
             </label>
             <input
@@ -718,11 +798,11 @@ export default function ModaleVente({
               value={clientTel}
               onChange={(e) => setClientTel(e.target.value)}
               placeholder="0X XX XX XX XX"
-              className="input w-full h-10 text-xs bg-white border-slate-200 rounded-xl"
+              className="champ"
             />
           </div>
           <div>
-            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="date-vente-unifie">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="date-vente-unifie">
               Date de vente
             </label>
             <input
@@ -731,11 +811,11 @@ export default function ModaleVente({
               value={dateVente}
               max={aujourdhuiIso()}
               onChange={(e) => setDateVente(e.target.value)}
-              className="input w-full h-10 text-xs font-mono bg-white border-slate-200 rounded-xl"
+              className="champ font-mono"
             />
           </div>
           <div>
-            <label className="libelle mb-1.5 text-xs font-bold text-slate-700" htmlFor="canal-unifie">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="canal-unifie">
               Canal de Vente
             </label>
             <input
@@ -744,7 +824,7 @@ export default function ModaleVente({
               value={canal}
               onChange={(e) => setCanal(e.target.value)}
               placeholder="Boutique, Ouedkniss, Facebook…"
-              className="input w-full h-10 text-xs bg-white border-slate-200 rounded-xl"
+              className="champ"
             />
           </div>
         </div>
@@ -754,74 +834,74 @@ export default function ModaleVente({
           <summary className="cursor-pointer text-xs font-bold text-brand-orange hover:underline outline-none">
             + Informations légales pour facture proforma / entreprise (Optionnel)
           </summary>
-          <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs">
+          <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3.5 bg-brand-light-grey/20 dark:bg-white/[0.03] border border-brand-light-grey/60 dark:border-white/10 rounded-2xl text-xs">
             <div>
-              <label className="libelle mb-1 text-slate-600" htmlFor="client-adresse-unifie">Adresse</label>
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1 block" htmlFor="client-adresse-unifie">Adresse</label>
               <input
                 id="client-adresse-unifie"
                 type="text"
                 value={clientAdresse}
                 onChange={(e) => setClientAdresse(e.target.value)}
-                className="input w-full h-9 text-xs bg-white border-slate-200 rounded-xl"
+                className="champ"
               />
             </div>
             <div>
-              <label className="libelle mb-1 text-slate-600" htmlFor="client-rc-unifie">RC (Registre Commerce)</label>
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1 block" htmlFor="client-rc-unifie">RC (Registre Commerce)</label>
               <input
                 id="client-rc-unifie"
                 type="text"
                 value={clientRc}
                 onChange={(e) => setClientRc(e.target.value)}
-                className="input w-full h-9 text-xs bg-white border-slate-200 rounded-xl"
+                className="champ"
               />
             </div>
             <div>
-              <label className="libelle mb-1 text-slate-600" htmlFor="client-nif-unifie">NIF</label>
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1 block" htmlFor="client-nif-unifie">NIF</label>
               <input
                 id="client-nif-unifie"
                 type="text"
                 value={clientNif}
                 onChange={(e) => setClientNif(e.target.value)}
-                className="input w-full h-9 text-xs bg-white border-slate-200 rounded-xl"
+                className="champ"
               />
             </div>
             <div>
-              <label className="libelle mb-1 text-slate-600" htmlFor="client-nis-unifie">NIS</label>
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1 block" htmlFor="client-nis-unifie">NIS</label>
               <input
                 id="client-nis-unifie"
                 type="text"
                 value={clientNis}
                 onChange={(e) => setClientNis(e.target.value)}
-                className="input w-full h-9 text-xs bg-white border-slate-200 rounded-xl"
+                className="champ"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="libelle mb-1 text-slate-600" htmlFor="client-ai-unifie">Article d&apos;imposition (AI)</label>
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1 block" htmlFor="client-ai-unifie">Article d&apos;imposition (AI)</label>
               <input
                 id="client-ai-unifie"
                 type="text"
                 value={clientAi}
                 onChange={(e) => setClientAi(e.target.value)}
-                className="input w-full h-9 text-xs bg-white border-slate-200 rounded-xl"
+                className="champ"
               />
             </div>
           </div>
         </details>
 
         {avertissement && (
-          <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 px-3.5 py-3 text-xs text-amber-900">
+          <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 px-3.5 py-3 text-xs text-amber-900 dark:text-amber-200">
             <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-brand-orange" />
             <span>{avertissement}</span>
           </div>
         )}
 
-        <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-200">
+        <div className="flex justify-end gap-2.5 pt-3 border-t border-brand-light-grey/60 dark:border-white/10">
           {avertissement ? (
             <>
               <button
                 type="button"
                 onClick={() => setAvertissement(null)}
-                className="btn btn-secondaire text-xs h-11 px-4 rounded-xl font-bold"
+                className="btn btn-secondaire text-xs font-bold"
               >
                 Revoir le prix
               </button>
@@ -829,7 +909,7 @@ export default function ModaleVente({
                 type="button"
                 disabled={envoi}
                 onClick={() => void enregistrerVente(true)}
-                className="btn btn-primaire text-xs h-11 px-5 rounded-xl font-black"
+                className="btn btn-primaire text-xs font-black"
               >
                 Vendre quand même
               </button>
@@ -837,9 +917,10 @@ export default function ModaleVente({
           ) : (
             <button
               type="button"
+              data-action="valider-vente"
               disabled={envoi || unitesChoisies.length === 0 || total < 0}
               onClick={() => void enregistrerVente(false)}
-              className="btn btn-primaire w-full sm:w-auto min-h-[46px] px-6 rounded-2xl text-xs font-black shadow-lg shadow-brand-orange/20 flex items-center justify-center gap-2"
+              className="btn btn-primaire w-full sm:w-auto text-xs font-black flex items-center justify-center gap-2"
             >
               <IconeBillet taille={16} />
               <span>

@@ -290,17 +290,17 @@ export default function ListeFactures({ role }: { role?: string }) {
     <div className="space-y-5 animate-entree">
       <ConfirmerAction {...propsModal} />
       {/* ===================== EN-TÊTE ERP ===================== */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-brand-light-grey dark:border-white/10">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-brand-orange/10 text-brand-orange">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-2xl font-black tracking-tight text-brand-black dark:text-white">
                 Factures & Documents
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-brand-warm-grey dark:text-brand-warm-grey">
                 Gestion et historique commercial — Factures fiscales, proformas et devis
               </p>
             </div>
@@ -323,25 +323,25 @@ export default function ListeFactures({ role }: { role?: string }) {
                 </div>
               </>
             )}
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700">
-              <strong className="font-bold text-slate-900 dark:text-white">{donnees.total}</strong> facture{donnees.total > 1 ? "s" : ""}
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-brand-warm-grey border border-brand-light-grey dark:border-white/10">
+              <strong className="font-bold text-brand-black dark:text-white">{donnees.total}</strong> facture{donnees.total > 1 ? "s" : ""}
             </span>
           </div>
         )}
       </div>
 
       {/* ===================== BARRE D'OUTILS COMPACTE ERP ===================== */}
-      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 shadow-xs space-y-2.5">
+      <div className="rounded-2xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper p-3 shadow-xs space-y-2.5">
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Recherche */}
           <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-warm-grey" />
             <input
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Rechercher N°, client, article..."
-              className="w-full h-9 pl-9 pr-7 text-xs font-medium rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-zinc-900 focus:border-brand-orange outline-none transition"
+              className="w-full h-9 pl-9 pr-7 text-xs font-medium rounded-xl border border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-white/5 text-brand-black dark:text-white placeholder:text-brand-warm-grey focus:bg-white dark:focus:bg-brand-paper focus:border-brand-orange outline-none transition"
             />
             {q && (
               <button
@@ -351,7 +351,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                   setRecherche("");
                   setPage(1);
                 }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-warm-grey hover:text-brand-warm-grey dark:hover:text-white"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -366,7 +366,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                 setFiltreTypeVente(e.target.value as FiltreTypeVente);
                 setPage(1);
               }}
-              className="h-9 text-xs font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 px-3 pr-7 text-slate-700 dark:text-slate-200 focus:border-brand-orange outline-none cursor-pointer"
+              className="h-9 text-xs font-bold rounded-xl border border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-white/5 px-3 pr-7 text-brand-black dark:text-white focus:border-brand-orange outline-none cursor-pointer"
             >
               <option value="TOUTES">Tous les canaux</option>
               <option value="COMPTOIR">Vente Comptoir</option>
@@ -382,7 +382,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                 setOnglet(e.target.value as OngletType);
                 setPage(1);
               }}
-              className="h-9 text-xs font-bold rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 px-3 pr-7 text-slate-700 dark:text-slate-200 focus:border-brand-orange outline-none cursor-pointer"
+              className="h-9 text-xs font-bold rounded-xl border border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-white/5 px-3 pr-7 text-brand-black dark:text-white focus:border-brand-orange outline-none cursor-pointer"
             >
               <option value="tous">Tous les documents</option>
               <option value="FACTURE_TVA">Factures TVA</option>
@@ -400,7 +400,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                 setPage(1);
                 setMois(e.target.value);
               }}
-              className="h-9 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 px-3 text-slate-700 dark:text-slate-200 focus:border-brand-orange outline-none cursor-pointer"
+              className="h-9 text-xs font-semibold rounded-xl border border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-white/5 px-3 text-brand-black dark:text-white focus:border-brand-orange outline-none cursor-pointer"
               title="Filtrer par mois"
             />
           </div>
@@ -410,7 +410,7 @@ export default function ListeFactures({ role }: { role?: string }) {
             <button
               type="button"
               onClick={reinitialiserFiltres}
-              className="h-9 px-3 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-danger rounded-xl border border-dashed border-slate-300 dark:border-zinc-700 hover:border-danger/40 transition flex items-center gap-1.5 cursor-pointer bg-white dark:bg-zinc-800"
+              className="h-9 px-3 text-xs font-bold text-brand-warm-grey dark:text-brand-warm-grey hover:text-danger rounded-xl border border-dashed border-brand-light-grey dark:border-white/10 hover:border-danger/40 transition flex items-center gap-1.5 cursor-pointer bg-white dark:bg-white/5"
               title="Effacer tous les filtres"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -421,13 +421,13 @@ export default function ListeFactures({ role }: { role?: string }) {
 
         {/* Badges des filtres actifs */}
         {estFiltreActif && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800/60 text-xs">
-            <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-brand-light-grey dark:border-white/10 text-xs">
+            <span className="text-[11px] font-semibold text-brand-warm-grey mr-1 flex items-center gap-1">
               <Filter className="w-3 h-3" /> Filtres actifs :
             </span>
 
             {recherche && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-brand-warm-grey text-[11px] font-medium border border-brand-light-grey dark:border-white/10">
                 Recherche: &quot;{recherche}&quot;
                 <button
                   type="button"
@@ -444,7 +444,7 @@ export default function ListeFactures({ role }: { role?: string }) {
             )}
 
             {filtreTypeVente !== "TOUTES" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-brand-warm-grey text-[11px] font-medium border border-brand-light-grey dark:border-white/10">
                 {filtreTypeVente === "COMPTOIR" ? <Store className="w-3 h-3 text-emerald-600" /> : <Truck className="w-3 h-3 text-blue-600" />}
                 Canal: {filtreTypeVente === "COMPTOIR" ? "Comptoir" : "Yalidine"}
                 <button
@@ -461,7 +461,7 @@ export default function ListeFactures({ role }: { role?: string }) {
             )}
 
             {onglet !== "tous" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-brand-warm-grey text-[11px] font-medium border border-brand-light-grey dark:border-white/10">
                 <FileText className="w-3 h-3 text-brand-orange" />
                 Document: {onglet === "FACTURE_TVA" ? "Facture TVA" : onglet === "PROFORMA" ? "Proforma" : "Devis"}
                 <button
@@ -478,8 +478,8 @@ export default function ListeFactures({ role }: { role?: string }) {
             )}
 
             {mois && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-zinc-700">
-                <Calendar className="w-3 h-3 text-slate-500" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-brand-warm-grey text-[11px] font-medium border border-brand-light-grey dark:border-white/10">
+                <Calendar className="w-3 h-3 text-brand-warm-grey" />
                 Mois: {mois}
                 <button
                   type="button"
@@ -507,14 +507,14 @@ export default function ListeFactures({ role }: { role?: string }) {
       {/* ===================== TABLEAU DES FACTURES ===================== */}
       {chargement && !donnees ? (
         /* Skeleton Table */
-        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3">
+        <div className="rounded-2xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper p-4 space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-11 rounded-xl bg-slate-100 dark:bg-zinc-800 animate-pulse" />
+            <div key={i} className="h-11 rounded-xl bg-brand-light-grey/30 dark:bg-white/5 animate-pulse" />
           ))}
         </div>
       ) : factures.length === 0 ? (
         /* État Vide Professionnel */
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/50">
+        <div className="rounded-2xl border border-dashed border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper/50">
           <EtatVide
             icone={<FileSearch className="w-12 h-12 text-brand-warm-grey/50" />}
             titre="Aucune facture trouvée"
@@ -532,8 +532,8 @@ export default function ListeFactures({ role }: { role?: string }) {
           {/* Vue Mobile (Cartes ERP) */}
           <div className="flex flex-col gap-3 md:hidden">
             {peutSupprimer && (
-              <div className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-zinc-800/50 px-4 py-2.5 border border-slate-200 dark:border-zinc-700">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+              <div className="flex items-center justify-between rounded-xl bg-brand-paper dark:bg-white/5 px-4 py-2.5 border border-brand-light-grey dark:border-white/10">
+                <label className="flex items-center gap-2 text-xs font-bold text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selection.size > 0 && selection.size === factures.length}
@@ -543,7 +543,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                       }
                     }}
                     onChange={toggleTout}
-                    className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange"
+                    className="h-4 w-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
                   />
                   Tout sélectionner
                 </label>
@@ -558,10 +558,10 @@ export default function ListeFactures({ role }: { role?: string }) {
                 <div
                   key={f.id}
                   onClick={() => router.push(`/factures/${f.id}`)}
-                  className={`flex flex-col gap-2.5 rounded-2xl border bg-white dark:bg-zinc-900 p-4 shadow-xs transition active:scale-[0.99] cursor-pointer ${
+                  className={`flex flex-col gap-2.5 rounded-2xl border bg-white dark:bg-brand-paper p-4 shadow-xs transition active:scale-[0.99] cursor-pointer ${
                     estSelectionnee
                       ? "border-brand-orange ring-1 ring-brand-orange"
-                      : "border-slate-200 dark:border-zinc-800"
+                      : "border-brand-light-grey dark:border-white/10"
                   } ${f.annulee ? "opacity-70" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -572,7 +572,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                           checked={estSelectionnee}
                           onClick={(e) => e.stopPropagation()}
                           onChange={() => toggleSelection(f.id)}
-                          className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange"
+                          className="h-4 w-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
                         />
                       )}
                       <div>
@@ -588,10 +588,10 @@ export default function ListeFactures({ role }: { role?: string }) {
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
+                        <div className="text-[11px] text-brand-warm-grey mt-0.5">
                           {dateFr(f.date_emission)}
                           {f.commande_numero && (
-                            <span className="ml-1.5 font-mono text-slate-600 dark:text-slate-300">
+                            <span className="ml-1.5 font-mono text-brand-warm-grey dark:text-brand-warm-grey">
                               · Cmd {f.commande_numero}
                             </span>
                           )}
@@ -600,24 +600,24 @@ export default function ListeFactures({ role }: { role?: string }) {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="font-mono text-sm font-black text-slate-900 dark:text-white">
+                      <div className="font-mono text-sm font-black text-brand-black dark:text-white">
                         {formaterDA(f.total_net)}
                       </div>
                       {f.total_net !== f.total && (
-                        <div className="text-[10px] text-slate-400 line-through">
+                        <div className="text-[10px] text-brand-warm-grey line-through">
                           {formaterDA(f.total)}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-xs text-slate-600 dark:text-slate-300 flex justify-between items-center pt-2 border-t border-slate-100 dark:border-zinc-800">
+                  <div className="text-xs text-brand-warm-grey dark:text-brand-warm-grey flex justify-between items-center pt-2 border-t border-brand-light-grey dark:border-white/10">
                     <div>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <span className="font-semibold text-brand-black dark:text-white">
                         {f.client_nom || "Client comptoir"}
                       </span>
                       {f.premier_article && (
-                        <p className="text-[11px] text-slate-400 truncate max-w-[220px]">
+                        <p className="text-[11px] text-brand-warm-grey truncate max-w-[220px]">
                           {f.premier_article}
                           {f.nb_autres_articles ? ` (+${f.nb_autres_articles})` : ""}
                         </p>
@@ -628,7 +628,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                       <button
                         type="button"
                         onClick={(e) => telechargerPdfDirect(f, e)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10 transition"
+                        className="p-1.5 rounded-lg text-brand-warm-grey hover:text-brand-orange hover:bg-brand-orange/10 transition"
                         title="Télécharger PDF"
                       >
                         <Download className="w-4 h-4" />
@@ -638,7 +638,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                           type="button"
                           onClick={(e) => supprimerFacture(f.id, e)}
                           disabled={envoi}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-danger hover:bg-danger/10 transition"
+                          className="p-1.5 rounded-lg text-brand-warm-grey hover:text-danger hover:bg-danger/10 transition"
                           title="Supprimer"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -652,9 +652,9 @@ export default function ListeFactures({ role }: { role?: string }) {
           </div>
 
           {/* Vue Bureau: Tableau Haute Lisibilité ERP */}
-          <div className="hidden w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs md:block">
+          <div className="hidden w-full overflow-x-auto rounded-2xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper shadow-xs md:block">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 dark:bg-zinc-800/60 border-b border-slate-200 dark:border-zinc-800 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <thead className="bg-brand-paper dark:bg-white/5 border-b border-brand-light-grey dark:border-white/10 text-[11px] font-bold text-brand-warm-grey uppercase tracking-wider">
                 <tr>
                   {peutSupprimer && (
                     <th className="w-10 px-3 py-3 text-center">
@@ -667,7 +667,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                           }
                         }}
                         onChange={toggleTout}
-                        className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange cursor-pointer"
+                        className="h-4 w-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
                       />
                     </th>
                   )}
@@ -683,7 +683,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                   <th className="px-3.5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
+              <tbody className="divide-y divide-brand-light-grey dark:divide-white/10">
                 {factures.map((f) => {
                   const estSelectionnee = selection.has(f.id);
 
@@ -691,8 +691,8 @@ export default function ListeFactures({ role }: { role?: string }) {
                     <tr
                       key={f.id}
                       onClick={() => router.push(`/factures/${f.id}`)}
-                      className={`transition-colors cursor-pointer hover:bg-slate-50/80 dark:hover:bg-zinc-800/50 ${
-                        f.annulee ? "opacity-60 bg-slate-50/40" : ""
+                      className={`transition-colors cursor-pointer hover:bg-brand-paper/80 dark:hover:bg-white/5 ${
+                        f.annulee ? "opacity-60 bg-brand-paper/40" : ""
                       } ${estSelectionnee ? "bg-brand-orange/5" : ""}`}
                     >
                       {peutSupprimer && (
@@ -701,7 +701,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                             type="checkbox"
                             checked={estSelectionnee}
                             onChange={() => toggleSelection(f.id)}
-                            className="h-4 w-4 rounded border-slate-300 text-brand-orange focus:ring-brand-orange cursor-pointer"
+                            className="h-4 w-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange cursor-pointer"
                           />
                         </td>
                       )}
@@ -720,19 +720,19 @@ export default function ListeFactures({ role }: { role?: string }) {
 
                       {/* Client */}
                       <td className="px-3 py-2.5">
-                        <div className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[160px]">
-                          {f.client_nom || <span className="text-slate-400 font-normal">Client comptoir</span>}
+                        <div className="font-bold text-brand-black dark:text-white truncate max-w-[160px]">
+                          {f.client_nom || <span className="text-brand-warm-grey font-normal">Client comptoir</span>}
                         </div>
                       </td>
 
                       {/* Commande associée */}
                       <td className="px-3 py-2.5 whitespace-nowrap">
                         {f.commande_numero ? (
-                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700">
+                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-brand-warm-grey border border-brand-light-grey dark:border-white/10">
                             {f.commande_numero}
                           </span>
                         ) : (
-                          <span className="text-slate-300 dark:text-zinc-600">—</span>
+                          <span className="text-brand-warm-grey dark:text-brand-warm-grey">—</span>
                         )}
                       </td>
 
@@ -740,23 +740,23 @@ export default function ListeFactures({ role }: { role?: string }) {
                       <td className="px-3 py-2.5">
                         {f.premier_article ? (
                           <div
-                            className="truncate max-w-[200px] text-slate-600 dark:text-slate-300 font-medium"
+                            className="truncate max-w-[200px] text-brand-warm-grey dark:text-brand-warm-grey font-medium"
                             title={`${f.premier_article}${f.nb_autres_articles ? ` (+${f.nb_autres_articles} article${f.nb_autres_articles > 1 ? "s" : ""})` : ""}`}
                           >
                             <span>{f.premier_article}</span>
                             {f.nb_autres_articles ? (
-                              <span className="ml-1 text-[10px] font-bold text-slate-400">
+                              <span className="ml-1 text-[10px] font-bold text-brand-warm-grey">
                                 (+{f.nb_autres_articles})
                               </span>
                             ) : null}
                           </div>
                         ) : (
-                          <span className="text-slate-400">{f.nb_lignes} article{f.nb_lignes > 1 ? "s" : ""}</span>
+                          <span className="text-brand-warm-grey">{f.nb_lignes} article{f.nb_lignes > 1 ? "s" : ""}</span>
                         )}
                       </td>
 
                       {/* Date */}
-                      <td className="px-3 py-2.5 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                      <td className="px-3 py-2.5 whitespace-nowrap text-brand-warm-grey dark:text-brand-warm-grey">
                         {dateFr(f.date_emission)}
                       </td>
 
@@ -768,11 +768,11 @@ export default function ListeFactures({ role }: { role?: string }) {
                       {/* Total Net */}
                       <td className="px-3.5 py-2.5 whitespace-nowrap text-right">
                         {f.total_net !== f.total && (
-                          <span className="block text-[10px] text-slate-400 line-through">
+                          <span className="block text-[10px] text-brand-warm-grey line-through">
                             {formaterDA(f.total)}
                           </span>
                         )}
-                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs">
+                        <span className="font-mono font-black text-brand-black dark:text-white text-xs">
                           {formaterDA(f.total_net)}
                         </span>
                       </td>
@@ -797,7 +797,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                         <div className="inline-flex items-center gap-1">
                           <Link
                             href={`/factures/${f.id}`}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                            className="p-1.5 rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30 dark:hover:bg-white/5 transition"
                             title="Consulter la facture"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -806,7 +806,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                           <button
                             type="button"
                             onClick={(e) => telechargerPdfDirect(f, e)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-brand-orange hover:bg-brand-orange/10 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-brand-warm-grey hover:text-brand-orange hover:bg-brand-orange/10 transition cursor-pointer"
                             title="Télécharger le PDF client"
                           >
                             <Download className="w-3.5 h-3.5" />
@@ -815,7 +815,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                           <button
                             type="button"
                             onClick={() => window.open(`/factures/${f.id}?print=ticket`, "_blank")}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30 dark:hover:bg-white/5 transition cursor-pointer"
                             title="Imprimer ticket de caisse"
                           >
                             <Printer className="w-3.5 h-3.5" />
@@ -826,7 +826,7 @@ export default function ListeFactures({ role }: { role?: string }) {
                               type="button"
                               onClick={(e) => supprimerFacture(f.id, e)}
                               disabled={envoi}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-danger hover:bg-danger/10 transition cursor-pointer disabled:opacity-50"
+                              className="p-1.5 rounded-lg text-brand-warm-grey hover:text-danger hover:bg-danger/10 transition cursor-pointer disabled:opacity-50"
                               title="Supprimer la facture"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -846,17 +846,17 @@ export default function ListeFactures({ role }: { role?: string }) {
       {/* ===================== PAGINATION MODERNE ===================== */}
       {donnees && donnees.pages > 1 && (
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-brand-warm-grey">
             Affichage de{" "}
-            <strong className="font-bold text-slate-700 dark:text-slate-200">
+            <strong className="font-bold text-brand-black dark:text-white">
               {(donnees.page - 1) * 25 + 1}
             </strong>{" "}
             à{" "}
-            <strong className="font-bold text-slate-700 dark:text-slate-200">
+            <strong className="font-bold text-brand-black dark:text-white">
               {Math.min(donnees.page * 25, donnees.total)}
             </strong>{" "}
             sur{" "}
-            <strong className="font-bold text-slate-700 dark:text-slate-200">{donnees.total}</strong>{" "}
+            <strong className="font-bold text-brand-black dark:text-white">{donnees.total}</strong>{" "}
             factures
           </p>
 
@@ -865,13 +865,13 @@ export default function ListeFactures({ role }: { role?: string }) {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((n) => Math.max(1, n - 1))}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition shadow-xs"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 text-brand-black dark:text-white hover:bg-brand-paper disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition shadow-xs"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>Précédent</span>
             </button>
 
-            <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-slate-300 font-mono text-xs">
+            <span className="px-3 py-1.5 rounded-xl bg-brand-light-grey/30 dark:bg-white/5/80 text-brand-black dark:text-brand-warm-grey font-mono text-xs">
               {donnees.page} / {donnees.pages}
             </span>
 
@@ -879,7 +879,7 @@ export default function ListeFactures({ role }: { role?: string }) {
               type="button"
               disabled={page >= donnees.pages}
               onClick={() => setPage((n) => n + 1)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition shadow-xs"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 text-brand-black dark:text-white hover:bg-brand-paper disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition shadow-xs"
             >
               <span>Suivant</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -890,7 +890,7 @@ export default function ListeFactures({ role }: { role?: string }) {
 
       {/* ===================== BARRE FLOTTANTE SÉLECTION MULTIPLE ===================== */}
       {selection.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 sm:gap-6 animate-entree z-50 border border-slate-800 backdrop-blur-md">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-black text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 sm:gap-6 animate-entree z-50 border border-brand-black backdrop-blur-md">
           <span className="font-bold text-xs whitespace-nowrap">
             {selection.size} sélectionné{selection.size > 1 ? "s" : ""}
           </span>
@@ -923,7 +923,7 @@ export default function ListeFactures({ role }: { role?: string }) {
               type="button"
               onClick={() => setSelection(new Set())}
               disabled={envoi}
-              className="text-xs font-bold text-slate-400 hover:text-white transition px-1 cursor-pointer"
+              className="text-xs font-bold text-brand-warm-grey hover:text-white transition px-1 cursor-pointer"
             >
               Annuler
             </button>

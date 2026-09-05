@@ -133,7 +133,7 @@ export default function GestionnaireQuantite({
         e.preventDefault();
         e.stopPropagation();
       }}
-      className={`inline-flex items-center rounded-xl bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700/80 p-0.5 select-none font-outfit shadow-2xs ${tailleClasses} ${className}`}
+      className={`inline-flex items-center rounded-xl bg-brand-light-grey/60 dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 p-0.5 select-none font-outfit shadow-2xs ${tailleClasses} ${className}`}
     >
       {/* Bouton Moins (-) */}
       {peutModifier && (
@@ -141,11 +141,11 @@ export default function GestionnaireQuantite({
           type="button"
           disabled={enCours || quantiteLocale <= 0}
           onClick={() => ajusterDelta(-1)}
-          className={`${boutonTaille} flex items-center justify-center rounded-lg bg-white dark:bg-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-600 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-700 transition-all active:scale-90 shadow-2xs cursor-pointer`}
+          className={`${boutonTaille} flex items-center justify-center rounded-lg bg-white dark:bg-white/10 text-brand-black dark:text-white hover:bg-brand-light-grey/60 dark:hover:bg-white/15 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-white/10 transition-all active:scale-90 shadow-2xs cursor-pointer`}
           title="Diminuer le stock (-1)"
         >
           {enCours ? (
-            <Loader2 className={`${iconeTaille} animate-spin text-slate-400`} />
+            <Loader2 className={`${iconeTaille} animate-spin text-brand-warm-grey dark:text-brand-warm-grey`} />
           ) : (
             <Minus className={iconeTaille} />
           )}
@@ -153,8 +153,8 @@ export default function GestionnaireQuantite({
       )}
 
       {/* Saisie Directe au Clavier Zéro-Friction */}
-      <div className="flex items-center gap-0.5 px-1 font-black text-slate-900 dark:text-white">
-        <Package className="w-3.5 h-3.5 text-brand-orange shrink-0" />
+      <div className="flex items-center gap-0.5 px-1 rounded-lg bg-white/40 dark:bg-white/5">
+        <Package className="w-3.5 h-3.5 text-brand-orange dark:text-brand-orange shrink-0" />
         <input
           type="number"
           min={0}
@@ -175,10 +175,10 @@ export default function GestionnaireQuantite({
               e.currentTarget.blur();
             }
           }}
-          className="w-11 h-6 text-center font-mono font-black text-xs bg-transparent border-0 focus:ring-1 focus:ring-brand-orange text-slate-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-text"
+          className="w-11 h-6 text-center font-mono font-black text-xs bg-transparent border-0 focus:ring-1 focus:ring-brand-orange text-brand-black dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-text"
           title="Modifier directement la quantité (Entrée ou clic ailleurs pour valider)"
         />
-        <span className="text-[10px] font-bold text-slate-400 uppercase">u.</span>
+        <span className="text-[10px] font-bold text-brand-warm-grey dark:text-brand-warm-grey uppercase">u.</span>
       </div>
 
       {/* Bouton Plus (+) */}
@@ -187,7 +187,7 @@ export default function GestionnaireQuantite({
           type="button"
           disabled={enCours}
           onClick={() => ajusterDelta(1)}
-          className={`${boutonTaille} flex items-center justify-center rounded-lg bg-brand-orange text-white hover:bg-brand-orange/90 disabled:opacity-40 transition-all active:scale-90 shadow-2xs cursor-pointer`}
+          className={`${boutonTaille} flex items-center justify-center rounded-lg bg-brand-orange text-white hover:bg-brand-orange/90 dark:hover:brightness-110 disabled:opacity-40 transition-all active:scale-90 shadow-2xs cursor-pointer`}
           title="Augmenter le stock (+1)"
         >
           {enCours ? (

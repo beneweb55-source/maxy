@@ -2,17 +2,17 @@
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  Search, 
-  Barcode, 
-  Plus, 
-  Minus, 
-  Trash2, 
-  UserPlus, 
-  CreditCard, 
-  Receipt, 
-  Check, 
-  Percent, 
+import {
+  Search,
+  Barcode,
+  Plus,
+  Minus,
+  Trash2,
+  UserPlus,
+  CreditCard,
+  Receipt,
+  Check,
+  Percent,
   X,
   UserCheck,
   RotateCcw,
@@ -345,11 +345,11 @@ export default function PosCreationCommande() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-4rem)] gap-4 p-3 sm:p-4 bg-slate-100 dark:bg-zinc-950 font-sans">
-      
+    <div className="flex flex-col lg:flex-row min-h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-4rem)] gap-4 p-3 sm:p-4 bg-brand-paper dark:bg-brand-paper font-sans">
+
       {/* ===================== PANNEAU GAUCHE : RECHERCHE SCANNER & QUICK PICKS ===================== */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm overflow-hidden">
-        
+      <div className="flex-1 flex flex-col bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 rounded-3xl p-5 shadow-sm overflow-hidden">
+
         {/* Scanner-First Input */}
         <div className="relative mb-4">
           <div className="absolute left-4 top-3.5 p-1 rounded-lg bg-brand-orange/15 text-brand-orange">
@@ -361,13 +361,13 @@ export default function PosCreationCommande() {
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
             placeholder="Scannez un Code-Barres, S/N ou saisissez une désignation..."
-            className="w-full h-16 pl-16 pr-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border-2 border-slate-200 dark:border-zinc-700 text-base font-bold text-slate-900 dark:text-white focus:border-brand-orange focus:outline-none transition-all shadow-inner"
+            className="w-full h-16 pl-16 pr-4 rounded-2xl bg-brand-paper dark:bg-white/5 border-2 border-brand-light-grey dark:border-white/10 text-base font-bold text-brand-black dark:text-white focus:border-brand-orange focus:outline-none transition-all shadow-inner"
           />
         </div>
 
         {/* Résultats de recherche dynamique */}
         {resultatsRecherche.length > 0 && (
-          <div className="mb-4 p-3 bg-slate-50 dark:bg-zinc-800/80 rounded-2xl border border-slate-200 dark:border-zinc-700 max-h-48 overflow-y-auto space-y-1.5 animate-entree">
+          <div className="mb-4 p-3 bg-brand-paper dark:bg-white/5 rounded-2xl border border-brand-light-grey dark:border-white/10 max-h-48 overflow-y-auto space-y-1.5 animate-entree">
             <span className="text-[11px] font-black uppercase text-brand-orange block px-1">
               Résultats trouvés ({resultatsRecherche.length}) :
             </span>
@@ -379,18 +379,18 @@ export default function PosCreationCommande() {
                   setRecherche("");
                   setResultatsRecherche([]);
                 }}
-                className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 hover:border-brand-orange cursor-pointer flex items-center justify-between transition-all"
+                className="p-2.5 rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 hover:border-brand-orange cursor-pointer flex items-center justify-between transition-all"
               >
                 <div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <div className="text-xs font-bold text-brand-black dark:text-white flex items-center gap-2">
                     <span className="font-mono text-brand-orange">{p.code_interne}</span>
                     <span>{p.reference}</span>
                   </div>
                   {p.numero_serie && (
-                    <span className="text-[10px] font-mono text-slate-400">S/N: {p.numero_serie}</span>
+                    <span className="text-[10px] font-mono text-brand-warm-grey">S/N: {p.numero_serie}</span>
                   )}
                 </div>
-                <div className="text-xs font-black font-mono text-slate-900 dark:text-white">
+                <div className="text-xs font-black font-mono text-brand-black dark:text-white">
                   {formaterDA(p.prix_vente_fixe || 0)}
                 </div>
               </div>
@@ -401,7 +401,7 @@ export default function PosCreationCommande() {
         {/* Quick Picks / Prestations & Accessoires Fréquents */}
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-black uppercase tracking-wider text-brand-warm-grey">
               Services & Accessoires Rapides
             </span>
             <span className="text-[11px] font-bold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
@@ -424,13 +424,13 @@ export default function PosCreationCommande() {
                   key={idx}
                   type="button"
                   onClick={() => ajouterQuickPick(qp.nom, qp.prix, qp.cat)}
-                  className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/30 hover:border-brand-orange hover:bg-brand-orange/5 text-left transition-all flex flex-col justify-between min-h-[105px] active:scale-98 shadow-xs"
+                  className="p-4 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/60 dark:bg-white/5 hover:border-brand-orange hover:bg-brand-orange/5 text-left transition-all flex flex-col justify-between min-h-[105px] active:scale-98 shadow-xs"
                 >
                   <div className="flex items-start justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{qp.cat}</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-brand-warm-grey">{qp.cat}</span>
                     <IconComp className="w-4 h-4 text-brand-orange" />
                   </div>
-                  <div className="text-xs font-black text-slate-900 dark:text-white line-clamp-2 my-1 leading-snug">
+                  <div className="text-xs font-black text-brand-black dark:text-white line-clamp-2 my-1 leading-snug">
                     {qp.nom}
                   </div>
                   <div className="text-sm font-black text-brand-orange font-mono">
@@ -445,13 +445,13 @@ export default function PosCreationCommande() {
       </div>
 
       {/* ===================== PANNEAU DROIT : TICKET DE CAISSE / PANIER ===================== */}
-      <div className="w-full lg:w-[480px] flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-sm overflow-hidden">
-        
+      <div className="w-full lg:w-[480px] flex flex-col bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 rounded-3xl shadow-sm overflow-hidden">
+
         {/* Header Ticket + Client */}
-        <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/20 flex items-center justify-between">
+        <div className="p-4 border-b border-brand-light-grey dark:border-white/10 bg-brand-paper/60 dark:bg-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-brand-orange" />
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
+            <h2 className="text-sm font-black uppercase tracking-wider text-brand-black dark:text-white">
               Ticket de Vente
             </h2>
           </div>
@@ -459,7 +459,7 @@ export default function PosCreationCommande() {
           <button
             type="button"
             onClick={() => setModalClient(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-brand-orange shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper text-xs font-bold text-brand-black dark:text-white hover:border-brand-orange shadow-xs"
           >
             {clientSelectionne ? <UserCheck className="w-4 h-4 text-emerald-500" /> : <UserPlus className="w-4 h-4 text-brand-orange" />}
             <span className="truncate max-w-[130px]">{clientSelectionne ? clientSelectionne.nom : "Associer Client"}</span>
@@ -469,15 +469,15 @@ export default function PosCreationCommande() {
         {/* Liste des Lignes du Panier */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {panier.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-12">
-              <Barcode className="w-12 h-12 stroke-1 text-slate-300 dark:text-zinc-700" />
+            <div className="h-full flex flex-col items-center justify-center text-brand-warm-grey space-y-2 py-12">
+              <Barcode className="w-12 h-12 stroke-1 text-brand-warm-grey dark:text-white/10" />
               <p className="text-xs font-bold text-center">Panier vide. Scannez un article pour commencer la vente.</p>
             </div>
           ) : (
             panier.map((ligne, idx) => (
               <div
                 key={`${ligne.code_interne}_${idx}`}
-                className="p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-800/30 space-y-2.5 shadow-xs"
+                className="p-3.5 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/40 dark:bg-white/5 space-y-2.5 shadow-xs"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -495,11 +495,11 @@ export default function PosCreationCommande() {
                         </span>
                       )}
                     </div>
-                    <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 leading-snug">
+                    <div className="text-xs sm:text-sm font-black text-brand-black dark:text-white mt-1 leading-snug">
                       {ligne.designation}
                     </div>
                     {ligne.numero_serie && (
-                      <span className="text-[10px] font-mono text-slate-500 font-bold block mt-0.5">
+                      <span className="text-[10px] font-mono text-brand-warm-grey font-bold block mt-0.5">
                         S/N : {ligne.numero_serie}
                       </span>
                     )}
@@ -507,19 +507,19 @@ export default function PosCreationCommande() {
                   <button
                     type="button"
                     onClick={() => supprimerLigne(idx)}
-                    className="p-1.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                    className="p-1.5 rounded-xl text-brand-warm-grey hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-zinc-800/60">
+                <div className="flex items-center justify-between pt-2 border-t border-brand-light-grey/60 dark:border-white/10">
                   {/* Contrôles Quantité Tactiles */}
-                  <div className="flex items-center border border-slate-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 overflow-hidden shadow-xs">
+                  <div className="flex items-center border border-brand-light-grey dark:border-white/10 rounded-xl bg-white dark:bg-brand-paper overflow-hidden shadow-xs">
                     <button
                       type="button"
                       onClick={() => modifierQuantite(idx, -1)}
-                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 active:bg-slate-200 transition"
+                      className="w-9 h-9 flex items-center justify-center text-brand-warm-grey hover:bg-brand-light-grey/30 dark:hover:bg-white/10 active:bg-brand-light-grey/60 transition"
                       title="Diminuer la quantité (-1)"
                     >
                       <Minus className="w-4 h-4" />
@@ -533,13 +533,13 @@ export default function PosCreationCommande() {
                         definirQuantiteLigne(idx, isNaN(val) ? 1 : val);
                       }}
                       disabled={Boolean(ligne.produit_id)}
-                      className="w-12 h-9 text-center text-xs font-black font-mono bg-transparent border-0 focus:ring-1 focus:ring-brand-orange text-slate-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-12 h-9 text-center text-xs font-black font-mono bg-transparent border-0 focus:ring-1 focus:ring-brand-orange text-brand-black dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       title="Saisir la quantité directement"
                     />
                     <button
                       type="button"
                       onClick={() => modifierQuantite(idx, 1)}
-                      className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 active:bg-slate-200 transition"
+                      className="w-9 h-9 flex items-center justify-center text-brand-warm-grey hover:bg-brand-light-grey/30 dark:hover:bg-white/10 active:bg-brand-light-grey/60 transition"
                       title="Augmenter la quantité (+1)"
                     >
                       <Plus className="w-4 h-4" />
@@ -553,9 +553,9 @@ export default function PosCreationCommande() {
                       min="0"
                       value={ligne.prix_unitaire}
                       onChange={(e) => modifierPrixLigne(idx, Number(e.target.value))}
-                      className="input input-xs w-24 text-right font-mono font-black text-xs rounded-xl border-slate-200 dark:border-zinc-700"
+                      className="input input-xs w-24 text-right font-mono font-black text-xs rounded-xl border-brand-light-grey dark:border-white/10"
                     />
-                    <span className="font-mono font-black text-sm text-slate-900 dark:text-white">
+                    <span className="font-mono font-black text-sm text-brand-black dark:text-white">
                       {formaterDA(ligne.prix_unitaire * ligne.quantite - ligne.remise_ligne)}
                     </span>
                   </div>
@@ -566,16 +566,16 @@ export default function PosCreationCommande() {
         </div>
 
         {/* Footer Sticky Totaux & Bouton d'Encaissement */}
-        <div className="p-5 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-800/40 space-y-3.5">
-          <div className="space-y-1.5 text-xs font-semibold text-slate-500">
+        <div className="p-5 border-t border-brand-light-grey dark:border-white/10 bg-brand-paper/80 dark:bg-white/5 space-y-3.5">
+          <div className="space-y-1.5 text-xs font-semibold text-brand-warm-grey">
             <div className="flex justify-between">
               <span>Sous-total Brut</span>
-              <span className="font-mono font-bold text-slate-900 dark:text-white">{formaterDA(sousTotal)}</span>
+              <span className="font-mono font-bold text-brand-black dark:text-white">{formaterDA(sousTotal)}</span>
             </div>
 
             {/* Remise commerciale globale */}
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-slate-500">
+              <span className="flex items-center gap-1 text-brand-warm-grey">
                 <Percent className="w-3.5 h-3.5 text-brand-orange" /> Remise commerciale
               </span>
               <input
@@ -584,12 +584,12 @@ export default function PosCreationCommande() {
                 value={remiseGlobale || ""}
                 onChange={(e) => setRemiseGlobale(Number(e.target.value) || 0)}
                 placeholder="0 DA"
-                className="input input-xs w-24 text-right font-mono font-bold text-xs rounded-lg border-slate-200 dark:border-zinc-700 text-red-600"
+                className="input input-xs w-24 text-right font-mono font-bold text-xs rounded-lg border-brand-light-grey dark:border-white/10 text-red-600"
               />
             </div>
 
-            <div className="flex justify-between items-baseline pt-2 border-t border-slate-200 dark:border-zinc-700">
-              <span className="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wider">Net à Payer</span>
+            <div className="flex justify-between items-baseline pt-2 border-t border-brand-light-grey dark:border-white/10">
+              <span className="text-sm font-black uppercase text-brand-black dark:text-white tracking-wider">Net à Payer</span>
               <span className="text-2xl font-black font-mono text-brand-orange">{formaterDA(totalFinal)}</span>
             </div>
           </div>
@@ -610,24 +610,24 @@ export default function PosCreationCommande() {
       {/* ===================== MODALE D'ASSOCIATION / CRÉATION CLIENT ===================== */}
       {modalClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree">
-          <div className="w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
-              <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+          <div className="w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
+
+            <div className="flex items-center justify-between border-b border-brand-light-grey/50 dark:border-white/10 pb-3">
+              <h3 className="text-base font-black text-brand-black dark:text-white uppercase tracking-wider">
                 Sélection du Client
               </h3>
-              <button onClick={() => setModalClient(false)} className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl p-1 text-slate-400 hover:text-slate-900">
+              <button onClick={() => setModalClient(false)} className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl p-1 text-brand-warm-grey hover:text-brand-black">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Onglets Recherche vs Nouveau */}
-            <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl">
+            <div className="flex bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-xl">
               <button
                 type="button"
                 onClick={() => setOngletClient("recherche")}
                 className={`flex-1 py-2.5 min-h-[44px] text-xs font-black rounded-lg transition-all ${
-                  ongetClient === "recherche" ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs" : "text-slate-500"
+                  ongetClient === "recherche" ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs" : "text-brand-warm-grey"
                 }`}
               >
                 Rechercher un Client
@@ -636,7 +636,7 @@ export default function PosCreationCommande() {
                 type="button"
                 onClick={() => setOngletClient("nouveau")}
                 className={`flex-1 py-2.5 min-h-[44px] text-xs font-black rounded-lg transition-all ${
-                  ongetClient === "nouveau" ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs" : "text-slate-500"
+                  ongetClient === "nouveau" ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs" : "text-brand-warm-grey"
                 }`}
               >
                 + Nouveau Client
@@ -650,7 +650,7 @@ export default function PosCreationCommande() {
                   value={rechercheClient}
                   onChange={(e) => setRechercheClient(e.target.value)}
                   placeholder="Rechercher par nom, téléphone ou RC..."
-                  className="input w-full h-12 min-h-[48px] rounded-xl bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-base font-bold"
+                  className="champ input w-full h-12 min-h-[48px] rounded-xl"
                 />
 
                 <div className="max-h-48 overflow-y-auto space-y-1.5">
@@ -659,7 +659,7 @@ export default function PosCreationCommande() {
                       setClientSelectionne(null);
                       setModalClient(false);
                     }}
-                    className="p-3 rounded-xl border border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-orange cursor-pointer text-xs font-bold text-slate-500 text-center"
+                    className="p-3 rounded-xl border border-dashed border-brand-light-grey dark:border-white/10 hover:border-brand-orange cursor-pointer text-xs font-bold text-brand-warm-grey text-center"
                   >
                     Client de passage (Anonyme)
                   </div>
@@ -672,11 +672,11 @@ export default function PosCreationCommande() {
                         setModalClient(false);
                         afficher(`Client ${c.nom} sélectionné.`, "succes");
                       }}
-                      className="p-3 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-brand-orange cursor-pointer flex justify-between items-center transition-all"
+                      className="p-3 rounded-xl border border-brand-light-grey dark:border-white/10 hover:border-brand-orange cursor-pointer flex justify-between items-center transition-all"
                     >
                       <div>
-                        <div className="text-xs font-bold text-slate-900 dark:text-white">{c.nom}</div>
-                        {c.telephone && <div className="text-[10px] text-slate-400">{c.telephone}</div>}
+                        <div className="text-xs font-bold text-brand-black dark:text-white">{c.nom}</div>
+                        {c.telephone && <div className="text-[10px] text-brand-warm-grey">{c.telephone}</div>}
                       </div>
                       <Check className="w-4 h-4 text-brand-orange" />
                     </div>
@@ -686,35 +686,35 @@ export default function PosCreationCommande() {
             ) : (
               <form onSubmit={creerClientRapide} className="space-y-3">
                 <div>
-                  <label className="text-xs font-bold uppercase text-slate-500">Nom / Raison Sociale *</label>
+                  <label className="text-xs font-bold uppercase text-brand-warm-grey">Nom / Raison Sociale *</label>
                   <input
                     type="text"
                     required
                     value={formNouveauClient.nom}
                     onChange={(e) => setFormNouveauClient({ ...formNouveauClient, nom: e.target.value })}
                     placeholder="Ex. Sarl Numidia Tech ou Karim Benali"
-                    className="input w-full h-12 min-h-[48px] rounded-xl bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-base font-bold"
+                    className="champ input w-full h-12 min-h-[48px] rounded-xl"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs font-bold uppercase text-slate-500">Téléphone</label>
+                    <label className="text-xs font-bold uppercase text-brand-warm-grey">Téléphone</label>
                     <input
                       type="text"
                       value={formNouveauClient.telephone}
                       onChange={(e) => setFormNouveauClient({ ...formNouveauClient, telephone: e.target.value })}
                       placeholder="0550 00 00 00"
-                      className="input w-full h-12 min-h-[48px] rounded-xl bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-base font-bold"
+                      className="champ input w-full h-12 min-h-[48px] rounded-xl"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold uppercase text-slate-500">Email</label>
+                    <label className="text-xs font-bold uppercase text-brand-warm-grey">Email</label>
                     <input
                       type="email"
                       value={formNouveauClient.email}
                       onChange={(e) => setFormNouveauClient({ ...formNouveauClient, email: e.target.value })}
                       placeholder="contact@client.dz"
-                      className="input w-full h-12 min-h-[48px] rounded-xl bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-base font-bold"
+                      className="champ input w-full h-12 min-h-[48px] rounded-xl"
                     />
                   </div>
                 </div>
@@ -731,20 +731,20 @@ export default function PosCreationCommande() {
       {/* ===================== MODALE DE PAIEMENT & VALIDATION ===================== */}
       {modalPaiement && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/20 backdrop-blur-sm animate-entree">
-          <div className="w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
-              <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+          <div className="w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
+
+            <div className="flex items-center justify-between border-b border-brand-light-grey/50 dark:border-white/10 pb-3">
+              <h3 className="text-base font-black text-brand-black dark:text-white uppercase tracking-wider">
                 Validation & Facturation
               </h3>
-              <button onClick={() => setModalPaiement(false)} className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl p-1 text-slate-400 hover:text-slate-900">
+              <button onClick={() => setModalPaiement(false)} className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl p-1 text-brand-warm-grey hover:text-brand-black">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Statut de l'Opération */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-slate-500">Statut de la Commande</label>
+              <label className="text-xs font-bold uppercase text-brand-warm-grey">Statut de la Commande</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { id: "payee", label: "Payée (Comptant)", desc: "Déstockage immédiat" },
@@ -761,7 +761,7 @@ export default function PosCreationCommande() {
                     className={`p-3 rounded-2xl border text-left transition-all ${
                       statutVente === st.id
                         ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
-                        : "border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/40 text-slate-600 dark:text-slate-300"
+                        : "border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-white/5 text-brand-warm-grey dark:text-brand-warm-grey"
                     }`}
                   >
                     <div className="text-xs font-black">{st.label}</div>
@@ -774,11 +774,11 @@ export default function PosCreationCommande() {
             {/* Type de Document / Facture */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Type de Document</label>
+                <label className="text-xs font-bold uppercase text-brand-warm-grey block mb-1">Type de Document</label>
                 <select
                   value={typeFacture}
                   onChange={(e) => setTypeFacture(e.target.value as any)}
-                  className="select select-sm w-full rounded-xl font-bold border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/40 text-xs"
+                  className="champ select select-sm w-full rounded-xl font-bold text-xs"
                 >
                   <option value="normale">Facture Normale (Standard)</option>
                   <option value="tva">Facture avec TVA</option>
@@ -787,11 +787,11 @@ export default function PosCreationCommande() {
               </div>
 
               <div>
-                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Mode de Règlement</label>
+                <label className="text-xs font-bold uppercase text-brand-warm-grey block mb-1">Mode de Règlement</label>
                 <select
                   value={typePaiement}
                   onChange={(e) => setTypePaiement(e.target.value as any)}
-                  className="select select-sm w-full rounded-xl font-bold border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/40 text-xs"
+                  className="champ select select-sm w-full rounded-xl font-bold text-xs"
                 >
                   <option value="especes">Espèces</option>
                   <option value="carte">Carte Bancaire / CIB</option>
@@ -803,20 +803,20 @@ export default function PosCreationCommande() {
 
             {/* Calcul de Monnaie si Espèces */}
             {statutVente === "payee" && typePaiement === "especes" && (
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200 dark:border-zinc-700 space-y-3">
+              <div className="p-4 rounded-2xl bg-brand-paper dark:bg-white/5 border border-brand-light-grey dark:border-white/10 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-500">Total à payer :</span>
+                  <span className="text-xs font-bold text-brand-warm-grey">Total à payer :</span>
                   <span className="text-lg font-black font-mono text-brand-orange">{formaterDA(totalFinal)}</span>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Montant Reçu (DA)</label>
+                  <label className="text-xs font-bold uppercase text-brand-warm-grey block mb-1">Montant Reçu (DA)</label>
                   <input
                     type="number"
                     value={montantRecu}
                     onChange={(e) => setMontantRecu(e.target.value)}
                     placeholder={String(totalFinal)}
-                    className="input w-full h-12 rounded-xl text-right font-mono font-black text-lg"
+                    className="champ input w-full h-12 rounded-xl text-right font-mono font-black text-lg"
                   />
                 </div>
 
@@ -850,9 +850,9 @@ export default function PosCreationCommande() {
                     Ce panier contient des équipements physiques ajoutés par recherche sans scan d&apos;étiquette code-barres.
                   </p>
 
-                  <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-800/80 border border-amber-500/20 space-y-3">
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-brand-paper border border-amber-500/20 space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <label htmlFor="toggle-etiquette" className="text-xs font-black text-slate-900 dark:text-white cursor-pointer select-none">
+                      <label htmlFor="toggle-etiquette" className="text-xs font-black text-brand-black dark:text-white cursor-pointer select-none">
                         Avez-vous imprimé et collé l&apos;étiquette sur ce produit ?
                       </label>
                       <input
@@ -900,37 +900,37 @@ export default function PosCreationCommande() {
               <summary className="cursor-pointer text-xs font-bold text-brand-orange hover:underline outline-none">
                 + Informations légales pour facture d&apos;entreprise / proforma (Optionnel)
               </summary>
-              <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 dark:bg-zinc-800/40 rounded-xl text-xs border border-slate-200 dark:border-zinc-700">
+              <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-brand-paper dark:bg-white/5 rounded-xl text-xs border border-brand-light-grey dark:border-white/10">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">Adresse</label>
+                  <label className="text-[11px] font-bold text-brand-warm-grey mb-1 block">Adresse</label>
                   <input type="text" value={clientAdresse} onChange={(e) => setClientAdresse(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Adresse du client" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">RC (Registre Commerce)</label>
+                  <label className="text-[11px] font-bold text-brand-warm-grey mb-1 block">RC (Registre Commerce)</label>
                   <input type="text" value={clientRc} onChange={(e) => setClientRc(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 16/00-1234567B19" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">NIF</label>
+                  <label className="text-[11px] font-bold text-brand-warm-grey mb-1 block">NIF</label>
                   <input type="text" value={clientNif} onChange={(e) => setClientNif(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 001916001234567" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">NIS</label>
+                  <label className="text-[11px] font-bold text-brand-warm-grey mb-1 block">NIS</label>
                   <input type="text" value={clientNis} onChange={(e) => setClientNis(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 001916012345678" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-[11px] font-bold text-slate-500 mb-1 block">Article d&apos;imposition (AI)</label>
+                  <label className="text-[11px] font-bold text-brand-warm-grey mb-1 block">Article d&apos;imposition (AI)</label>
                   <input type="text" value={clientAi} onChange={(e) => setClientAi(e.target.value)} className="input input-sm w-full rounded-lg" placeholder="Ex. 16123456789" />
                 </div>
               </div>
             </details>
 
             {/* Durée de garantie */}
-            <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/20">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Garantie Matériel :</span>
+            <div className="flex items-center justify-between p-3 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper dark:bg-white/5">
+              <span className="text-xs font-bold text-brand-black dark:text-white">Garantie Matériel :</span>
               <select
                 value={garantieMois}
                 onChange={(e) => setGarantieMois(Number(e.target.value))}
-                className="select select-sm rounded-xl font-bold border-slate-200 dark:border-zinc-700 text-xs"
+                className="champ select select-sm rounded-xl font-bold text-xs"
               >
                 <option value={1}>1 Mois</option>
                 <option value={3}>3 Mois</option>

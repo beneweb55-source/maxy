@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { 
-  Search, 
-  Plus, 
-  Eye, 
-  Trash2, 
+import {
+  Search,
+  Plus,
+  Eye,
+  Trash2,
   X,
   Truck,
   Store,
@@ -88,9 +88,9 @@ export default function DashboardCommandes() {
   // Onglet actif déduit de l'URL
   const statutActuel = searchParams.get("statut") || "tous";
   const canalActuel = searchParams.get("canal") || "tous";
-  const ongletActuel = 
-    canalActuel === "YALIDINE" 
-      ? "yalidine" 
+  const ongletActuel =
+    canalActuel === "YALIDINE"
+      ? "yalidine"
       : canalActuel === "COMPTOIR"
         ? "comptoir"
         : statutActuel === "EN_ATTENTE"
@@ -239,7 +239,7 @@ export default function DashboardCommandes() {
       COMPTOIR: {
         label: "Comptoir",
         icon: Store,
-        cls: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
+        cls: "bg-brand-light-grey/30 text-brand-black border-brand-light-grey dark:bg-white/5 dark:text-brand-warm-grey dark:border-white/10",
       },
       YALIDINE: {
         label: "Yalidine",
@@ -305,7 +305,7 @@ export default function DashboardCommandes() {
 
       {/* Onglets rapides (Tabs) : Toutes | En Attente | Expéditions Yalidine | Comptoir | Terminées */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        <div className="flex bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+        <div className="flex bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-xl border border-brand-light-grey dark:border-white/10">
           {[
             { id: "toutes", label: "Toutes" },
             { id: "attente", label: "En Attente" },
@@ -319,8 +319,8 @@ export default function DashboardCommandes() {
               onClick={() => changerOnglet(tab.id)}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 ongletActuel === tab.id
-                  ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs font-black"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs font-black"
+                  : "text-brand-warm-grey dark:text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
               }`}
             >
               {tab.label}
@@ -330,13 +330,13 @@ export default function DashboardCommandes() {
 
         {/* Barre de Recherche */}
         <div className="relative flex-1 min-w-[240px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-warm-grey" />
           <input
             type="text"
             placeholder="Rechercher par N° commande, client, téléphone, wilaya..."
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 focus:outline-none focus:border-brand-orange"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 focus:outline-none focus:border-brand-orange"
           />
         </div>
       </div>
@@ -355,7 +355,7 @@ export default function DashboardCommandes() {
           <button
             type="button"
             onClick={() => setSelection(new Set())}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs"
+            className="px-3 py-1.5 rounded-lg border border-brand-light-grey text-brand-warm-grey hover:bg-brand-paper text-xs"
           >
             Désélectionner
           </button>
@@ -458,12 +458,12 @@ export default function DashboardCommandes() {
                         <div className="font-mono font-bold text-xs text-brand-black dark:text-white">
                           {cmd.numero}
                         </div>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-brand-warm-grey">
                           {cmd.lignes?.length || 0} article{(cmd.lignes?.length || 0) > 1 ? "s" : ""}
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 text-[11px] whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-brand-warm-grey dark:text-brand-warm-grey text-[11px] whitespace-nowrap">
                         {dateStr}
                       </td>
 
@@ -507,7 +507,7 @@ export default function DashboardCommandes() {
 
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-xs text-brand-black dark:text-white">
                         <div>{formaterDA(cmd.total_ttc)}</div>
-                        <div className="text-[10px] text-slate-400 font-normal">
+                        <div className="text-[10px] text-brand-warm-grey font-normal">
                           {cmd.caisse === "CAISSE_YALIDINE" ? "Caisse Yalidine" : "Caisse Magasin"}
                         </div>
                       </td>
@@ -517,7 +517,7 @@ export default function DashboardCommandes() {
                           <button
                             type="button"
                             onClick={() => router.push(`/commandes/${cmd.id}`)}
-                            className="p-1.5 rounded-lg border border-brand-light-grey text-slate-600 hover:text-brand-orange hover:border-brand-orange transition"
+                            className="p-1.5 rounded-lg border border-brand-light-grey text-brand-warm-grey hover:text-brand-orange hover:border-brand-orange transition"
                             title="Voir détail"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -526,7 +526,7 @@ export default function DashboardCommandes() {
                           <button
                             type="button"
                             onClick={() => setModalSuppression({ type: "unique", id: cmd.id, numero: cmd.numero })}
-                            className="p-1.5 rounded-lg border border-brand-light-grey text-slate-400 hover:text-danger hover:border-danger transition"
+                            className="p-1.5 rounded-lg border border-brand-light-grey text-brand-warm-grey hover:text-danger hover:border-danger transition"
                             title="Supprimer la commande"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -579,12 +579,12 @@ export default function DashboardCommandes() {
       {/* Modale confirmation suppression */}
       {modalSuppression && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 space-y-4">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-brand-paper p-6 shadow-2xl border border-brand-light-grey dark:border-white/10 space-y-4">
             <div className="flex items-center gap-3 text-danger">
               <AlertCircle className="w-6 h-6" />
               <h3 className="text-base font-bold">Confirmer la suppression</h3>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-xs text-brand-warm-grey dark:text-brand-warm-grey leading-relaxed">
               {modalSuppression.type === "unique" ? (
                 <>Êtes-vous sûr de vouloir supprimer la commande <strong>{modalSuppression.numero}</strong> ?</>
               ) : (
@@ -596,7 +596,7 @@ export default function DashboardCommandes() {
               <button
                 type="button"
                 onClick={() => setModalSuppression(null)}
-                className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+                className="px-4 py-2 text-xs font-bold rounded-xl border border-brand-light-grey text-brand-warm-grey hover:bg-brand-paper"
               >
                 Annuler
               </button>

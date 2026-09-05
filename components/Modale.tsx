@@ -168,7 +168,7 @@ export default function Modale({
             : large === "sm"
             ? "w-full max-w-[95vw] sm:max-w-sm"
             : "w-full max-w-[95vw] sm:max-w-lg"
-        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-brand-paper shadow-2xl safe-bottom`}
+        } flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-brand-light-grey/80 dark:border-white/10 bg-white dark:bg-brand-paper shadow-2xl safe-bottom`}
         style={{
           // On garde l'animation d'entrée si pas de drag
           animation: !isDragging && currentY.current === 0 ? 'entree-douce 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',

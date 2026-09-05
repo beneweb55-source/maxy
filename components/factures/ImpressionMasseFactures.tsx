@@ -114,7 +114,7 @@ export default function ImpressionMasseFactures() {
       <div className="min-h-screen flex items-center justify-center p-8 bg-brand-light-grey/10 font-sans">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-3 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-sm font-bold text-slate-600">Préparation des factures pour l&apos;impression...</p>
+          <p className="text-sm font-bold text-brand-warm-grey">Préparation des factures pour l&apos;impression...</p>
         </div>
       </div>
     );
@@ -125,7 +125,7 @@ export default function ImpressionMasseFactures() {
       <div className="min-h-screen flex items-center justify-center p-8 font-sans">
         <div className="carte max-w-md w-full text-center space-y-4 p-6">
           <div className="text-danger font-black text-lg">Impression Impossible</div>
-          <p className="text-xs text-slate-600 font-medium">{erreur || "Aucune facture trouvée pour ces identifiants."}</p>
+          <p className="text-xs text-brand-warm-grey font-medium">{erreur || "Aucune facture trouvée pour ces identifiants."}</p>
           <Link href="/factures" className="btn btn-primaire w-full justify-center">
             Retour aux Factures
           </Link>
@@ -135,10 +135,10 @@ export default function ImpressionMasseFactures() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-zinc-950 p-4 sm:p-8 font-sans">
+    <div className="min-h-screen bg-brand-paper dark:bg-brand-paper p-4 sm:p-8 font-sans">
       
       {/* ================= BARRE DE CONTROLE FLOTTANTE (Masquée à l'impression) ================= */}
-      <div className="print:hidden sticky top-4 z-40 max-w-5xl mx-auto mb-8 p-4 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <div className="print:hidden sticky top-4 z-40 max-w-5xl mx-auto mb-8 p-4 rounded-3xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         
         <div className="flex items-center gap-3">
           <Link
@@ -151,7 +151,7 @@ export default function ImpressionMasseFactures() {
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-black text-slate-900 dark:text-white">
+              <span className="text-base font-black text-brand-black dark:text-white">
                 Impression en Masse ({factures.length} facture{factures.length > 1 ? "s" : ""})
               </span>
             </div>
@@ -163,14 +163,14 @@ export default function ImpressionMasseFactures() {
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Format Toggle */}
-          <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+          <div className="flex bg-brand-light-grey/30 dark:bg-white/5 p-1 rounded-xl border border-brand-light-grey dark:border-white/10">
             <button
               type="button"
               onClick={() => setFormatTicket(false)}
               className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${
                 !formatTicket
-                  ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs"
+                  : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
               }`}
             >
               Format A4
@@ -180,8 +180,8 @@ export default function ImpressionMasseFactures() {
               onClick={() => setFormatTicket(true)}
               className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${
                 formatTicket
-                  ? "bg-white dark:bg-zinc-900 text-brand-orange shadow-xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs"
+                  : "text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
               }`}
             >
               Ticket POS (80mm)

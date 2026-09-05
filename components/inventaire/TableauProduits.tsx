@@ -127,7 +127,7 @@ export default function TableauProduits({
                     <button
                       type="button"
                       onClick={() => onBasculerGroupe(g.cle)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10 transition"
+                      className="p-1 rounded-lg text-brand-warm-grey hover:text-brand-orange hover:bg-brand-orange/10 transition"
                       title={ouvert ? "Masquer les exemplaires" : "Voir les exemplaires physiques (S/N)"}
                     >
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${ouvert ? "rotate-180 text-brand-orange" : ""}`} />
@@ -141,17 +141,17 @@ export default function TableauProduits({
                         <img
                           src={g.image_url}
                           alt={g.reference}
-                          className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0 bg-slate-50"
+                          className="w-12 h-12 rounded-xl object-cover border border-brand-light-grey dark:border-white/10 shrink-0 bg-brand-paper"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-dashed border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-400 shrink-0">
+                        <div className="w-12 h-12 rounded-xl bg-brand-light-grey/30 dark:bg-white/5 border border-dashed border-brand-light-grey dark:border-white/10 flex items-center justify-center text-brand-warm-grey shrink-0">
                           <Boxes className="w-6 h-6 opacity-40" />
                         </div>
                       )}
                       <div className="min-w-0">
                         <div
                           onClick={() => onBasculerGroupe(g.cle)}
-                          className="font-black text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-orange cursor-pointer whitespace-normal break-words max-w-[320px] leading-snug"
+                          className="font-black text-sm sm:text-base text-brand-black dark:text-white hover:text-brand-orange cursor-pointer whitespace-normal break-words max-w-[320px] leading-snug"
                           title={g.reference}
                         >
                           {g.reference}
@@ -168,7 +168,7 @@ export default function TableauProduits({
                   </td>
 
                   {/* Catégorie */}
-                  <td className="py-4 px-3 text-xs font-semibold text-slate-500 whitespace-normal break-words max-w-[160px]">
+                  <td className="py-4 px-3 text-xs font-semibold text-brand-warm-grey whitespace-normal break-words max-w-[160px]">
                     {g.categorie}
                   </td>
 
@@ -186,7 +186,7 @@ export default function TableauProduits({
 
                   {/* Prix Achat */}
                   {!estSocial && (
-                    <td className="py-4 px-3 text-right font-mono font-bold text-xs text-slate-900 dark:text-white">
+                    <td className="py-4 px-3 text-right font-mono font-bold text-xs text-brand-black dark:text-white">
                       {g.prixMin === g.prixMax
                         ? formaterDA(g.prixMin)
                         : `${formaterDA(g.prixMin)} – ${formaterDA(g.prixMax)}`}
@@ -256,7 +256,7 @@ export default function TableauProduits({
                         <button
                           type="button"
                           onClick={() => onOuvrirSelectionQuantite({ action: "statut", groupe: g })}
-                          className="p-1.5 rounded-xl text-slate-400 hover:text-brand-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                          className="p-1.5 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30 dark:hover:bg-white/5 transition"
                           title="Changer le statut en masse"
                         >
                           <SlidersHorizontal className="w-4 h-4" />
@@ -279,7 +279,7 @@ export default function TableauProduits({
                           className={`p-1.5 rounded-xl transition ${
                             g.enVitrine > 0
                               ? "text-brand-orange bg-brand-orange/15"
-                              : "text-slate-400 hover:text-brand-orange hover:bg-brand-orange/10"
+                              : "text-brand-warm-grey hover:text-brand-orange hover:bg-brand-orange/10"
                           }`}
                           title={g.enVitrine > 0 ? "Retirer de la vitrine" : "Mettre en vitrine"}
                         >
@@ -291,7 +291,7 @@ export default function TableauProduits({
                       <BoutonImpression
                         ids={g.unites.map(u => u.id)}
                         dejaImprimee={g.unites.every(u => u.etiquette_imprimee)}
-                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                        className="p-1.5 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30 dark:hover:bg-white/5 transition"
                       />
 
                       {/* Bouton Éditer */}
@@ -299,7 +299,7 @@ export default function TableauProduits({
                         <button
                           type="button"
                           onClick={() => onOuvrirEdition(g.unites, g.reference)}
-                          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                          className="p-1.5 rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/30 dark:hover:bg-white/5 transition"
                           title="Modifier les informations du modèle"
                         >
                           <IconeCrayon taille={15} />
@@ -311,7 +311,7 @@ export default function TableauProduits({
                         <button
                           type="button"
                           onClick={() => onOuvrirSuppressionModele(g)}
-                          className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                          className="p-1.5 rounded-xl text-brand-warm-grey hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
                           title="Supprimer tous les exemplaires"
                         >
                           <IconeCorbeille taille={15} />
@@ -324,21 +324,21 @@ export default function TableauProduits({
                 {/* Drill-down : Liste des Exemplaires Physiques Dépliée */}
                 {ouvert && (
                   <tr>
-                    <td colSpan={8} className="p-0 bg-slate-50/70 dark:bg-zinc-900/60 border-y border-slate-200 dark:border-white/10">
+                    <td colSpan={8} className="p-0 bg-brand-paper/50 dark:bg-white/5 border-y border-brand-light-grey dark:border-white/10">
                       <div className="py-3 px-6 space-y-2">
-                        <div className="flex items-center justify-between text-xs font-black text-slate-400 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-xs font-black text-brand-warm-grey uppercase tracking-wider">
                           <span>Exemplaires physiques actifs ({g.unites.length})</span>
                           <span>S/N & Emplacement</span>
                         </div>
 
-                        <div className="divide-y divide-slate-200/60 dark:divide-white/5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
+                        <div className="divide-y divide-brand-light-grey/40 dark:divide-white/5 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper overflow-hidden shadow-xs">
                           {g.unites.map((p) => {
                             const estCoche = selection.includes(p.id);
                             return (
                               <div
                                 key={p.id}
                                 className={`flex items-center justify-between p-3 transition-colors ${
-                                  estCoche ? "bg-brand-orange/10" : "hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                                  estCoche ? "bg-brand-orange/10" : "hover:bg-brand-paper dark:hover:bg-white/5"
                                 }`}
                               >
                                 <div className="flex items-center gap-3">
@@ -350,7 +350,7 @@ export default function TableauProduits({
                                         prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id]
                                       );
                                     }}
-                                    className="accent-brand-orange w-4 h-4 rounded border-slate-300 cursor-pointer"
+                                    className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
                                   />
 
                                   <div>
@@ -362,17 +362,17 @@ export default function TableauProduits({
                                         {p.code_interne}
                                       </Link>
                                       {p.grade && (
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey dark:text-white">
                                           {p.grade}
                                         </span>
                                       )}
                                       {p.emplacement && (
-                                        <span className="text-[10px] font-medium text-slate-400">
+                                        <span className="text-[10px] font-medium text-brand-warm-grey">
                                           · {p.emplacement === "vitrine" ? "Vitrine" : "Réserve"}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[11px] font-mono font-bold text-slate-500 mt-0.5">
+                                    <div className="text-[11px] font-mono font-bold text-brand-warm-grey mt-0.5">
                                       {p.numero_serie ? `S/N: ${p.numero_serie}` : "Sans numéro de série"}
                                     </div>
                                   </div>
@@ -382,10 +382,10 @@ export default function TableauProduits({
                                   <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
 
                                   <div className="text-right">
-                                    <div className="font-mono font-bold text-xs text-slate-900 dark:text-white">
+                                    <div className="font-mono font-bold text-xs text-brand-black dark:text-white">
                                       {p.prix_vente_fixe ? formaterDA(p.prix_vente_fixe) : "—"}
                                     </div>
-                                    <div className="text-[10px] font-mono text-slate-400">
+                                    <div className="text-[10px] font-mono text-brand-warm-grey">
                                       Achat: {formaterDA(p.prix_achat)}
                                     </div>
                                   </div>
@@ -413,7 +413,7 @@ export default function TableauProduits({
                                       <button
                                         type="button"
                                         onClick={() => onOuvrirEdition([p], p.code_interne, g.unites)}
-                                        className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+                                        className="p-1 rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white transition"
                                         title="Éditer cette unité"
                                       >
                                         <IconeCrayon taille={13} />
@@ -421,7 +421,7 @@ export default function TableauProduits({
                                       <button
                                         type="button"
                                         onClick={() => onOuvrirSuppressionUnites([p])}
-                                        className="p-1 rounded-lg text-slate-400 hover:text-red-600 transition"
+                                        className="p-1 rounded-lg text-brand-warm-grey hover:text-red-600 transition"
                                         title="Supprimer cette unité"
                                       >
                                         <IconeCorbeille taille={13} />
