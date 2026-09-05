@@ -14,7 +14,7 @@ import {
   IconeCodeBarres,
   IconeCoche,
 } from "@/components/icons";
-import { Layers, Boxes } from "lucide-react";
+import { Layers, Boxes, Share2 } from "lucide-react";
 import RubanVitrine from "./RubanVitrine";
 import BoutonImpression from "@/components/BoutonImpression";
 import { useToast } from "@/components/toast";
@@ -31,6 +31,7 @@ interface CarteProduitProps {
   estSelectionne?: boolean;
   onToggleSelection?: (id: number) => void;
   basculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
+  basculerSocialIds: (ids: number[], posteReseaux: boolean, libelle: string) => void;
   ouvrirEdition: (unites: LigneProduit[], titre: string) => void;
   ouvrirSuppressionUnites: (unites: LigneProduit[]) => void;
   ouvrirClassification?: (unites: LigneProduit[]) => void;
@@ -48,6 +49,7 @@ export default function CarteProduit({
   estSelectionne,
   onToggleSelection,
   basculerVitrineIds,
+  basculerSocialIds,
   ouvrirEdition,
   ouvrirSuppressionUnites,
   ouvrirClassification,
@@ -120,9 +122,10 @@ export default function CarteProduit({
         </div>
       )}
 
-      {/* Ruban Vitrine / Inventaire — superposé sur le coin supérieur-droit */}
-      {produit.en_vitrine && <RubanVitrine type="vitrine" />}
-      {!produit.en_vitrine && produit.statut !== "vendu" && <RubanVitrine type="inventaire" />}
+      {/* Ruban Vitrine / Inventaire / Social — superposé sur le coin supérieur-droit */}
+      {produit.poste_reseaux && <RubanVitrine type="social" />}
+      {!produit.poste_reseaux && produit.en_vitrine && <RubanVitrine type="vitrine" />}
+      {!produit.poste_reseaux && !produit.en_vitrine && produit.statut !== "vendu" && <RubanVitrine type="inventaire" />}
 
       {/* Zone Image */}
       <div className="relative aspect-video sm:aspect-square bg-brand-light-grey/20 dark:bg-black/20 overflow-hidden">
@@ -158,13 +161,13 @@ export default function CarteProduit({
       </div>
 
       {/* Contenu principal */}
-      <div className="flex-1 flex flex-col p-3.5">
+      <div className="flex-1 flex flex-col p-2.5 sm:p-3.5">
         <div className="mb-2">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="font-mono text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey bg-brand-light-grey/40 dark:bg-white/5 px-1.5 py-0.5 rounded border border-brand-light-grey/40 dark:border-white/5">
+          <div className="flex items-center gap-1 sm:gap-1.5 mb-1">
+            <span className="font-mono text-[10px] sm:text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey bg-brand-light-grey/40 dark:bg-white/5 px-1 sm:px-1.5 py-0.5 rounded border border-brand-light-grey/40 dark:border-white/5">
               {produit.code_interne}
             </span>
-            <span className="text-[11px] text-brand-warm-grey dark:text-brand-grey truncate" title={cheminArbo}>
+            <span className="text-[10px] sm:text-[11px] text-brand-warm-grey dark:text-brand-grey truncate" title={cheminArbo}>
               {cheminArbo}
             </span>
           </div>
@@ -210,7 +213,7 @@ export default function CarteProduit({
       {/* Footer d'actions compact : +  Billet  S/N  Crayon  Printer  Statut  Trash */}
       {peutModifier && (
         <div
-          className="flex items-center justify-between gap-1 px-2 py-1.5 bg-brand-light-grey/30 dark:bg-black/30 border-t border-brand-light-grey/50 dark:border-white/5"
+          className="flex items-center justify-between gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-1.5 bg-brand-light-grey/30 dark:bg-black/30 border-t border-brand-light-grey/50 dark:border-white/5"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -306,6 +309,28 @@ export default function CarteProduit({
               }`}
             >
               <IconeVitrine taille={15} />
+            </button>
+          )}
+
+          {/* Réseaux Sociaux : Marquer comme posté */}
+          {produit.statut !== "vendu" && (
+            <button
+              type="button"
+              disabled={envoi}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void basculerSocialIds([produit.id], !produit.poste_reseaux, produit.code_interne);
+              }}
+              title={produit.poste_reseaux ? "Retirer des réseaux sociaux" : "Marquer comme posté sur les réseaux"}
+              aria-label="Réseaux sociaux"
+              className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                produit.poste_reseaux
+                  ? "text-blue-600 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/50"
+                  : "text-brand-warm-grey hover:bg-brand-light-grey/60 hover:text-blue-600 dark:hover:bg-white/10"
+              }`}
+            >
+              <Share2 size={15} />
             </button>
           )}
 

@@ -231,6 +231,7 @@ model Produit {
   en_vitrine       Boolean          @default(false)
   etiquette_imprimee Boolean        @default(false)
   etiquette_imprimee_le DateTime?
+  poste_reseaux     Boolean          @default(false)
   created_at       DateTime         @default(now())
 
   // === Produits Composés (BOM - Bill of Materials) ===
@@ -257,6 +258,7 @@ model Produit {
   @@index([categorie_id])
   @@index([statut])
   @@index([en_vitrine])
+  @@index([poste_reseaux])
   @@index([numero_serie])
   @@index([categorie])
   @@index([lot_id, reference, categorie])

@@ -37,6 +37,7 @@ export interface LigneProduit {
   image_url: string | null;
   nb_images: number;
   etiquette_imprimee: boolean;
+  poste_reseaux: boolean;
   nb_composants?: number;
   est_compose?: boolean;
   parent_id?: number | null;
@@ -51,6 +52,7 @@ export interface GroupeProduits {
   image_url: string | null;
   nbImages: number;
   enVitrine: number;
+  nbPostesReseaux: number;
   unites: LigneProduit[];
   prixMin: number;
   prixMax: number;

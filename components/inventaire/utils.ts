@@ -54,6 +54,7 @@ export function grouperDoublons(produits: LigneProduit[], statutsActifs?: Statut
       image_url: unites.find((u) => u.image_url)?.image_url ?? premier.modele?.image_url ?? null,
       nbImages: Math.max(...unites.map((u) => u.nb_images || 0), 0),
       enVitrine: unites.filter((u) => u.en_vitrine).length,
+      nbPostesReseaux: unites.filter((u) => u.poste_reseaux).length,
       unites,
       prixMin: Math.min(...prix),
       prixMax: Math.max(...prix),

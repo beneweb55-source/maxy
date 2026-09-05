@@ -8,7 +8,7 @@ import GestionnaireQuantite from "@/components/produits/GestionnaireQuantite";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
 import { IconeBillet, IconeCrayon, IconeCorbeille, IconeVitrine } from "@/components/icons";
-import { Plus, Boxes, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { Plus, Boxes, ChevronDown, SlidersHorizontal, Share2 } from "lucide-react";
 import RubanVitrine from "./RubanVitrine";
 import type { GroupeProduits, ReponseInventaire } from "./types";
 
@@ -28,6 +28,7 @@ interface TableauProduitsProps {
   onOuvrirSuppressionModele: (g: GroupeProduits) => void;
   onOuvrirSuppressionUnites: (unites: GroupeProduits["unites"]) => void;
   onBasculerVitrineIds: (ids: number[], enVitrine: boolean, libelle: string) => void;
+  onBasculerSocialIds: (ids: number[], posteReseaux: boolean, libelle: string) => void;
   onCharger: () => void;
 }
 
@@ -47,6 +48,7 @@ export default function TableauProduits({
   onOuvrirSuppressionModele,
   onOuvrirSuppressionUnites,
   onBasculerVitrineIds,
+  onBasculerSocialIds,
   onCharger,
 }: TableauProduitsProps) {
   return (
@@ -162,6 +164,12 @@ export default function TableauProduits({
                               {r.n}× {INFOS_STATUT[r.statut].libelle}
                             </span>
                           ))}
+                          {g.nbPostesReseaux > 0 && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                              <Share2 className="w-3 h-3" />
+                              {g.nbPostesReseaux}× Posté
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -287,6 +295,33 @@ export default function TableauProduits({
                         </button>
                       )}
 
+                      {/* Bouton Réseaux Sociaux */}
+                      {peutModifier && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const tousPostes = g.unites.every(u => u.poste_reseaux);
+                            if (tousPostes) {
+                              const postesIds = g.unites.filter(u => u.poste_reseaux).map(u => u.id);
+                              onBasculerSocialIds(postesIds, false, g.reference);
+                            } else {
+                              const nonVendu = g.unites.filter(u => u.statut !== "vendu");
+                              if (nonVendu.length > 0) {
+                                onBasculerSocialIds([nonVendu[0]!.id], true, g.reference);
+                              }
+                            }
+                          }}
+                          className={`p-1.5 rounded-xl transition ${
+                            g.nbPostesReseaux > 0
+                              ? "text-blue-600 bg-blue-100 dark:bg-blue-900/40"
+                              : "text-brand-warm-grey hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                          }`}
+                          title={g.nbPostesReseaux > 0 ? "Retirer des réseaux sociaux" : "Marquer comme posté"}
+                        >
+                          <Share2 size={16} />
+                        </button>
+                      )}
+
                       {/* Bouton Imprimer */}
                       <BoutonImpression
                         ids={g.unites.map(u => u.id)}
@@ -325,10 +360,10 @@ export default function TableauProduits({
                 {ouvert && (
                   <tr>
                     <td colSpan={8} className="p-0 bg-brand-paper/50 dark:bg-white/5 border-y border-brand-light-grey dark:border-white/10">
-                      <div className="py-3 px-6 space-y-2">
-                        <div className="flex items-center justify-between text-xs font-black text-brand-warm-grey uppercase tracking-wider">
+                      <div className="py-3 px-3 sm:px-6 space-y-2">
+                        <div className="flex items-center justify-between text-[10px] sm:text-xs font-black text-brand-warm-grey uppercase tracking-wider">
                           <span>Exemplaires physiques actifs ({g.unites.length})</span>
-                          <span>S/N & Emplacement</span>
+                          <span className="hidden sm:inline">S/N & Emplacement</span>
                         </div>
 
                         <div className="divide-y divide-brand-light-grey/40 dark:divide-white/5 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-brand-paper overflow-hidden shadow-xs">
@@ -337,11 +372,11 @@ export default function TableauProduits({
                             return (
                               <div
                                 key={p.id}
-                                className={`flex items-center justify-between p-3 transition-colors ${
+                                className={`flex flex-col sm:flex-row sm:items-center justify-between p-2.5 sm:p-3 gap-2 sm:gap-3 transition-colors ${
                                   estCoche ? "bg-brand-orange/10" : "hover:bg-brand-paper dark:hover:bg-white/5"
                                 }`}
                               >
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                   <input
                                     type="checkbox"
                                     checked={estCoche}
@@ -350,52 +385,52 @@ export default function TableauProduits({
                                         prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id]
                                       );
                                     }}
-                                    className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer"
+                                    className="accent-brand-orange w-4 h-4 rounded border-brand-light-grey cursor-pointer shrink-0"
                                   />
 
-                                  <div>
-                                    <div className="flex items-center gap-2">
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                                       <Link
                                         href={`/produits/${p.id}`}
-                                        className="font-mono text-xs font-black text-brand-orange hover:underline"
+                                        className="font-mono text-[11px] sm:text-xs font-black text-brand-orange hover:underline"
                                       >
                                         {p.code_interne}
                                       </Link>
                                       {p.grade && (
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey dark:text-white">
+                                        <span className="text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey dark:text-white">
                                           {p.grade}
                                         </span>
                                       )}
                                       {p.emplacement && (
-                                        <span className="text-[10px] font-medium text-brand-warm-grey">
+                                        <span className="text-[9px] sm:text-[10px] font-medium text-brand-warm-grey">
                                           · {p.emplacement === "vitrine" ? "Vitrine" : "Réserve"}
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[11px] font-mono font-bold text-brand-warm-grey mt-0.5">
-                                      {p.numero_serie ? `S/N: ${p.numero_serie}` : "Sans numéro de série"}
+                                    <div className="text-[10px] sm:text-[11px] font-mono font-bold text-brand-warm-grey mt-0.5">
+                                      {p.numero_serie ? `S/N: ${p.numero_serie}` : "Sans S/N"}
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 sm:gap-4 pl-7 sm:pl-0">
                                   <BadgeStatut statut={p.statut} aJeter={p.a_jeter} />
 
                                   <div className="text-right">
-                                    <div className="font-mono font-bold text-xs text-brand-black dark:text-white">
+                                    <div className="font-mono font-bold text-[11px] sm:text-xs text-brand-black dark:text-white">
                                       {p.prix_vente_fixe ? formaterDA(p.prix_vente_fixe) : "—"}
                                     </div>
-                                    <div className="text-[10px] font-mono text-brand-warm-grey">
+                                    <div className="text-[9px] sm:text-[10px] font-mono text-brand-warm-grey">
                                       Achat: {formaterDA(p.prix_achat)}
                                     </div>
                                   </div>
 
                                   {peutModifier && (
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-0.5 sm:gap-1">
                                       <button
                                         type="button"
                                         onClick={() => onOuvrirAjoutRapide(p)}
-                                        className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold cursor-pointer"
+                                        className="p-1 min-w-[32px] min-h-[32px] rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition font-bold cursor-pointer flex items-center justify-center"
                                         title="Ajouter des exemplaires en stock"
                                       >
                                         <Plus className="w-3.5 h-3.5" />
@@ -404,7 +439,7 @@ export default function TableauProduits({
                                         <button
                                           type="button"
                                           onClick={() => onOuvrirVente([p])}
-                                          className="p-1 rounded-lg text-brand-orange hover:bg-brand-orange/10 transition"
+                                          className="p-1 min-w-[32px] min-h-[32px] rounded-lg text-brand-orange hover:bg-brand-orange/10 transition flex items-center justify-center"
                                           title="Facturer cette unité"
                                         >
                                           <IconeBillet taille={14} />
@@ -413,7 +448,7 @@ export default function TableauProduits({
                                       <button
                                         type="button"
                                         onClick={() => onOuvrirEdition([p], p.code_interne, g.unites)}
-                                        className="p-1 rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white transition"
+                                        className="p-1 min-w-[32px] min-h-[32px] rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white transition flex items-center justify-center"
                                         title="Éditer cette unité"
                                       >
                                         <IconeCrayon taille={13} />
@@ -421,7 +456,7 @@ export default function TableauProduits({
                                       <button
                                         type="button"
                                         onClick={() => onOuvrirSuppressionUnites([p])}
-                                        className="p-1 rounded-lg text-brand-warm-grey hover:text-red-600 transition"
+                                        className="p-1 min-w-[32px] min-h-[32px] rounded-lg text-brand-warm-grey hover:text-red-600 transition flex items-center justify-center"
                                         title="Supprimer cette unité"
                                       >
                                         <IconeCorbeille taille={13} />

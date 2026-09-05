@@ -5,7 +5,7 @@ import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
 import { IconeBillet, IconeCrayon } from "@/components/icons";
-import { Plus, Boxes, Hash } from "lucide-react";
+import { Plus, Boxes, Hash, Share2 } from "lucide-react";
 import type { GroupeProduits } from "./types";
 
 interface GrilleProduitsProps {
@@ -20,6 +20,7 @@ interface GrilleProduitsProps {
   onOuvrirEdition: (unites: GroupeProduits["unites"], titre: string) => void;
   onOuvrirVente: (unites: GroupeProduits["unites"]) => void;
   onOuvrirSelectionQuantite: (params: { action: "facturer" | "statut" | "supprimer"; groupe: GroupeProduits }) => void;
+  onBasculerSocialIds: (ids: number[], posteReseaux: boolean, libelle: string) => void;
 }
 
 export default function GrilleProduits({
@@ -34,9 +35,10 @@ export default function GrilleProduits({
   onOuvrirEdition,
   onOuvrirVente,
   onOuvrirSelectionQuantite,
+  onBasculerSocialIds,
 }: GrilleProduitsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
       {groupes.map((g) => {
         const ouvert = groupesOuverts.has(g.cle);
         const tousCoches = g.unites.length > 0 && g.unites.every(u => selection.includes(u.id));
@@ -115,6 +117,12 @@ export default function GrilleProduits({
                       {r.n}× {INFOS_STATUT[r.statut].libelle}
                     </span>
                   ))}
+                  {g.nbPostesReseaux > 0 && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                      <Share2 className="w-3 h-3" />
+                      {g.nbPostesReseaux}× Posté
+                    </span>
+                  )}
                 </div>
               </div>
 

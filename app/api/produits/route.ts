@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
       statut: string | StatutProduit;
       a_jeter: boolean;
       en_vitrine: boolean;
+      poste_reseaux: boolean;
       prix_achat: number;
       prix_vente_fixe: number | null;
       prix_vente_reel: number | null;
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
             modele: { select: { id: true, nom: true, image_url: true } },
             statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
             prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
-            etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
+            etiquette_imprimee: true, poste_reseaux: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
             reparations: { select: { cout: true } }, _count: { select: { images: true, composants: true } },
             est_compose: true, parent_id: true,
           },
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
             statut: true, a_jeter: true, en_vitrine: true, prix_achat: true,
             prix_vente_fixe: true, prix_vente_reel: true, created_at: true,
             numero_serie: true, grade: true, emplacement: true,
-            etiquette_imprimee: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
+            etiquette_imprimee: true, poste_reseaux: true, lot: { select: { id: true, fournisseur: true, date_entree: true } },
             reparations: { select: { cout: true } }, _count: { select: { images: true, composants: true } },
             est_compose: true, parent_id: true,
           },
@@ -194,6 +195,7 @@ export async function GET(request: NextRequest) {
           prix_vente_fixe: p.prix_vente_fixe,
           prix_vente_reel: p.prix_vente_reel,
           etiquette_imprimee: p.etiquette_imprimee,
+          poste_reseaux: p.poste_reseaux,
           lot_id: p.lot?.id ?? null,
           fournisseur: p.lot?.fournisseur ?? null,
           // Sans lot, la date d'entrée est celle de création du produit.

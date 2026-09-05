@@ -203,6 +203,10 @@ export function construireFiltresProduits(
     clauses.push({ en_vitrine: true });
   }
 
+  if (params.get("poste_reseaux") === "1") {
+    clauses.push({ poste_reseaux: true });
+  }
+
   if (params.get("sans_photo") === "1") {
     // image_url is null and no images in relation
     clauses.push({

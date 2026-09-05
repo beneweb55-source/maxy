@@ -405,6 +405,7 @@ export default function Inventaire({ role }: { role: Role }) {
     (searchParams?.get("sans_etiquette") ? 1 : 0) +
     (searchParams?.get("a_jeter") ? 1 : 0) +
     (searchParams?.get("en_vitrine") ? 1 : 0) +
+    (searchParams?.get("poste_reseaux") ? 1 : 0) +
     statutsActifs.length;
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -547,6 +548,31 @@ export default function Inventaire({ role }: { role: Role }) {
         return;
       }
       afficher(enVitrine ? `${libelle} mis en vitrine.` : `${libelle} retiré de la vitrine.`);
+      await charger();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  // Action rapide : marquer / démarquer des produits comme postés sur les réseaux sociaux.
+  async function basculerSocialIds(ids: number[], posteReseaux: boolean, libelle: string) {
+    if (envoi) return;
+    if (ids.length === 0) return;
+    setEnvoi(true);
+    try {
+      const res = await fetch("/api/produits/masse/social", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, poste_reseaux: posteReseaux }),
+      });
+      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors de la mise à jour réseaux sociaux.", "erreur");
+        return;
+      }
+      afficher(posteReseaux ? `${libelle} marqué comme posté.` : `${libelle} retiré des réseaux sociaux.`);
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -964,10 +990,10 @@ export default function Inventaire({ role }: { role: Role }) {
   const page = donnees?.page ?? 1;
 
   const champsProduit = (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+
       {/* COLONNE GAUCHE : IDENTIFICATION */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div>
           <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white mb-1.5" htmlFor="ref-produit">
             Désignation / Référence Commerciale *
@@ -1460,6 +1486,15 @@ export default function Inventaire({ role }: { role: Role }) {
                   />
                   En vitrine
                 </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-blue-700 dark:text-blue-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchParams?.get("poste_reseaux") === "1"}
+                    onChange={(e) => majUrl({ poste_reseaux: e.target.checked ? "1" : null, page: "1" })}
+                    className="w-4 h-4 rounded border-brand-light-grey text-blue-600 focus:ring-blue-500"
+                  />
+                  Posté réseaux
+                </label>
 
                 {nbFiltresActifs > 0 && (
                   <button
@@ -1591,6 +1626,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   onOuvrirEdition={ouvrirEdition}
                   onOuvrirVente={ouvrirVenteInventaire}
                   onOuvrirSelectionQuantite={setModalSelectionQuantite}
+                  onBasculerSocialIds={basculerSocialIds}
                 />
               </div>
 
@@ -1612,6 +1648,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   onOuvrirSuppressionModele={ouvrirSuppressionModele}
                   onOuvrirSuppressionUnites={ouvrirSuppressionUnites}
                   onBasculerVitrineIds={basculerVitrineIds}
+                  onBasculerSocialIds={basculerSocialIds}
                   onCharger={charger}
                 />
               </div>
@@ -1692,8 +1729,8 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {/* Barre d'actions groupées flottante si sélection active */}
       {selection.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-entree max-w-[95vw]">
-          <div className="flex flex-wrap items-center gap-3 px-5 py-3 rounded-2xl bg-brand-black/95 dark:bg-brand-black/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
+        <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-entree max-w-[95vw]">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-brand-black/95 dark:bg-brand-black/95 text-white shadow-2xl backdrop-blur-xl border border-white/15">
             <div className="flex items-center gap-2 pr-3 border-r border-white/20">
               <span className="w-7 h-7 rounded-full bg-brand-orange text-white font-black text-xs flex items-center justify-center shadow-md">
                 {selection.length}
@@ -1824,7 +1861,7 @@ export default function Inventaire({ role }: { role: Role }) {
           }}
         >
           {champsProduit}
-          <div className="pt-4 border-t border-brand-light-grey dark:border-white/10 flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <div className="pt-3 sm:pt-4 border-t border-brand-light-grey dark:border-white/10 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => {
@@ -2152,8 +2189,8 @@ export default function Inventaire({ role }: { role: Role }) {
       )}
       {/* Barre flottante d'actions groupées (Bulk Actions) */}
       {selection.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-3 bg-brand-black text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 animate-entree backdrop-blur-xl max-w-[95vw]">
-          <div className="flex items-center gap-2 border-r border-white/20 pr-3">
+        <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-2 sm:gap-3 bg-brand-black text-white px-3 sm:px-5 py-2.5 sm:py-3 rounded-2xl shadow-2xl border border-white/20 animate-entree backdrop-blur-xl max-w-[95vw]">
+          <div className="flex items-center gap-2 border-r border-white/20 pr-2 sm:pr-3">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-orange text-xs font-bold text-white">
               {selection.length}
             </span>

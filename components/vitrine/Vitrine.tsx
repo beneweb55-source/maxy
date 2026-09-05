@@ -191,15 +191,16 @@ export default function Vitrine({ role }: { role: Role }) {
   return (
     <div className="space-y-6 animate-entree">
       {/* ─── Header ─── */}
-      <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-light-grey/50 dark:border-white/10 bg-gradient-to-br from-brand-paper to-white dark:from-white/5 dark:to-white/[0.02] px-5 py-4">
+      <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-light-grey/50 dark:border-white/10 bg-gradient-to-br from-brand-paper to-white dark:from-white/5 dark:to-white/[0.02] px-4 sm:px-5 py-3 sm:py-4">
         <div>
-          <h1 className="inline-flex items-center gap-2.5 text-3xl font-extrabold tracking-tight text-brand-black dark:text-white">
-            <span className="inline-flex items-center justify-center rounded-xl bg-brand-orange/10 p-1.5">
-              <IconeVitrine taille={24} className="text-brand-orange" />
+          <h1 className="inline-flex items-center gap-2 sm:gap-2.5 text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-brand-black dark:text-white">
+            <span className="inline-flex items-center justify-center rounded-xl bg-brand-orange/10 p-1 sm:p-1.5">
+              <IconeVitrine taille={20} className="text-brand-orange sm:hidden" />
+              <IconeVitrine taille={24} className="text-brand-orange hidden sm:block" />
             </span>
             {t("vitrine.titre")}
           </h1>
-          <p className="mt-1 text-sm text-brand-warm-grey dark:text-brand-warm-grey">
+          <p className="mt-1 text-xs sm:text-sm text-brand-warm-grey dark:text-brand-warm-grey">
             {t("vitrine.sousTitre")}
           </p>
         </div>
@@ -214,7 +215,7 @@ export default function Vitrine({ role }: { role: Role }) {
 
       {/* ─── Loading state ─── */}
       {donnees === null && !erreur && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
           {Array.from({ length: 8 }).map((_, i) => (
             <CarteSquelette key={i} />
           ))}
@@ -244,7 +245,7 @@ export default function Vitrine({ role }: { role: Role }) {
 
       {/* ─── Product grid ─── */}
       {produits.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
           {produits.map((p) => {
             const dispo = unitesVendables(p);
             const vendable = dispo.length > 0;
@@ -286,27 +287,27 @@ export default function Vitrine({ role }: { role: Role }) {
                 </div>
 
                 {/* ─── Card body ─── */}
-                <div className="flex flex-1 flex-col gap-2.5 p-4">
+                <div className="flex flex-1 flex-col gap-2 sm:gap-2.5 p-3 sm:p-4">
                   {/* Code + Category row */}
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs font-bold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
+                    <span className="font-mono text-[11px] sm:text-xs font-bold text-brand-orange bg-brand-orange/10 px-1.5 sm:px-2 py-0.5 rounded-full">
                       {p.code_interne}
                     </span>
                     {p.categorie && (
-                      <span className="text-[11px] font-semibold text-brand-warm-grey dark:text-brand-warm-grey truncate max-w-[120px]">
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-brand-warm-grey dark:text-brand-warm-grey truncate max-w-[100px] sm:max-w-[120px]">
                         {p.categorie}
                       </span>
                     )}
                   </div>
 
                   {/* Reference */}
-                  <h3 className="line-clamp-2 text-sm font-bold text-brand-black dark:text-white leading-snug group-hover:text-brand-orange dark:group-hover:text-brand-orange transition-colors">
+                  <h3 className="line-clamp-2 text-xs sm:text-sm font-bold text-brand-black dark:text-white leading-snug group-hover:text-brand-orange dark:group-hover:text-brand-orange transition-colors">
                     {p.reference}
                   </h3>
 
                   {/* Price + Quantity manager */}
-                  <div className="mt-auto flex items-center justify-between pt-3 border-t border-brand-light-grey/50 dark:border-white/10 gap-2">
-                    <span className="text-base font-black text-brand-black dark:text-white font-mono">
+                  <div className="mt-auto flex items-center justify-between pt-2.5 sm:pt-3 border-t border-brand-light-grey/50 dark:border-white/10 gap-2">
+                    <span className="text-sm sm:text-base font-black text-brand-black dark:text-white font-mono">
                       {prix !== null ? formaterDA(prix) : "—"}
                     </span>
                     <div className="flex items-center gap-1">

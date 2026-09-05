@@ -8,17 +8,63 @@
  * avec un texte court qui s'étend du coin vers la gauche.
  */
 import React from "react";
-import { Store, Warehouse } from "lucide-react";
+import { Store, Warehouse, Share2 } from "lucide-react";
 
 interface RubanVitrineProps {
-  /** "vitrine" affiche le ruban orange, "inventaire" affiche le ruban gris */
-  type: "vitrine" | "inventaire";
+  /** "vitrine" affiche le ruban orange, "inventaire" affiche le ruban gris, "social" affiche le ruban bleu */
+  type: "vitrine" | "inventaire" | "social";
   /** Taille du ruban. "card" = carte produit, "row" = ligne tableau */
   taille?: "card" | "row";
   className?: string;
 }
 
 export default function RubanVitrine({ type, taille = "card", className = "" }: RubanVitrineProps) {
+  if (type === "social") {
+    return (
+      <div
+        className={`pointer-events-none absolute z-20 select-none ${className}`}
+        style={{
+          top: taille === "card" ? "-1px" : "-1px",
+          right: "-1px",
+        }}
+        aria-label="Posté sur les réseaux sociaux"
+      >
+        <div
+          className="relative flex items-center justify-center overflow-hidden"
+          style={{
+            width: taille === "card" ? "92px" : "76px",
+            height: taille === "card" ? "28px" : "22px",
+            background: "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
+            borderRadius: taille === "card" ? "0 0 0 12px" : "0 0 0 8px",
+            boxShadow: "0 2px 8px rgba(59, 130, 246, 0.4)",
+          }}
+        >
+          <div
+            className="absolute"
+            style={{
+              top: 0,
+              right: 0,
+              width: taille === "card" ? "24px" : "18px",
+              height: taille === "card" ? "24px" : "18px",
+              background: "linear-gradient(225deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 50%, transparent 50%)",
+            }}
+          />
+          <span
+            className="relative flex items-center gap-1 font-black text-white drop-shadow-sm"
+            style={{
+              fontSize: taille === "card" ? "9px" : "8px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            <Share2 style={{ width: taille === "card" ? "11px" : "9px", height: taille === "card" ? "11px" : "9px" }} />
+            POSTÉ
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   if (type === "vitrine") {
     return (
       <div

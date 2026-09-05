@@ -28,6 +28,12 @@ export default function ActiveFilterBadges({
   const capaciteDisque = searchParams.get("capacite_disque");
   const tailleEcran = searchParams.get("taille_ecran");
   const aTarifer = searchParams.get("a_tarifer") === "1";
+  const aClasser = searchParams.get("a_classer") === "1";
+  const sansPhoto = searchParams.get("sans_photo") === "1";
+  const sansEtiquette = searchParams.get("sans_etiquette") === "1";
+  const aJeter = searchParams.get("a_jeter") === "1";
+  const enVitrine = searchParams.get("en_vitrine") === "1";
+  const posteReseaux = searchParams.get("poste_reseaux") === "1";
   const plus30j = searchParams.get("plus30j") === "1";
   const sansLot = searchParams.get("sans_lot") === "1";
 
@@ -181,6 +187,54 @@ export default function ActiveFilterBadges({
     });
   }
 
+  if (aClasser) {
+    badges.push({
+      id: "a_classer",
+      libelle: "À classer",
+      onSupprimer: () => majUrl({ a_classer: null, page: "1" }),
+    });
+  }
+
+  if (sansPhoto) {
+    badges.push({
+      id: "sans_photo",
+      libelle: "Sans photo",
+      onSupprimer: () => majUrl({ sans_photo: null, page: "1" }),
+    });
+  }
+
+  if (sansEtiquette) {
+    badges.push({
+      id: "sans_etiquette",
+      libelle: "Sans étiquette",
+      onSupprimer: () => majUrl({ sans_etiquette: null, page: "1" }),
+    });
+  }
+
+  if (aJeter) {
+    badges.push({
+      id: "a_jeter",
+      libelle: "À jeter",
+      onSupprimer: () => majUrl({ a_jeter: null, page: "1" }),
+    });
+  }
+
+  if (enVitrine) {
+    badges.push({
+      id: "en_vitrine",
+      libelle: "En vitrine",
+      onSupprimer: () => majUrl({ en_vitrine: null, page: "1" }),
+    });
+  }
+
+  if (posteReseaux) {
+    badges.push({
+      id: "poste_reseaux",
+      libelle: "Posté réseaux",
+      onSupprimer: () => majUrl({ poste_reseaux: null, page: "1" }),
+    });
+  }
+
   if (plus30j) {
     badges.push({
       id: "plus30j",
@@ -215,6 +269,12 @@ export default function ActiveFilterBadges({
       lot: null,
       sans_lot: null,
       a_tarifer: null,
+      a_classer: null,
+      sans_photo: null,
+      sans_etiquette: null,
+      a_jeter: null,
+      en_vitrine: null,
+      poste_reseaux: null,
       plus30j: null,
       page: "1",
     });

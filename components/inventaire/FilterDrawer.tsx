@@ -1,18 +1,18 @@
 "use client";
 
 import React from "react";
-import { 
-  Filter, 
-  X, 
-  RotateCcw, 
-  Cpu, 
-  HardDrive, 
-  Monitor, 
-  ShieldCheck, 
-  Eye, 
-  Archive, 
-  Layers, 
-  Tag, 
+import {
+  Filter,
+  X,
+  RotateCcw,
+  Cpu,
+  HardDrive,
+  Monitor,
+  ShieldCheck,
+  Eye,
+  Archive,
+  Layers,
+  Tag,
   Calendar,
   Check,
   Zap,
@@ -20,7 +20,9 @@ import {
   Printer,
   Package,
   Server,
-  Sparkles
+  Sparkles,
+  Store,
+  Share2
 } from "lucide-react";
 import { INFOS_STATUT, STATUTS_PRODUIT } from "@/lib/statuts";
 import type { StatutProduit } from "@prisma/client";
@@ -67,6 +69,8 @@ export default function FilterDrawer({
   const lotActif = searchParams.get("lot") ?? "";
   const sansLotActif = searchParams.get("sans_lot") === "1";
   const aTariferActif = searchParams.get("a_tarifer") === "1";
+  const enVitrineActif = searchParams.get("en_vitrine") === "1";
+  const posteReseauxActif = searchParams.get("poste_reseaux") === "1";
   const plus30jActif = searchParams.get("plus30j") === "1";
 
   // Toggle helper pour filtres multi-valeurs (statuts)
@@ -98,6 +102,8 @@ export default function FilterDrawer({
       lot: null,
       sans_lot: null,
       a_tarifer: null,
+      en_vitrine: null,
+      poste_reseaux: null,
       plus30j: null,
       page: "1",
     };
@@ -417,6 +423,38 @@ export default function FilterDrawer({
                   <span>Articles hors-lot (Arrivage unitaire)</span>
                 </div>
                 {sansLotActif && <Check className="w-4 h-4 text-indigo-500" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => majUrl({ en_vitrine: enVitrineActif ? null : "1", page: "1" })}
+                className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition-all ${
+                  enVitrineActif
+                    ? "bg-orange-500/15 border-orange-500 text-orange-700 dark:text-orange-300 font-extrabold"
+                    : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-orange-400"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Store className="w-4 h-4 text-orange-500" />
+                  <span>Exposé en vitrine</span>
+                </div>
+                {enVitrineActif && <Check className="w-4 h-4 text-orange-500" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => majUrl({ poste_reseaux: posteReseauxActif ? null : "1", page: "1" })}
+                className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition-all ${
+                  posteReseauxActif
+                    ? "bg-blue-500/15 border-blue-500 text-blue-700 dark:text-blue-300 font-extrabold"
+                    : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-blue-400"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-4 h-4 text-blue-500" />
+                  <span>Posté sur les réseaux sociaux</span>
+                </div>
+                {posteReseauxActif && <Check className="w-4 h-4 text-blue-500" />}
               </button>
             </div>
           </div>
