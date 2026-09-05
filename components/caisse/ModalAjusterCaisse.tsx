@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Banknote, Minus, Plus, ArrowDownToLine, ArrowUpFromLine, X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Banknote, Minus, Plus, ArrowDownToLine, ArrowUpFromLine, RefreshCw } from "lucide-react";
 import Modale from "@/components/Modale";
 import { formaterDA } from "@/lib/caisse";
 import { useConfirmation } from "@/hooks/useConfirmation";
@@ -15,15 +15,36 @@ interface Props {
   onTermine: () => void; // callback après succès pour recharger les stats
 }
 
+interface SoldesInfo {
+  physique: { total: number; disponible: number; reserve: number };
+  yalidine: { total: number; disponible: number; reserve: number };
+}
+
 export default function ModalAjusterCaisse({ ouverte, onFermer, onTermine }: Props) {
   const [mode, setMode] = useState<ModeAjustement>("ajouter");
   const [caisse, setCaisse] = useState<"CAISSE_PHYSIQUE" | "CAISSE_YALIDINE">("CAISSE_PHYSIQUE");
+  const [soldes, setSoldes] = useState<SoldesInfo | null>(null);
   const [montant, setMontant] = useState<string>("");
   const [description, setDescription] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [confirmationRequise, setConfirmationRequise] = useState<string | null>(null);
   const { confirmer, propsModal } = useConfirmation();
+
+  // Charger les soldes à l'ouverture
+  const chargerSoldes = useCallback(async () => {
+    try {
+      const res = await fetch("/api/caisse");
+      if (res.ok) {
+        const data = await res.json();
+        setSoldes(data.soldes);
+      }
+    } catch { /* silencieux */ }
+  }, []);
+
+  useEffect(() => {
+    if (ouverte) void chargerSoldes();
+  }, [ouverte, chargerSoldes]);
 
   const montantNum = parseInt(montant.replace(/\D/g, ""), 10) || 0;
   const estValide = montantNum > 0;
@@ -156,26 +177,40 @@ export default function ModalAjusterCaisse({ ouverte, onFermer, onTermine }: Pro
               <button
                 type="button"
                 onClick={() => setCaisse("CAISSE_PHYSIQUE")}
-                className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all min-h-[48px] ${
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-sm font-bold transition-all min-h-[48px] ${
                   caisse === "CAISSE_PHYSIQUE"
                     ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
                     : "border-brand-light-grey dark:border-white/10 hover:border-brand-orange/40 text-brand-warm-grey"
                 }`}
               >
-                <Banknote className="w-4 h-4" />
-                Physique
+                <span className="flex items-center gap-1.5">
+                  <Banknote className="w-4 h-4" />
+                  Physique
+                </span>
+                {soldes && (
+                  <span className="text-[11px] font-black opacity-80">
+                    {formaterDA(soldes.physique.disponible)}
+                  </span>
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => setCaisse("CAISSE_YALIDINE")}
-                className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all min-h-[48px] ${
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-sm font-bold transition-all min-h-[48px] ${
                   caisse === "CAISSE_YALIDINE"
                     ? "border-brand-orange bg-brand-orange/10 text-brand-orange"
                     : "border-brand-light-grey dark:border-white/10 hover:border-brand-orange/40 text-brand-warm-grey"
                 }`}
               >
-                <Banknote className="w-4 h-4" />
-                Yalidine
+                <span className="flex items-center gap-1.5">
+                  <Banknote className="w-4 h-4" />
+                  Yalidine
+                </span>
+                {soldes && (
+                  <span className="text-[11px] font-black opacity-80">
+                    {formaterDA(soldes.yalidine.disponible)}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -206,9 +241,28 @@ export default function ModalAjusterCaisse({ ouverte, onFermer, onTermine }: Pro
               )}
             </div>
             {montantNum > 0 && (
-              <p className="text-center text-xs text-brand-warm-grey mt-1">
-                {mode === "ajouter" ? "+" : "-"} {formaterDA(montantNum)}
-              </p>
+              <>
+                <p className="text-center text-xs text-brand-warm-grey mt-1">
+                  {mode === "ajouter" ? "+" : "-"} {formaterDA(montantNum)}
+                </p>
+                {soldes && (
+                  <p className="text-center text-[11px] mt-1">
+                    <span className="text-brand-warm-grey">Solde actuel : </span>
+                    <span className="font-bold text-brand-black dark:text-white">
+                      {formaterDA(caisse === "CAISSE_PHYSIQUE" ? soldes.physique.disponible : soldes.yalidine.disponible)}
+                    </span>
+                    <span className="text-brand-warm-grey"> → </span>
+                    <span className={`font-black ${
+                      mode === "ajouter" ? "text-emerald-600" : "text-danger"
+                    }`}>
+                      {formaterDA(
+                        (caisse === "CAISSE_PHYSIQUE" ? soldes.physique.disponible : soldes.yalidine.disponible)
+                        + (mode === "ajouter" ? montantNum : -montantNum)
+                      )}
+                    </span>
+                  </p>
+                )}
+              </>
             )}
           </div>
 
