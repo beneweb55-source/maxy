@@ -79,7 +79,7 @@ export default function ModaleVente({
   const [selectionnes, setSelectionnes] = useState<Set<number>>(new Set());
 
   // Prix par unité (ajustable à la volée, 0 DA permis)
-  const [prixMap, setPrixMap] = useState<{ [id: number]: number }>({});
+  const [prixMap, setPrixMap] = useState<{ [id: number]: number | "" }>({});
 
   const [typeFacture, setTypeFacture] = useState<"FACTURE_TVA" | "PROFORMA" | "DEVIS">("FACTURE_TVA");
   const [numeroManuel, setNumeroManuel] = useState("");
@@ -103,7 +103,7 @@ export default function ModaleVente({
   // Initialisation à l'ouverture : prix par défaut + sélection initiale
   useEffect(() => {
     if (unitesDisponibles.length > 0) {
-      const map: { [id: number]: number } = {};
+      const map: { [id: number]: number | "" } = {};
       const initialSelection = new Set<number>();
       const referencesVues = new Set<string>();
 
@@ -113,7 +113,7 @@ export default function ModaleVente({
             ? u.prix_vente_fixe
             : u.prix_vente_reel !== null && u.prix_vente_reel !== undefined
               ? u.prix_vente_reel
-              : (u.prix_achat && u.prix_achat > 0 ? Math.round(u.prix_achat * 1.25) : 0);
+              : (u.prix_achat && u.prix_achat > 0 ? Math.round(u.prix_achat * 1.25) : "");
 
         if (preSelectionne) {
           // Unités pré-sélectionnées par ModaleSelectionQuantite : tout sélectionner
@@ -162,7 +162,7 @@ export default function ModaleVente({
 
   // Total à encaisser (Arrondi sécurisé)
   const total = useMemo(() => {
-    const sum = unitesChoisies.reduce((acc, u) => acc + (prixMap[u.id] ?? 0), 0);
+    const sum = unitesChoisies.reduce((acc, u) => acc + (Number(prixMap[u.id]) || 0), 0);
     return arrondirMonnaie(Math.max(0, sum));
   }, [unitesChoisies, prixMap]);
 
@@ -273,8 +273,8 @@ export default function ModaleVente({
 
     // Vérifier les prix : prix négatifs interdits (0 DA autorisé)
     for (const u of unitesChoisies) {
-      const p = prixMap[u.id];
-      if (p === undefined || p === null || p < 0 || Number.isNaN(p)) {
+      const p = Number(prixMap[u.id]);
+      if (Number.isNaN(p) || p < 0) {
         afficher(`Veuillez renseigner un prix de vente valide (≥ 0 DA) pour ${u.code_interne}.`, "erreur");
         return;
       }
@@ -309,7 +309,7 @@ export default function ModaleVente({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 produit_id: unitesChoisies[0]!.id,
-                prix_vente_reel: prixMap[unitesChoisies[0]!.id] ?? 0,
+                prix_vente_reel: Number(prixMap[unitesChoisies[0]!.id]) || 0,
                 ...commun,
               }),
             })
@@ -319,7 +319,9 @@ export default function ModaleVente({
               body: JSON.stringify({
                 produit_ids: unitesChoisies.map((u) => u.id),
                 prix_total: total,
-                prix_par_produit: prixMap,
+                prix_par_produit: Object.fromEntries(
+                  Object.entries(prixMap).map(([k, v]) => [k, Number(v) || 0])
+                ),
                 ...commun,
               }),
             });
@@ -487,7 +489,7 @@ export default function ModaleVente({
                     {items.map((u) => {
                       const estCoche = selectionnes.has(u.id);
                       const prixActuel = prixMap[u.id];
-                      const prixNulOuManquant = prixActuel === undefined || prixActuel <= 0;
+                      const prixNulOuManquant = prixActuel === undefined || prixActuel === "" || Number(prixActuel) <= 0;
 
                       return (
                         <div
@@ -539,7 +541,7 @@ export default function ModaleVente({
                                 min="0"
                                 value={prixMap[u.id] !== undefined ? prixMap[u.id] : ""}
                                 onChange={(e) =>
-                                  setPrixMap({ ...prixMap, [u.id]: Number(e.target.value) || 0 })
+                                  setPrixMap({ ...prixMap, [u.id]: e.target.value === "" ? "" : Number(e.target.value) })
                                 }
                                 className={`champ h-7 w-24 text-right font-mono font-bold text-xs ${
                                   estCoche && prixNulOuManquant
@@ -582,7 +584,7 @@ export default function ModaleVente({
                           min="0"
                           value={items[0] && prixMap[items[0].id] !== undefined ? prixMap[items[0].id] : ""}
                           onChange={(e) => {
-                            const val = Number(e.target.value) || 0;
+                            const val = e.target.value === "" ? "" : Number(e.target.value);
                             const newMap = { ...prixMap };
                             for (const item of items) {
                               newMap[item.id] = val;
@@ -590,7 +592,7 @@ export default function ModaleVente({
                             setPrixMap(newMap);
                           }}
                           className={`champ h-8 w-28 text-right font-mono font-bold text-xs ${
-                            (prixMap[items[0]?.id ?? 0] ?? 0) <= 0
+                            (Number(prixMap[items[0]?.id ?? 0]) || 0) <= 0
                               ? "bg-red-50 dark:bg-red-950/40 border-red-400 text-red-700 dark:text-red-300 ring-2 ring-red-400/30"
                               : ""
                           }`}

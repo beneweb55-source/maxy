@@ -17,7 +17,6 @@ import {
   MapPin,
   CheckCircle2,
   Clock,
-  AlertCircle,
   Package,
   Layers,
   ArrowUpDown
@@ -76,14 +75,6 @@ export default function DashboardCommandes() {
   // Multi-sélection pour actions de masse
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [envoiMasse, setEnvoiMasse] = useState(false);
-
-  // Modale de confirmation suppression
-  const [modalSuppression, setModalSuppression] = useState<{
-    type: "unique" | "selection";
-    id?: number;
-    numero?: string;
-    nb?: number;
-  } | null>(null);
 
   // Onglet actif déduit de l'URL
   const statutActuel = searchParams.get("statut") || "tous";
@@ -191,13 +182,15 @@ export default function DashboardCommandes() {
     }
   };
 
-  const executerSuppression = async () => {
-    if (!modalSuppression) return;
+  const executerSuppression = async (
+    type: "unique" | "selection",
+    id?: number,
+    numero?: string,
+  ) => {
     setEnvoiMasse(true);
-
     try {
-      if (modalSuppression.type === "unique" && modalSuppression.id) {
-        const res = await fetch(`/api/commandes/${modalSuppression.id}`, {
+      if (type === "unique" && id) {
+        const res = await fetch(`/api/commandes/${id}`, {
           method: "DELETE",
         });
         if (!res.ok) {
@@ -205,10 +198,10 @@ export default function DashboardCommandes() {
           throw new Error(corps?.error || "Erreur lors de la suppression.");
         }
         afficher(
-          `Commande ${modalSuppression.numero} supprimée et stocks réajustés.`,
+          `Commande ${numero} supprimée et stocks réajustés.`,
           "succes"
         );
-      } else if (modalSuppression.type === "selection") {
+      } else if (type === "selection") {
         const ids = Array.from(selection);
         const res = await fetch("/api/commandes/masse/suppression", {
           method: "POST",
@@ -224,12 +217,33 @@ export default function DashboardCommandes() {
         afficher(`${data.supprimes} commande(s) supprimée(s) et stocks réajustés.`, "succes");
       }
 
-      setModalSuppression(null);
       void chargerCommandes();
     } catch (err: any) {
       afficher(err.message || "Erreur lors de la suppression.", "erreur");
     } finally {
       setEnvoiMasse(false);
+    }
+  };
+
+  /** Déclenche la suppression via ConfirmerAction */
+  const demanderSuppression = async (
+    type: "unique" | "selection",
+    id?: number,
+    numero?: string,
+  ) => {
+    const message =
+      type === "unique"
+        ? `Êtes-vous sûr de vouloir supprimer la commande ${numero} ? Les articles réservés seront automatiquement remis en stock disponible.`
+        : `Êtes-vous sûr de vouloir supprimer les ${selection.size} commande(s) sélectionnée(s) ? Les articles réservés seront automatiquement remis en stock disponible.`;
+
+    const ok = await confirmer({
+      titre: "Confirmer la suppression",
+      message,
+      labelConfirmer: "Supprimer",
+      variante: "danger",
+    });
+    if (ok) {
+      await executerSuppression(type, id, numero);
     }
   };
 
@@ -281,7 +295,7 @@ export default function DashboardCommandes() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-black text-brand-black dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-black dark:text-white">
               Gestion des Commandes (OMS)
             </h1>
             <span className="text-xs font-black text-brand-orange bg-brand-orange/10 px-2.5 py-0.5 rounded-full">
@@ -317,7 +331,7 @@ export default function DashboardCommandes() {
               key={tab.id}
               type="button"
               onClick={() => changerOnglet(tab.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 ongletActuel === tab.id
                   ? "bg-white dark:bg-brand-paper text-brand-orange shadow-xs font-black"
                   : "text-brand-warm-grey dark:text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
@@ -336,7 +350,7 @@ export default function DashboardCommandes() {
             placeholder="Rechercher par N° commande, client, téléphone, wilaya..."
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 focus:outline-none focus:border-brand-orange"
+            className="champ pl-9"
           />
         </div>
       </div>
@@ -347,15 +361,15 @@ export default function DashboardCommandes() {
           <span className="text-brand-orange">{selection.size} sélectionnée(s)</span>
           <button
             type="button"
-            onClick={() => setModalSuppression({ type: "selection", numero: `${selection.size} commande(s)` })}
-            className="px-3 py-1.5 rounded-lg bg-danger text-white hover:bg-danger/90 text-xs"
+            onClick={() => demanderSuppression("selection")}
+            className="btn px-3 py-1.5 rounded-xl bg-danger text-white hover:bg-danger/90 text-xs"
           >
             🗑 Supprimer la sélection
           </button>
           <button
             type="button"
             onClick={() => setSelection(new Set())}
-            className="px-3 py-1.5 rounded-lg border border-brand-light-grey text-brand-warm-grey hover:bg-brand-paper text-xs"
+            className="btn px-3 py-1.5 rounded-xl border border-brand-light-grey text-brand-warm-grey hover:bg-brand-paper text-xs"
           >
             Désélectionner
           </button>
@@ -363,7 +377,7 @@ export default function DashboardCommandes() {
       )}
 
       {/* Tableau des Commandes */}
-      <div className="bg-white dark:bg-brand-paper rounded-2xl border border-brand-light-grey/80 dark:border-white/10 shadow-sm overflow-hidden">
+      <div className="bg-brand-white dark:bg-brand-paper rounded-2xl border border-brand-light-grey/80 dark:border-white/10 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -487,7 +501,7 @@ export default function DashboardCommandes() {
                         <select
                           value={cmd.statut}
                           onChange={(e) => void changerStatutRapide(cmd.id, e.target.value as StatutCommande)}
-                          className={`rounded-lg font-bold text-[11px] px-2.5 py-1 cursor-pointer border shadow-2xs ${
+                          className={`champ text-xs font-bold cursor-pointer border shadow-2xs ${
                             cmd.statut === "TERMINEE"
                               ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300"
                               : cmd.statut === "EN_LIVRAISON"
@@ -525,7 +539,7 @@ export default function DashboardCommandes() {
 
                           <button
                             type="button"
-                            onClick={() => setModalSuppression({ type: "unique", id: cmd.id, numero: cmd.numero })}
+                            onClick={() => demanderSuppression("unique", cmd.id, cmd.numero)}
                             className="p-1.5 rounded-lg border border-brand-light-grey text-brand-warm-grey hover:text-danger hover:border-danger transition"
                             title="Supprimer la commande"
                           >
@@ -553,7 +567,7 @@ export default function DashboardCommandes() {
               type="button"
               disabled={page <= 1}
               onClick={() => { setPage(page - 1); majUrl({ page: String(page - 1) }); }}
-              className="px-3 py-1.5 rounded-lg border border-brand-light-grey font-bold disabled:opacity-40 hover:bg-brand-light-grey/30 transition"
+              className="btn btn-secondaire text-xs px-3 py-1.5 disabled:opacity-40 transition"
             >
               ← Préc
             </button>
@@ -561,7 +575,7 @@ export default function DashboardCommandes() {
               type="button"
               disabled={page >= pagesTotales}
               onClick={() => { setPage(page + 1); majUrl({ page: String(page + 1) }); }}
-              className="px-3 py-1.5 rounded-lg border border-brand-light-grey font-bold disabled:opacity-40 hover:bg-brand-light-grey/30 transition"
+              className="btn btn-secondaire text-xs px-3 py-1.5 disabled:opacity-40 transition"
             >
               Suiv →
             </button>
@@ -576,42 +590,6 @@ export default function DashboardCommandes() {
         onSucces={() => void chargerCommandes()}
       />
 
-      {/* Modale confirmation suppression */}
-      {modalSuppression && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-brand-paper p-6 shadow-2xl border border-brand-light-grey dark:border-white/10 space-y-4">
-            <div className="flex items-center gap-3 text-danger">
-              <AlertCircle className="w-6 h-6" />
-              <h3 className="text-base font-bold">Confirmer la suppression</h3>
-            </div>
-            <p className="text-xs text-brand-warm-grey dark:text-brand-warm-grey leading-relaxed">
-              {modalSuppression.type === "unique" ? (
-                <>Êtes-vous sûr de vouloir supprimer la commande <strong>{modalSuppression.numero}</strong> ?</>
-              ) : (
-                <>Êtes-vous sûr de vouloir supprimer les <strong>{selection.size} commande(s) sélectionnée(s)</strong> ?</>
-              )}
-              {" "}Les articles réservés seront automatiquement remis en stock disponible.
-            </p>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setModalSuppression(null)}
-                className="px-4 py-2 text-xs font-bold rounded-xl border border-brand-light-grey text-brand-warm-grey hover:bg-brand-paper"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={executerSuppression}
-                disabled={envoiMasse}
-                className="px-4 py-2 text-xs font-bold rounded-xl bg-danger text-white hover:bg-danger/90"
-              >
-                {envoiMasse ? "Suppression..." : "Supprimer"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

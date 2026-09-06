@@ -294,7 +294,7 @@ export default function ModaleCreationCommande({
           {/* ============================================================ */}
           {/* SECTION 1 : SOURCE & CANAL DE VENTE */}
           {/* ============================================================ */}
-          <div className="rounded-xl border border-brand-light-grey/80 dark:border-white/10 p-4 bg-brand-light-grey/10 dark:bg-white/5 space-y-3">
+          <div className="rounded-2xl border border-brand-light-grey/80 dark:border-white/10 p-4 bg-brand-light-grey/10 dark:bg-white/5 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-brand-warm-grey flex items-center gap-1.5">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-orange text-[10px] text-white">1</span>
@@ -339,7 +339,7 @@ export default function ModaleCreationCommande({
           {/* ============================================================ */}
           {/* SECTION 2 : COORDONNÉES CLIENT & EXPÉDITION */}
           {/* ============================================================ */}
-          <div className="rounded-xl border border-brand-light-grey/80 dark:border-white/10 p-4 bg-brand-light-grey/10 dark:bg-white/5 space-y-4">
+          <div className="rounded-2xl border border-brand-light-grey/80 dark:border-white/10 p-4 bg-brand-light-grey/10 dark:bg-white/5 space-y-4">
             <label className="text-xs font-bold uppercase tracking-wider text-brand-warm-grey flex items-center gap-1.5">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-orange text-[10px] text-white">2</span>
               Client & Expédition
@@ -347,7 +347,7 @@ export default function ModaleCreationCommande({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                   Nom complet du client <span className="text-danger">*</span>
                 </label>
                 <input
@@ -356,12 +356,12 @@ export default function ModaleCreationCommande({
                   value={clientNom}
                   onChange={(e) => setClientNom(e.target.value)}
                   placeholder="Ex: Karim Benali"
-                  className="w-full rounded-xl border border-brand-light-grey bg-brand-white dark:bg-black/20 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange"
+                  className="champ"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                   Numéro de téléphone <span className="text-danger">*</span>
                 </label>
                 <input
@@ -370,7 +370,7 @@ export default function ModaleCreationCommande({
                   value={clientTel}
                   onChange={(e) => setClientTel(e.target.value)}
                   placeholder="Ex: 0550 12 34 56"
-                  className="w-full rounded-xl border border-brand-light-grey bg-brand-white dark:bg-black/20 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange"
+                  className="champ"
                 />
               </div>
             </div>
@@ -385,13 +385,13 @@ export default function ModaleCreationCommande({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                       Wilaya <span className="text-danger">*</span>
                     </label>
                     <select
                       value={wilaya}
                       onChange={(e) => setWilaya(e.target.value)}
-                      className="w-full rounded-xl border border-blue-200 bg-white dark:bg-black/40 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                      className="champ !border-brand-crystal focus:!border-brand-crystal focus:!shadow-[0_0_0_2px_rgba(59,130,246,0.2)]"
                     >
                       <option value="">Sélectionner la wilaya...</option>
                       {WILAYAS_ALGERIE.map((w) => (
@@ -403,7 +403,7 @@ export default function ModaleCreationCommande({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                       Commune <span className="text-danger">*</span>
                     </label>
                     <input
@@ -411,12 +411,12 @@ export default function ModaleCreationCommande({
                       value={commune}
                       onChange={(e) => setCommune(e.target.value)}
                       placeholder="Ex: Bab Ezzouar"
-                      className="w-full rounded-xl border border-blue-200 bg-white dark:bg-black/40 px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
+                      className="champ !border-brand-crystal focus:!border-brand-crystal focus:!shadow-[0_0_0_2px_rgba(59,130,246,0.2)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                       Frais de port (DA)
                     </label>
                     <input
@@ -425,13 +425,13 @@ export default function ModaleCreationCommande({
                       value={fraisLivraison}
                       onChange={(e) => setFraisLivraison(Math.max(0, Number(e.target.value) || 0))}
                       placeholder="Ex: 800"
-                      className="w-full rounded-xl border border-blue-200 bg-white dark:bg-black/40 px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-500"
+                      className="champ !border-brand-crystal focus:!border-brand-crystal focus:!shadow-[0_0_0_2px_rgba(59,130,246,0.2)]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-brand-black dark:text-white mb-1">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                     Adresse complète / Point relais
                   </label>
                   <input
@@ -439,7 +439,7 @@ export default function ModaleCreationCommande({
                     value={adresse}
                     onChange={(e) => setAdresse(e.target.value)}
                     placeholder="Ex: Cité 500 logts Bâtiment B, ou Agence Yalidine"
-                    className="w-full rounded-xl border border-blue-200 bg-white dark:bg-black/40 px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
+                    className="champ !border-brand-crystal focus:!border-brand-crystal focus:!shadow-[0_0_0_2px_rgba(59,130,246,0.2)]"
                   />
                 </div>
               </div>
@@ -460,7 +460,7 @@ export default function ModaleCreationCommande({
           {/* ============================================================ */}
           {/* SECTION 3 : PANIER & SÉLECTION D'ARTICLES EN STOCK */}
           {/* ============================================================ */}
-          <div className="rounded-xl border border-brand-light-grey/80 dark:border-white/10 p-4 bg-brand-light-grey/10 dark:bg-white/5 space-y-4">
+          <div className="rounded-2xl border border-brand-light-grey/80 dark:border-white/10 p-4 bg-brand-light-grey/10 dark:bg-white/5 space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-brand-warm-grey flex items-center gap-1.5">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-orange text-[10px] text-white">3</span>
@@ -480,7 +480,7 @@ export default function ModaleCreationCommande({
                   value={rechercheProduit}
                   onChange={(e) => setRechercheProduit(e.target.value)}
                   placeholder="Rechercher un produit disponible (Désignation, code P-XXXX, numéro de série...)"
-                  className="w-full rounded-xl border border-brand-light-grey bg-brand-white dark:bg-black/20 pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-brand-orange"
+                  className="champ pl-9"
                 />
               </div>
 
@@ -552,7 +552,7 @@ export default function ModaleCreationCommande({
                             min={1}
                             value={item.quantite}
                             onChange={(e) => modifierQuantite(idx, Number(e.target.value))}
-                            className="w-14 text-center rounded-lg border border-brand-light-grey bg-transparent px-1 py-1 text-xs font-bold focus:outline-none focus:border-brand-orange"
+                            className="champ w-14 text-center text-xs font-bold !min-h-0 !py-1"
                           />
                         </td>
                         <td className="py-2.5 px-3 text-right">
@@ -561,7 +561,7 @@ export default function ModaleCreationCommande({
                             min={0}
                             value={item.prix_unitaire}
                             onChange={(e) => modifierPrixLigne(idx, Number(e.target.value) || 0)}
-                            className="w-24 text-right rounded-lg border border-brand-light-grey bg-transparent px-2 py-1 text-xs font-bold focus:outline-none focus:border-brand-orange"
+                            className="champ w-24 text-right text-xs font-bold !min-h-0 !py-1"
                           />
                         </td>
                         <td className="py-2.5 px-3 text-center">
@@ -622,9 +622,23 @@ export default function ModaleCreationCommande({
                   value={remiseGlobale}
                   onChange={(e) => setRemiseGlobale(Math.max(0, Number(e.target.value) || 0))}
                   placeholder="0"
-                  className="w-24 text-right rounded-lg border border-brand-light-grey bg-transparent px-2 py-1 text-xs font-bold focus:outline-none focus:border-brand-orange"
+                  className="champ w-24 text-right text-xs font-bold !min-h-0 !py-1"
                 />
               </div>
+            </div>
+
+            {/* Notes / Observations */}
+            <div>
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
+                Notes / Observations
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Remarques internes, instructions de livraison..."
+                rows={2}
+                className="champ resize-none"
+              />
             </div>
 
             {/* Récapitulatif Financier */}
@@ -659,7 +673,7 @@ export default function ModaleCreationCommande({
             type="button"
             onClick={onFermer}
             disabled={soumission}
-            className="px-4 py-2 rounded-xl border border-brand-light-grey bg-brand-white dark:bg-brand-paper text-xs font-semibold hover:bg-brand-light-grey/50 transition"
+            className="btn btn-secondaire"
           >
             Annuler
           </button>
@@ -667,7 +681,7 @@ export default function ModaleCreationCommande({
             type="button"
             onClick={handleSubmit}
             disabled={soumission || panier.length === 0}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-brand-orange text-white text-xs font-bold hover:bg-brand-orange/90 transition shadow-md disabled:opacity-50"
+            className="btn btn-primaire"
           >
             <ShieldCheck className="w-4 h-4" />
             <span>{soumission ? "Création en cours..." : "Créer et Réserver le Stock"}</span>

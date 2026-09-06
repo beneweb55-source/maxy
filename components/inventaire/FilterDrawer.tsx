@@ -156,7 +156,7 @@ export default function FilterDrawer({
             <button
               type="button"
               onClick={reinitialiserTout}
-              className="text-xs font-bold text-brand-warm-grey hover:text-danger flex items-center gap-1 p-2 rounded-lg hover:bg-brand-light-grey/30 transition-colors"
+              className="text-xs font-bold text-brand-warm-grey hover:text-danger flex items-center gap-1 p-2 rounded-xl hover:bg-brand-light-grey/30 transition-colors"
               title="Réinitialiser tous les filtres"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -222,8 +222,8 @@ export default function FilterDrawer({
 
           {/* Si aucun profil spécifique n'est actif, afficher les facettes de base matériel */}
           {!profil && (
-            <div className="space-y-4 p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40">
-              <div className="flex items-center gap-1.5 text-xs font-extrabold text-blue-800 dark:text-blue-300 uppercase tracking-wider">
+            <div className="space-y-4 p-4 rounded-2xl bg-brand-orange/5 dark:bg-brand-orange/10 border border-brand-orange/20 dark:border-brand-orange/15">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-brand-orange dark:text-brand-orange uppercase tracking-wider">
                 <Cpu className="w-4 h-4" /> Spécifications Générales
               </div>
 
@@ -240,8 +240,8 @@ export default function FilterDrawer({
                         onClick={() => majUrl({ cpu: actif ? null : val, page: "1" })}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           actif
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "bg-white dark:bg-brand-paper border border-blue-200 dark:border-blue-900 text-brand-black dark:text-white hover:border-blue-400"
+                            ? "bg-brand-orange text-white shadow-xs"
+                            : "bg-white dark:bg-brand-paper border border-brand-orange/30 dark:border-white/10 text-brand-black dark:text-white hover:border-brand-orange/50"
                         }`}
                       >
                         {val}
@@ -264,8 +264,8 @@ export default function FilterDrawer({
                         onClick={() => majUrl({ ram: actif ? null : val, page: "1" })}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           actif
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "bg-white dark:bg-brand-paper border border-blue-200 dark:border-blue-900 text-brand-black dark:text-white hover:border-blue-400"
+                            ? "bg-brand-orange text-white shadow-xs"
+                            : "bg-white dark:bg-brand-paper border border-brand-orange/30 dark:border-white/10 text-brand-black dark:text-white hover:border-brand-orange/50"
                         }`}
                       >
                         {val} Go
@@ -468,7 +468,7 @@ export default function FilterDrawer({
               <select
                 value={lotActif}
                 onChange={(e) => majUrl({ lot: e.target.value || null, page: "1" })}
-                className="select select-sm w-full h-12 min-h-[48px] rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 font-bold text-base"
+                className="select select-sm w-full h-12 min-h-[48px] rounded-lg bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 font-bold text-base"
               >
                 <option value="">Tous les lots</option>
                 {lotsDisponibles.map((l) => (
