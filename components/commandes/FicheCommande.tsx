@@ -188,7 +188,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
             <button
               type="button"
               onClick={() => setModalAction("remboursement")}
-              className="btn bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100"
+              className="btn bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50 dark:hover:bg-purple-900/60"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Rembourser</span>
@@ -226,7 +226,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
               type="button"
               onClick={() => setFormatTicket(false)}
               className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${
-                !formatTicket ? "bg-white shadow-sm text-brand-black" : "text-brand-warm-grey hover:text-brand-black"
+                !formatTicket ? "bg-white shadow-sm text-brand-black dark:bg-white/10 dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15" : "text-brand-warm-grey hover:text-brand-black dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15"
               }`}
             >
               A4
@@ -235,7 +235,7 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
               type="button"
               onClick={() => setFormatTicket(true)}
               className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${
-                formatTicket ? "bg-white shadow-sm text-brand-black" : "text-brand-warm-grey hover:text-brand-black"
+                formatTicket ? "bg-white shadow-sm text-brand-black dark:bg-white/10 dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15" : "text-brand-warm-grey hover:text-brand-black dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15"
               }`}
             >
               Ticket (80mm)

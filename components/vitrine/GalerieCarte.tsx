@@ -16,8 +16,8 @@ export default function GalerieCarte({ images, reference }: GalerieCarteProps) {
   // Si pas d'image
   if (!images || images.length === 0) {
     return (
-      <span className="flex h-full w-full items-center justify-center bg-brand-paper dark:bg-white/10 text-brand-grey dark:text-brand-warm-grey">
-        <IconeImage taille={28} />
+      <span className="flex h-full w-full items-center justify-center bg-brand-paper dark:bg-white/[0.03] text-brand-light-grey dark:text-white/20">
+        <IconeImage taille={32} />
       </span>
     );
   }
@@ -29,7 +29,7 @@ export default function GalerieCarte({ images, reference }: GalerieCarteProps) {
         src={images[0]}
         alt={`Photo de ${reference}`}
         loading="lazy"
-        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
       />
     );
   }
@@ -99,55 +99,60 @@ export default function GalerieCarte({ images, reference }: GalerieCarteProps) {
 
   return (
     <div
-      className="relative h-full w-full bg-brand-paper dark:bg-white/10"
-      style={{ touchAction: "pan-y" }} // Autorise le scroll vertical mais capture le horizontal
+      className="relative h-full w-full bg-brand-paper dark:bg-white/[0.03]"
+      style={{ touchAction: "pan-y" }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Image with smooth crossfade and gentle zoom on hover */}
       <img
         key={urlCourante}
         src={urlCourante}
         alt={`Photo ${indexCourant + 1} de ${reference}`}
         loading="lazy"
-        className="h-full w-full object-cover animate-fade-in transition duration-300 group-hover:scale-[1.03]"
+        className="absolute inset-0 h-full w-full object-cover animate-fade-in transition-transform duration-500 ease-out group-hover:scale-[1.04]"
       />
-      
-      {/* Flèches pour usage Desktop (affichées au hover via CSS Tailwind) */}
-      <div className="absolute inset-y-0 left-0 hidden items-center opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+
+      {/* Desktop arrows — high contrast, visible on hover */}
+      <div className="absolute inset-y-0 left-0 hidden items-center opacity-0 transition-all duration-200 group-hover:opacity-100 sm:flex">
         <button
           type="button"
           onClick={navPrec}
-          className="m-1 rounded-full bg-brand-white/80 p-1 text-brand-black shadow backdrop-blur hover:bg-brand-white"
+          className="m-1.5 rounded-full bg-white/90 dark:bg-white/80 p-1.5 text-brand-black dark:text-black shadow-lg backdrop-blur-sm transition-transform hover:scale-110 hover:bg-white"
           title="Précédent"
         >
-          <IconeChevronGauche taille={16} />
+          <IconeChevronGauche taille={14} />
         </button>
       </div>
-      <div className="absolute inset-y-0 right-0 hidden items-center opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+      <div className="absolute inset-y-0 right-0 hidden items-center opacity-0 transition-all duration-200 group-hover:opacity-100 sm:flex">
         <button
           type="button"
           onClick={navSuiv}
-          className="m-1 rounded-full bg-brand-white/80 p-1 text-brand-black shadow backdrop-blur hover:bg-brand-white"
+          className="m-1.5 rounded-full bg-white/90 dark:bg-white/80 p-1.5 text-brand-black dark:text-black shadow-lg backdrop-blur-sm transition-transform hover:scale-110 hover:bg-white"
           title="Suivant"
         >
-          <IconeChevronDroite taille={16} />
+          <IconeChevronDroite taille={14} />
         </button>
       </div>
 
-      {/* Indicateur de position (dots/texte) en bas de l'image */}
-      <div className="absolute bottom-2 left-0 right-0 flex justify-center">
-        <div className="flex gap-1.5 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm">
-          {images.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                i === indexCourant ? "bg-white" : "bg-white/40"
-              }`}
-            />
-          ))}
+      {/* Indicator dots — active dot expands, pill shape */}
+      {images.length > 1 && (
+        <div className="absolute bottom-2 left-0 right-0 flex justify-center">
+          <div className="flex items-center gap-1.5 rounded-full bg-black/50 dark:bg-black/60 px-2.5 py-1 backdrop-blur-md">
+            {images.map((_, i) => (
+              <div
+                key={i}
+                className={`rounded-full transition-all duration-300 ease-out ${
+                  i === indexCourant
+                    ? "h-1.5 w-4 bg-white shadow-[0_0_6px_rgba(255,255,255,0.4)]"
+                    : "h-1.5 w-1.5 bg-white/35 hover:bg-white/55"
+                }`}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

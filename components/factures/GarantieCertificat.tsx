@@ -174,11 +174,11 @@ export default function GarantieCertificat({
           <div className="flex-1">
             <p className="libelle mb-1.5">{t("garantie.periode")}</p>
             <div className="flex items-center gap-2 text-sm font-semibold text-brand-black py-2">
-              <span className="rounded-lg bg-emerald-50 text-emerald-800 px-3 py-1 text-xs">
+              <span className="rounded-lg bg-emerald-50 text-emerald-800 px-3 py-1 text-xs dark:bg-emerald-950/40 dark:text-emerald-300">
                 {dateFr(facture.date_emission)}
               </span>
               <span className="text-brand-grey">→</span>
-              <span className="rounded-lg bg-emerald-50 text-emerald-800 px-3 py-1 text-xs">
+              <span className="rounded-lg bg-emerald-50 text-emerald-800 px-3 py-1 text-xs dark:bg-emerald-950/40 dark:text-emerald-300">
                 {dateFr(dateFin.toISOString())}
               </span>
             </div>

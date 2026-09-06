@@ -44,6 +44,8 @@ export interface ArticleAVendre {
 interface ModaleVenteProps {
   ouverte: boolean;
   unites: ArticleAVendre[];
+  /** true = les unités viennent d'une pré-sélection (ModaleSelectionQuantite) : tout sélectionner */
+  preSelectionne?: boolean;
   onFermer: () => void;
   onSucces: () => void;
 }
@@ -60,6 +62,7 @@ function arrondirMonnaie(valeur: number): number {
 export default function ModaleVente({
   ouverte,
   unites,
+  preSelectionne = false,
   onFermer,
   onSucces,
 }: ModaleVenteProps) {
@@ -97,7 +100,7 @@ export default function ModaleVente({
   const [avertissement, setAvertissement] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  // Initialisation à l'ouverture : Quantité par défaut TOUJOURS égale à 1 par référence (Jamais tout le stock)
+  // Initialisation à l'ouverture : prix par défaut + sélection initiale
   useEffect(() => {
     if (unitesDisponibles.length > 0) {
       const map: { [id: number]: number } = {};
@@ -112,11 +115,16 @@ export default function ModaleVente({
               ? u.prix_vente_reel
               : (u.prix_achat && u.prix_achat > 0 ? Math.round(u.prix_achat * 1.25) : 0);
 
-        // Règle absolue UX POS : pré-sélectionner exactement 1 unité par modèle/référence
-        const cleRef = u.reference || `prod-${u.id}`;
-        if (!referencesVues.has(cleRef)) {
+        if (preSelectionne) {
+          // Unités pré-sélectionnées par ModaleSelectionQuantite : tout sélectionner
           initialSelection.add(u.id);
-          referencesVues.add(cleRef);
+        } else {
+          // Par défaut (FicheProduit, vente directe) : exactement 1 unité par référence
+          const cleRef = u.reference || `prod-${u.id}`;
+          if (!referencesVues.has(cleRef)) {
+            initialSelection.add(u.id);
+            referencesVues.add(cleRef);
+          }
         }
       }
 
@@ -129,7 +137,7 @@ export default function ModaleVente({
       setSelectionnes(new Set());
       setPrixMap({});
     }
-  }, [unitesDisponibles]);
+  }, [unitesDisponibles, preSelectionne]);
 
   // Regroupement des unités par modèle / référence
   const groupesParReference = useMemo(() => {
@@ -428,7 +436,7 @@ export default function ModaleVente({
                       <button
                         type="button"
                         onClick={() => selectionnerTousDuGroupe(items, !tousCoches)}
-                        className="btn btn-secondaire btn-xs text-[11px] font-bold rounded-lg"
+                        className="btn btn-secondaire text-[11px] font-bold rounded-lg"
                       >
                         {tousCoches ? "Tout désélectionner" : "Tout sélectionner"}
                       </button>

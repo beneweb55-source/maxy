@@ -170,7 +170,7 @@ export default function MigrationPage() {
           <button 
             onClick={corrigerTextesInventaire}
             disabled={applying}
-            className="px-4 py-2 bg-yellow-500 text-white font-bold rounded-md hover:bg-yellow-600 disabled:opacity-50"
+            className="btn btn-primaire text-xs font-bold rounded-xl disabled:opacity-50"
           >
             Mettre à jour l'Affichage Inventaire
           </button>
@@ -180,7 +180,7 @@ export default function MigrationPage() {
           <button 
             onClick={genererAudit}
             disabled={applying}
-            className="px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600 disabled:opacity-50"
+            className="btn btn-crystal text-xs font-bold rounded-xl disabled:opacity-50"
           >
             🔍 Générer Rapport Audit
           </button>

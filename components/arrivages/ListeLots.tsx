@@ -346,7 +346,7 @@ export default function ListeLots({ role }: { role: Role }) {
                           e.stopPropagation();
                           ouvrirEdition(lot);
                         }}
-                        className="rounded-md p-1.5 text-brand-warm-grey bg-brand-light-grey/20 transition hover:bg-brand-light-grey hover:text-brand-black"
+                        className="rounded-md p-1.5 text-brand-warm-grey bg-brand-light-grey/20 transition hover:bg-brand-light-grey hover:text-brand-black dark:hover:bg-white/15"
                       >
                         <IconeCrayon taille={14} />
                       </button>
@@ -443,7 +443,7 @@ export default function ListeLots({ role }: { role: Role }) {
                             }}
                             title={t("commun.modifier")}
                             aria-label={t("listeLots.modifierLot", { id: lot.id })}
-                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black"
+                            className="rounded-md p-1.5 text-brand-warm-grey transition hover:bg-brand-light-grey/50 hover:text-brand-black dark:hover:bg-white/15"
                           >
                             <IconeCrayon taille={14} />
                           </button>

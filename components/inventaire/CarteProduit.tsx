@@ -95,10 +95,10 @@ export default function CarteProduit({
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative flex flex-col carte !p-0 !hover:transform-none overflow-visible h-full cursor-pointer ${
+      className={`group relative flex flex-col carte !p-0 !hover:transform-none overflow-visible h-full cursor-pointer transition-all duration-300 ease-out ${
         estCoche
-          ? "!border-brand-orange ring-2 ring-brand-orange/30"
-          : "!border-brand-light-grey dark:!border-white/10 hover:!border-brand-smooth"
+          ? "!border-brand-orange ring-2 ring-brand-orange/30 shadow-lg shadow-brand-orange/10"
+          : "!border-brand-light-grey dark:!border-white/10 hover:!border-brand-orange/30 dark:hover:!border-brand-orange/20 hover:shadow-xl"
       }`}
     >
       {/* Checkbox de sélection (Absolute Top-Right) */}
@@ -117,7 +117,7 @@ export default function CarteProduit({
               e.stopPropagation();
               onToggleSelection(produit.id);
             }}
-            className="w-5 h-5 rounded border-2 border-brand-light-grey dark:border-white/30 text-brand-orange focus:ring-brand-orange focus:ring-offset-0 accent-brand-orange cursor-pointer shadow-sm bg-white/95 dark:bg-brand-paper/95 transition-all hover:scale-110"
+            className="w-5 h-5 rounded-md border-2 border-brand-light-grey dark:border-white/30 text-brand-orange focus:ring-brand-orange focus:ring-offset-0 accent-brand-orange cursor-pointer shadow-sm bg-white/95 dark:bg-brand-paper/95 transition-all duration-200 hover:scale-110"
           />
         </div>
       )}
@@ -128,31 +128,34 @@ export default function CarteProduit({
       {!produit.poste_reseaux && !produit.en_vitrine && produit.statut !== "vendu" && <RubanVitrine type="inventaire" />}
 
       {/* Zone Image */}
-      <div className="relative aspect-video sm:aspect-square bg-brand-light-grey/20 dark:bg-black/20 overflow-hidden">
+      <div className="relative aspect-video sm:aspect-square bg-brand-light-grey/15 dark:bg-white/[0.03] overflow-hidden">
         {produit.image_url ? (
           <img
             src={produit.image_url}
             alt={produit.reference}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
             loading="lazy"
           />
         ) : (
-          <div className="flex items-center justify-center w-full h-full text-brand-warm-grey opacity-50 uppercase text-xs font-bold font-outfit tracking-wider">
+          <div className="flex items-center justify-center w-full h-full text-brand-light-grey dark:text-white/15 uppercase text-xs font-bold font-outfit tracking-wider">
             {t("inventaire.sansPhoto")}
           </div>
         )}
 
+        {/* Gradient overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
         {/* Badges Overlay */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1.5 items-start pointer-events-none">
+        <div className="absolute top-2 left-2 flex flex-col gap-1.5 items-start pointer-events-none z-10">
           <BadgeStatut statut={produit.statut} aJeter={produit.a_jeter} />
           {produit.est_compose && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md">
               <Layers className="w-3 h-3" />
               COMPOSÉ{produit.nb_composants ? ` (${produit.nb_composants})` : ""}
             </span>
           )}
           {produit.parent_id !== undefined && produit.parent_id !== null && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-600/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-600/90 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md">
               <Boxes className="w-3 h-3" />
               INTÉGRÉ
             </span>
@@ -161,28 +164,28 @@ export default function CarteProduit({
       </div>
 
       {/* Contenu principal */}
-      <div className="flex-1 flex flex-col p-2.5 sm:p-3.5">
-        <div className="mb-2">
-          <div className="flex items-center gap-1 sm:gap-1.5 mb-1">
-            <span className="font-mono text-[10px] sm:text-[11px] font-bold text-brand-warm-grey dark:text-brand-grey bg-brand-light-grey/40 dark:bg-white/5 px-1 sm:px-1.5 py-0.5 rounded border border-brand-light-grey/40 dark:border-white/5">
+      <div className="flex-1 flex flex-col p-3 sm:p-3.5">
+        <div className="mb-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="font-mono text-[10px] sm:text-[11px] font-bold text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-full">
               {produit.code_interne}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-brand-warm-grey dark:text-brand-grey truncate" title={cheminArbo}>
+            <span className="text-[10px] sm:text-[11px] text-brand-warm-grey truncate" title={cheminArbo}>
               {cheminArbo}
             </span>
           </div>
           <h4
-            className="font-semibold text-brand-black dark:text-white leading-tight line-clamp-2 text-sm"
+            className="font-bold text-brand-black dark:text-white leading-snug line-clamp-2 text-[13px] sm:text-sm group-hover:text-brand-orange dark:group-hover:text-brand-orange transition-colors duration-200"
             title={produit.reference}
           >
             {produit.reference}
           </h4>
         </div>
 
-        <div className="mt-auto grid grid-cols-2 gap-2 bg-brand-light-grey/15 dark:bg-white/5 rounded-lg p-2 border border-brand-light-grey/30 dark:border-white/5">
+        <div className="mt-auto grid grid-cols-2 gap-2.5 bg-brand-light-grey/15 dark:bg-white/[0.04] rounded-xl p-2.5 border border-brand-light-grey/30 dark:border-white/[0.06]">
           {!estSocial && (
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-brand-warm-grey dark:text-brand-grey">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-brand-warm-grey mb-0.5">
                 {t("inventaire.achat")}
               </span>
               <span className="font-bold text-brand-black dark:text-white text-xs whitespace-nowrap">
@@ -200,10 +203,10 @@ export default function CarteProduit({
               estSocial ? "col-span-2 text-center items-center" : "text-right"
             }`}
           >
-            <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange/80">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange/70 mb-0.5">
               {t("inventaire.colPrixVente")}
             </span>
-            <span className="font-extrabold text-brand-orange text-sm whitespace-nowrap">
+            <span className="font-extrabold text-brand-orange text-sm whitespace-nowrap leading-none">
               {prixVente !== null ? formaterDA(prixVente) : "—"}
             </span>
           </div>
@@ -213,7 +216,7 @@ export default function CarteProduit({
       {/* Footer d'actions compact : +  Billet  S/N  Crayon  Printer  Statut  Trash */}
       {peutModifier && (
         <div
-          className="flex items-center justify-between gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-1.5 bg-brand-light-grey/30 dark:bg-black/30 border-t border-brand-light-grey/50 dark:border-white/5"
+          className="flex items-center justify-between gap-0.5 sm:gap-1 px-2 sm:px-2.5 py-2 bg-brand-light-grey/20 dark:bg-white/[0.03] border-t border-brand-light-grey/40 dark:border-white/[0.06]"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

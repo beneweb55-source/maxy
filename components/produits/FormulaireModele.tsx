@@ -318,35 +318,45 @@ export default function FormulaireModele({
         </div>
 
         {/* Stepper / Onglets interactifs */}
-        <div className="flex border-b border-brand-light-grey/60 dark:border-white/10 px-4 sm:px-6 bg-brand-light-grey/5 dark:bg-white/1 overflow-x-auto">
+        <div className="flex border-b border-brand-light-grey/60 dark:border-white/10 px-4 sm:px-6 bg-brand-paper/50 dark:bg-white/[0.02] overflow-x-auto">
           <button
             type="button"
             onClick={() => setEtape(1)}
-            className={`flex items-center gap-2 py-3.5 px-4 text-xs font-black border-b-2 transition-all ${
+            className={`flex items-center gap-2.5 py-3.5 px-5 text-xs font-black border-b-[3px] transition-all ${
               etape === 1
                 ? "border-brand-orange text-brand-orange"
                 : "border-transparent text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px]">
-              1
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-colors ${
+              etape === 1
+                ? "bg-brand-orange text-white"
+                : "bg-brand-light-grey/40 dark:bg-white/10 text-brand-warm-grey"
+            }`}>
+              {etape === 1 ? <CheckCircle2 className="w-3.5 h-3.5" /> : "1"}
             </span>
-            Informations Générales & Catégorie
+            <span className="hidden sm:inline">Informations Générales & Catégorie</span>
+            <span className="sm:hidden">Infos</span>
           </button>
 
           <button
             type="button"
             onClick={() => setEtape(2)}
-            className={`flex items-center gap-2 py-3.5 px-4 text-xs font-black border-b-2 transition-all ${
+            className={`flex items-center gap-2.5 py-3.5 px-5 text-xs font-black border-b-[3px] transition-all ${
               etape === 2
                 ? "border-brand-orange text-brand-orange"
                 : "border-transparent text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px]">
-              2
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-colors ${
+              etape === 2
+                ? "bg-brand-orange text-white"
+                : "bg-brand-light-grey/40 dark:bg-white/10 text-brand-warm-grey"
+            }`}>
+              {etape === 2 ? <CheckCircle2 className="w-3.5 h-3.5" /> : "2"}
             </span>
-            Spécifications Techniques
+            <span className="hidden sm:inline">Spécifications Techniques</span>
+            <span className="sm:hidden">Specs</span>
             {profilEquipement && (
               <span className="text-[10px] font-bold bg-brand-orange/15 text-brand-orange px-2 py-0.5 rounded-full ml-1">
                 {profilEquipement.description.split(" ")[0]}
@@ -356,10 +366,10 @@ export default function FormulaireModele({
         </div>
 
         {/* Corps du Formulaire */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 scrollbar-fine">
           
           {erreur && (
-            <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-300 text-xs font-bold border border-red-200 dark:border-red-900 flex items-center gap-2">
+            <div className="rounded-2xl bg-danger/10 border border-danger/30 text-danger text-xs font-bold p-4 flex items-center gap-2">
               <Info className="w-4 h-4 shrink-0" />
               {erreur}
             </div>
@@ -371,15 +381,16 @@ export default function FormulaireModele({
               
               {/* Arborescence Catégories */}
               <div className="p-4 rounded-2xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey/50 dark:border-white/10 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-brand-warm-grey">
+                <div className="flex items-center gap-2.5">
                   <FolderTree className="w-4 h-4 text-brand-orange" />
-                  Classification dans le Catalogue
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-brand-orange">Classification</span>
+                  <div className="flex-1 h-px bg-brand-light-grey dark:bg-white/10" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Niveau 1 : Famille */}
                   <div>
-                    <label className="block text-[11px] font-bold text-brand-warm-grey mb-1">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                       1. Famille
                     </label>
                     <select
@@ -389,7 +400,7 @@ export default function FormulaireModele({
                         setCategorieId(null);
                         setSousCategorieId(null);
                       }}
-                      className="champ w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                      className="champ"
                     >
                       <option value="">Sélectionner une famille...</option>
                       {categoriesArbre.map((f) => (
@@ -402,7 +413,7 @@ export default function FormulaireModele({
 
                   {/* Niveau 2 : Catégorie */}
                   <div>
-                    <label className="block text-[11px] font-bold text-brand-warm-grey mb-1">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                       2. Catégorie
                     </label>
                     <select
@@ -412,7 +423,7 @@ export default function FormulaireModele({
                         setCategorieId(e.target.value ? Number(e.target.value) : null);
                         setSousCategorieId(null);
                       }}
-                      className="champ w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10 disabled:opacity-40"
+                      className="champ"
                     >
                       <option value="">Sélectionner une catégorie...</option>
                       {categoriesDisponibles.map((c: any) => (
@@ -425,14 +436,14 @@ export default function FormulaireModele({
 
                   {/* Niveau 3 : Sous-Catégorie */}
                   <div>
-                    <label className="block text-[11px] font-bold text-brand-warm-grey mb-1">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                       3. Sous-Catégorie (Optionnel)
                     </label>
                     <select
                       value={sousCategorieId || ""}
                       disabled={!categorieId || sousCategoriesDisponibles.length === 0}
                       onChange={(e) => setSousCategorieId(e.target.value ? Number(e.target.value) : null)}
-                      className="champ w-full rounded-xl bg-white dark:bg-brand-paper border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10 disabled:opacity-40"
+                      className="champ"
                     >
                       <option value="">Aucune sous-catégorie</option>
                       {sousCategoriesDisponibles.map((s: any) => (
@@ -454,7 +465,7 @@ export default function FormulaireModele({
 
               {/* Sélection Rapide de la Marque */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-brand-warm-grey mb-2">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-2 block">
                   Constructeur / Marque
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -483,7 +494,7 @@ export default function FormulaireModele({
               {/* Nom Commercial du Modèle */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-black uppercase tracking-wider text-brand-warm-grey">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey">
                     Nom Commercial du Modèle *
                   </label>
                   {profilEquipement && (
@@ -501,14 +512,14 @@ export default function FormulaireModele({
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex: ThinkPad T480 Core i5 8th Gen 16Go RAM 256Go SSD..."
-                  className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-sm font-bold h-12"
+                  className="champ h-12 font-bold"
                 />
               </div>
 
               {/* Prix de Vente Conseillé & URL Photo */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-brand-warm-grey mb-1.5">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                     Prix de vente conseillé (DA)
                   </label>
                   <div className="relative">
@@ -519,13 +530,13 @@ export default function FormulaireModele({
                       value={prixConseille}
                       onChange={(e) => setPrixConseille(e.target.value)}
                       placeholder="Ex: 45000"
-                      className="champ w-full pl-10 rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-11"
+                      className="champ pl-10 h-11"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-brand-warm-grey mb-1.5">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                     Photo du Modèle
                   </label>
                   
@@ -606,7 +617,7 @@ export default function FormulaireModele({
 
               {/* Description / Remarques */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-brand-warm-grey mb-1.5">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                   Description technique détaillée (Optionnel)
                 </label>
                 <textarea
@@ -614,7 +625,7 @@ export default function FormulaireModele({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Points forts, compatibilité, connectique spécifique..."
                   rows={2}
-                  className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-medium resize-none p-3"
+                  className="champ resize-none"
                 />
               </div>
 
@@ -626,7 +637,7 @@ export default function FormulaireModele({
             <div className="space-y-6 animate-entree">
               
               {!profilEquipement ? (
-                <div className="p-8 text-center rounded-2xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey space-y-2">
+                <div className="p-8 text-center rounded-2xl bg-brand-paper/50 dark:bg-white/[0.03] border border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey space-y-2">
                   <SlidersHorizontal className="w-8 h-8 mx-auto opacity-40 text-brand-orange" />
                   <p className="text-sm font-bold text-brand-black dark:text-white">
                     Sélectionnez d'abord une catégorie à l'étape 1
@@ -675,10 +686,10 @@ export default function FormulaireModele({
                       return (
                         <div 
                           key={attr.cle}
-                          className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-brand-light-grey/80 dark:border-white/10 space-y-2.5"
+                          className="p-4 rounded-2xl bg-brand-paper/50 dark:bg-white/[0.03] border border-brand-light-grey/50 dark:border-white/10 space-y-2.5"
                         >
                           <div className="flex items-center justify-between">
-                            <label className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white flex items-center gap-1.5">
+                            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey flex items-center gap-1.5">
                               {attr.label}
                               {attr.obligatoire && <span className="text-brand-orange">*</span>}
                             </label>
@@ -717,7 +728,7 @@ export default function FormulaireModele({
                             <select
                               value={valeurCourante}
                               onChange={(e) => setSpecValeur(attr.cle, e.target.value)}
-                              className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                              className="champ"
                             >
                               <option value="">Sélectionner une option...</option>
                               {attr.options.map((opt) => (
@@ -735,7 +746,7 @@ export default function FormulaireModele({
                               value={valeurCourante}
                               onChange={(e) => setSpecValeur(attr.cle, e.target.value)}
                               placeholder={attr.placeholder || `Saisir ${attr.label.toLowerCase()}...`}
-                              className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                              className="champ"
                             />
                           )}
 
@@ -746,7 +757,7 @@ export default function FormulaireModele({
                               value={valeurCourante}
                               onChange={(e) => setSpecValeur(attr.cle, e.target.value ? Number(e.target.value) : "")}
                               placeholder={attr.placeholder || "0"}
-                              className="champ w-full rounded-xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs font-bold h-10"
+                              className="champ"
                             />
                           )}
                         </div>
@@ -763,13 +774,13 @@ export default function FormulaireModele({
         </div>
 
         {/* Footer d'actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/2">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-t border-brand-light-grey/60 dark:border-white/10 bg-brand-paper/50 dark:bg-white/[0.02]">
           <div>
             {etape === 2 ? (
               <button
                 type="button"
                 onClick={() => setEtape(1)}
-                className="btn btn-secondaire text-xs px-4 py-2.5 rounded-xl font-bold"
+                className="btn btn-secondaire px-4 rounded-xl font-bold"
               >
                 ← Étape précédente
               </button>
@@ -777,7 +788,7 @@ export default function FormulaireModele({
               <button
                 type="button"
                 onClick={onFermer}
-                className="btn btn-secondaire text-xs px-4 py-2.5 rounded-xl font-bold"
+                className="btn btn-secondaire px-4 rounded-xl font-bold"
               >
                 Annuler
               </button>
@@ -789,7 +800,7 @@ export default function FormulaireModele({
               <button
                 type="button"
                 onClick={() => setEtape(2)}
-                className="btn btn-primaire text-xs px-6 py-2.5 rounded-xl font-black shadow-xs flex items-center gap-2"
+                className="btn btn-primaire px-6 rounded-xl font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
               >
                 Suivant : Spécifications →
               </button>
@@ -798,7 +809,7 @@ export default function FormulaireModele({
                 type="button"
                 onClick={validerEtSoumettre}
                 disabled={chargement}
-                className="btn btn-primaire text-xs px-6 py-2.5 rounded-xl font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
+                className="btn btn-primaire px-6 rounded-xl font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
               >
                 {chargement ? (
                   <span>Enregistrement...</span>

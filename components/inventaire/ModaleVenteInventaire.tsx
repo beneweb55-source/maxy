@@ -7,6 +7,8 @@ import type { LigneProduit } from "./CarteProduit";
 interface ModaleVenteInventaireProps {
   ouverte: boolean;
   unites: LigneProduit[];
+  /** true = unités pré-sélectionnées (via ModaleSelectionQuantite) : tout cocher */
+  preSelectionne?: boolean;
   onFermer: () => void;
   onSucces: () => void;
 }
@@ -14,6 +16,7 @@ interface ModaleVenteInventaireProps {
 export default function ModaleVenteInventaire({
   ouverte,
   unites,
+  preSelectionne,
   onFermer,
   onSucces,
 }: ModaleVenteInventaireProps) {
@@ -34,6 +37,7 @@ export default function ModaleVenteInventaire({
     <ModaleVente
       ouverte={ouverte}
       unites={articles}
+      preSelectionne={preSelectionne}
       onFermer={onFermer}
       onSucces={onSucces}
     />

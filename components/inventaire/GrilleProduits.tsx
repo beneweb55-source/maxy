@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
-import { IconeBillet, IconeCrayon } from "@/components/icons";
+import { IconeBillet, IconeCrayon, IconeVitrine } from "@/components/icons";
 import { Plus, Boxes, Hash, Share2 } from "lucide-react";
 import type { GroupeProduits } from "./types";
 
@@ -21,6 +23,7 @@ interface GrilleProduitsProps {
   onOuvrirVente: (unites: GroupeProduits["unites"]) => void;
   onOuvrirSelectionQuantite: (params: { action: "facturer" | "statut" | "supprimer"; groupe: GroupeProduits }) => void;
   onBasculerSocialIds: (ids: number[], posteReseaux: boolean, libelle: string) => void;
+  onBasculerVitrineIds?: (ids: number[], enVitrine: boolean, libelle: string) => void;
 }
 
 export default function GrilleProduits({
@@ -36,12 +39,16 @@ export default function GrilleProduits({
   onOuvrirVente,
   onOuvrirSelectionQuantite,
   onBasculerSocialIds,
+  onBasculerVitrineIds,
 }: GrilleProduitsProps) {
+  const router = useRouter();
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
       {groupes.map((g) => {
         const ouvert = groupesOuverts.has(g.cle);
         const tousCoches = g.unites.length > 0 && g.unites.every(u => selection.includes(u.id));
+        const premiereUnite = g.unites[0];
 
         return (
           <div
@@ -52,8 +59,15 @@ export default function GrilleProduits({
                 : "!border-brand-light-grey dark:!border-white/10 hover:!border-brand-orange/40"
             }`}
           >
-            {/* Image / Header de la Carte */}
-            <div className="relative aspect-video bg-brand-light-grey/30 dark:bg-white/5 overflow-hidden">
+            {/* Image / Header de la Carte — cliquable pour naviguer vers le produit */}
+            <div
+              className="relative aspect-video bg-brand-light-grey/30 dark:bg-white/5 overflow-hidden cursor-pointer"
+              onClick={() => {
+                if (premiereUnite) {
+                  router.push(`/produits/${premiereUnite.id}`);
+                }
+              }}
+            >
               {g.image_url ? (
                 <img
                   src={g.image_url}
@@ -77,6 +91,16 @@ export default function GrilleProduits({
                   En stock : {g.totalDisponibles}
                 </span>
               </div>
+
+              {/* Badge Vitrine superposé */}
+              {g.enVitrine > 0 && (
+                <div className="absolute top-2 right-10">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-brand-orange text-white shadow-md">
+                    <IconeVitrine taille={10} />
+                    Vitrine
+                  </span>
+                </div>
+              )}
 
               {/* Checkbox Sélection Modèle */}
               <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
@@ -184,6 +208,30 @@ export default function GrilleProduits({
                   </button>
                 )}
 
+                {/* Bouton Vitrine Toggle */}
+                {peutModifier && onBasculerVitrineIds && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const exposeIds = g.unites.filter(u => u.en_vitrine).map(u => u.id);
+                      const nonVendu = g.unites.filter(u => u.statut !== "vendu");
+                      if (g.enVitrine > 0) {
+                        onBasculerVitrineIds(exposeIds, false, g.reference);
+                      } else if (nonVendu.length > 0) {
+                        onBasculerVitrineIds([nonVendu[0]!.id], true, g.reference);
+                      }
+                    }}
+                    className={`p-2 rounded-xl transition ${
+                      g.enVitrine > 0
+                        ? "text-brand-orange bg-brand-orange/15"
+                        : "text-brand-warm-grey hover:text-brand-orange hover:bg-brand-orange/10"
+                    }`}
+                    title={g.enVitrine > 0 ? "Retirer de la vitrine" : "Mettre en vitrine"}
+                  >
+                    <IconeVitrine taille={16} />
+                  </button>
+                )}
+
                 {/* Bouton Drilldown (Voir exemplaires) */}
                 <button
                   type="button"
@@ -218,8 +266,14 @@ export default function GrilleProduits({
                   <span className="text-[10px] font-black uppercase text-brand-warm-grey block">Exemplaires :</span>
                   {g.unites.map((u) => (
                     <div key={u.id} className="p-1.5 rounded-xl bg-brand-paper/50 dark:bg-white/5 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-mono font-bold text-brand-orange">{u.code_interne}</span>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/produits/${u.id}`}
+                          className="font-mono font-bold text-brand-orange hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {u.code_interne}
+                        </Link>
                         <span className="text-[10px] text-brand-warm-grey block">{u.numero_serie ? `S/N: ${u.numero_serie}` : "Sans S/N"}</span>
                       </div>
                       <BadgeStatut statut={u.statut} aJeter={u.a_jeter} />

@@ -171,13 +171,15 @@ export default function Inventaire({ role }: { role: Role }) {
   const [modalClassification, setModalClassification] = useState<LigneProduit[] | null>(null);
   const [selection, setSelection] = useState<number[]>([]);
   const [modalVenteUnites, setModalVenteUnites] = useState<LigneProduit[] | null>(null);
+  const [ventePreSelectionne, setVentePreSelectionne] = useState(false);
   const [modalSelectionQuantite, setModalSelectionQuantite] = useState<{
     action: "facturer" | "statut" | "supprimer";
     groupe: GroupeProduits;
   } | null>(null);
   const [cibleStockManager, setCibleStockManager] = useState<TargetStockSource | null>(null);
-  function ouvrirVenteInventaire(unites: LigneProduit[]) {
+  function ouvrirVenteInventaire(unites: LigneProduit[], preSelectionne = false) {
     setModalVenteUnites(unites);
+    setVentePreSelectionne(preSelectionne);
   }
 
   // Suppression : soit des unités précises (« unites »), soit tout un modèle
@@ -990,65 +992,69 @@ export default function Inventaire({ role }: { role: Role }) {
   const page = donnees?.page ?? 1;
 
   const champsProduit = (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+    <div className="space-y-5">
 
-      {/* COLONNE GAUCHE : IDENTIFICATION */}
-      <div className="space-y-3 sm:space-y-4">
-        <div>
-          <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white mb-1.5" htmlFor="ref-produit">
-            Désignation / Référence Commerciale *
-          </label>
-          <input
-            id="ref-produit"
-            type="text"
-            value={formulaire.reference}
-            onChange={(e) => setFormulaire({ ...formulaire, reference: e.target.value })}
-            placeholder="Ex. Lenovo ThinkPad T480 i5 8Go 256Go SSD"
-            className="champ dark:bg-white/5 dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs"
-          />
+      {/* ===== SECTION : IDENTIFICATION ===== */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-brand-orange">Identification</span>
+          <div className="flex-1 h-px bg-brand-light-grey dark:bg-white/10" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="ref-produit">
+              Désignation / Référence *
+            </label>
+            <input
+              id="ref-produit"
+              type="text"
+              value={formulaire.reference}
+              onChange={(e) => setFormulaire({ ...formulaire, reference: e.target.value })}
+              placeholder="Ex. Lenovo ThinkPad T480 i5 8Go 256Go SSD"
+              className="champ"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="cat-produit">
+              Catégorie *
+            </label>
+            <select
+              id="cat-produit"
+              value={formulaire.categorie}
+              onChange={(e) => setFormulaire({ ...formulaire, categorie: e.target.value })}
+              className="champ"
+            >
+              <option value="">Sélectionner une catégorie…</option>
+              {categoriesTree.map((famille) => (
+                <optgroup key={famille.id} label={famille.nom}>
+                  {(famille.enfants ?? []).map((cat) => (
+                    <React.Fragment key={cat.id}>
+                      <option value={cat.nom}>{cat.nom}</option>
+                      {(cat.enfants ?? []).map((sc) => (
+                        <option key={sc.id} value={sc.nom}>{`  └ ${sc.nom}`}</option>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </optgroup>
+              ))}
+              {categoriesTree.length === 0 && (
+                <option value="" disabled>Aucune catégorie disponible</option>
+              )}
+            </select>
+          </div>
         </div>
 
         <div>
-          <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white mb-1.5" htmlFor="cat-produit">
-            Catégorie du Produit *
-          </label>
-          <select
-            id="cat-produit"
-            value={formulaire.categorie}
-            onChange={(e) => {
-              const val = e.target.value;
-              setFormulaire({ ...formulaire, categorie: val });
-            }}
-            className="select w-full h-12 rounded-lg bg-brand-paper dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-sm sm:text-base font-bold text-brand-black dark:text-white shadow-xs focus:border-brand-orange"
-          >
-            <option value="">Sélectionner une catégorie…</option>
-            {categoriesTree.map((famille) => (
-              <optgroup key={famille.id} label={famille.nom}>
-                {(famille.enfants ?? []).map((cat) => (
-                  <React.Fragment key={cat.id}>
-                    <option value={cat.nom}>{cat.nom}</option>
-                    {(cat.enfants ?? []).map((sc) => (
-                      <option key={sc.id} value={sc.nom}>{`  └ ${sc.nom}`}</option>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </optgroup>
-            ))}
-            {categoriesTree.length === 0 && (
-              <option value="" disabled>Aucune catégorie disponible</option>
-            )}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-warm-grey mb-1.5" htmlFor="lot-produit">
+          <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="lot-produit">
             {t("inventaire.lotRattachement")}
           </label>
           <select
             id="lot-produit"
             value={formulaire.lot_id}
             onChange={(e) => setFormulaire({ ...formulaire, lot_id: e.target.value })}
-            className="select w-full h-12 rounded-lg bg-brand-paper dark:bg-white/5 border border-brand-light-grey dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+            className="champ"
           >
             <option value="">{t("inventaire.stockIndependant")}</option>
             {(donnees?.lots ?? []).map((l) => (
@@ -1060,81 +1066,88 @@ export default function Inventaire({ role }: { role: Role }) {
         </div>
       </div>
 
-      {/* COLONNE DROITE : FINANCES & STOCK */}
+      {/* ===== SECTION : STOCK & PRIX ===== */}
       <div className="space-y-4">
-        
-        <div className="p-4 rounded-2xl bg-brand-paper/50 dark:bg-white/5 border border-brand-light-grey dark:border-white/10 space-y-4">
-          <span className="text-[11px] font-black uppercase tracking-wider text-brand-orange block">
-            Finances & Exemplaires Physiques
-          </span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-brand-orange">Stock & Prix</span>
+          <div className="flex-1 h-px bg-brand-light-grey dark:bg-white/10" />
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-bold text-brand-warm-grey uppercase mb-1.5" htmlFor="prix-produit">
-                Prix Achat (DA) *
-              </label>
-              <input
-                id="prix-produit"
-                type="number"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                min={0}
-                step={1}
-                value={formulaire.prix_achat}
-                onChange={(e) =>
-                  setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
-                }
-                className="champ dark:bg-white/5 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-brand-orange uppercase mb-1.5" htmlFor="prix-vente-produit">
-                Prix Vente (DA)
-              </label>
-              <input
-                id="prix-vente-produit"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                value={formulaire.prix_vente_fixe}
-                onChange={(e) =>
-                  setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
-                }
-                className="champ dark:bg-white/5 !border-brand-orange/40 text-right font-black text-sm sm:text-base text-brand-orange"
-                placeholder="Non fixé"
-              />
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-[11px] font-bold text-brand-warm-grey uppercase mb-1.5" htmlFor="quantite-produit">
-              Quantité en Stock *
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="quantite-produit">
+              Quantité *
             </label>
             <input
               id="quantite-produit"
               type="number"
               inputMode="numeric"
+              pattern="[0-9]*"
               min={1}
               step={1}
               value={formulaire.quantite}
               onChange={(e) =>
                 setFormulaire({ ...formulaire, quantite: e.target.value.replace(/[^\d]/g, "") })
               }
-              className="champ dark:bg-white/5 dark:border-white/10 text-right font-black text-sm sm:text-base text-brand-black dark:text-white"
+              className="champ text-right font-black"
             />
             {modalEdition !== null && Number(formulaire.quantite) !== modalEdition.unites.length && (
-              <div className="mt-2 text-[11px] font-bold leading-tight text-brand-orange bg-brand-orange/10 p-2.5 rounded-xl border border-brand-orange/20 flex items-center gap-1.5">
-                <span>Attention : Modifier la quantité ajustera le nombre d'exemplaires réels.</span>
+              <div className="mt-2 rounded-2xl bg-brand-orange/10 border border-brand-orange/20 text-brand-orange text-xs font-bold p-3 flex items-start gap-1.5">
+                <span className="shrink-0 mt-px">⚠</span>
+                <span>Modifier la quantité ajustera le nombre d'exemplaires réels.</span>
               </div>
             )}
           </div>
+
+          <div>
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block" htmlFor="prix-produit">
+              Prix Achat (DA) *
+            </label>
+            <input
+              id="prix-produit"
+              type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              min={0}
+              step={1}
+              value={formulaire.prix_achat}
+              onChange={(e) =>
+                setFormulaire({ ...formulaire, prix_achat: e.target.value.replace(/[^\d]/g, "") })
+              }
+              className="champ text-right font-black"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-orange mb-1.5 block" htmlFor="prix-vente-produit">
+              Prix Vente (DA)
+            </label>
+            <input
+              id="prix-vente-produit"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
+              value={formulaire.prix_vente_fixe}
+              onChange={(e) =>
+                setFormulaire({ ...formulaire, prix_vente_fixe: e.target.value.replace(/[^\d]/g, "") })
+              }
+              className="champ text-right font-black !border-brand-orange/40"
+              placeholder="Non fixé"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ===== SECTION : OPTIONS ===== */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-brand-orange">Options</span>
+          <div className="flex-1 h-px bg-brand-light-grey dark:bg-white/10" />
         </div>
 
-        {/* Toggles Tactiles Larges */}
         {modalEdition === null && (
-          <label className="flex items-center justify-between p-3.5 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 cursor-pointer transition-all hover:bg-brand-light-grey/30">
+          <label className="flex items-center justify-between p-3.5 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 cursor-pointer transition-all hover:bg-brand-light-grey/30 dark:hover:bg-white/[0.08]">
             <div className="flex items-center gap-2.5">
               <input
                 type="checkbox"
@@ -1175,14 +1188,14 @@ export default function Inventaire({ role }: { role: Role }) {
             </div>
           </label>
         )}
-
       </div>
 
-      {/* PLEINE LARGEUR EN BAS : PHOTOS */}
-      <div className="md:col-span-2 pt-2 border-t border-brand-light-grey dark:border-white/10 space-y-2">
-        <label className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-warm-grey">
-          {t("inventaire.photos")}
-        </label>
+      {/* ===== SECTION : PHOTOS ===== */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-brand-orange">{t("inventaire.photos")}</span>
+          <div className="flex-1 h-px bg-brand-light-grey dark:bg-white/10" />
+        </div>
         <ChampPhotos
           photos={formPhotos}
           onChange={(p) => {
@@ -1626,6 +1639,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   onOuvrirEdition={ouvrirEdition}
                   onOuvrirVente={ouvrirVenteInventaire}
                   onOuvrirSelectionQuantite={setModalSelectionQuantite}
+                  onBasculerVitrineIds={basculerVitrineIds}
                   onBasculerSocialIds={basculerSocialIds}
                 />
               </div>
@@ -1852,7 +1866,7 @@ export default function Inventaire({ role }: { role: Role }) {
           </button>
         </div>
         <form
-          className="space-y-4"
+          className="space-y-5"
           onSubmit={(e) => {
             e.preventDefault();
             if (!envoi && formulaireValide) {
@@ -1914,7 +1928,7 @@ export default function Inventaire({ role }: { role: Role }) {
           </div>
         )}
         <form
-          className="space-y-3"
+          className="space-y-5"
           onKeyDown={async (e) => {
             if (e.key === "Enter" && e.shiftKey) {
               e.preventDefault();
@@ -1943,7 +1957,7 @@ export default function Inventaire({ role }: { role: Role }) {
           {modalEdition && peutStatut && (
             <div className="space-y-3 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 p-4">
               <div className="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-2">
-                <span className="block text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
                   {t("inventaire.statut")}
                 </span>
                 {(() => {
@@ -1966,7 +1980,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     }
                   }}
                   disabled={envoi || cibleStatut !== null}
-                  className="select w-full sm:w-auto h-11 rounded-lg bg-white dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs sm:text-sm font-bold text-brand-black dark:text-white shadow-xs"
+                  className="champ w-full sm:w-auto h-11"
                 >
                   <option value="">{t("inventaire.changerStatut")}</option>
                   {(() => {
@@ -2001,7 +2015,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     rows={2}
                     autoFocus
                     placeholder={PLACEHOLDERS_NOTE[cibleStatut] ?? t("inventaire.precisezRaison")}
-                    className="textarea w-full rounded-lg bg-brand-paper dark:bg-white/5 border-brand-light-grey dark:border-white/10 text-xs font-medium"
+                    className="champ resize-none"
                   />
                   <div className="flex flex-col sm:flex-row justify-end gap-2 mt-2">
                     <button
@@ -2057,7 +2071,7 @@ export default function Inventaire({ role }: { role: Role }) {
           {modalEdition && peutModifier && modalEdition.unites[0]!.statut !== "vendu" && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-light-grey dark:border-white/10 bg-brand-paper/50 dark:bg-white/5 p-4">
               <div className="min-w-0">
-                <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-brand-black dark:text-white inline-flex items-center gap-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey inline-flex items-center gap-1.5">
                   <IconeVitrine taille={16} className="text-brand-orange" /> {t("inventaire.vitrine")}
                 </span>
                 <p className="text-xs text-brand-warm-grey mt-0.5">
@@ -2154,7 +2168,7 @@ export default function Inventaire({ role }: { role: Role }) {
                     }
                   }}
                   title="Raccourci: Maj + Entrée"
-                  className="btn bg-brand-black hover:bg-brand-black/90 text-white h-12 px-5 rounded-xl text-xs font-black w-full sm:w-auto justify-center shadow-md"
+                  className="btn btn-primaire h-12 px-5 rounded-xl text-xs font-black w-full sm:w-auto justify-center shadow-md shadow-brand-orange/20"
                 >
                   Enregistrer & Suivant
                 </button>
@@ -2428,6 +2442,7 @@ export default function Inventaire({ role }: { role: Role }) {
         <ModaleVenteInventaire
           ouverte={modalVenteUnites !== null}
           unites={modalVenteUnites}
+          preSelectionne={ventePreSelectionne}
           onFermer={() => setModalVenteUnites(null)}
           onSucces={() => {
             setModalVenteUnites(null);
@@ -2448,7 +2463,7 @@ export default function Inventaire({ role }: { role: Role }) {
           onFermer={() => setModalSelectionQuantite(null)}
           onConfirmer={(unitesSelectionnees, statutCible, note) => {
             if (modalSelectionQuantite.action === "facturer") {
-              ouvrirVenteInventaire(unitesSelectionnees);
+              ouvrirVenteInventaire(unitesSelectionnees, true);
             } else if (modalSelectionQuantite.action === "statut" && statutCible) {
               void changerStatutUnites(unitesSelectionnees, statutCible, note);
             } else if (modalSelectionQuantite.action === "supprimer") {

@@ -279,7 +279,7 @@ export default function FactureDetail({
           <button
             type="button"
             onClick={() => setVueGarantie(true)}
-            className="btn bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+            className="btn bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50 dark:hover:bg-emerald-900/60"
           >
             <IconeBouclier taille={15} />
             Créer garantie
@@ -311,14 +311,14 @@ export default function FactureDetail({
             <button
               type="button"
               onClick={() => setFormatTicket(false)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${!formatTicket ? 'bg-white shadow-sm text-brand-black' : 'text-brand-warm-grey hover:text-brand-black'}`}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${!formatTicket ? 'bg-white shadow-sm text-brand-black dark:bg-white/10 dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15' : 'text-brand-warm-grey hover:text-brand-black dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15'}`}
             >
               A4
             </button>
             <button
               type="button"
               onClick={() => setFormatTicket(true)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${formatTicket ? 'bg-white shadow-sm text-brand-black' : 'text-brand-warm-grey hover:text-brand-black'}`}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${formatTicket ? 'bg-white shadow-sm text-brand-black dark:bg-white/10 dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15' : 'text-brand-warm-grey hover:text-brand-black dark:text-brand-warm-grey dark:hover:text-white dark:hover:bg-white/15'}`}
             >
               Ticket (80mm)
             </button>

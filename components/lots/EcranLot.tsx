@@ -486,7 +486,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
             )}
           </div>
           {lot.cout_valide ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
               <IconeCoche taille={13} />
               Coût validé en caisse
             </span>
@@ -502,7 +502,7 @@ export default function EcranLot({ lotId, role }: { lotId: number; role: Role })
               {t("ecranLot.validerCout", { montant: formaterDA(montantCout) })}
             </button>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
               {t("ecranLot.attenteValidation")}
             </span>
           )}

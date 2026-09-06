@@ -1179,7 +1179,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); retirerDeSelection(g.cle); }}
-                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-white"
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-white dark:bg-white/15 dark:text-white"
                               >
                                 -
                               </button>
@@ -1188,7 +1188,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                                 type="button"
                                 disabled={qtySelected >= g.unites.length}
                                 onClick={(e) => { e.stopPropagation(); ajouterASelection(g.cle); }}
-                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-white disabled:opacity-30 disabled:hover:bg-brand-light-grey/50 disabled:hover:text-brand-black"
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-light-grey/50 text-brand-black transition hover:bg-brand-orange hover:text-white dark:bg-white/15 dark:text-white disabled:opacity-30 disabled:hover:bg-brand-light-grey/50 disabled:hover:text-brand-black"
                               >
                                 +
                               </button>
@@ -1382,10 +1382,10 @@ export default function CaisseClient({ role }: { role: Role }) {
                     </div>
                   </div>
                   <div className="flex justify-end gap-1 mt-1">
-                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.05).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-5%</button>
-                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.10).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-10%</button>
-                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.15).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-15%</button>
-                    <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 bg-brand-light-grey/30 rounded flex items-center justify-center hover:bg-danger/20 text-brand-black" title="Retirer la remise"><IconeFermer taille={12} /></button>
+                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.05).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black dark:bg-white/15 dark:text-white">-5%</button>
+                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.10).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black dark:bg-white/15 dark:text-white">-10%</button>
+                    <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.15).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black dark:bg-white/15 dark:text-white">-15%</button>
+                    <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 bg-brand-light-grey/30 rounded flex items-center justify-center hover:bg-danger/20 text-brand-black dark:bg-white/15 dark:text-white" title="Retirer la remise"><IconeFermer taille={12} /></button>
                   </div>
                   <div className="flex justify-between items-center pt-2 mt-2 border-t border-brand-light-grey/30">
                     <span className="font-black text-lg text-brand-black uppercase">{t("caisse.totalNet")}</span>
@@ -1549,10 +1549,10 @@ export default function CaisseClient({ role }: { role: Role }) {
               </div>
             </div>
             <div className="flex justify-end gap-1 mt-1">
-              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.05).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-5%</button>
-              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.10).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-10%</button>
-              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.15).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black">-15%</button>
-              <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 bg-brand-light-grey/30 rounded flex items-center justify-center hover:bg-danger/20 text-brand-black" title="Retirer la remise"><IconeFermer taille={12} /></button>
+              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.05).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black dark:bg-white/15 dark:text-white">-5%</button>
+              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.10).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black dark:bg-white/15 dark:text-white">-10%</button>
+              <button type="button" onClick={() => setRemiseBundle(Math.floor(cartTotal * 0.15).toString())} className="px-2 py-0.5 text-[10px] bg-brand-light-grey/30 rounded font-bold hover:bg-brand-orange/20 text-brand-black dark:bg-white/15 dark:text-white">-15%</button>
+              <button type="button" onClick={() => setRemiseBundle("")} className="px-2 py-0.5 bg-brand-light-grey/30 rounded flex items-center justify-center hover:bg-danger/20 text-brand-black dark:bg-white/15 dark:text-white" title="Retirer la remise"><IconeFermer taille={12} /></button>
             </div>
             <div className="flex justify-between items-center pt-2 mt-2 border-t border-brand-light-grey/30">
               <span className="font-black text-lg text-brand-black uppercase">{t("caisse.totalNet")}</span>
@@ -2116,7 +2116,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                         window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
                         setEtiquetteVenteValidee(true);
                       }}
-                      className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
+                      className="btn text-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
                     >
                       Imprimer l&apos;étiquette
                     </button>
@@ -2453,7 +2453,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                         window.open(`/imprimer-etiquettes?ids=${ids.join(",")}`, "_blank");
                         setEtiquetteBundleValidee(true);
                       }}
-                      className="btn btn-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
+                      className="btn text-xs bg-brand-orange text-white hover:bg-brand-orange/90 font-bold"
                     >
                       Imprimer les étiquettes
                     </button>

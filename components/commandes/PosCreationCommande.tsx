@@ -883,7 +883,7 @@ export default function PosCreationCommande() {
                               setEtiquetteManuelleValidee(true);
                             }
                           }}
-                          className="btn btn-xs min-h-[36px] bg-brand-orange text-white hover:bg-brand-orange/90 font-bold flex items-center gap-1.5 px-3 rounded-lg shrink-0"
+                          className="btn min-h-[36px] bg-brand-orange text-white hover:bg-brand-orange/90 font-bold flex items-center gap-1.5 px-3 rounded-lg shrink-0"
                         >
                           <Barcode className="w-3.5 h-3.5" />
                           Imprimer l&apos;étiquette
