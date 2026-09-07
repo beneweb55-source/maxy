@@ -53,7 +53,7 @@ import VueFamille from "./VueFamille";
 import CarteProduit from "./CarteProduit";
 import ModalClassification from "./ModalClassification";
 import ModalSuppression from "./ModalSuppression";
-import ModaleAjoutTerrain from "./ModaleAjoutTerrain";
+import FormulaireAjoutUnifie from "./FormulaireAjoutUnifie";
 import AssistantImportation from "./AssistantImportation";
 import ModaleExport from "./ModaleExport";
 import ModaleVenteInventaire from "./ModaleVenteInventaire";
@@ -2413,13 +2413,13 @@ export default function Inventaire({ role }: { role: Role }) {
         categorieNom={nomCategorieActif}
       />
 
-      <ModaleAjoutTerrain
-        ouverte={modalAjoutTerrain}
+      <FormulaireAjoutUnifie
+        ouvert={modalAjoutTerrain}
         onFermer={() => setModalAjoutTerrain(false)}
+        categoriesTree={categoriesTree}
         lotsDisponibles={donnees?.lots || []}
-        categorieDefautId={sousCategorieActive?.id || categorieActive?.id || (categorieIdActif ? Number(categorieIdActif) : null)}
-        onSucces={({ codes, ajoutes }) => {
-          afficher(`${ajoutes} exemplaire(s) généré(s) avec succès.`);
+        onSucces={() => {
+          afficher("Produit ajouté avec succès.");
           void charger();
         }}
       />
