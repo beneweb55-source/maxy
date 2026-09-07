@@ -13,10 +13,10 @@
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 
-/** Largeur utile d'une page A4 paysage en mm (après margins 10mm) */
-const A4_WIDTH_MM = 297 - 20;
-/** Hauteur utile d'une page A4 paysage en mm (après margins 10mm) */
-const A4_HEIGHT_MM = 210 - 20;
+/** Largeur utile d'une page A4 portrait en mm (après margins 10mm) */
+const A4_WIDTH_MM = 210 - 20;
+/** Hauteur utile d'une page A4 portrait en mm (après margins 10mm) */
+const A4_HEIGHT_MM = 297 - 20;
 
 /**
  * Génère un PDF WYSIWYG à partir d'un élément DOM affiché à l'écran.
@@ -61,7 +61,7 @@ export async function telechargerElementEnPdf(
 
     // 3. Calcul de la disposition multi-pages A4
     const pdf = new jsPDF({
-      orientation: "landscape",
+      orientation: "portrait",
       unit: "mm",
       format: "a4",
     });

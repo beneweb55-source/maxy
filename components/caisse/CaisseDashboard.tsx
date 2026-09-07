@@ -258,10 +258,19 @@ export default function CaisseDashboard({ role }: { role: Role }) {
       {/* SECTION PRINCIPALE : LES DEUX CAISSES CÔTE À CÔTE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* CARTE 1 : CAISSE NORMALE (MAGASIN / COMPTOIR) */}
-        <div 
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => {
             setFiltreCaisse((prev) => (prev === "CAISSE_PHYSIQUE" ? "TOUTES" : "CAISSE_PHYSIQUE"));
             setPage(1);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setFiltreCaisse((prev) => (prev === "CAISSE_PHYSIQUE" ? "TOUTES" : "CAISSE_PHYSIQUE"));
+              setPage(1);
+            }
           }}
           className={`relative overflow-hidden rounded-3xl p-6 border-2 transition-all cursor-pointer shadow-sm ${
             filtreCaisse === "CAISSE_PHYSIQUE"
@@ -312,10 +321,19 @@ export default function CaisseDashboard({ role }: { role: Role }) {
         </div>
 
         {/* CARTE 2 : CAISSE YALIDINE (EXPÉDITIONS & RECOUVREMENTS) */}
-        <div 
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => {
             setFiltreCaisse((prev) => (prev === "CAISSE_YALIDINE" ? "TOUTES" : "CAISSE_YALIDINE"));
             setPage(1);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setFiltreCaisse((prev) => (prev === "CAISSE_YALIDINE" ? "TOUTES" : "CAISSE_YALIDINE"));
+              setPage(1);
+            }
           }}
           className={`relative overflow-hidden rounded-3xl p-6 border-2 transition-all cursor-pointer shadow-sm ${
             filtreCaisse === "CAISSE_YALIDINE"
@@ -643,9 +661,9 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               onClick={() => void enregistrerMouvement(false)}
               className={`btn flex items-center justify-center gap-2 sm:w-auto ${
                 sensMouvement(typeMouvement) === "entree"
-                  ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+                  ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                   : sensMouvement(typeMouvement) === "sortie"
-                  ? "bg-danger hover:bg-danger/90 text-white shadow-lg shadow-red-500/25"
+                  ? "bg-danger hover:bg-danger/90 text-white shadow-lg shadow-danger/25"
                   : "btn-primaire"
               }`}
             >
@@ -993,12 +1011,12 @@ function GraphiqueLigne({ donnees }: { donnees: { jour: {label: string, solde: n
               <g key={s.label}>
                 <circle cx={i * pas} cy={y(s.solde)} r={isFirstOrLastOrMiddle ? 3.5 : 2} fill="#1770E5" />
                 {isFirstOrLastOrMiddle && (
-                  <text x={i * pas} y={y(s.solde) - 8} textAnchor={i === 0 ? "start" : i === series.length - 1 ? "end" : "middle"} fontSize={10} fill="#2E2D2D">
+                  <text x={i * pas} y={y(s.solde) - 8} textAnchor={i === 0 ? "start" : i === series.length - 1 ? "end" : "middle"} fontSize={10} fill="var(--color-brand-black)">
                     {formaterDA(s.solde)}
                   </text>
                 )}
                 {isFirstOrLastOrMiddle && (
-                  <text x={i * pas} y={hauteur - 5} textAnchor={i === 0 ? "start" : i === series.length - 1 ? "end" : "middle"} fontSize={9} fill="#7C7572" transform={granularite === 'jour' && i !== 0 && i !== series.length - 1 ? `rotate(-45 ${i * pas} ${hauteur - 5})` : undefined}>
+                  <text x={i * pas} y={hauteur - 5} textAnchor={i === 0 ? "start" : i === series.length - 1 ? "end" : "middle"} fontSize={9} fill="var(--color-brand-warm-grey)" transform={granularite === 'jour' && i !== 0 && i !== series.length - 1 ? `rotate(-45 ${i * pas} ${hauteur - 5})` : undefined}>
                     {formatLabel(s.label, granularite)}
                   </text>
                 )}

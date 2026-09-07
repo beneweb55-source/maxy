@@ -976,7 +976,7 @@ export default function CaisseClient({ role }: { role: Role }) {
               {peutVendre && (
                 <button
                   onClick={() => setModalViderCaisse(true)}
-                  className="min-h-[44px] px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-xl shadow-sm transition flex items-center"
+                  className="min-h-[44px] px-3 py-1.5 bg-danger/10 hover:bg-danger/20 text-danger text-xs font-bold rounded-xl shadow-sm transition flex items-center dark:bg-danger/15 dark:hover:bg-danger/25 dark:text-danger"
                 >
                   Vider la Caisse
                 </button>
@@ -1352,7 +1352,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                                   const val = parseInt(e.target.value, 10);
                                   definirQuantiteSelection(item.groupe.cle, isNaN(val) ? 0 : val);
                                 }}
-                                className="w-12 h-9 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-12 h-11 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 title={`Quantité (Max: ${item.groupe.unites.length})`}
                               />
                               <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={16} /></button>
@@ -1519,7 +1519,7 @@ export default function CaisseClient({ role }: { role: Role }) {
                             const val = parseInt(e.target.value, 10);
                             definirQuantiteSelection(item.groupe.cle, isNaN(val) ? 0 : val);
                           }}
-                          className="w-12 h-9 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-12 h-11 text-center font-bold font-mono text-base bg-brand-white rounded-lg shadow-2xs border border-brand-light-grey/40 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           title={`Quantité (Max: ${item.groupe.unites.length})`}
                         />
                         <button onClick={() => ajouterASelection(item.groupe.cle)} disabled={item.qty >= item.groupe.unites.length} className="h-9 w-9 bg-brand-white shadow-sm rounded-lg flex items-center justify-center transition hover:text-brand-orange hover:bg-brand-orange/10 active-scale disabled:opacity-40 disabled:hover:text-brand-black disabled:hover:bg-brand-white"><IconePlus taille={16} /></button>
@@ -2329,9 +2329,9 @@ export default function CaisseClient({ role }: { role: Role }) {
                   )}
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">1000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">2000 DA</button>
-                  <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">5000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("1000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey dark:bg-white/10 dark:border-white/15 dark:text-white rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">1000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("2000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey dark:bg-white/10 dark:border-white/15 dark:text-white rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">2000 DA</button>
+                  <button type="button" onClick={() => setEspecesRecues("5000")} className="flex-1 py-1 min-h-[44px] bg-brand-white border border-brand-light-grey dark:bg-white/10 dark:border-white/15 dark:text-white rounded shadow-sm text-sm font-bold hover:bg-brand-orange hover:text-white transition active-scale">5000 DA</button>
                   <button type="button" onClick={() => setEspecesRecues(prixTotalBundle)} className="flex-1 py-1 min-h-[44px] bg-brand-orange text-white border border-brand-orange rounded shadow-sm text-sm font-bold hover:bg-brand-orange/90 transition active-scale">{t("caisse.exact")}</button>
                 </div>
               </div>
@@ -2627,7 +2627,7 @@ export default function CaisseClient({ role }: { role: Role }) {
 
               <p className="text-brand-warm-grey">
                 L&apos;article est actuellement au statut{" "}
-                <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50">
                   {REGLES_MACHINE_ETATS[modalOverride.statutActuel as StatutProduit]?.libelle || modalOverride.statutActuel}
                 </span>
                 . Voulez-vous forcer sa mise en vente et l&apos;ajouter au panier ?

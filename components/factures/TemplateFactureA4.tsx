@@ -153,17 +153,16 @@ export default function TemplateFactureA4({
   const logoSrc = "/brand/solutionmaxi-icone.svg";
   const cachetSrc = entreprise?.cachet || "/brand/cachet.png";
   const nomEntreprise = entreprise?.nom || "SOLUTION MAXI";
-  const emailDomaine = nomEntreprise.toLowerCase().replace(/\s+/g, "");
 
   return (
     <div
       id="facture-print-area"
       ref={innerRef}
-      className="carte w-full max-w-[210mm] mx-auto bg-white dark:bg-brand-paper p-8 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-brand-light-grey print:break-inside-avoid"
+      className="carte w-full max-w-[210mm] mx-auto bg-white dark:bg-brand-paper p-6 print:border-0 print:p-[15mm] print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight shadow-md border border-brand-light-grey print:break-inside-avoid force-light-mode"
     >
       {/* ── En-tête : Info entreprise à gauche, Logo à droite ── */}
       {showHeader && (
-        <div className="flex justify-between items-start gap-4 mb-6">
+        <div className="flex justify-between items-start gap-4 mb-4">
           <div className="bg-[#e5e7eb] p-4 rounded-xl rounded-tl-none w-[45%] text-xs border border-[#d1d5db] relative">
             <h2 className="text-sm font-bold uppercase tracking-wide text-brand-black mb-1.5">
               {nomEntreprise}
@@ -187,7 +186,7 @@ export default function TemplateFactureA4({
           </div>
 
           <div className="flex flex-col items-end flex-shrink-0">
-            <div className="flex items-center gap-1.5 mb-8 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 mb-4 whitespace-nowrap">
               <img
                 src={logoSrc}
                 alt="Logo"
@@ -198,9 +197,6 @@ export default function TemplateFactureA4({
                 <h1 className="text-xl font-black uppercase text-brand-black leading-none">
                   {nomEntreprise}
                 </h1>
-                <p className="text-[10px] font-bold italic mt-0.5 tracking-tighter">
-                  Plus de temps à perdre !
-                </p>
               </div>
             </div>
 
@@ -212,14 +208,14 @@ export default function TemplateFactureA4({
       )}
 
       {/* ── Titre facture ── */}
-      <div className="text-center mb-5">
+      <div className="text-center mb-3">
         <h2 className="text-lg font-bold">
           {titre} n°: {facture.numero}
         </h2>
       </div>
 
       {/* ── Informations du client ── */}
-      <div className="mb-6 w-full sm:w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
+      <div className="mb-4 w-full sm:w-[45%] border border-black rounded-xl p-3 text-xs leading-relaxed font-medium">
         <p className="mb-2">
           <span className="font-bold">Doit :</span>{" "}
           {facture.client_nom || "Particulier"}
@@ -258,7 +254,7 @@ export default function TemplateFactureA4({
       </div>
 
       {/* ── Tableau des articles ── */}
-      <div className="mb-6 w-full overflow-x-auto">
+      <div className="mb-4 w-full overflow-x-auto">
         <table className="w-full min-w-[500px] border-collapse border border-black text-xs text-center">
           <thead>
             <tr className="bg-[#d1d5db]">
@@ -371,7 +367,7 @@ export default function TemplateFactureA4({
       </div>
 
       {/* ── Arrêté de facture (montant en lettres + mode de règlement) ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
         <div className="w-full sm:w-1/2 p-3 bg-slate-50 border border-black rounded-xl text-xs space-y-1">
           <div className="font-bold">
             Arrêtée la présente facture à la somme de :
@@ -379,57 +375,28 @@ export default function TemplateFactureA4({
           <div className="italic font-medium text-slate-800">
             {montantEnLettres(totaux.totalNet)}
           </div>
-          <div className="pt-2 text-[11px] text-slate-600">
-            Mode de règlement :{" "}
-            <strong className="uppercase">
-              {facture.mode_paiement || "Espèces"}
-            </strong>
+          <div className="text-[11px] text-slate-600">
+            {facture.mode_paiement && (
+              <>Mode de règlement : <strong className="uppercase">{facture.mode_paiement}</strong></>
+            )}
             {facture.garantie_mois && (
-              <>
-                {" · "}Garantie :{" "}
-                <strong>{facture.garantie_mois} Mois</strong>
-              </>
+              <> · Garantie : <strong>{facture.garantie_mois} Mois</strong></>
             )}
           </div>
         </div>
-
-        {/* Résumé des totaux (côté droit, visible sur desktop) */}
-        {avecTva && (
-          <div className="w-full sm:w-[40%] space-y-1 text-xs print:hidden">
-            <div className="flex justify-between border-b border-black py-1">
-              <span>Total Brut HT :</span>
-              <span className="font-mono font-bold">
-                {formaterDA(totaux.totalNet)}
-              </span>
-            </div>
-            <div className="flex justify-between border-b border-black py-1">
-              <span>TVA (19%) :</span>
-              <span className="font-mono font-bold">
-                {formaterDA(totaux.tva)}
-              </span>
-            </div>
-            <div className="flex justify-between bg-[#d1d5db] p-2 border border-black font-black text-sm">
-              <span>TOTAL TTC :</span>
-              <span className="font-mono">{formaterDA(totaux.ttc)}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Cachet et signature ── */}
       {showCachet && (
-        <div className="flex justify-between items-end pt-4 border-t border-slate-300 text-xs">
+        <div className="flex justify-between items-end pt-2 border-t border-slate-300 text-xs">
           <div>
             {facture.vendeur && (
               <div>
                 Émis par : <strong>{facture.vendeur}</strong>
               </div>
             )}
-            <div className="text-[10px] text-slate-500">
-              Document généré automatiquement
-            </div>
           </div>
-          <div className="relative w-64 h-32">
+          <div className="relative w-40 h-20">
             {cachetSrc && (
               <img
                 src={cachetSrc}
@@ -441,34 +408,6 @@ export default function TemplateFactureA4({
         </div>
       )}
 
-      {/* ── Pied de page ── */}
-      {showCachet && (
-        <div className="bg-[#e5e7eb] py-3 px-6 text-xs text-brand-black mt-8">
-          <div className="text-center font-semibold mb-2 underline underline-offset-2">
-            Pour toutes informations, n&apos;hésitez pas de nous contacter
-          </div>
-          <div className="flex justify-between font-bold">
-            <div>
-              <p>Mobile :</p>
-              <p className="font-normal mt-0.5">
-                {entreprise?.tel || "0000 00 00 00"}
-              </p>
-            </div>
-            <div>
-              <p>Courriel :</p>
-              <p className="font-normal mt-0.5">
-                contact@{emailDomaine}.dz
-              </p>
-            </div>
-            <div className="text-right">
-              <p>Site :</p>
-              <p className="font-normal mt-0.5">
-                www.{emailDomaine}.dz
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
