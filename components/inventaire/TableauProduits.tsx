@@ -164,12 +164,6 @@ export default function TableauProduits({
                               {r.n}× {INFOS_STATUT[r.statut].libelle}
                             </span>
                           ))}
-                          {g.nbPostesReseaux > 0 && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                              <Share2 className="w-3 h-3" />
-                              {g.nbPostesReseaux}× Posté
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -212,9 +206,11 @@ export default function TableauProduits({
 
                   {/* Actions Rapides Modèle — avec Ruban superposé */}
                   <td className="py-4 px-4 text-right whitespace-nowrap relative" onClick={(e) => e.stopPropagation()}>
-                    {/* Ruban Vitrine / Inventaire — superposé sur le coin supérieur-droit de la ligne */}
+                    {/* Ruban Social / Vitrine / Inventaire — superposé sur le coin supérieur-droit de la ligne */}
                     <div className="absolute pointer-events-none z-20" style={{ top: 0, right: 0 }}>
-                      {g.enVitrine > 0 ? (
+                      {g.nbPostesReseaux > 0 ? (
+                        <RubanVitrine type="social" taille="row" />
+                      ) : g.enVitrine > 0 ? (
                         <RubanVitrine type="vitrine" taille="row" />
                       ) : (
                         <RubanVitrine type="inventaire" taille="row" />
@@ -359,7 +355,7 @@ export default function TableauProduits({
                 {/* Drill-down : Liste des Exemplaires Physiques Dépliée */}
                 {ouvert && (
                   <tr>
-                    <td colSpan={8} className="p-0 bg-brand-paper/50 dark:bg-white/5 border-y border-brand-light-grey dark:border-white/10">
+                    <td colSpan={estSocial ? 7 : 8} className="p-0 bg-brand-paper/50 dark:bg-white/5 border-y border-brand-light-grey dark:border-white/10">
                       <div className="py-3 px-3 sm:px-6 space-y-2">
                         <div className="flex items-center justify-between text-[10px] sm:text-xs font-black text-brand-warm-grey uppercase tracking-wider">
                           <span>Exemplaires physiques actifs ({g.unites.length})</span>

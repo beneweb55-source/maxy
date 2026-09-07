@@ -8,6 +8,7 @@ import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
 import { IconeBillet, IconeCrayon, IconeVitrine } from "@/components/icons";
 import { Plus, Boxes, Hash, Share2 } from "lucide-react";
+import RubanVitrine from "./RubanVitrine";
 import type { GroupeProduits } from "./types";
 
 interface GrilleProduitsProps {
@@ -85,22 +86,19 @@ export default function GrilleProduits({
               <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-black text-xs shadow-md ${
                   g.totalDisponibles > 0
-                    ? "bg-emerald-600 text-white"
-                    : "bg-red-600 text-white"
+                    ? "bg-succes text-white dark:bg-succes/80"
+                    : "bg-danger text-white dark:bg-danger/80"
                 }`}>
                   En stock : {g.totalDisponibles}
                 </span>
               </div>
 
-              {/* Badge Vitrine superposé */}
-              {g.enVitrine > 0 && (
-                <div className="absolute top-2 right-10">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-brand-orange text-white shadow-md">
-                    <IconeVitrine taille={10} />
-                    Vitrine
-                  </span>
-                </div>
-              )}
+              {/* Rubans superposés — coin supérieur droit */}
+              {g.nbPostesReseaux > 0 ? (
+                <RubanVitrine type="social" taille="card" />
+              ) : g.enVitrine > 0 ? (
+                <RubanVitrine type="vitrine" taille="card" />
+              ) : null}
 
               {/* Checkbox Sélection Modèle */}
               <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
@@ -141,12 +139,6 @@ export default function GrilleProduits({
                       {r.n}× {INFOS_STATUT[r.statut].libelle}
                     </span>
                   ))}
-                  {g.nbPostesReseaux > 0 && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                      <Share2 className="w-3 h-3" />
-                      {g.nbPostesReseaux}× Posté
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -229,6 +221,33 @@ export default function GrilleProduits({
                     title={g.enVitrine > 0 ? "Retirer de la vitrine" : "Mettre en vitrine"}
                   >
                     <IconeVitrine taille={16} />
+                  </button>
+                )}
+
+                {/* Bouton Social Toggle */}
+                {peutModifier && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tousPostes = g.unites.every(u => u.poste_reseaux);
+                      if (tousPostes) {
+                        const postesIds = g.unites.filter(u => u.poste_reseaux).map(u => u.id);
+                        onBasculerSocialIds(postesIds, false, g.reference);
+                      } else {
+                        const nonVendu = g.unites.filter(u => u.statut !== "vendu");
+                        if (nonVendu.length > 0) {
+                          onBasculerSocialIds(nonVendu.map(u => u.id), true, g.reference);
+                        }
+                      }
+                    }}
+                    className={`p-2 rounded-xl transition ${
+                      g.nbPostesReseaux > 0
+                        ? "text-blue-600 bg-blue-50 dark:bg-blue-900/40 dark:text-blue-400"
+                        : "text-brand-warm-grey hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    }`}
+                    title={g.nbPostesReseaux > 0 ? "Retirer des réseaux sociaux" : "Marquer comme posté"}
+                  >
+                    <Share2 className="w-4 h-4" />
                   </button>
                 )}
 

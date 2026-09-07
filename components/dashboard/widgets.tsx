@@ -258,21 +258,21 @@ function GraphiqueBarres({
         <button
           type="button"
           onClick={() => setGranularite('jour')}
-          className={`px-2 py-1 text-xs rounded-md font-medium transition ${granularite === 'jour' ? 'bg-brand-orange text-white' : 'bg-brand-light-grey/30 text-brand-smooth hover:bg-brand-light-grey/50'}`}
+          className={`px-2 py-1 text-xs rounded-md font-medium transition ${granularite === 'jour' ? 'bg-brand-orange text-white' : 'bg-brand-light-grey/30 text-brand-smooth hover:bg-brand-light-grey/50 dark:bg-white/10 dark:text-brand-warm-grey dark:hover:bg-white/15'}`}
         >
           Jour
         </button>
         <button
           type="button"
           onClick={() => setGranularite('mois')}
-          className={`px-2 py-1 text-xs rounded-md font-medium transition ${granularite === 'mois' ? 'bg-brand-orange text-white' : 'bg-brand-light-grey/30 text-brand-smooth hover:bg-brand-light-grey/50'}`}
+          className={`px-2 py-1 text-xs rounded-md font-medium transition ${granularite === 'mois' ? 'bg-brand-orange text-white' : 'bg-brand-light-grey/30 text-brand-smooth hover:bg-brand-light-grey/50 dark:bg-white/10 dark:text-brand-warm-grey dark:hover:bg-white/15'}`}
         >
           Mois
         </button>
         <button
           type="button"
           onClick={() => setGranularite('an')}
-          className={`px-2 py-1 text-xs rounded-md font-medium transition ${granularite === 'an' ? 'bg-brand-orange text-white' : 'bg-brand-light-grey/30 text-brand-smooth hover:bg-brand-light-grey/50'}`}
+          className={`px-2 py-1 text-xs rounded-md font-medium transition ${granularite === 'an' ? 'bg-brand-orange text-white' : 'bg-brand-light-grey/30 text-brand-smooth hover:bg-brand-light-grey/50 dark:bg-white/10 dark:text-brand-warm-grey dark:hover:bg-white/15'}`}
         >
           Année
         </button>
@@ -370,7 +370,7 @@ function DonutStatuts({
             <title>{`${INFOS_STATUT[s.statut].libelle} : ${s.nombre}`}</title>
           </path>
         ))}
-        <text x={100} y={95} textAnchor="middle" fontSize={26} fontWeight={700} className="fill-brand-black">
+        <text x={100} y={95} textAnchor="middle" fontSize={26} fontWeight={700} style={{ fill: 'var(--color-brand-black)' }}>
           {total}
         </text>
         <text x={100} y={115} textAnchor="middle" fontSize={11} className="fill-brand-grey">

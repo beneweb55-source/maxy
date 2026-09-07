@@ -1321,7 +1321,7 @@ export default function Inventaire({ role }: { role: Role }) {
               {vue !== "cockpit" && (
                 <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                   {/* Sélecteur d'arrivage / lot */}
-                  <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-xl bg-white dark:bg-brand-paper px-3 py-2 h-[44px]">
+                  <div className="relative flex-1 sm:flex-none flex items-center champ !rounded-lg !px-3 !py-2 !h-[44px]">
                     <select
                       value={searchParams?.get("sans_lot") === "1" ? "__sans__" : (searchParams?.get("lot") ?? "")}
                       onChange={(e) => {
@@ -1341,7 +1341,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   </div>
                   
                   {/* Tri */}
-                  <div className="relative flex-1 sm:flex-none flex items-center border border-brand-light-grey dark:border-white/10 rounded-xl bg-white dark:bg-brand-paper px-3 py-2 h-[44px]">
+                  <div className="relative flex-1 sm:flex-none flex items-center champ !rounded-lg !px-3 !py-2 !h-[44px]">
                     <select
                       value={
                         (searchParams?.get("tri") === "prix_achat" ? (searchParams?.get("ordre") === "desc" ? "prix_desc" : "prix_asc") : "")
@@ -1420,14 +1420,14 @@ export default function Inventaire({ role }: { role: Role }) {
                       type="date"
                       value={searchParams?.get("du") ?? ""}
                       onChange={(e) => majUrl({ du: e.target.value || null, page: "1" })}
-                      className="champ text-xs py-1 px-2 h-[32px] w-[110px]"
+                      className="champ text-xs py-1 px-2 h-[44px] w-[110px]"
                     />
                     <span className="text-brand-warm-grey">-</span>
                     <input
                       type="date"
                       value={searchParams?.get("au") ?? ""}
                       onChange={(e) => majUrl({ au: e.target.value || null, page: "1" })}
-                      className="champ text-xs py-1 px-2 h-[32px] w-[110px]"
+                      className="champ text-xs py-1 px-2 h-[44px] w-[110px]"
                     />
                   </div>
                 </div>
@@ -1445,7 +1445,7 @@ export default function Inventaire({ role }: { role: Role }) {
                   />
                   +30 jours
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-brand-orange cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={searchParams?.get("a_classer") === "1"}
@@ -1454,12 +1454,12 @@ export default function Inventaire({ role }: { role: Role }) {
                   />
                   À classer
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-brand-black dark:text-brand-warm-grey cursor-pointer">
                   <input
                     type="checkbox"
                     checked={searchParams?.get("a_tarifer") === "1"}
                     onChange={(e) => majUrl({ a_tarifer: e.target.checked ? "1" : null, page: "1" })}
-                    className="w-4 h-4 rounded border-red-300 text-red-500 focus:ring-red-500"
+                    className="w-4 h-4 rounded border-brand-light-grey text-brand-orange focus:ring-brand-orange"
                   />
                   À tarifer
                 </label>

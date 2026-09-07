@@ -262,7 +262,7 @@ export default function AppShell({
           {/* Sidebar */}
           <div
             ref={sidebarRef}
-            className={`absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl transition-transform duration-300 cubic-bezier-out ${
+            className={`absolute left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] shadow-2xl transition-transform duration-300 ease-out ${
               menuOuvert ? "translate-x-0" : "-translate-x-full"
             }`}
           >
@@ -300,7 +300,7 @@ export default function AppShell({
               >
                 <IconeRecherche taille={16} />
                 <span className="hidden xl:inline-block">Rechercher...</span>
-                <kbd className="ml-2 rounded border border-brand-light-grey bg-brand-paper px-1.5 py-0.5 font-mono text-[10px]">Ctrl K</kbd>
+                <kbd className="ml-2 rounded border border-brand-light-grey bg-brand-paper px-1.5 py-0.5 font-mono text-[10px] dark:border-white/20 dark:bg-white/10">Ctrl K</kbd>
               </button>
               <button
                 type="button"
@@ -333,31 +333,31 @@ export default function AppShell({
         <div className="space-y-4 text-sm text-brand-smooth mt-2">
           <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
             <span>Recherche globale</span>
-            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + K</kbd>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold dark:border-white/20 dark:bg-white/10">Ctrl + K</kbd>
           </div>
           <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
             <span>Aller à l'inventaire</span>
-            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + I</kbd>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold dark:border-white/20 dark:bg-white/10">Ctrl + I</kbd>
           </div>
           <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
             <span>Aller aux commandes</span>
-            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + O</kbd>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold dark:border-white/20 dark:bg-white/10">Ctrl + O</kbd>
           </div>
           <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
             <span>Aller aux factures</span>
-            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + Shift + F</kbd>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold dark:border-white/20 dark:bg-white/10">Ctrl + Shift + F</kbd>
           </div>
           <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
             <span>Nouveau lot (Gérant)</span>
-            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + N</kbd>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold dark:border-white/20 dark:bg-white/10">Ctrl + N</kbd>
           </div>
           <div className="flex justify-between items-center border-b border-brand-light-grey/50 pb-2">
             <span>Fermer / Retour en arrière</span>
-            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Échap</kbd>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold dark:border-white/20 dark:bg-white/10">Échap</kbd>
           </div>
           <div className="flex justify-between items-center pb-2">
             <span>Afficher ce guide</span>
-            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold">Ctrl + H</kbd>
+            <kbd className="rounded border border-brand-light-grey bg-brand-light-grey/20 px-2 py-1 font-mono font-bold dark:border-white/20 dark:bg-white/10">Ctrl + H</kbd>
           </div>
         </div>
       </Modale>

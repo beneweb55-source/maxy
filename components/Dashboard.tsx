@@ -80,7 +80,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => void charger(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-brand-light-grey bg-brand-white px-3 py-1.5 text-xs font-semibold text-brand-warm-grey transition hover-lift hover:text-brand-orange hover:border-brand-orange/30 shadow-sm"
+            className="btn btn-secondaire text-xs hover:text-brand-orange hover:border-brand-orange/30"
           >
             <IconeActualiser taille={14} />
             {t("dashboard.actualiser")}
