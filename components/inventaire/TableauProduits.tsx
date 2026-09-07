@@ -296,10 +296,13 @@ export default function TableauProduits({
                         <button
                           type="button"
                           onClick={() => {
-                            const tousPostes = g.unites.every(u => u.poste_reseaux);
-                            if (tousPostes) {
+                            // Si au moins une unité est postée → toutes les déposter
+                            // Si aucune n'est postée → poster la première non-vendue
+                            if (g.nbPostesReseaux > 0) {
                               const postesIds = g.unites.filter(u => u.poste_reseaux).map(u => u.id);
-                              onBasculerSocialIds(postesIds, false, g.reference);
+                              if (postesIds.length > 0) {
+                                onBasculerSocialIds(postesIds, false, g.reference);
+                              }
                             } else {
                               const nonVendu = g.unites.filter(u => u.statut !== "vendu");
                               if (nonVendu.length > 0) {

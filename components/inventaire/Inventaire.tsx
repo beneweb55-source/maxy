@@ -569,12 +569,16 @@ export default function Inventaire({ role }: { role: Role }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids, poste_reseaux: posteReseaux }),
       });
-      const corps = (await res.json().catch(() => null)) as { error?: string } | null;
+      const corps = await res.json().catch(() => null) as { error?: string; modifies?: number } | null;
       if (!res.ok) {
         afficher(corps?.error ?? "Erreur lors de la mise à jour réseaux sociaux.", "erreur");
         return;
       }
-      afficher(posteReseaux ? `${libelle} marqué comme posté.` : `${libelle} retiré des réseaux sociaux.`);
+      afficher(posteReseaux ? `${libelle} marqué comme posté (${corps?.modifies ?? ids.length} produit(s)).` : `${libelle} retiré des réseaux sociaux (${corps?.modifies ?? ids.length} produit(s)).`);
+      // Double refresh pour s'assurer que les données sont à jour
+      await charger();
+      // Petit délai puis re-refresh pour garantir la cohérence
+      await new Promise(r => setTimeout(r, 300));
       await charger();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");

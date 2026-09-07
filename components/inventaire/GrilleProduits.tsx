@@ -229,11 +229,16 @@ export default function GrilleProduits({
                   <button
                     type="button"
                     onClick={() => {
-                      const tousPostes = g.unites.every(u => u.poste_reseaux);
-                      if (tousPostes) {
+                      // Si au moins une unité est postée → toutes les déposter
+                      // Si aucune n'est postée → poster toutes les non-vendues
+                      if (g.nbPostesReseaux > 0) {
+                        // Déposter TOUTES les unités qui sont postées
                         const postesIds = g.unites.filter(u => u.poste_reseaux).map(u => u.id);
-                        onBasculerSocialIds(postesIds, false, g.reference);
+                        if (postesIds.length > 0) {
+                          onBasculerSocialIds(postesIds, false, g.reference);
+                        }
                       } else {
+                        // Poster toutes les unités non-vendues
                         const nonVendu = g.unites.filter(u => u.statut !== "vendu");
                         if (nonVendu.length > 0) {
                           onBasculerSocialIds(nonVendu.map(u => u.id), true, g.reference);
