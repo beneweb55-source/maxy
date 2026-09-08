@@ -10,7 +10,27 @@ import { StockService } from "@/lib/stock-service";
  * POST   /api/produits/[id]/composants → Attache un composant existant
  * PATCH  /api/produits/[id]/composants → Remplacement atomique d'un composant
  * DELETE /api/produits/[id]/composants → Détache un composant
+ *
+ * IMPORTANT: compositionHistorique writes are done OUTSIDE the $transaction
+ * to prevent the 25P02 "transaction aborted" cascade when the table is missing
+ * or the query fails. History logging is best-effort.
  */
+
+/** Best-effort history write — never throws */
+async function tracerHistorique(data: {
+  produit_id: number;
+  produit_parent_id: number | null;
+  user_id: number;
+  action: string;
+  composant_remplace_id?: number | null;
+  note?: string;
+}) {
+  try {
+    await prisma.compositionHistorique.create({ data });
+  } catch (err: any) {
+    console.warn("⚠️ compositionHistorique write skipped:", err.message);
+  }
+}
 
 // GET : Lister les composants d'un produit + historique + stats
 export async function GET(
@@ -27,31 +47,38 @@ export async function GET(
   }
 
   try {
-    const [produit, composants, historique, stats] = await Promise.all([
-      // Vérifier que le parent existe et est composé
-      prisma.produit.findUnique({
-        where: { id: produitId },
-        select: { id: true, reference: true, est_compose: true },
-      }),
-      // Composants attachés
-      prisma.produit.findMany({
-        where: { parent_id: produitId },
-        select: {
-          id: true,
-          code_interne: true,
-          reference: true,
-          categorie: true,
-          numero_serie: true,
-          grade: true,
-          statut: true,
-          prix_achat: true,
-          image_url: true,
-          modele: { select: { nom: true, categorie_id: true } },
-        },
-        orderBy: { id: "asc" },
-      }),
-      // 10 dernières opérations d'assemblage sur ce parent
-      prisma.compositionHistorique.findMany({
+    // Vérifier que le parent existe
+    const produit = await prisma.produit.findUnique({
+      where: { id: produitId },
+      select: { id: true, reference: true, est_compose: true },
+    });
+
+    if (!produit) {
+      return erreur(404, "Produit introuvable.");
+    }
+
+    // Composants attachés
+    const composants = await prisma.produit.findMany({
+      where: { parent_id: produitId },
+      select: {
+        id: true,
+        code_interne: true,
+        reference: true,
+        categorie: true,
+        numero_serie: true,
+        grade: true,
+        statut: true,
+        prix_achat: true,
+        image_url: true,
+        modele: { select: { nom: true, categorie_id: true } },
+      },
+      orderBy: { id: "asc" },
+    });
+
+    // 10 dernières opérations d'assemblage — best-effort
+    let historique: any[] = [];
+    try {
+      historique = await prisma.compositionHistorique.findMany({
         where: { produit_parent_id: produitId },
         include: {
           produit: { select: { code_interne: true, reference: true } },
@@ -59,21 +86,17 @@ export async function GET(
         },
         orderBy: { created_at: "desc" },
         take: 10,
-      }).catch((err) => {
-        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", err.message);
-        return [];
-      }),
-      // Stats agrégées
-      prisma.produit.aggregate({
-        where: { parent_id: produitId },
-        _count: true,
-        _sum: { prix_achat: true },
-      }),
-    ]);
-
-    if (!produit) {
-      return erreur(404, "Produit introuvable.");
+      });
+    } catch {
+      // Table may not exist — ignore
     }
+
+    // Stats agrégées
+    const stats = await prisma.produit.aggregate({
+      where: { parent_id: produitId },
+      _count: true,
+      _sum: { prix_achat: true },
+    });
 
     // Compter les composants par catégorie
     const parCategorie: Record<string, number> = {};
@@ -127,15 +150,14 @@ export async function POST(
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      // Vérifier que le produit parent existe
+    // Core operation in transaction — NO compositionHistorique here
+    const parentRef = await prisma.$transaction(async (tx) => {
       const parent = await tx.produit.findUnique({
         where: { id: parentId },
         select: { id: true, reference: true, statut: true, modele_id: true },
       });
       if (!parent) throw new Error("Produit parent introuvable.");
 
-      // Vérifier que le composant existe et est disponible
       const composant = await tx.produit.findUnique({
         where: { id: composantId },
         select: { id: true, reference: true, statut: true, parent_id: true, modele_id: true },
@@ -177,25 +199,21 @@ export async function POST(
         },
       });
 
-      // Tracer dans l'historique d'assemblage
-      try {
-        await tx.compositionHistorique.create({
-          data: {
-            produit_id: composantId,
-            produit_parent_id: parentId,
-            user_id: user.id,
-            action: "assemblage",
-            note: `Intégré dans "${parent.reference}"`,
-          },
-        });
-      } catch (histErr: any) {
-        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
-      }
-
       // Mettre à jour la quantité du Modèle si le composant y est lié
       if (composant.modele_id) {
         await StockService.synchroniserCompteModele(composant.modele_id, tx);
       }
+
+      return parent.reference;
+    });
+
+    // History logging OUTSIDE transaction — best-effort
+    await tracerHistorique({
+      produit_id: composantId,
+      produit_parent_id: parentId,
+      user_id: user.id,
+      action: "assemblage",
+      note: `Intégré dans "${parentRef}"`,
     });
 
     return NextResponse.json({ ok: true, message: "Composant intégré avec succès." });
@@ -241,15 +259,14 @@ export async function PATCH(
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      // Vérifier le parent
+    // Core operation in transaction — NO compositionHistorique here
+    const refs = await prisma.$transaction(async (tx) => {
       const parent = await tx.produit.findUnique({
         where: { id: parentId },
         select: { id: true, reference: true },
       });
       if (!parent) throw new Error("Produit parent introuvable.");
 
-      // Vérifier l'ancien composant
       const ancien = await tx.produit.findUnique({
         where: { id: ancienComposantId },
         select: { id: true, reference: true, parent_id: true, statut: true, modele_id: true },
@@ -259,7 +276,6 @@ export async function PATCH(
         throw new Error("L'ancien composant n'appartient pas à ce produit parent.");
       }
 
-      // Vérifier le nouveau composant
       const nouveau = await tx.produit.findUnique({
         where: { id: nouveauComposantId },
         select: { id: true, reference: true, statut: true, parent_id: true, modele_id: true },
@@ -289,20 +305,6 @@ export async function PATCH(
           note: `Remplacé par "${nouveau.reference}" (ID #${nouveauComposantId}) dans "${parent.reference}"`,
         },
       });
-      try {
-        await tx.compositionHistorique.create({
-          data: {
-            produit_id: ancienComposantId,
-            produit_parent_id: parentId,
-            user_id: user.id,
-            action: "remplacement",
-            composant_remplace_id: nouveauComposantId,
-            note: `Retiré du composé "${parent.reference}" — remplacé par "${nouveau.reference}"`,
-          },
-        });
-      } catch (histErr: any) {
-        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
-      }
       if (ancien.modele_id) {
         await StockService.synchroniserCompteModele(ancien.modele_id, tx);
       }
@@ -325,23 +327,31 @@ export async function PATCH(
           note: `Remplace "${ancien.reference}" (ID #${ancienComposantId}) dans "${parent.reference}"`,
         },
       });
-      try {
-        await tx.compositionHistorique.create({
-          data: {
-            produit_id: nouveauComposantId,
-            produit_parent_id: parentId,
-            user_id: user.id,
-            action: "assemblage",
-            note: `Intégré dans "${parent.reference}" en remplacement de "${ancien.reference}"`,
-          },
-        });
-      } catch (histErr: any) {
-        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
-      }
       if (nouveau.modele_id) {
         await StockService.synchroniserCompteModele(nouveau.modele_id, tx);
       }
+
+      return { parentRef: parent.reference, ancienRef: ancien.reference, nouveauRef: nouveau.reference };
     });
+
+    // History logging OUTSIDE transaction — best-effort
+    await Promise.all([
+      tracerHistorique({
+        produit_id: ancienComposantId,
+        produit_parent_id: parentId,
+        user_id: user.id,
+        action: "remplacement",
+        composant_remplace_id: nouveauComposantId,
+        note: `Retiré du composé "${refs.parentRef}" — remplacé par "${refs.nouveauRef}"`,
+      }),
+      tracerHistorique({
+        produit_id: nouveauComposantId,
+        produit_parent_id: parentId,
+        user_id: user.id,
+        action: "assemblage",
+        note: `Intégré dans "${refs.parentRef}" en remplacement de "${refs.ancienRef}"`,
+      }),
+    ]);
 
     return NextResponse.json({ ok: true, message: "Composant remplacé avec succès." });
   } catch (e: any) {
@@ -378,6 +388,7 @@ export async function DELETE(
   }
 
   try {
+    // Core operation in transaction — NO compositionHistorique here
     await prisma.$transaction(async (tx) => {
       const composant = await tx.produit.findUnique({
         where: { id: composantId },
@@ -408,25 +419,19 @@ export async function DELETE(
         },
       });
 
-      // Tracer dans l'historique d'assemblage
-      try {
-        await tx.compositionHistorique.create({
-          data: {
-            produit_id: composantId,
-            produit_parent_id: parentId,
-            user_id: user.id,
-            action: "désassemblage",
-            note: `Retiré du composé (ID #${parentId}) — retour en stock`,
-          },
-        });
-      } catch (histErr: any) {
-        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
-      }
-
       // Mettre à jour la quantité du Modèle si le composant y est lié
       if (composant.modele_id) {
         await StockService.synchroniserCompteModele(composant.modele_id, tx);
       }
+    });
+
+    // History logging OUTSIDE transaction — best-effort
+    await tracerHistorique({
+      produit_id: composantId,
+      produit_parent_id: parentId,
+      user_id: user.id,
+      action: "désassemblage",
+      note: `Retiré du composé (ID #${parentId}) — retour en stock`,
     });
 
     return NextResponse.json({ ok: true, message: "Composant retiré et remis en stock." });

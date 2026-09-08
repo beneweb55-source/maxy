@@ -185,6 +185,7 @@ export async function POST(request: NextRequest) {
     }
 
     const groupeVente = randomUUID();
+    const histBomEntries: Array<{ produit_id: number; produit_parent_id: number; user_id: number; action: string; note: string }> = [];
     const venteIds = await prisma.$transaction(async (tx) => {
       // Double vérification atomique sous transaction (Protection contre Race Conditions)
       const pVerifs = await tx.produit.findMany({
@@ -253,14 +254,13 @@ export async function POST(request: NextRequest) {
                   note: `Vendu avec l'équipement ${produit.code_interne} (vente groupée composé)`,
                 },
               });
-              await tx.compositionHistorique.create({
-                data: {
-                  produit_id: comp.id,
-                  produit_parent_id: produit.id,
-                  user_id: user.id,
-                  action: "vente_composant",
-                  note: `Composant vendu avec l'équipement ${produit.code_interne}`,
-                },
+              // Collect for best-effort history write AFTER transaction
+              histBomEntries.push({
+                produit_id: comp.id,
+                produit_parent_id: produit.id,
+                user_id: user.id,
+                action: "vente_composant",
+                note: `Composant vendu avec l'équipement ${produit.code_interne}`,
               });
               if (comp.modele_id) {
                 await StockService.synchroniserCompteModele(comp.modele_id, tx);
@@ -368,6 +368,15 @@ export async function POST(request: NextRequest) {
       });
       return { cree, facture };
     });
+
+    // Best-effort BOM history writes — outside transaction to avoid 25P02 cascade
+    for (const entry of histBomEntries) {
+      try {
+        await prisma.compositionHistorique.create({ data: entry });
+      } catch {
+        // Table may not exist — non-critical
+      }
+    }
 
     return NextResponse.json(
       {

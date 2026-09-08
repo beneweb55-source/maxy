@@ -190,6 +190,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Collect history entries outside transaction to avoid 25P02 cascade
+    const histBomEntries: Array<{ produit_id: number; produit_parent_id: number; user_id: number; action: string; note: string }> = [];
+
     const venteId = await prisma.$transaction(async (tx) => {
       // 1. Double vérification atomique sous transaction (Protection contre Race Conditions)
       const pVerif = await tx.produit.findUnique({
@@ -248,14 +251,13 @@ export async function POST(request: NextRequest) {
                 note: `Vendu avec l'équipement ${produit.code_interne} (vente composé)`,
               },
             });
-            await tx.compositionHistorique.create({
-              data: {
-                produit_id: comp.id,
-                produit_parent_id: produit.id,
-                user_id: user.id,
-                action: "vente_composant",
-                note: `Composant vendu avec l'équipement ${produit.code_interne}`,
-              },
+            // Collect for best-effort history write AFTER transaction
+            histBomEntries.push({
+              produit_id: comp.id,
+              produit_parent_id: produit.id,
+              user_id: user.id,
+              action: "vente_composant",
+              note: `Composant vendu avec l'équipement ${produit.code_interne}`,
             });
             // Resync du modèle du composant
             const modeleComp = await tx.produit.findUnique({
@@ -373,6 +375,15 @@ export async function POST(request: NextRequest) {
 
       return { venteId: vente.id, facture };
     });
+
+    // Best-effort BOM history writes — outside transaction to avoid 25P02 cascade
+    for (const entry of histBomEntries) {
+      try {
+        await prisma.compositionHistorique.create({ data: entry });
+      } catch {
+        // Table may not exist — non-critical
+      }
+    }
 
     return NextResponse.json(
       {

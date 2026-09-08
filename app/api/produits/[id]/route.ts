@@ -705,9 +705,7 @@ export async function DELETE(
       // 6. Supprimer images, historiques et réparations
       await tx.produitImage.deleteMany({ where: { produit_id: produitId } });
       await tx.historiqueStatut.deleteMany({ where: { produit_id: produitId } });
-      await tx.compositionHistorique.deleteMany({
-        where: { OR: [{ produit_id: produitId }, { produit_parent_id: produitId }] },
-      });
+      // compositionHistorique deleted AFTER transaction (best-effort, avoids 25P02)
       await tx.reparation.deleteMany({ where: { produit_id: produitId } });
 
       // 7. Supprimer le produit
@@ -723,6 +721,15 @@ export async function DELETE(
         code_interne: produit.code_interne,
       });
     });
+
+    // Best-effort: clean composition history after transaction (table may not exist)
+    try {
+      await prisma.compositionHistorique.deleteMany({
+        where: { OR: [{ produit_id: produitId }, { produit_parent_id: produitId }] },
+      });
+    } catch {
+      // Table may not exist — non-critical
+    }
 
     return NextResponse.json({ ok: true, supprime: produit.code_interne });
   } catch (e) {
