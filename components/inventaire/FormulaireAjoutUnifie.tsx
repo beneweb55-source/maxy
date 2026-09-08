@@ -12,6 +12,7 @@ import {
   Layers,
   Search,
   Trash2,
+  Boxes,
 } from "lucide-react";
 import type { CategorieNoeud } from "./types";
 import Modale from "@/components/Modale";
@@ -157,41 +158,51 @@ export default function FormulaireAjoutUnifie({
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  // Recherche de composants disponibles
-  const [rechercheComposant, setRechercheComposant] = useState("");
-  const [resultatsComposants, setResultatsComposants] = useState<ComposantChoisi[]>([]);
-  const [chargementRecherche, setChargementRecherche] = useState(false);
+  // Composants disponibles du stock
+  const [tousComposants, setTousComposants] = useState<ComposantChoisi[]>([]);
+  const [chargementComposants, setChargementComposants] = useState(false);
+  const [filtreComposant, setFiltreComposant] = useState("");
 
   const categories = aplatirCategories(categoriesTree);
 
-  /* ── Recherche de composants disponibles ── */
+  /* ── Charger TOUS les composants disponibles quand le toggle est activé ── */
   useEffect(() => {
-    if (!formulaire.est_compose) return;
-    const q = rechercheComposant.trim();
-    if (q.length < 2) {
-      setResultatsComposants([]);
+    if (!formulaire.est_compose) {
+      setTousComposants([]);
+      setFiltreComposant("");
       return;
     }
-    const timer = setTimeout(async () => {
-      setChargementRecherche(true);
+    let abort = false;
+    (async () => {
+      setChargementComposants(true);
       try {
-        const params = new URLSearchParams({ q, limit: "20" });
-        const res = await fetch(`/api/produits/composants/disponibles?${params}`);
-        if (res.ok) {
+        const res = await fetch("/api/produits/composants/disponibles?limit=100");
+        if (res.ok && !abort) {
           const data = await res.json();
-          // Exclure les produits déjà sélectionnés
-          const idsSelectionnes = new Set(formulaire.composantsSelectionnes.map((c) => c.id));
-          const filtres = (data.produits || []).filter((p: ComposantChoisi) => !idsSelectionnes.has(p.id));
-          setResultatsComposants(filtres);
+          setTousComposants(data.produits || []);
         }
       } catch {
         // ignorer
       } finally {
-        setChargementRecherche(false);
+        if (!abort) setChargementComposants(false);
       }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [rechercheComposant, formulaire.est_compose, formulaire.composantsSelectionnes]);
+    })();
+    return () => { abort = true; };
+  }, [formulaire.est_compose]);
+
+  // Filtrage local (instantané, pas de debounce)
+  const idsSelectionnes = new Set(formulaire.composantsSelectionnes.map((c) => c.id));
+  const filtresLocaux = tousComposants.filter((c) => {
+    if (idsSelectionnes.has(c.id)) return false;
+    if (!filtreComposant.trim()) return true;
+    const q = filtreComposant.toLowerCase();
+    return (
+      c.reference.toLowerCase().includes(q) ||
+      c.code_interne.toLowerCase().includes(q) ||
+      c.categorie.toLowerCase().includes(q) ||
+      (c.numero_serie || "").toLowerCase().includes(q)
+    );
+  });
 
   /* ── Focus auto sur le champ référence à l'ouverture ── */
   useEffect(() => {
@@ -254,8 +265,6 @@ export default function FormulaireAjoutUnifie({
       ...f,
       composantsSelectionnes: [...f.composantsSelectionnes, c],
     }));
-    setRechercheComposant("");
-    setResultatsComposants([]);
   }, []);
 
   const retirerComposant = useCallback((id: number) => {
@@ -271,8 +280,8 @@ export default function FormulaireAjoutUnifie({
     setFormulaire({ ...FORMULAIRE_VIDE, garderOuvert: garder });
     setPhotos([]);
     setErreur(null);
-    setRechercheComposant("");
-    setResultatsComposants([]);
+    setFiltreComposant("");
+    setTousComposants([]);
     setTimeout(() => refInput.current?.focus(), 100);
   }, [formulaire.garderOuvert]);
 
@@ -737,6 +746,11 @@ export default function FormulaireAjoutUnifie({
                 <span className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white">
                   Produit Composé (BOM)
                 </span>
+                {formulaire.composantsSelectionnes.length > 0 && (
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-orange text-white">
+                    {formulaire.composantsSelectionnes.length}
+                  </span>
+                )}
               </div>
               <button
                 type="button"
@@ -756,56 +770,76 @@ export default function FormulaireAjoutUnifie({
             {formulaire.est_compose && (
               <div className="space-y-3 animate-entree">
                 <p className="text-[11px] text-brand-warm-grey">
-                  Ce produit sera un assemblage. Sélectionnez les composants du stock à intégrer.
+                  Activez ce mode pour assembler ce produit avec des composants du stock.
                 </p>
 
-                {/* Recherche */}
+                {/* Filtre rapide */}
                 <div className="relative">
                   <Search className="w-4 h-4 text-brand-warm-grey absolute left-3 top-2.5" />
                   <input
                     type="text"
-                    value={rechercheComposant}
-                    onChange={(e) => setRechercheComposant(e.target.value)}
-                    placeholder="Rechercher un composant (réf, code, S/N)..."
+                    value={filtreComposant}
+                    onChange={(e) => setFiltreComposant(e.target.value)}
+                    placeholder="Filtrer par référence, catégorie, code..."
                     className="champ pl-9 text-xs"
                   />
+                  {filtreComposant && (
+                    <button
+                      type="button"
+                      onClick={() => setFiltreComposant("")}
+                      className="absolute right-3 top-2.5 text-brand-warm-grey hover:text-brand-black"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
-                {/* Résultats */}
-                {chargementRecherche && (
-                  <p className="text-[11px] text-brand-warm-grey text-center py-2">Recherche...</p>
+                {/* Chargement */}
+                {chargementComposants && (
+                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-brand-warm-grey">
+                    <span className="w-4 h-4 border-2 border-brand-orange/30 border-t-brand-orange rounded-full animate-spin" />
+                    Chargement du stock disponible...
+                  </div>
                 )}
-                {!chargementRecherche && rechercheComposant.trim().length >= 2 && resultatsComposants.length === 0 && (
-                  <p className="text-[11px] text-brand-warm-grey text-center py-2 border border-dashed border-brand-light-grey/60 rounded-xl">
-                    Aucun composant disponible trouvé.
-                  </p>
+
+                {/* Liste des composants disponibles */}
+                {!chargementComposants && filtresLocaux.length === 0 && (
+                  <div className="py-6 text-center border border-dashed border-brand-light-grey/60 rounded-xl">
+                    <Boxes className="w-6 h-6 text-brand-warm-grey/40 mx-auto mb-1.5" />
+                    <p className="text-[11px] text-brand-warm-grey font-bold">
+                      {tousComposants.length === 0
+                        ? "Aucun produit disponible en stock."
+                        : "Aucun résultat pour ce filtre."}
+                    </p>
+                  </div>
                 )}
-                {resultatsComposants.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
-                    {resultatsComposants.slice(0, 10).map((c) => (
-                      <div
+
+                {!chargementComposants && filtresLocaux.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                    {filtresLocaux.map((c) => (
+                      <button
                         key={c.id}
-                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-brand-light-grey/50 dark:border-white/10 bg-white dark:bg-brand-paper hover:border-brand-orange/50 transition"
+                        type="button"
+                        onClick={() => ajouterComposant(c)}
+                        className="w-full flex items-center justify-between gap-2 p-2.5 rounded-xl border border-brand-light-grey/50 dark:border-white/10 bg-white dark:bg-brand-paper hover:border-brand-orange/60 hover:bg-brand-orange/5 transition text-left"
                       >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-mono text-[10px] font-bold text-brand-orange">{c.code_interne}</span>
-                            <span className="text-[11px] font-extrabold text-brand-black dark:text-white truncate max-w-[140px]">
+                            <span className="text-[11px] font-extrabold text-brand-black dark:text-white truncate">
                               {c.reference}
                             </span>
                           </div>
-                          <span className="text-[10px] text-brand-warm-grey">
-                            {c.categorie} {c.numero_serie ? `· S/N: ${c.numero_serie}` : ""}
-                          </span>
+                          <div className="flex items-center gap-1.5 text-[10px] text-brand-warm-grey mt-0.5">
+                            <span className="px-1.5 py-0.5 rounded bg-brand-light-grey/30 dark:bg-white/5 font-bold">
+                              {c.categorie}
+                            </span>
+                            {c.grade && <span>· {c.grade}</span>}
+                            {c.numero_serie && <span>· S/N: {c.numero_serie}</span>}
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => ajouterComposant(c)}
-                          className="btn btn-primaire text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
+                        <Plus className="w-4 h-4 text-brand-orange shrink-0" />
+                      </button>
                     ))}
                   </div>
                 )}
@@ -813,13 +847,15 @@ export default function FormulaireAjoutUnifie({
                 {/* Composants sélectionnés */}
                 {formulaire.composantsSelectionnes.length > 0 && (
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-extrabold uppercase text-brand-warm-grey">
-                      Composants intégrés ({formulaire.composantsSelectionnes.length})
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold uppercase text-brand-warm-grey">
+                        Intégrés ({formulaire.composantsSelectionnes.length})
+                      </span>
+                    </div>
                     {formulaire.composantsSelectionnes.map((c) => (
                       <div
                         key={c.id}
-                        className="flex items-center justify-between gap-2 p-2 rounded-xl bg-brand-orange/5 dark:bg-brand-orange/10 border border-brand-orange/20"
+                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-brand-orange/5 dark:bg-brand-orange/10 border border-brand-orange/20"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <Layers className="w-3 h-3 text-brand-orange shrink-0" />
@@ -827,13 +863,14 @@ export default function FormulaireAjoutUnifie({
                           <span className="text-[11px] font-bold text-brand-black dark:text-white truncate">
                             {c.reference}
                           </span>
+                          <span className="text-[10px] text-brand-warm-grey hidden sm:inline">{c.categorie}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => retirerComposant(c.id)}
-                          className="p-1 rounded-lg text-brand-warm-grey hover:text-danger hover:bg-danger/10 transition shrink-0"
+                          className="p-1.5 rounded-lg text-brand-warm-grey hover:text-danger hover:bg-danger/10 transition shrink-0"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}

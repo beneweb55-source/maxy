@@ -41,6 +41,7 @@ export async function GET(request: Request) {
         { code_interne: { contains: q, mode: "insensitive" } },
         { reference: { contains: q, mode: "insensitive" } },
         { numero_serie: { contains: q, mode: "insensitive" } },
+        { categorie: { contains: q, mode: "insensitive" } },
       ];
     }
 
