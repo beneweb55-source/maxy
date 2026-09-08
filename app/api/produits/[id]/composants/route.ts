@@ -59,6 +59,9 @@ export async function GET(
         },
         orderBy: { created_at: "desc" },
         take: 10,
+      }).catch((err) => {
+        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", err.message);
+        return [];
       }),
       // Stats agrégées
       prisma.produit.aggregate({
@@ -175,15 +178,19 @@ export async function POST(
       });
 
       // Tracer dans l'historique d'assemblage
-      await tx.compositionHistorique.create({
-        data: {
-          produit_id: composantId,
-          produit_parent_id: parentId,
-          user_id: user.id,
-          action: "assemblage",
-          note: `Intégré dans "${parent.reference}"`,
-        },
-      });
+      try {
+        await tx.compositionHistorique.create({
+          data: {
+            produit_id: composantId,
+            produit_parent_id: parentId,
+            user_id: user.id,
+            action: "assemblage",
+            note: `Intégré dans "${parent.reference}"`,
+          },
+        });
+      } catch (histErr: any) {
+        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
+      }
 
       // Mettre à jour la quantité du Modèle si le composant y est lié
       if (composant.modele_id) {
@@ -282,16 +289,20 @@ export async function PATCH(
           note: `Remplacé par "${nouveau.reference}" (ID #${nouveauComposantId}) dans "${parent.reference}"`,
         },
       });
-      await tx.compositionHistorique.create({
-        data: {
-          produit_id: ancienComposantId,
-          produit_parent_id: parentId,
-          user_id: user.id,
-          action: "remplacement",
-          composant_remplace_id: nouveauComposantId,
-          note: `Retiré du composé "${parent.reference}" — remplacé par "${nouveau.reference}"`,
-        },
-      });
+      try {
+        await tx.compositionHistorique.create({
+          data: {
+            produit_id: ancienComposantId,
+            produit_parent_id: parentId,
+            user_id: user.id,
+            action: "remplacement",
+            composant_remplace_id: nouveauComposantId,
+            note: `Retiré du composé "${parent.reference}" — remplacé par "${nouveau.reference}"`,
+          },
+        });
+      } catch (histErr: any) {
+        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
+      }
       if (ancien.modele_id) {
         await StockService.synchroniserCompteModele(ancien.modele_id, tx);
       }
@@ -314,15 +325,19 @@ export async function PATCH(
           note: `Remplace "${ancien.reference}" (ID #${ancienComposantId}) dans "${parent.reference}"`,
         },
       });
-      await tx.compositionHistorique.create({
-        data: {
-          produit_id: nouveauComposantId,
-          produit_parent_id: parentId,
-          user_id: user.id,
-          action: "assemblage",
-          note: `Intégré dans "${parent.reference}" en remplacement de "${ancien.reference}"`,
-        },
-      });
+      try {
+        await tx.compositionHistorique.create({
+          data: {
+            produit_id: nouveauComposantId,
+            produit_parent_id: parentId,
+            user_id: user.id,
+            action: "assemblage",
+            note: `Intégré dans "${parent.reference}" en remplacement de "${ancien.reference}"`,
+          },
+        });
+      } catch (histErr: any) {
+        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
+      }
       if (nouveau.modele_id) {
         await StockService.synchroniserCompteModele(nouveau.modele_id, tx);
       }
@@ -394,15 +409,19 @@ export async function DELETE(
       });
 
       // Tracer dans l'historique d'assemblage
-      await tx.compositionHistorique.create({
-        data: {
-          produit_id: composantId,
-          produit_parent_id: parentId,
-          user_id: user.id,
-          action: "désassemblage",
-          note: `Retiré du composé (ID #${parentId}) — retour en stock`,
-        },
-      });
+      try {
+        await tx.compositionHistorique.create({
+          data: {
+            produit_id: composantId,
+            produit_parent_id: parentId,
+            user_id: user.id,
+            action: "désassemblage",
+            note: `Retiré du composé (ID #${parentId}) — retour en stock`,
+          },
+        });
+      } catch (histErr: any) {
+        console.warn("⚠️ compositionHistorique table unavailable, skipping history:", histErr.message);
+      }
 
       // Mettre à jour la quantité du Modèle si le composant y est lié
       if (composant.modele_id) {
