@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   const categorieId = searchParams.get("categorie_id");
   const modeleId = searchParams.get("modele_id");
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || 20));
+  const limit = Math.min(300, Math.max(1, Number(searchParams.get("limit")) || 50));
   const skip = (page - 1) * limit;
 
   try {
@@ -42,6 +42,7 @@ export async function GET(request: Request) {
         { reference: { contains: q, mode: "insensitive" } },
         { numero_serie: { contains: q, mode: "insensitive" } },
         { categorie: { contains: q, mode: "insensitive" } },
+        { modele: { nom: { contains: q, mode: "insensitive" } } },
       ];
     }
 

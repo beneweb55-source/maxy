@@ -76,6 +76,7 @@ interface ComposantChoisi {
   grade: string | null;
   prix_achat: number;
   image_url: string | null;
+  modele?: { nom: string } | null;
 }
 
 interface Formulaire {
@@ -165,6 +166,20 @@ export default function FormulaireAjoutUnifie({
 
   const categories = aplatirCategories(categoriesTree);
 
+  /* ── Catégories qui NE sont PAS des composants (produits entiers) ── */
+  const CATEGORIES_EXCLUES_COMPOSANTS = [
+    "laptop", "ultrabook", "serveur", "imprimante", "tout-en-un", "all-in-one",
+    "clavier", "souris", "combo", "toner", "tambour", "nas", "das",
+    "terminal", "caisse", "tpv", "visioconférence", "caméra", "switch",
+    "écran", "monitor", "tablette", "téléphone", "phone", "tablet",
+    "à classifier",
+  ];
+
+  function estCategoryValide(categorie: string): boolean {
+    const catLower = categorie.toLowerCase();
+    return !CATEGORIES_EXCLUES_COMPOSANTS.some((excl) => catLower.includes(excl));
+  }
+
   /* ── Charger TOUS les composants disponibles quand le toggle est activé ── */
   useEffect(() => {
     if (!formulaire.est_compose) {
@@ -176,10 +191,14 @@ export default function FormulaireAjoutUnifie({
     (async () => {
       setChargementComposants(true);
       try {
-        const res = await fetch("/api/produits/composants/disponibles?limit=100");
+        const res = await fetch("/api/produits/composants/disponibles?limit=200");
         if (res.ok && !abort) {
           const data = await res.json();
-          setTousComposants(data.produits || []);
+          // Filtrer les catégories non-composants côté client
+          const produits = (data.produits || []).filter((p: ComposantChoisi) =>
+            estCategoryValide(p.categorie)
+          );
+          setTousComposants(produits);
         }
       } catch {
         // ignorer
@@ -200,7 +219,8 @@ export default function FormulaireAjoutUnifie({
       c.reference.toLowerCase().includes(q) ||
       c.code_interne.toLowerCase().includes(q) ||
       c.categorie.toLowerCase().includes(q) ||
-      (c.numero_serie || "").toLowerCase().includes(q)
+      (c.numero_serie || "").toLowerCase().includes(q) ||
+      (c as any).modele?.nom?.toLowerCase().includes(q) || false
     );
   });
 
