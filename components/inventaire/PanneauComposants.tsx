@@ -33,6 +33,8 @@ export interface ComposantProduit {
   prix_achat: number;
   image_url: string | null;
   modele?: { nom: string; categorie_id?: number } | null;
+  quantite?: number;
+  bom_entry_id?: number;
 }
 
 interface HistoriqueOperation {
@@ -141,7 +143,7 @@ export default function PanneauComposants({
       try {
         const params = new URLSearchParams();
         if (recherche.trim()) params.set("q", recherche.trim());
-        if (filtreCategorie) params.set("q", filtreCategorie);
+        if (filtreCategorie) params.set("categorie_nom", filtreCategorie);
         params.set("limit", "30");
         const res = await fetch(`/api/produits/composants/disponibles?${params.toString()}`);
         if (res.ok) {
@@ -216,6 +218,28 @@ export default function PanneauComposants({
     }
   };
 
+  // 5. Modifier la quantité d'un composant
+  const modifierQuantite = async (composantId: number, nouvelleQuantite: number) => {
+    if (enAction) return;
+    setEnAction(true);
+    try {
+      const res = await fetch(`/api/produits/${produitId}/composants`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ composant_id: composantId, quantite: nouvelleQuantite }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur lors de la mise à jour.");
+
+      await chargerComposants();
+      if (onMiseAJour) onMiseAJour();
+    } catch (e: any) {
+      afficher(e?.message || "Erreur lors de la mise à jour.", "erreur");
+    } finally {
+      setEnAction(false);
+    }
+  };
+
   // Catégories uniques pour les filtres
   const categoriesUniques = [...new Set(composants.map((c) => c.categorie))].sort();
 
@@ -253,7 +277,13 @@ export default function PanneauComposants({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-brand-glow/20 dark:bg-white/5 border border-brand-orange/20 text-xs">
           <div>
             <span className="text-[10px] font-extrabold uppercase text-brand-warm-grey block">Composants intégrés</span>
-            <span className="text-sm font-black text-brand-black dark:text-white">{composants.length} pièce(s)</span>
+            <span className="text-sm font-black text-brand-black dark:text-white">
+              {composants.length} type{composants.length > 1 ? "s" : ""}
+              {(() => {
+                const totalPieces = composants.reduce((s, c) => s + (c.quantite || 1), 0);
+                return totalPieces !== composants.length ? ` · ${totalPieces} pièce(s)` : "";
+              })()}
+            </span>
           </div>
           <div>
             <span className="text-[10px] font-extrabold uppercase text-brand-orange block">Coût total composants</span>
@@ -324,7 +354,7 @@ export default function PanneauComposants({
                         key={c.id}
                         className="p-3 flex items-center justify-between gap-2 hover:bg-brand-light-grey/15 dark:hover:bg-white/3 transition-colors"
                       >
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <Link
                               href={`/produits/${c.id}`}
@@ -346,10 +376,40 @@ export default function PanneauComposants({
                               <span>S/N: <strong className="font-mono">{c.numero_serie}</strong></span>
                             )}
                             <span className="font-mono font-bold text-brand-black dark:text-white">
-                              {formaterDA(c.prix_achat)}
+                              {formaterDA(c.prix_achat * (c.quantite || 1))}
                             </span>
+                            {(c.quantite || 1) > 1 && (
+                              <span className="text-[9px] text-brand-warm-grey/60">({formaterDA(c.prix_achat)} x{c.quantite})</span>
+                            )}
                           </div>
                         </div>
+
+                        {/* Contrôle quantité [-] N [+] */}
+                        {peutModifier && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => modifierQuantite(c.id, (c.quantite || 1) - 1)}
+                              disabled={enAction || (c.quantite || 1) <= 1}
+                              className="w-6 h-6 rounded-md bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-danger/10 hover:text-danger flex items-center justify-center text-xs font-bold transition disabled:opacity-30"
+                              title="Retirer une unité"
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center text-[11px] font-black text-brand-black dark:text-white">
+                              {c.quantite || 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => modifierQuantite(c.id, (c.quantite || 1) + 1)}
+                              disabled={enAction}
+                              className="w-6 h-6 rounded-md bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-emerald-100 hover:text-emerald-600 flex items-center justify-center text-xs font-bold transition disabled:opacity-30"
+                              title="Ajouter une unité"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
 
                         {peutModifier && (
                           <button

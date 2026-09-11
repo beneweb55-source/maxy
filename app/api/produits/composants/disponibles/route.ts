@@ -5,7 +5,7 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 /**
  * GET /api/produits/composants/disponibles
  * Recherche de composants disponibles pour intégration BOM.
- * Filtre : statut NOT IN [vendu, hs, assemble] ET parent_id = null.
+ * Filtre : statut NOT IN [vendu, hs] ET non présent dans bom_entries.
  *
  * Query params :
  *   q          → recherche texte (code_interne, reference, numero_serie)
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() || "";
   const categorieId = searchParams.get("categorie_id");
+  const categorieNom = searchParams.get("categorie_nom")?.trim() || "";
   const modeleId = searchParams.get("modele_id");
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const limit = Math.min(300, Math.max(1, Number(searchParams.get("limit")) || 50));
@@ -29,13 +30,22 @@ export async function GET(request: Request) {
 
   try {
     // Statuts qui retirent le produit du stock disponible
-    const STATUTS_NON_DISPONIBLES = ["vendu", "hs", "assemble"];
+    const STATUTS_NON_DISPONIBLES = ["vendu", "hs"];
+
+    // Exclure les produits déjà attachés via BomEntry
+    const dejaAttaches = await prisma.bomEntry.findMany({
+      select: { produit_composant_id: true },
+    });
+    const idsAttaches = [...new Set(dejaAttaches.map((e) => e.produit_composant_id))];
 
     const where: any = {
       statut: { notIn: STATUTS_NON_DISPONIBLES },
-      parent_id: null,
       bom_role: { in: ["component", "both"] },
     };
+
+    if (idsAttaches.length > 0) {
+      where.id = { notIn: idsAttaches };
+    }
 
     if (q) {
       where.OR = [
@@ -49,6 +59,8 @@ export async function GET(request: Request) {
 
     if (categorieId) {
       where.categorie_id = Number(categorieId);
+    } else if (categorieNom) {
+      where.categorie = { contains: categorieNom, mode: "insensitive" };
     }
 
     if (modeleId) {

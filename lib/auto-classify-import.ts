@@ -21,6 +21,7 @@ export interface ClassificationImportResult {
   cheminComplet: string;
   marque?: string;
   scoreConfiance: "haut" | "moyen" | "faible";
+  scoreNumerique: number;
   doute: boolean;
   explication?: string;
   attributsExtraits: Record<string, any>;
@@ -54,6 +55,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       sousCategorieNom: "À Classifier",
       cheminComplet: chemin("DIVERS", "Non Classé", "À Classifier"),
       scoreConfiance: "faible",
+      scoreNumerique: 0,
       doute: true,
       explication: "Désignation vide ou non renseignée",
       attributsExtraits: {},
@@ -62,6 +64,10 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
 
   const texte = designationBrute.trim();
   const texteNorm = texte.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  // Détecter si la désignation contient des indices de "produit fini" (PC, portable, serveur complet)
+  // pour éviter les faux positifs sur les composants internes
+  const estProduitFini = /\b(portable|laptop|notebook|ultrabook|pc\s*(bureau|fixe|portable)|optiplex|thinkcentre|prodesk|elitedesk|thinkpad|elitebook|probook|latitude|all[\s-]*in[\s-]*one|aio|serveur|proliant|poweredge|thinksystem|workstation|macbook|imac)\b/i.test(texteNorm);
 
   // 1. Extraction de la marque
   let marqueExtraite: string | undefined = undefined;
@@ -121,8 +127,11 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.MEMOIRE, "Processeurs (CPU)", "Processeurs Serveur (Intel Xeon / AMD EPYC)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
-      doute: false,
-      explication: "Détecté comme processeur serveur (Intel Xeon / AMD EPYC)",
+      scoreNumerique: estProduitFini ? 60 : 95,
+      doute: estProduitFini,
+      explication: estProduitFini
+        ? "Xeon détecté mais la désignation semble être un produit fini — vérification recommandée"
+        : "Détecté comme processeur serveur (Intel Xeon / AMD EPYC)",
       attributsExtraits: attributs,
     };
   }
@@ -142,6 +151,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.ALIMENTATION, "Chargeurs & Alimentation Externe", "Chargeurs Embout Propriétaire (Jack / Slim Tip)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 92,
       doute: false,
       explication: "Détecté comme chargeur ou bloc d'alimentation",
       attributsExtraits: attributs,
@@ -154,7 +164,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     texteNorm.includes("barrette") ||
     texteNorm.includes("memoire vive") ||
     (texteNorm.includes("ram") && /\b[0-9]{1,3}\s*(go|gb)\b/i.test(texteNorm))) &&
-    !texteNorm.includes("laptop") && !texteNorm.includes("portable") && !texteNorm.includes("optiplex") && !texteNorm.includes("thinkpad")
+    !estProduitFini
   ) {
     const isSodimm = texteNorm.includes("sodimm") || texteNorm.includes("laptop") || texteNorm.includes("portable");
     const sousCat = isSodimm ? "RAM PC Portable (SO-DIMM)" : "RAM PC Fixe (UDIMM / Non-ECC)";
@@ -165,6 +175,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.MEMOIRE, "Mémoire Vive (RAM)", sousCat),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 93,
       doute: false,
       explication: "Détecté comme module de mémoire vive RAM",
       attributsExtraits: attributs,
@@ -174,7 +185,8 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   // --- C. STOCKAGE (SSD / HDD) ---
   if (
     (/\b(ssd|nvme|m\.2|pcie ssd|flash storage)\b/i.test(texteNorm) ||
-    (/\b(hdd|disque dur|sata hdd|sas hdd|3\.5\"|2\.5\")\b/i.test(texteNorm) && !texteNorm.includes("thinkpad") && !texteNorm.includes("optiplex")))
+    (/\b(hdd|disque dur|sata hdd|sas hdd|3\.5\"|2\.5\")\b/i.test(texteNorm))) &&
+    !estProduitFini
   ) {
     const isSsd = /\b(ssd|nvme|m\.2|nand|pcie)\b/i.test(texteNorm);
     const isSas = texteNorm.includes("sas");
@@ -197,6 +209,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.STOCKAGE, categorieCible, sousCat),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 91,
       doute: false,
       explication: `Détecté comme support de stockage (${isSsd ? "SSD" : "HDD"})`,
       attributsExtraits: attributs,
@@ -226,6 +239,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.INFORMATIQUE, "Matériel Point de Vente (POS)", "Terminaux & Caisses Tactiles (TPV)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 88,
       doute: false,
       explication: "Détecté comme équipement de Point de Vente / Encaissement",
       attributsExtraits: attributs,
@@ -251,6 +265,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.SERVEURS, "Serveurs", isTour ? "Serveurs Tour" : "Serveurs Rack (1U / 2U / 4U)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 94,
       doute: false,
       explication: `Détecté comme serveur informatique (${isTour ? "Tour" : "Rack"})`,
       attributsExtraits: attributs,
@@ -270,6 +285,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.COMPOSANTS, "Cartes Graphiques (GPU)", "Cartes Graphiques Grand Public (GeForce / Radeon)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 90,
       doute: false,
       explication: "Détecté comme carte graphique GPU",
       attributsExtraits: attributs,
@@ -290,6 +306,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.PERIPHERIQUES, "Moniteurs & Affichage", "Écrans & Moniteurs Bureautique / Pro"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 85,
       doute: false,
       explication: "Détecté comme moniteur / écran d'affichage",
       attributsExtraits: attributs,
@@ -312,6 +329,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.IMPRESSION, "Consommables d'Impression", "Toners & Tambours Laser"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 90,
       doute: false,
       explication: "Détecté comme cartouche ou toner d'impression",
       attributsExtraits: attributs,
@@ -333,6 +351,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.IMPRESSION, "Imprimantes & Scanners", "Imprimantes Laser & Multifonctions"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 90,
       doute: false,
       explication: "Détecté comme imprimante bureautique",
       attributsExtraits: attributs,
@@ -359,6 +378,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.RESEAU, "Commutateurs & Routage", "Switches Réseau (Manageables / PoE)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 85,
       doute: false,
       explication: "Détecté comme équipement réseau (Switch/Routeur)",
       attributsExtraits: attributs,
@@ -393,6 +413,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.INFORMATIQUE, "PC Portables", sousCat),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 93,
       doute: false,
       explication: "Détecté comme ordinateur portable",
       attributsExtraits: attributs,
@@ -434,6 +455,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(FAMILLES.INFORMATIQUE, categorieCible, sousCat),
       marque: marqueExtraite,
       scoreConfiance: "haut",
+      scoreNumerique: 91,
       doute: false,
       explication: "Détecté comme ordinateur fixe ou station de travail",
       attributsExtraits: attributs,
@@ -451,6 +473,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
       cheminComplet: chemin(noeudCanonique.famille, noeudCanonique.categorie, noeudCanonique.sousCategorie),
       marque: marqueExtraite,
       scoreConfiance: "moyen",
+      scoreNumerique: 65,
       doute: true,
       explication: "Classifié par heuristic canonique (confiance moyenne)",
       attributsExtraits: attributs,
@@ -465,6 +488,7 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     cheminComplet: chemin("DIVERS", "Non Classé", "À Classifier"),
     marque: marqueExtraite,
     scoreConfiance: "faible",
+    scoreNumerique: 15,
     doute: true,
     explication: "Mots-clés insuffisants pour une classification certaine",
     attributsExtraits: attributs,

@@ -134,10 +134,14 @@ export async function GET(
           },
         },
         images: { orderBy: { position: "asc" }, select: { id: true } },
-        _count: { select: { composants: true } },
       },
     });
     if (!p) return erreur(404, "Produit introuvable.");
+
+    // Compter les composants via BomEntry (source de truth)
+    const nbComposants = await prisma.bomEntry.count({
+      where: { produit_parent_id: p.id },
+    });
 
     // Couverture et galerie : URL publiques du CDN si les photos sont
     // hébergées, sinon routes proxy — jamais de base64 transféré ici.
@@ -217,7 +221,7 @@ export async function GET(
       image_url: urlCouvertureProduit,
       images: galerie,
       decision_rapport: p.decision_rapport,
-      nb_composants: p._count.composants,
+      nb_composants: nbComposants,
       ids_modele,
       quantite: totalExemplaires,
       exemplaires: exemplairesRaw.map(ex => ({

@@ -77,6 +77,7 @@ interface ComposantChoisi {
   prix_achat: number;
   image_url: string | null;
   modele?: { nom: string } | null;
+  quantite: number;
 }
 
 type BomRoleType = "component" | "finished" | "both";
@@ -265,18 +266,40 @@ export default function FormulaireAjoutUnifie({
     });
   }, []);
 
-  /* ── Ajouter / retirer un composant ── */
+  /* ── Ajouter / retirer un composant (avec déduplication et quantité) ── */
   const ajouterComposant = useCallback((c: ComposantChoisi) => {
-    setFormulaire((f) => ({
-      ...f,
-      composantsSelectionnes: [...f.composantsSelectionnes, c],
-    }));
+    setFormulaire((f) => {
+      const existant = f.composantsSelectionnes.find((x) => x.id === c.id);
+      if (existant) {
+        // Incrémenter la quantité si déjà présent
+        return {
+          ...f,
+          composantsSelectionnes: f.composantsSelectionnes.map((x) =>
+            x.id === c.id ? { ...x, quantite: x.quantite + 1 } : x
+          ),
+        };
+      }
+      return {
+        ...f,
+        composantsSelectionnes: [...f.composantsSelectionnes, { ...c, quantite: 1 }],
+      };
+    });
   }, []);
 
   const retirerComposant = useCallback((id: number) => {
     setFormulaire((f) => ({
       ...f,
       composantsSelectionnes: f.composantsSelectionnes.filter((c) => c.id !== id),
+    }));
+  }, []);
+
+  const modifierQuantiteComposant = useCallback((id: number, nouvelleQuantite: number) => {
+    const qte = Math.max(1, Math.floor(nouvelleQuantite));
+    setFormulaire((f) => ({
+      ...f,
+      composantsSelectionnes: f.composantsSelectionnes.map((c) =>
+        c.id === id ? { ...c, quantite: qte } : c
+      ),
     }));
   }, []);
 
@@ -391,13 +414,25 @@ export default function FormulaireAjoutUnifie({
               body: JSON.stringify({ est_compose: true }),
             });
 
-            // Attacher chaque composant
+            // Attacher chaque composant avec quantité (un seul appel par composant)
+            const erreursComposants: string[] = [];
             for (const comp of formulaire.composantsSelectionnes) {
-              await fetch(`/api/produits/${produitCree.id}/composants`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ composant_id: comp.id }),
-              });
+              try {
+                const resComp = await fetch(`/api/produits/${produitCree.id}/composants`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ composant_id: comp.id, quantite: comp.quantite }),
+                });
+                if (!resComp.ok) {
+                  const errData = await resComp.json().catch(() => null);
+                  erreursComposants.push(`${comp.reference}: ${errData?.error || "Erreur"}`);
+                }
+              } catch {
+                erreursComposants.push(`${comp.reference}: Erreur réseau`);
+              }
+            }
+            if (erreursComposants.length > 0) {
+              afficher(`Produit créé mais ${erreursComposants.length} composant(s) en erreur : ${erreursComposants[0]}`, "erreur");
             }
           }
         }
@@ -884,7 +919,7 @@ export default function FormulaireAjoutUnifie({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-extrabold uppercase text-brand-warm-grey">
-                        Intégrés ({formulaire.composantsSelectionnes.length})
+                        Intégrés ({formulaire.composantsSelectionnes.reduce((s, c) => s + c.quantite, 0)} pièce{formulaire.composantsSelectionnes.reduce((s, c) => s + c.quantite, 0) > 1 ? "s" : ""})
                       </span>
                     </div>
                     {formulaire.composantsSelectionnes.map((c) => (
@@ -892,7 +927,7 @@ export default function FormulaireAjoutUnifie({
                         key={c.id}
                         className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-brand-orange/5 dark:bg-brand-orange/10 border border-brand-orange/20"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <Layers className="w-3 h-3 text-brand-orange shrink-0" />
                           <span className="font-mono text-[10px] font-bold text-brand-orange">{c.code_interne}</span>
                           <span className="text-[11px] font-bold text-brand-black dark:text-white truncate">
@@ -900,13 +935,34 @@ export default function FormulaireAjoutUnifie({
                           </span>
                           <span className="text-[10px] text-brand-warm-grey hidden sm:inline">{c.categorie}</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => retirerComposant(c.id)}
-                          className="p-1.5 rounded-lg text-brand-warm-grey hover:text-danger hover:bg-danger/10 transition shrink-0"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {/* Contrôles quantité */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => modifierQuantiteComposant(c.id, c.quantite - 1)}
+                            disabled={c.quantite <= 1}
+                            className="w-6 h-6 rounded-lg bg-white dark:bg-white/10 border border-brand-light-grey dark:border-white/10 flex items-center justify-center text-xs font-bold text-brand-black dark:text-white hover:bg-brand-light-grey/40 disabled:opacity-30 transition"
+                          >
+                            -
+                          </button>
+                          <span className="w-7 text-center text-[11px] font-mono font-black text-brand-orange">
+                            {c.quantite}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => modifierQuantiteComposant(c.id, c.quantite + 1)}
+                            className="w-6 h-6 rounded-lg bg-brand-orange text-white flex items-center justify-center text-xs font-bold hover:bg-brand-orange/90 transition"
+                          >
+                            +
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => retirerComposant(c.id)}
+                            className="ml-1 p-1 rounded-lg text-brand-warm-grey hover:text-danger hover:bg-danger/10 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

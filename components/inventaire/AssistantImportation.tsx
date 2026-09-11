@@ -418,7 +418,7 @@ export default function AssistantImportation({
               categorie_id_selectionnee: targetCat.id,
               categorie_nom_selectionnee: targetCat.nom,
               chemin_selectionne: targetCat.chemin,
-              classification: { ...l.classification, doute: false, scoreConfiance: "haut" },
+              classification: { ...l.classification, doute: false, scoreConfiance: "haut", scoreNumerique: 100 },
             }
           : l
       )
@@ -475,7 +475,10 @@ export default function AssistantImportation({
     const doutes = lignesPrevisu.filter((l) => l.classification.doute).length;
     const valides = total - doutes;
     const totalUnites = lignesPrevisu.reduce((acc, l) => acc + l.quantite, 0);
-    return { total, doutes, valides, totalUnites };
+    const fiables = lignesPrevisu.filter((l) => (l.classification.scoreNumerique ?? 0) >= 80).length;
+    const aVerifier = lignesPrevisu.filter((l) => { const s = l.classification.scoreNumerique ?? 0; return s >= 50 && s < 80; }).length;
+    const manuel = lignesPrevisu.filter((l) => (l.classification.scoreNumerique ?? 0) < 50).length;
+    return { total, doutes, valides, totalUnites, fiables, aVerifier, manuel };
   }, [lignesPrevisu]);
 
   // Validation Finale & Insertion en Base
@@ -856,26 +859,36 @@ export default function AssistantImportation({
                       : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10"
                   }`}
                 >
-                  <span className="text-[10px] font-extrabold uppercase text-emerald-500">Confiance Haute</span>
+                  <span className="text-[10px] font-extrabold uppercase text-emerald-500">Fiable (80%+) ({statsClassification.fiables})</span>
                   <div className="text-xl font-black font-outfit mt-0.5 text-emerald-600 dark:text-emerald-400">
                     {statsClassification.valides}
                   </div>
                 </div>
 
-                <div 
+                <div
                   onClick={() => setFiltreDoute("doutes")}
                   className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                    filtreDoute === "doutes" 
-                      ? "bg-amber-600 text-white shadow-xs border-amber-600" 
+                    filtreDoute === "doutes"
+                      ? "bg-amber-600 text-white shadow-xs border-amber-600"
                       : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold uppercase text-amber-500">À Confirmer (Doutes)</span>
+                    <span className="text-[10px] font-extrabold uppercase text-amber-500">A verifier ({statsClassification.aVerifier})</span>
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                   </div>
                   <div className="text-xl font-black font-outfit mt-0.5 text-amber-600 dark:text-amber-400">
                     {statsClassification.doutes}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase text-red-500">Classification manuelle</span>
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                  </div>
+                  <div className="text-xl font-black font-outfit mt-0.5 text-red-600 dark:text-red-400">
+                    {statsClassification.manuel}
                   </div>
                 </div>
 
@@ -1026,15 +1039,25 @@ export default function AssistantImportation({
                             </td>
 
                             <td className="py-3 px-3.5 text-center">
-                              {estDoute ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
-                                  <AlertTriangle className="w-3 h-3" /> À vérifier
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300">
-                                  <CheckCircle2 className="w-3 h-3" /> Haute
-                                </span>
-                              )}
+                              {(() => {
+                                const score = l.classification.scoreNumerique ?? 0;
+                                const couleur = score >= 80
+                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300"
+                                  : score >= 50
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300"
+                                  : "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 border-red-300";
+                                const icone = score >= 80
+                                  ? <CheckCircle2 className="w-3 h-3" />
+                                  : score >= 50
+                                  ? <AlertTriangle className="w-3 h-3" />
+                                  : <AlertTriangle className="w-3 h-3" />;
+                                const label = score >= 80 ? "Fiable" : score >= 50 ? "À vérifier" : "Manuel";
+                                return (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border ${couleur}`}>
+                                    {icone} {label} {score}%
+                                  </span>
+                                );
+                              })()}
                             </td>
 
                             <td className="py-3 px-3.5 text-center font-bold">

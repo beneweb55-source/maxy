@@ -259,6 +259,8 @@ model Produit {
   images      ProduitImage[]
   composition_historique CompositionHistorique[] @relation("CompositionHistoriqueProduit")
   composition_parent_historique CompositionHistorique[] @relation("CompositionParentHistorique")
+  bom_parent_entries    BomEntry[]              @relation("BomParent")
+  bom_composant_entries BomEntry[]              @relation("BomComposant")
 
   @@index([lot_id])
   @@index([modele_id])
@@ -358,6 +360,23 @@ model CompositionHistorique {
   @@index([produit_parent_id])
   @@index([created_at])
   @@map("composition_historique")
+}
+
+model BomEntry {
+  id                Int      @id @default(autoincrement())
+  produit_parent_id Int      // Le produit composé parent
+  produit_composant_id Int   // Le composant (référence au produit)
+  quantite          Int      @default(1) // Quantité requise de ce composant
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  produit_parent    Produit  @relation("BomParent", fields: [produit_parent_id], references: [id], onDelete: Cascade)
+  produit_composant Produit  @relation("BomComposant", fields: [produit_composant_id], references: [id], onDelete: Cascade)
+
+  @@unique([produit_parent_id, produit_composant_id])
+  @@index([produit_parent_id])
+  @@index([produit_composant_id])
+  @@map("bom_entries")
 }
 
 model MouvementCaisse {
