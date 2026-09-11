@@ -30,7 +30,7 @@ vi.mock("@/lib/db", () => ({
 }));
 
 vi.mock("@/lib/creation-produits", () => ({
-  creerProduitsGroupes: vi.fn().mockResolvedValue(["PR-0001", "PR-0002", "PR-0003"]),
+  creerProduitsGroupes: vi.fn().mockResolvedValue({ codes: ["PR-0001", "PR-0002", "PR-0003"], bomUpdates: [] }),
 }));
 
 vi.mock("@/lib/journal", () => ({

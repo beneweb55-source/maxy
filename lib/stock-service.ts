@@ -281,6 +281,7 @@ export class StockService {
         }
 
         let codesCrees: string[] = [];
+        let bomUpdates2: any[] = [];
 
         // 3. CAS A : Augmentation directe (diff > 0) -> Génération automatique des exemplaires manquants
         if (diff > 0) {
@@ -310,7 +311,7 @@ export class StockService {
             images: extraImgs,
           }));
 
-          const { codes: newCodes, bomUpdates: bomUpdates2 } = await creerProduitsGroupes(tx, {
+          const { codes: newCodes, bomUpdates: bomUpdatesRes } = await creerProduitsGroupes(tx, {
             lotId: dernierExemplaire?.lot_id ?? null,
             lignes,
             userId,
@@ -318,6 +319,7 @@ export class StockService {
             enVitrine: emplacementCible === "vitrine",
           });
           codesCrees = newCodes;
+          bomUpdates2 = bomUpdatesRes;
 
           await tx.modele.update({
             where: { id: modeleId },
@@ -460,8 +462,8 @@ export class StockService {
    * Best-effort : si la colonne bom_role n'existe pas (base de prod non migrée),
    * l'erreur est silencieusement ignorée.
    */
-  static async applyBomUpdates(updates: BomUpdate[]): Promise<void> {
-    if (!updates.length) return;
+  static async applyBomUpdates(updates?: BomUpdate[] | null): Promise<void> {
+    if (!updates?.length) return;
     try {
       for (const u of updates) {
         await prisma.produit.update({
