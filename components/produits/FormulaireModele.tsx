@@ -458,7 +458,7 @@ export default function FormulaireModele({
                 {suggestionAuto && (
                   <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-black flex items-center gap-1.5 animate-entree">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>✨ Catégorie suggérée automatiquement : <strong>{suggestionAuto.categorieNom}</strong> ({suggestionAuto.familleNom})</span>
+                    <span>Catégorie suggérée automatiquement : <strong>{suggestionAuto.categorieNom}</strong> ({suggestionAuto.familleNom})</span>
                   </p>
                 )}
               </div>

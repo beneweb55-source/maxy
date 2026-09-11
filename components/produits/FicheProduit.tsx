@@ -650,9 +650,9 @@ export default function FicheProduit({
                   }`}
                   title="Rôle BOM de ce produit"
                 >
-                  {produit.bom_role === "component" && "🔧 Composant"}
-                  {produit.bom_role === "both" && "🔧+📦 Les deux"}
-                  {produit.bom_role === "finished" && "📦 Produit fini"}
+                  {produit.bom_role === "component" && "Composant"}
+                  {produit.bom_role === "both" && "Les deux"}
+                  {produit.bom_role === "finished" && "Produit fini"}
                 </button>
                 {/* Dropdown au hover */}
                 <div className="hidden group-hover:block absolute top-full left-0 mt-1 z-50 bg-white dark:bg-brand-paper border border-brand-light-grey/80 dark:border-white/10 rounded-xl shadow-xl p-1.5 min-w-[160px]">
@@ -679,9 +679,9 @@ export default function FicheProduit({
                           : "text-brand-black dark:text-white hover:bg-brand-light-grey/20 dark:hover:bg-white/5"
                       }`}
                     >
-                      {role === "finished" && "📦 Produit fini"}
-                      {role === "component" && "🔧 Composant"}
-                      {role === "both" && "🔧+📦 Produit fini + composant"}
+                      {role === "finished" && "Produit fini"}
+                      {role === "component" && "Composant"}
+                      {role === "both" && "Produit fini + composant"}
                     </button>
                   ))}
                 </div>
@@ -697,9 +697,9 @@ export default function FicheProduit({
                     ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
                     : "bg-brand-light-grey/30 text-brand-warm-grey"
               }`}>
-                {produit.bom_role === "component" && "🔧 Composant"}
-                {produit.bom_role === "both" && "🔧+📦 Les deux"}
-                {produit.bom_role === "finished" && "📦 Produit fini"}
+                {produit.bom_role === "component" && "Composant"}
+                {produit.bom_role === "both" && "Les deux"}
+                {produit.bom_role === "finished" && "Produit fini"}
               </span>
             )}
 

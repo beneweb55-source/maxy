@@ -326,9 +326,12 @@ export default function ModaleAjoutTerrain({
     // Vérifier les champs obligatoires du profil
     if (profilActif) {
       for (const attr of profilActif.attributs) {
-        if (attr.obligatoire && !specs[attr.cle] && !marque && attr.cle === "marque") {
-          setErreur(`Le champ « ${attr.label} » est obligatoire.`);
-          return;
+        if (attr.obligatoire) {
+          const valeur = attr.cle === "marque" ? marque : specs[attr.cle];
+          if (!valeur || (Array.isArray(valeur) && valeur.length === 0)) {
+            setErreur(`Le champ « ${attr.label} » est obligatoire.`);
+            return;
+          }
         }
       }
     }
@@ -577,7 +580,7 @@ export default function ModaleAjoutTerrain({
                 {suggestionAuto && (
                   <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 font-black flex items-center gap-1.5 animate-entree">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>✨ Catégorie suggérée automatiquement : <strong>{suggestionAuto.categorieNom}</strong> ({suggestionAuto.familleNom})</span>
+                    <span>Catégorie suggérée automatiquement : <strong>{suggestionAuto.categorieNom}</strong> ({suggestionAuto.familleNom})</span>
                   </p>
                 )}
 

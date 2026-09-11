@@ -158,7 +158,7 @@ export default function GestionnaireQuantite({
         <input
           type="number"
           min={0}
-          max={1000}
+          max={9999}
           value={quantiteLocale}
           disabled={enCours || !peutModifier}
           onChange={(e) => {

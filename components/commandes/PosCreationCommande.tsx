@@ -184,7 +184,7 @@ export default function PosCreationCommande() {
     };
 
     setPanier((prev) => [nouvelleLigne, ...prev]);
-    afficher(`Ajouté (${mode_ajout === "scan" ? "Scan ⚡" : "Manuel 📝"}) : ${p.reference} (${p.code_interne})`, "succes");
+    afficher(`Ajouté (${mode_ajout === "scan" ? "Scan" : "Manuel"}) : ${p.reference} (${p.code_interne})`, "succes");
     inputScannerRef.current?.focus();
   };
 
@@ -487,11 +487,11 @@ export default function PosCreationCommande() {
                       </span>
                       {ligne.mode_ajout === "scan" ? (
                         <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                          Scan ⚡
+                          Scan
                         </span>
                       ) : (
                         <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100/60 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                          Manuel 📝
+                          Manuel
                         </span>
                       )}
                     </div>

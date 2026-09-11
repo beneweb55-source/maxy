@@ -66,6 +66,11 @@ export const ACTIONS_JOURNAL = {
   PARAMETRES_MODIFIER: "parametres.modifier",
   BACKUP_EXPORTER: "backup.exporter",
   BACKUP_RESTAURER: "backup.restaurer",
+  BACKUP_CREER: "backup.creer",
+  BACKUP_CHARGER: "backup.charger",
+  BACKUP_IMPORTER: "backup.importer",
+  BACKUP_SUPPRIMER: "backup.supprimer",
+  BACKUP_TELECHARGER: "backup.telecharger",
 } as const;
 
 export type ActionJournal = (typeof ACTIONS_JOURNAL)[keyof typeof ACTIONS_JOURNAL];

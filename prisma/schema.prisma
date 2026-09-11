@@ -698,3 +698,70 @@ model LigneCommande {
   @@index([produit_id])
   @@map("lignes_commande")
 }
+
+// ─── SYSTÈME DE BACKUP ───
+
+enum BackupStatus {
+  creating
+  ready
+  failed
+  validating
+  corrupted
+  restoring
+  restored
+}
+
+enum BackupType {
+  manual
+  automatic
+  pre_restore
+  import
+}
+
+model Backup {
+  id                  Int          @id @default(autoincrement())
+  name                String
+  filename            String
+  description         String?
+  status              BackupStatus @default(creating)
+  type                BackupType   @default(manual)
+  size                Int          @default(0)       // Octets
+  checksum            String       @default("")      // SHA-256
+  storageKey          String       @unique           // Identifiant unique du fichier (UUID)
+  version             Int          @default(1)       // Version du format de backup
+  databaseVersion     String       @default("")      // Version du schéma Prisma/migration
+  applicationVersion  String       @default("")      // Version de l'app (package.json)
+  metadata            Json?        // recordCounts, compatibility info, etc.
+  error               String?      // Message d'erreur si status = failed
+
+  cree_par            Int?         // User ID
+  cree_par_nom        String?      // Username (dénormalisé pour affichage)
+
+  created_at          DateTime     @default(now())
+  updated_at          DateTime     @updatedAt
+
+  logs                BackupLog[]
+
+  @@index([status])
+  @@index([type])
+  @@index([created_at])
+  @@map("backups")
+}
+
+model BackupLog {
+  id          Int      @id @default(autoincrement())
+  backup_id   Int?
+  action      String   // BACKUP_CREATED, BACKUP_VALIDATED, BACKUP_RESTORE_STARTED, etc.
+  user_id     Int?
+  user_nom    String?
+  details     String?  // JSON ou texte libre
+  success     Boolean  @default(true)
+  created_at  DateTime @default(now())
+
+  backup      Backup?  @relation(fields: [backup_id], references: [id], onDelete: SetNull)
+
+  @@index([backup_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("backup_logs")
+}

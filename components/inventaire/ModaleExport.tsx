@@ -258,7 +258,7 @@ export default function ModaleExport({
                 onClick={() => appliquerPreset("pos")}
                 className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
               >
-                🎯 Standard POS
+                Standard POS
               </button>
               <button
                 type="button"
@@ -272,7 +272,7 @@ export default function ModaleExport({
                 onClick={() => appliquerPreset("public")}
                 className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
               >
-                🏷️ Public (Sans prix d'achat)
+                Public (Sans prix d'achat)
               </button>
               <button
                 type="button"

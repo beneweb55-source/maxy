@@ -3,14 +3,21 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-    let categorie = await prisma.categorie.findFirst({
-        where: { nom: 'processeur serveur xeon' }
+    // Chercher la catégorie correcte dans le TREE : MÉMOIRE & PROCESSEURS > Processeurs (CPU) > Processeurs Serveur (Intel Xeon / AMD EPYC)
+    const famille = await prisma.categorie.findFirst({
+        where: { nom: 'MÉMOIRE & PROCESSEURS', parent_id: null }
     });
-    if (!categorie) {
-        categorie = await prisma.categorie.create({
-            data: { nom: 'processeur serveur xeon' }
-        });
-    }
+    if (!famille) throw new Error('Catégorie racine "MÉMOIRE & PROCESSEURS" introuvable. Exécuter d\'abord apply_classification.ts');
+
+    const catCPU = await prisma.categorie.findFirst({
+        where: { nom: 'Processeurs (CPU)', parent_id: famille.id }
+    });
+    if (!catCPU) throw new Error('Catégorie "Processeurs (CPU)" introuvable');
+
+    const categorie = await prisma.categorie.findFirst({
+        where: { nom: 'Processeurs Serveur (Intel Xeon / AMD EPYC)', parent_id: catCPU.id }
+    });
+    if (!categorie) throw new Error('Sous-catégorie "Processeurs Serveur (Intel Xeon / AMD EPYC)" introuvable');
 
     const data = `Processeur Intel Xeon Gold 6138 2 GHz	13
 Processeur Intel Xeon Gold 6262 1.9 GHz	4
@@ -58,7 +65,7 @@ Processeur Intel Xeon E5-2650 v3	2`;
         const productsToCreate = Array.from({ length: qty }).map((_, i) => ({
             code_interne: `CPU-XEON-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
             reference: nom,
-            categorie: 'processeur serveur xeon',
+            categorie: 'Processeurs Serveur (Intel Xeon / AMD EPYC)',
             prix_achat: 0,
             modele_id: modele.id,
             categorie_id: categorie.id,

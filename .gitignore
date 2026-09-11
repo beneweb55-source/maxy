@@ -3,6 +3,7 @@ node_modules/
 .pgdata/
 out/
 build/
+storage/backups/
 
 .env
 .env.local

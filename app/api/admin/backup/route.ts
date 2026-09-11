@@ -1,7 +1,12 @@
+/**
+ * API /api/admin/backup
+ *
+ * GET  → Lister tous les backups
+ * POST → Créer un nouveau backup
+ */
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { utilisateurCourant } from "@/lib/session";
-import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
+import { BackupService } from "@/lib/backup-service";
 
 export async function GET() {
   try {
@@ -10,82 +15,56 @@ export async function GET() {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
-    const [
-      users,
-      parametres,
-      lots,
-      produits,
-      ventes,
-      reparations,
-      mouvements,
-      factures,
-      factureLignes,
-      journal,
-      notifications,
-      produitImages,
-      historiqueStatuts,
-      pushSubscriptions,
-      fcmTokens
-    ] = await Promise.all([
-      prisma.user.findMany({
-        select: {
-          id: true,
-          username: true,
-          role: true,
-          langue: true,
-          // Sécurité : exclure password_hash, login_attempts, locked_until, tokens push
-        }
-      }),
-      prisma.parametres.findFirst(),
-      prisma.lot.findMany(),
-      prisma.produit.findMany(),
-      prisma.vente.findMany(),
-      prisma.reparation.findMany(),
-      prisma.mouvementCaisse.findMany(),
-      prisma.facture.findMany(),
-      prisma.factureLigne.findMany(),
-      prisma.journalActivite.findMany(),
-      prisma.notification.findMany(),
-      prisma.produitImage.findMany(),
-      prisma.historiqueStatut.findMany(),
-      prisma.pushSubscription.findMany(),
-      prisma.fcmToken.findMany()
-    ]);
+    const backups = await BackupService.listBackups();
+    return NextResponse.json({ backups });
+  } catch (error: any) {
+    console.error("GET /api/admin/backup", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la récupération des sauvegardes." },
+      { status: 500 }
+    );
+  }
+}
 
-    const backupData = {
-      timestamp: new Date().toISOString(),
-      version: "1.1",
-      data: {
-        users,
-        parametres,
-        lots,
-        produits,
-        ventes,
-        reparations,
-        mouvements,
-        factures,
-        factureLignes,
-        journal,
-        notifications,
-        produitImages,
-        historiqueStatuts,
-        pushSubscriptions,
-        fcmTokens
-      }
-    };
+export async function POST(req: Request) {
+  try {
+    const session = await utilisateurCourant();
+    if (!session || (session.role !== "gerant" && session.role !== "dev")) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    }
 
-    // Enregistrer l'action
-    await enregistrerActivite(prisma, session.id, ACTIONS_JOURNAL.BACKUP_EXPORTER);
+    const body = await req.json().catch(() => ({}));
+    const name = body.name || `Backup du ${new Date().toLocaleDateString("fr-FR")}`;
+    const description = body.description || null;
 
-    return new NextResponse(JSON.stringify(backupData, null, 2), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="backup_maxy_${new Date().toISOString().split('T')[0]}.json"`
-      }
+    const { backup, recordCounts } = await BackupService.createBackup({
+      name,
+      description,
+      type: "manual",
+      userId: session.id,
+      username: session.username,
     });
-  } catch (error) {
-    console.error("Erreur backup:", error);
-    return NextResponse.json({ error: "Erreur lors de la génération de la sauvegarde" }, { status: 500 });
+
+    return NextResponse.json({
+      message: "Sauvegarde créée avec succès.",
+      backup: {
+        id: backup.id,
+        name: backup.name,
+        filename: backup.filename,
+        status: backup.status,
+        size: backup.size,
+        checksum: backup.checksum,
+        version: backup.version,
+        created_at: backup.created_at,
+      },
+      recordCounts,
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error("POST /api/admin/backup", error);
+    return NextResponse.json(
+      { error: error.message || "Erreur lors de la création de la sauvegarde." },
+      { status: 500 }
+    );
   }
 }

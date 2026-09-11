@@ -49,9 +49,10 @@ function chemin(famille: string, categorie: string, sousCategorie?: string): str
 export function autoClassifyProduct(designationBrute: string): ClassificationImportResult {
   if (!designationBrute || typeof designationBrute !== "string" || !designationBrute.trim()) {
     return {
-      familleNom: FAMILLES.INFORMATIQUE,
-      categorieNom: "PC PORTABLES",
-      cheminComplet: chemin(FAMILLES.INFORMATIQUE, "PC PORTABLES"),
+      familleNom: "DIVERS",
+      categorieNom: "Non Classé",
+      sousCategorieNom: "À Classifier",
+      cheminComplet: chemin("DIVERS", "Non Classé", "À Classifier"),
       scoreConfiance: "faible",
       doute: true,
       explication: "Désignation vide ou non renseignée",
@@ -104,10 +105,29 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   const matchWatts = texte.match(/\b([0-9]{2,3})\s*w\b/i);
 
   // =========================================================================
-  // RÈGLES DE CLASSIFICATION — noms canoniques depuis taxonomie-canonical.ts
+  // RÈGLES DE CLASSIFICATION — noms canoniques = TREE dans apply_classification.ts
+  // Ordre : le plus spécifique en premier, les plus génériques après
   // =========================================================================
 
-  // --- A. CHARGEURS & ALIMENTATION ---
+  // --- A. PROCESSEURS SERVEUR (XEON / EPYC) — avant portables/fixes pour éviter faux positifs ---
+  if (
+    /\b(xeon|epyc)\b/i.test(texteNorm) &&
+    !texteNorm.includes("portable") && !texteNorm.includes("laptop") && !texteNorm.includes("thinkpad") && !texteNorm.includes("probook")
+  ) {
+    return {
+      familleNom: FAMILLES.MEMOIRE,
+      categorieNom: "Processeurs (CPU)",
+      sousCategorieNom: "Processeurs Serveur (Intel Xeon / AMD EPYC)",
+      cheminComplet: chemin(FAMILLES.MEMOIRE, "Processeurs (CPU)", "Processeurs Serveur (Intel Xeon / AMD EPYC)"),
+      marque: marqueExtraite,
+      scoreConfiance: "haut",
+      doute: false,
+      explication: "Détecté comme processeur serveur (Intel Xeon / AMD EPYC)",
+      attributsExtraits: attributs,
+    };
+  }
+
+  // --- B. CHARGEURS & ALIMENTATION ---
   if (
     texteNorm.includes("chargeur") ||
     texteNorm.includes("adaptateur secteur") ||
@@ -117,9 +137,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     if (matchWatts) attributs.puissance_w = `${matchWatts[1]}W`;
     return {
       familleNom: FAMILLES.ALIMENTATION,
-      categorieNom: "CHARGEURS PC PORTABLE",
-      sousCategorieNom: "Chargeurs PC Portables",
-      cheminComplet: chemin(FAMILLES.ALIMENTATION, "CHARGEURS PC PORTABLE", "Chargeurs PC Portables"),
+      categorieNom: "Chargeurs & Alimentation Externe",
+      sousCategorieNom: "Chargeurs Embout Propriétaire (Jack / Slim Tip)",
+      cheminComplet: chemin(FAMILLES.ALIMENTATION, "Chargeurs & Alimentation Externe", "Chargeurs Embout Propriétaire (Jack / Slim Tip)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -137,12 +157,12 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     !texteNorm.includes("laptop") && !texteNorm.includes("portable") && !texteNorm.includes("optiplex") && !texteNorm.includes("thinkpad")
   ) {
     const isSodimm = texteNorm.includes("sodimm") || texteNorm.includes("laptop") || texteNorm.includes("portable");
-    const sousCat = isSodimm ? "RAM PC Portable (SO-DIMM)" : "RAM PC Fixe (DIMM)";
+    const sousCat = isSodimm ? "RAM PC Portable (SO-DIMM)" : "RAM PC Fixe (UDIMM / Non-ECC)";
     return {
       familleNom: FAMILLES.MEMOIRE,
-      categorieNom: "RAM DESKTOP",
+      categorieNom: "Mémoire Vive (RAM)",
       sousCategorieNom: sousCat,
-      cheminComplet: chemin(FAMILLES.MEMOIRE, "RAM DESKTOP", sousCat),
+      cheminComplet: chemin(FAMILLES.MEMOIRE, "Mémoire Vive (RAM)", sousCat),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -163,11 +183,11 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     let sousCat: string;
     let categorieCible: string;
     if (isSsd) {
-      categorieCible = "SSD";
-      sousCat = isM2 ? "NVMe" : "SATA";
+      categorieCible = "Disques Flash (SSD)";
+      sousCat = isM2 ? "Disques SSD M.2 NVMe & PCIe" : "Disques SSD 2,5\" SATA";
     } else {
-      categorieCible = "DISQUES DURS";
-      sousCat = isSas ? "SAS" : "SATA";
+      categorieCible = "Disques Durs Mécaniques (HDD)";
+      sousCat = isSas ? "Disques Durs SAS 2,5\" (10K / 15K RPM)" : "Disques Durs SATA 3,5\" (Bureautique / NAS)";
     }
 
     return {
@@ -201,9 +221,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   ) {
     return {
       familleNom: FAMILLES.INFORMATIQUE,
-      categorieNom: "TERMINAUX POS",
-      sousCategorieNom: "Terminaux Tactiles POS",
-      cheminComplet: chemin(FAMILLES.INFORMATIQUE, "TERMINAUX POS", "Terminaux Tactiles POS"),
+      categorieNom: "Matériel Point de Vente (POS)",
+      sousCategorieNom: "Terminaux & Caisses Tactiles (TPV)",
+      cheminComplet: chemin(FAMILLES.INFORMATIQUE, "Matériel Point de Vente (POS)", "Terminaux & Caisses Tactiles (TPV)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -226,8 +246,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     const isTour = /\b(ml350|ml110|ml10|ml30|t430|t440|t330|t340|t130|t140|st50|tower|tour)\b/i.test(texteNorm);
     return {
       familleNom: FAMILLES.SERVEURS,
-      categorieNom: isTour ? "SERVEURS TOUR" : "SERVEURS RACK",
-      cheminComplet: chemin(FAMILLES.SERVEURS, isTour ? "SERVEURS TOUR" : "SERVEURS RACK"),
+      categorieNom: "Serveurs",
+      sousCategorieNom: isTour ? "Serveurs Tour" : "Serveurs Rack (1U / 2U / 4U)",
+      cheminComplet: chemin(FAMILLES.SERVEURS, "Serveurs", isTour ? "Serveurs Tour" : "Serveurs Rack (1U / 2U / 4U)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -244,8 +265,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   ) {
     return {
       familleNom: FAMILLES.COMPOSANTS,
-      categorieNom: "CARTES GRAPHIQUES",
-      cheminComplet: chemin(FAMILLES.COMPOSANTS, "CARTES GRAPHIQUES"),
+      categorieNom: "Cartes Graphiques (GPU)",
+      sousCategorieNom: "Cartes Graphiques Grand Public (GeForce / Radeon)",
+      cheminComplet: chemin(FAMILLES.COMPOSANTS, "Cartes Graphiques (GPU)", "Cartes Graphiques Grand Public (GeForce / Radeon)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -263,8 +285,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   ) {
     return {
       familleNom: FAMILLES.PERIPHERIQUES,
-      categorieNom: "ÉCRANS",
-      cheminComplet: chemin(FAMILLES.PERIPHERIQUES, "ÉCRANS"),
+      categorieNom: "Moniteurs & Affichage",
+      sousCategorieNom: "Écrans & Moniteurs Bureautique / Pro",
+      cheminComplet: chemin(FAMILLES.PERIPHERIQUES, "Moniteurs & Affichage", "Écrans & Moniteurs Bureautique / Pro"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -284,8 +307,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   ) {
     return {
       familleNom: FAMILLES.IMPRESSION,
-      categorieNom: "CONSOMMABLES",
-      cheminComplet: chemin(FAMILLES.IMPRESSION, "CONSOMMABLES"),
+      categorieNom: "Consommables d'Impression",
+      sousCategorieNom: "Toners & Tambours Laser",
+      cheminComplet: chemin(FAMILLES.IMPRESSION, "Consommables d'Impression", "Toners & Tambours Laser"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -304,8 +328,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   ) {
     return {
       familleNom: FAMILLES.IMPRESSION,
-      categorieNom: "IMPRIMANTES",
-      cheminComplet: chemin(FAMILLES.IMPRESSION, "IMPRIMANTES"),
+      categorieNom: "Imprimantes & Scanners",
+      sousCategorieNom: "Imprimantes Laser & Multifonctions",
+      cheminComplet: chemin(FAMILLES.IMPRESSION, "Imprimantes & Scanners", "Imprimantes Laser & Multifonctions"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -329,8 +354,9 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
   ) {
     return {
       familleNom: FAMILLES.RESEAU,
-      categorieNom: "SWITCHES",
-      cheminComplet: chemin(FAMILLES.RESEAU, "SWITCHES"),
+      categorieNom: "Commutateurs & Routage",
+      sousCategorieNom: "Switches Réseau (Manageables / PoE)",
+      cheminComplet: chemin(FAMILLES.RESEAU, "Commutateurs & Routage", "Switches Réseau (Manageables / PoE)"),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -359,12 +385,12 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     texteNorm.includes("yoga") ||
     (/\b(13\.3\"|14\"|15\.6\"|16\"|17\.3\"|12\.5\"|13\"|15\")\b/i.test(texteNorm) && (texteNorm.includes("i5") || texteNorm.includes("i7") || texteNorm.includes("i3") || texteNorm.includes("ryzen")))
   ) {
-    const sousCat = texteNorm.includes("macbook") ? "MacBook & Ultrabooks" : "PC Portables Professionnels";
+    const sousCat = "Laptops & Ultrabooks";
     return {
       familleNom: FAMILLES.INFORMATIQUE,
-      categorieNom: "PC PORTABLES",
+      categorieNom: "PC Portables",
       sousCategorieNom: sousCat,
-      cheminComplet: chemin(FAMILLES.INFORMATIQUE, "PC PORTABLES", sousCat),
+      cheminComplet: chemin(FAMILLES.INFORMATIQUE, "PC Portables", sousCat),
       marque: marqueExtraite,
       scoreConfiance: "haut",
       doute: false,
@@ -391,17 +417,14 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
     texteNorm.includes("aio") ||
     (/\b(i3|i5|i7|i9|ryzen)\b/i.test(texteNorm) && (texteNorm.includes("pc") || texteNorm.includes("unite centrale")))
   ) {
-    let sousCat = "PC Fixes (SFF / Tour)";
-    let categorieCible = "PC DE BUREAU";
+    let sousCat = "Tours & Formats SFF";
+    let categorieCible = "PC Fixes & Tout-en-un";
     if (texteNorm.includes("tiny") || texteNorm.includes("mini pc") || texteNorm.includes("micro") || texteNorm.includes("usff")) {
-      categorieCible = "MINI PC";
-      sousCat = "Mini PC & Tiny";
+      sousCat = "Mini PC & Clients Légers";
     } else if (texteNorm.includes("tout-en-un") || texteNorm.includes("aio")) {
-      categorieCible = "ALL-IN-ONE";
-      sousCat = "Tout-en-un (AIO)";
+      sousCat = "Tout-en-un (All-in-One)";
     } else if (texteNorm.includes("workstation") || texteNorm.includes("precision") || texteNorm.includes("z440") || texteNorm.includes("z640")) {
-      categorieCible = "STATIONS DE TRAVAIL";
-      sousCat = "Stations de Travail (Workstations)";
+      sousCat = "Stations de Travail & PC Gaming";
     }
 
     return {
@@ -436,9 +459,10 @@ export function autoClassifyProduct(designationBrute: string): ClassificationImp
 
   // Non classé
   return {
-    familleNom: FAMILLES.PERIPHERIQUES,
-    categorieNom: "CLAVIERS & SOURIS",
-    cheminComplet: chemin(FAMILLES.PERIPHERIQUES, "CLAVIERS & SOURIS"),
+    familleNom: "DIVERS",
+    categorieNom: "Non Classé",
+    sousCategorieNom: "À Classifier",
+    cheminComplet: chemin("DIVERS", "Non Classé", "À Classifier"),
     marque: marqueExtraite,
     scoreConfiance: "faible",
     doute: true,
