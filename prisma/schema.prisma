@@ -44,6 +44,12 @@ enum StatutProduit {
   assemble // Composant intégré dans un produit parent (BOM) — retiré du stock général
 }
 
+enum BomRole {
+  component  // Produit pouvant être intégré dans un autre (RAM, SSD, CPU…)
+  finished   // Produit fini vendu comme unité complète (laptop, serveur…)
+  both       // Peut être à la fois vendu seul ET utilisé comme composant
+}
+
 // Types de documents commerciaux légaux
 enum TypeDocument {
   FACTURE_TVA  // Facture avec TVA (document fiscal)
@@ -237,6 +243,7 @@ model Produit {
   // === Produits Composés (BOM - Bill of Materials) ===
   // Un PC assemblé peut contenir des composants issus du stock
   est_compose  Boolean              @default(false)      // Indique si le produit a vocation à avoir des composants
+  bom_role     BomRole              @default(finished)   // Rôle BOM : component / finished / both
   parent_id    Int?                 // Si non-null : ce produit est assemblé dans le produit parent
   parent       Produit?             @relation("ComposantParent", fields: [parent_id], references: [id])
   composants   Produit[]            @relation("ComposantParent")

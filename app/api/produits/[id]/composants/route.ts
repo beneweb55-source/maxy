@@ -160,9 +160,12 @@ export async function POST(
 
       const composant = await tx.produit.findUnique({
         where: { id: composantId },
-        select: { id: true, reference: true, statut: true, parent_id: true, modele_id: true },
+        select: { id: true, reference: true, statut: true, parent_id: true, modele_id: true, bom_role: true },
       });
       if (!composant) throw new Error("Composant introuvable.");
+      if (composant.bom_role === "finished") {
+        throw new Error(`« ${composant.reference} » est un produit fini et ne peut pas être utilisé comme composant.`);
+      }
       if (composant.parent_id !== null) {
         throw new Error(`Ce composant est déjà intégré dans un autre produit (ID: ${composant.parent_id}).`);
       }
@@ -278,9 +281,12 @@ export async function PATCH(
 
       const nouveau = await tx.produit.findUnique({
         where: { id: nouveauComposantId },
-        select: { id: true, reference: true, statut: true, parent_id: true, modele_id: true },
+        select: { id: true, reference: true, statut: true, parent_id: true, modele_id: true, bom_role: true },
       });
       if (!nouveau) throw new Error("Nouveau composant introuvable.");
+      if (nouveau.bom_role === "finished") {
+        throw new Error(`« ${nouveau.reference} » est un produit fini et ne peut pas être utilisé comme composant.`);
+      }
       if (nouveau.parent_id !== null) {
         throw new Error("Le nouveau composant est déjà intégré dans un autre produit.");
       }

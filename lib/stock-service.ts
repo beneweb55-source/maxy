@@ -54,6 +54,7 @@ export interface OptionsCreationExemplaires {
   image_url?: string | null;
   images?: string[];
   est_compose?: boolean;
+  bom_role?: "component" | "finished" | "both";
 }
 
 export interface ResultatMutationStock {
@@ -140,6 +141,7 @@ export class StockService {
           image_url: coverImg || undefined,
           images: extraImgs,
           est_compose: options.est_compose ?? false,
+          bom_role: (options.bom_role as any) ?? "finished",
         }));
 
         // Insertion haute performance via creerProduitsGroupes

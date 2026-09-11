@@ -47,6 +47,7 @@ export async function creerProduitsGroupes(
         prix_vente_fixe: ligne.prix_vente_fixe ?? null,
         image_url: ligne.images[0] ?? null,
         est_compose: ligne.est_compose ?? false,
+        bom_role: (ligne.bom_role as any) ?? "finished",
         statut,
         en_vitrine: enVitrine,
       })),

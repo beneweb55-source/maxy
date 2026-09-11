@@ -34,6 +34,7 @@ export async function GET(request: Request) {
     const where: any = {
       statut: { notIn: STATUTS_NON_DISPONIBLES },
       parent_id: null,
+      bom_role: { in: ["component", "both"] },
     };
 
     if (q) {

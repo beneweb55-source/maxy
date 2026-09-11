@@ -104,6 +104,7 @@ export interface ProduitDetailDto {
   images: string[];
   en_vitrine: boolean;
   est_compose: boolean;
+  bom_role: "component" | "finished" | "both";
   nb_composants: number;
   etiquette_imprimee: boolean;
   decision_rapport: DecisionRapport | null;
@@ -596,10 +597,11 @@ export default function FicheProduit({
                 type="button"
                 onClick={async () => {
                   const nouveauStatut = !produit.est_compose;
-                  const label = nouveauStatut ? "marquer comme composé" : "retirer le statut composé";
                   const ok = await confirmer({
                     titre: nouveauStatut ? "Activer le mode composé" : "Désactiver le mode composé",
-                    message: `Voulez-vous ${label} ce produit ?${nouveauStatut ? " Vous pourrez ensuite ajouter des composants." : ""}`,
+                    message: nouveauStatut
+                      ? "Ce produit pourra contenir des composants. Vous pourrez ensuite les intégrer."
+                      : "Retirer le statut composé ? Les composants restent rattachés.",
                     labelConfirmer: "Confirmer",
                     variante: nouveauStatut ? "info" : "warning",
                   });
@@ -626,6 +628,73 @@ export default function FicheProduit({
                 <Layers className="w-4 h-4" />
                 {produit.est_compose ? "Composé" : "Assemblage"}
               </button>
+            )}
+
+            {/* Rôle BOM — Produit fini / Composant / Les deux */}
+            {peutModifier && (
+              <div className="relative group">
+                <button
+                  type="button"
+                  className={`btn text-xs py-2.5 px-3.5 rounded-md font-bold flex items-center gap-1.5 ${
+                    produit.bom_role === "component"
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                      : produit.bom_role === "both"
+                        ? "bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30"
+                        : "btn-secondaire"
+                  }`}
+                  title="Rôle BOM de ce produit"
+                >
+                  {produit.bom_role === "component" && "🔧 Composant"}
+                  {produit.bom_role === "both" && "🔧+📦 Les deux"}
+                  {produit.bom_role === "finished" && "📦 Produit fini"}
+                </button>
+                {/* Dropdown au hover */}
+                <div className="hidden group-hover:block absolute top-full left-0 mt-1 z-50 bg-white dark:bg-brand-paper border border-brand-light-grey/80 dark:border-white/10 rounded-xl shadow-xl p-1.5 min-w-[160px]">
+                  {(["finished", "component", "both"] as const).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/produits/${produit.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ bom_role: role }),
+                          });
+                          if (!res.ok) throw new Error();
+                          window.location.reload();
+                        } catch {
+                          afficher("Erreur lors de la mise à jour.", "erreur");
+                        }
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${
+                        produit.bom_role === role
+                          ? "bg-brand-orange/10 text-brand-orange"
+                          : "text-brand-black dark:text-white hover:bg-brand-light-grey/20 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      {role === "finished" && "📦 Produit fini"}
+                      {role === "component" && "🔧 Composant"}
+                      {role === "both" && "🔧+📦 Produit fini + composant"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Badge rôle BOM (lecture seule) */}
+            {!peutModifier && (
+              <span className={`text-[10px] font-black px-2.5 py-1 rounded-md ${
+                produit.bom_role === "component"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  : produit.bom_role === "both"
+                    ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                    : "bg-brand-light-grey/30 text-brand-warm-grey"
+              }`}>
+                {produit.bom_role === "component" && "🔧 Composant"}
+                {produit.bom_role === "both" && "🔧+📦 Les deux"}
+                {produit.bom_role === "finished" && "📦 Produit fini"}
+              </span>
             )}
 
             {/* Modifier le Modèle */}

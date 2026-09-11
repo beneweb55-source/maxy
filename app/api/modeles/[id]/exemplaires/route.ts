@@ -29,6 +29,7 @@ export async function POST(
       reference,
       categorie,
       est_compose = false,
+      bom_role = "finished",
     } = body;
 
     const resultat = await StockService.createExemplaires(user.id, {
@@ -45,6 +46,7 @@ export async function POST(
       statut,
       en_vitrine: en_vitrine === true || emplacement === "vitrine",
       est_compose: est_compose === true,
+      bom_role: ["component", "finished", "both"].includes(bom_role) ? bom_role : "finished",
     });
 
     return NextResponse.json(

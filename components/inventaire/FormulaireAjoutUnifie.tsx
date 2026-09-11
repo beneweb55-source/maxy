@@ -79,6 +79,8 @@ interface ComposantChoisi {
   modele?: { nom: string } | null;
 }
 
+type BomRoleType = "component" | "finished" | "both";
+
 interface Formulaire {
   reference: string;
   categorie_id: string;
@@ -93,6 +95,7 @@ interface Formulaire {
   lot_id: string;
   garderOuvert: boolean;
   est_compose: boolean;
+  bom_role: BomRoleType;
   composantsSelectionnes: ComposantChoisi[];
 }
 
@@ -110,6 +113,7 @@ const FORMULAIRE_VIDE: Formulaire = {
   lot_id: "",
   garderOuvert: false,
   est_compose: false,
+  bom_role: "finished",
   composantsSelectionnes: [],
 };
 
@@ -166,20 +170,6 @@ export default function FormulaireAjoutUnifie({
 
   const categories = aplatirCategories(categoriesTree);
 
-  /* ── Catégories qui NE sont PAS des composants (produits entiers) ── */
-  const CATEGORIES_EXCLUES_COMPOSANTS = [
-    "laptop", "ultrabook", "serveur", "imprimante", "tout-en-un", "all-in-one",
-    "clavier", "souris", "combo", "toner", "tambour", "nas", "das",
-    "terminal", "caisse", "tpv", "visioconférence", "caméra", "switch",
-    "écran", "monitor", "tablette", "téléphone", "phone", "tablet",
-    "à classifier",
-  ];
-
-  function estCategoryValide(categorie: string): boolean {
-    const catLower = categorie.toLowerCase();
-    return !CATEGORIES_EXCLUES_COMPOSANTS.some((excl) => catLower.includes(excl));
-  }
-
   /* ── Charger TOUS les composants disponibles quand le toggle est activé ── */
   useEffect(() => {
     if (!formulaire.est_compose) {
@@ -191,14 +181,10 @@ export default function FormulaireAjoutUnifie({
     (async () => {
       setChargementComposants(true);
       try {
-        const res = await fetch("/api/produits/composants/disponibles?limit=200");
+        const res = await fetch("/api/produits/composants/disponibles?limit=300");
         if (res.ok && !abort) {
           const data = await res.json();
-          // Filtrer les catégories non-composants côté client
-          const produits = (data.produits || []).filter((p: ComposantChoisi) =>
-            estCategoryValide(p.categorie)
-          );
-          setTousComposants(produits);
+          setTousComposants(data.produits || []);
         }
       } catch {
         // ignorer
@@ -377,6 +363,7 @@ export default function FormulaireAjoutUnifie({
           emplacement: formulaire.emplacement,
           numeros_serie: formulaire.numeros_serie,
           en_vitrine: formulaire.emplacement === "vitrine",
+          bom_role: formulaire.bom_role,
         }),
       });
 
@@ -542,6 +529,34 @@ export default function FormulaireAjoutUnifie({
                     }`}
                   >
                     {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rôle BOM */}
+            <div>
+              <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
+                Utilisation du produit
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  { valeur: "finished" as const, label: "Produit fini", desc: "Vendu seul" },
+                  { valeur: "component" as const, label: "Composant", desc: "Intégré à un autre" },
+                  { valeur: "both" as const, label: "Les deux", desc: "Composant + vente" },
+                ]).map((opt) => (
+                  <button
+                    key={opt.valeur}
+                    type="button"
+                    onClick={() => maj("bom_role", opt.valeur)}
+                    className={`py-2 px-2 rounded-xl text-center border transition-all ${
+                      formulaire.bom_role === opt.valeur
+                        ? "bg-brand-orange text-white border-brand-orange shadow-xs"
+                        : "bg-white dark:bg-brand-paper border-brand-light-grey dark:border-white/10 text-brand-warm-grey hover:border-brand-orange/60"
+                    }`}
+                  >
+                    <span className="text-[11px] font-black block">{opt.label}</span>
+                    <span className="text-[9px] opacity-70 block">{opt.desc}</span>
                   </button>
                 ))}
               </div>
@@ -828,7 +843,7 @@ export default function FormulaireAjoutUnifie({
                     <Boxes className="w-6 h-6 text-brand-warm-grey/40 mx-auto mb-1.5" />
                     <p className="text-[11px] text-brand-warm-grey font-bold">
                       {tousComposants.length === 0
-                        ? "Aucun produit disponible en stock."
+                        ? "Aucun composant compatible en stock."
                         : "Aucun résultat pour ce filtre."}
                     </p>
                   </div>

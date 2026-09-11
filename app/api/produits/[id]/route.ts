@@ -58,6 +58,7 @@ export async function GET(
         date_vente: true,
         created_at: true,
         est_compose: true,
+        bom_role: true,
         modele: {
           select: {
             id: true,
@@ -211,6 +212,7 @@ export async function GET(
       a_jeter: p.a_jeter,
       en_vitrine: p.en_vitrine,
       est_compose: p.est_compose,
+      bom_role: p.bom_role,
       notes: p.notes,
       image_url: urlCouvertureProduit,
       images: galerie,
@@ -622,17 +624,21 @@ export async function PATCH(
     return erreur(400, "Requête invalide.");
   }
 
-  const { est_compose } = (corps ?? {}) as { est_compose?: boolean };
+  const { est_compose, bom_role } = (corps ?? {}) as { est_compose?: boolean; bom_role?: string };
 
-  if (typeof est_compose !== "boolean") {
-    return erreur(400, "Champ est_compose requis (boolean).");
+  const data: Record<string, unknown> = {};
+  if (typeof est_compose === "boolean") data.est_compose = est_compose;
+  if (bom_role && ["component", "finished", "both"].includes(bom_role)) data.bom_role = bom_role;
+
+  if (Object.keys(data).length === 0) {
+    return erreur(400, "Aucun champ valide à mettre à jour.");
   }
 
   try {
     const produit = await prisma.produit.update({
       where: { id: produitId },
-      data: { est_compose },
-      select: { id: true, est_compose: true },
+      data,
+      select: { id: true, est_compose: true, bom_role: true },
     });
     return NextResponse.json(produit);
   } catch {
