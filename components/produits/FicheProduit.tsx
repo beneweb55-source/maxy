@@ -234,7 +234,13 @@ export default function FicheProduit({
       const res = await fetch(`/api/produits/${produitId}`);
       if (!res.ok) {
         if (res.status === 404) throw new Error("Produit introuvable.");
-        throw new Error("Erreur lors du chargement des données.");
+        // Try to extract server error message for better diagnostics
+        let msg = "Erreur lors du chargement des données.";
+        try {
+          const body = await res.json();
+          if (body?.error) msg = body.error;
+        } catch { /* ignore parse error */ }
+        throw new Error(msg);
       }
       const json = await res.json();
       setProduit(json);
