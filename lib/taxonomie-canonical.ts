@@ -129,11 +129,18 @@ export const REGLES_CLASSIFICATION: RegleClassification[] = [
     regex: /\b(geforce|rtx\s*\d{3,4}|gtx\s*\d{3,4}|radeon\s*rx|quadro|intel\s*arc|gpu|amd\s*rx\s*\d{3,4}|ti\s*(super)?)\b/i,
     poids: 90,
   },
+  // Processeurs Serveur
+  {
+    famille: "processeur serveur xeon",
+    categorie: "processeur serveur xeon",
+    regex: /\b(xeon|epyc)\b/i,
+    poids: 95,
+  },
   // Processeurs
   {
     famille: FAMILLES.COMPOSANTS,
     categorie: "PROCESSEURS",
-    regex: /\b(core\s*i[3579]|intel\s*core|ryzen\s*[3579]|xeon|threadripper|pentium|celeron|socket\s*lga|socket\s*am[45]|cpu\s*intel|cpu\s*amd)\b/i,
+    regex: /\b(core\s*i[3579]|intel\s*core|ryzen\s*[3579]|threadripper|pentium|celeron|socket\s*lga|socket\s*am[45]|cpu\s*intel|cpu\s*amd)\b/i,
     poids: 88,
   },
   // Écrans

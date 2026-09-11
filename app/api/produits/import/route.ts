@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       let modelesExistants = 0;
       let exemplairesCrees = 0;
       const codesGeneres: string[] = [];
+      const allBomUpdates: { produit_id: number; bom_role: string }[] = [];
 
       // Cache en mémoire pour cette session d'import
       const cacheModeles = new Map<string, any>();
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
           images: [] as string[],
         }));
 
-        const codes = await creerProduitsGroupes(tx, {
+        const { codes, bomUpdates } = await creerProduitsGroupes(tx, {
           lotId: lotIdNum,
           lignes: lignesExemplaires,
           userId: user.id,
@@ -125,6 +126,7 @@ export async function POST(request: NextRequest) {
 
         exemplairesCrees += codes.length;
         codesGeneres.push(...codes);
+        allBomUpdates.push(...bomUpdates);
       }
 
       return {
@@ -132,8 +134,18 @@ export async function POST(request: NextRequest) {
         modelesExistants,
         exemplairesCrees,
         codesGeneres,
+        allBomUpdates,
       };
     }, { timeout: 180000 });
+
+    // Apply bom_role updates AFTER transaction commits (best-effort)
+    if (resultat.allBomUpdates?.length) {
+      for (const u of resultat.allBomUpdates) {
+        try {
+          await prisma.produit.update({ where: { id: u.produit_id }, data: { bom_role: u.bom_role as any } });
+        } catch { /* column may not exist */ }
+      }
+    }
 
     // Journal d'activité
     await enregistrerActivite(

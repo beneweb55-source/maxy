@@ -4,12 +4,20 @@ import { genererCodesInternes } from "@/lib/codes";
 
 type Tx = Prisma.TransactionClient;
 
-// Insère des produits par PAQUETS plutôt qu'un par un. Créer chaque produit
-// individuellement (create + historique + images) multiplie les allers-retours
-// vers la base : au-delà de ~50 produits, la fonction serverless dépasse son
-// délai maximum et l'ajout échoue. `createManyAndReturn` insère tout un paquet
-// en une seule requête. La taille de paquet est réduite quand des photos sont
-// jointes, pour éviter une requête SQL surdimensionnée.
+/** Data needed to set bom_role after the transaction commits. */
+export interface BomUpdate {
+  produit_id: number;
+  bom_role: string;
+}
+
+/**
+ * Insère des produits par PAQUETS plutôt qu'un par un.
+ *
+ * Les mises à jour `bom_role` sont retournées en dehors de la transaction pour
+ * éviter d'abandonner toute la transaction si la colonne `bom_role` n'existe pas
+ * dans la base de production (comportement PostgreSQL : une erreur dans un
+ * $transaction abort le bloc entier → 25P02).
+ */
 export async function creerProduitsGroupes(
   tx: Tx,
   options: {
@@ -19,14 +27,16 @@ export async function creerProduitsGroupes(
     statut?: StatutProduit;
     enVitrine?: boolean;
   }
-): Promise<string[]> {
+): Promise<{ codes: string[]; bomUpdates: BomUpdate[] }> {
   const { lotId, lignes, userId, statut = "recu", enVitrine = false } = options;
-  if (lignes.length === 0) return [];
+  if (lignes.length === 0) return { codes: [], bomUpdates: [] };
 
   const codes = await genererCodesInternes(tx, lignes.length);
 
   const aDesImages = lignes.some((l) => l.images.length > 0);
   const TAILLE_PAQUET = aDesImages ? 10 : 200;
+
+  const allBomUpdates: BomUpdate[] = [];
 
   for (let debut = 0; debut < lignes.length; debut += TAILLE_PAQUET) {
     const tranche = lignes.slice(debut, debut + TAILLE_PAQUET);
@@ -47,7 +57,6 @@ export async function creerProduitsGroupes(
         prix_vente_fixe: ligne.prix_vente_fixe ?? null,
         image_url: ligne.images[0] ?? null,
         est_compose: ligne.est_compose ?? false,
-        bom_role: (ligne.bom_role as any) ?? "finished",
         statut,
         en_vitrine: enVitrine,
       })),
@@ -56,6 +65,14 @@ export async function creerProduitsGroupes(
     // On relie par code_interne (unique) plutôt que par l'ordre de retour, non
     // garanti par Prisma.
     const idParCode = new Map(crees.map((p) => [p.code_interne, p.id]));
+
+    // Collect bom_role updates (will be applied AFTER transaction commits)
+    tranche.forEach((ligne, i) => {
+      const id = idParCode.get(codesTranche[i]!);
+      if (id !== undefined && ligne.bom_role) {
+        allBomUpdates.push({ produit_id: id, bom_role: ligne.bom_role as string });
+      }
+    });
 
     await tx.historiqueStatut.createMany({
       data: crees.map((p) => ({
@@ -79,5 +96,5 @@ export async function creerProduitsGroupes(
     }
   }
 
-  return codes;
+  return { codes, bomUpdates: allBomUpdates };
 }

@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
     // Les photos sont téléversées AVANT la transaction : la base ne stocke que
     // leur URL (une seule fois, partagée par les `qty` exemplaires).
     const lignes = await televerserLignes(Array.from({ length: qty }, () => ligne));
-    const codes = await prisma.$transaction(
+    const { codes, bomUpdates } = await prisma.$transaction(
       async (tx) => {
         const c = await creerProduitsGroupes(tx, {
           lotId: lotId,
@@ -270,6 +270,8 @@ export async function POST(request: NextRequest) {
       },
       { timeout: 120000 }
     );
+    // Apply bom_role AFTER transaction commits (best-effort, column may not exist)
+    await StockService.applyBomUpdates(bomUpdates);
 
     // Audit Log
     await enregistrerActivite(prisma, user.id, ACTIONS_JOURNAL.PRODUIT_AJOUTER, "lot", lotId ?? undefined, {

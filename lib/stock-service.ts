@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { Prisma, StatutProduit } from "@prisma/client";
-import { creerProduitsGroupes } from "@/lib/creation-produits";
+import { creerProduitsGroupes, type BomUpdate } from "@/lib/creation-produits";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 type Tx = Prisma.TransactionClient;
@@ -91,7 +91,7 @@ export class StockService {
     }
     const qty = Math.min(500, options.quantite);
 
-    return await prisma.$transaction(
+    const txResult = await prisma.$transaction(
       async (tx) => {
         let parentModele: any = null;
         if (options.modeleId) {
@@ -145,7 +145,7 @@ export class StockService {
         }));
 
         // Insertion haute performance via creerProduitsGroupes
-        const codes = await creerProduitsGroupes(tx, {
+        const { codes, bomUpdates } = await creerProduitsGroupes(tx, {
           lotId: options.lot_id ? Number(options.lot_id) : null,
           lignes,
           userId,
@@ -191,10 +191,16 @@ export class StockService {
           diff: qty,
           codesCrees: codes,
           message: `${qty} exemplaire(s) créé(s) avec succès pour ${refName}.`,
+          _bomUpdates: bomUpdates,
         };
       },
       { timeout: 60000 }
     );
+
+    // Apply bom_role updates AFTER transaction commits (best-effort, column may not exist)
+    const { _bomUpdates, ...cleanResult } = txResult;
+    await StockService.applyBomUpdates(_bomUpdates);
+    return cleanResult;
   }
 
   /**
@@ -218,7 +224,7 @@ export class StockService {
     }
     const qteCible = Math.min(1000, cibleQuantite);
 
-    return await prisma.$transaction(
+    const txResult2 = await prisma.$transaction(
       async (tx) => {
         // 1. Re-lecture du modèle avec verrou logique
         const modele = await tx.modele.findUnique({
@@ -304,13 +310,14 @@ export class StockService {
             images: extraImgs,
           }));
 
-          codesCrees = await creerProduitsGroupes(tx, {
+          const { codes: newCodes, bomUpdates: bomUpdates2 } = await creerProduitsGroupes(tx, {
             lotId: dernierExemplaire?.lot_id ?? null,
             lignes,
             userId,
             statut: statutCible,
             enVitrine: emplacementCible === "vitrine",
           });
+          codesCrees = newCodes;
 
           await tx.modele.update({
             where: { id: modeleId },
@@ -419,10 +426,16 @@ export class StockService {
             diff > 0
               ? `Stock augmenté à ${qteCible} (${diff} nouveau(x) exemplaire(s) créé(s)).`
               : `Stock réduit à ${qteCible} (${Math.abs(diff)} exemplaire(s) retiré(s)).`,
+          _bomUpdates: bomUpdates2 ?? [],
         };
       },
       { timeout: 60000 }
     );
+
+    // Apply bom_role updates AFTER transaction commits (best-effort, column may not exist)
+    const { _bomUpdates, ...cleanResult } = txResult2;
+    await StockService.applyBomUpdates(_bomUpdates);
+    return cleanResult;
   }
 
   /**
@@ -440,6 +453,25 @@ export class StockService {
     if (!modele) throw new Error(`Modèle #${modeleId} introuvable.`);
     const nouvelle = Math.max(0, (modele.quantite || 0) + delta);
     return await this.setStockQuantity(modeleId, nouvelle, userId);
+  }
+
+  /**
+   * Applique les mises à jour de bom_role EN DEHORS de la transaction.
+   * Best-effort : si la colonne bom_role n'existe pas (base de prod non migrée),
+   * l'erreur est silencieusement ignorée.
+   */
+  static async applyBomUpdates(updates: BomUpdate[]): Promise<void> {
+    if (!updates.length) return;
+    try {
+      for (const u of updates) {
+        await prisma.produit.update({
+          where: { id: u.produit_id },
+          data: { bom_role: u.bom_role as any },
+        });
+      }
+    } catch (err: any) {
+      console.warn("⚠️ bom_role update skipped (column may not exist):", err.message);
+    }
   }
 
   /**
