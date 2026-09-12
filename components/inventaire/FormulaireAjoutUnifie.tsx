@@ -387,6 +387,7 @@ export default function FormulaireAjoutUnifie({
           numeros_serie: formulaire.numeros_serie,
           en_vitrine: formulaire.emplacement === "vitrine",
           bom_role: formulaire.bom_role,
+          est_compose: formulaire.est_compose,
         }),
       });
 
@@ -395,27 +396,43 @@ export default function FormulaireAjoutUnifie({
         throw new Error(errData.error || "Erreur création exemplaires.");
       }
 
-      // 3. Si produit composé — marquer + attacher les composants
+      // 3. Si produit composé — marquer + attacher les composants à TOUS les exemplaires
       if (formulaire.est_compose && formulaire.composantsSelectionnes.length > 0) {
         const exemplairesData = await resExemplaires.json();
-        const premierCode = exemplairesData?.codes?.[0];
+        const tousLesCodes: string[] = exemplairesData?.codes || [];
 
-        if (premierCode) {
-          // Trouver le produit par code_interne exact
-          const resSearch = await fetch(`/api/produits?code_exact=${encodeURIComponent(premierCode)}`);
-          const searchData = await resSearch.json();
-          const produitCree = searchData?.produits?.[0];
+        if (tousLesCodes.length > 0) {
+          // Attacher les composants à chaque exemplaire créé
+          const erreursComposants: string[] = [];
+          let succesCount = 0;
 
-          if (produitCree?.id) {
-            // Marquer comme composé
-            await fetch(`/api/produits/${produitCree.id}`, {
+          for (const code of tousLesCodes) {
+            // Trouver le produit par code_interne exact
+            const resSearch = await fetch(`/api/produits?code_exact=${encodeURIComponent(code)}`);
+            if (!resSearch.ok) {
+              erreursComposants.push(`${code}: impossible de retrouver le produit`);
+              continue;
+            }
+            const searchData = await resSearch.json();
+            const produitCree = searchData?.produits?.[0];
+
+            if (!produitCree?.id) {
+              erreursComposants.push(`${code}: produit non trouvé après création`);
+              continue;
+            }
+
+            // Marquer comme composé (PATCH vérifié)
+            const resPatch = await fetch(`/api/produits/${produitCree.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ est_compose: true }),
             });
+            if (!resPatch.ok) {
+              erreursComposants.push(`${code}: impossible de marquer comme composé`);
+              // Continuer quand même — le POST composants auto-flag est_compose
+            }
 
-            // Attacher chaque composant avec quantité (un seul appel par composant)
-            const erreursComposants: string[] = [];
+            // Attacher chaque composant avec quantité
             for (const comp of formulaire.composantsSelectionnes) {
               try {
                 const resComp = await fetch(`/api/produits/${produitCree.id}/composants`, {
@@ -425,15 +442,21 @@ export default function FormulaireAjoutUnifie({
                 });
                 if (!resComp.ok) {
                   const errData = await resComp.json().catch(() => null);
-                  erreursComposants.push(`${comp.reference}: ${errData?.error || "Erreur"}`);
+                  erreursComposants.push(`[${code}] ${comp.reference}: ${errData?.error || "Erreur"}`);
+                } else {
+                  succesCount++;
                 }
               } catch {
-                erreursComposants.push(`${comp.reference}: Erreur réseau`);
+                erreursComposants.push(`[${code}] ${comp.reference}: Erreur réseau`);
               }
             }
-            if (erreursComposants.length > 0) {
-              afficher(`Produit créé mais ${erreursComposants.length} composant(s) en erreur : ${erreursComposants[0]}`, "erreur");
-            }
+          }
+
+          if (erreursComposants.length > 0) {
+            // Afficher toutes les erreurs (max 5 dans le toast)
+            const apercus = erreursComposants.slice(0, 5).join(" | ");
+            const reste = erreursComposants.length > 5 ? ` (+${erreursComposants.length - 5} autres)` : "";
+            afficher(`Produit créé mais ${erreursComposants.length} erreur(s) : ${apercus}${reste}`, "erreur");
           }
         }
       }
