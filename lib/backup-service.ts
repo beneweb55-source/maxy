@@ -340,12 +340,12 @@ export class BackupService {
       // 4. Construire le contenu complet
       const content: BackupContent = { metadata, data };
 
-      // 5. Sérialiser et calculer checksum
+      // 5. Sérialiser avec checksum vide, calculer, ré-serialiser avec checksum
       const jsonString = JSON.stringify(content, null, 2);
       const checksum = computeChecksum(jsonString);
-      metadata.checksum = checksum;
 
-      // Ré-serialiser avec le checksum inclus
+      // Ré-serialiser avec le checksum inclus dans metadata
+      metadata.checksum = checksum;
       const finalJson = JSON.stringify({ ...content, metadata }, null, 2);
       const fileSize = Buffer.byteLength(finalJson, "utf8");
 
@@ -488,16 +488,35 @@ export class BackupService {
       throw new Error("Backup introuvable : le fichier n'est pas sur disque et la colonne raw_data est absente. Exécutez la migration raw_data sur la base de production.");
     }
 
-    // 3. Vérifier le checksum
-    const fileChecksum = computeChecksum(fileContent);
-    const checksumValid = fileChecksum === backup.checksum;
+    // 3. Vérifier le checksum (gérer les 2 formats historiques)
+    //    Format A (ancien) : checksum calculé sur JSON sans checksum →strip avant comparaison
+    //    Format B (nouveau) : checksum calculé sur JSON final → comparaison directe
+    let checksumValid = computeChecksum(fileContent) === backup.checksum;
 
     if (!checksumValid) {
-      await prisma.backup.update({
-        where: { id: backupId },
-        data: { status: "corrupted", error: `Checksum invalide. Attendu: ${backup.checksum}, Obtenu: ${fileChecksum}` },
-      });
-      throw new Error("Checksum invalide. Le backup est marqué comme corrompu.");
+      // Essayer format A : parser, vider le checksum, re-sérialiser, re-comparer
+      try {
+        const parsed = JSON.parse(fileContent);
+        if (parsed.metadata) {
+          const savedChecksum = parsed.metadata.checksum;
+          parsed.metadata.checksum = "";
+          const reserialized = JSON.parse(JSON.stringify(parsed)); // normaliser
+          const reserializedStr = JSON.stringify(reserialized, null, 2);
+          checksumValid = computeChecksum(reserializedStr) === backup.checksum;
+          if (checksumValid) {
+            // Remettre le checksum pour la suite
+            parsed.metadata.checksum = savedChecksum;
+            fileContent = JSON.stringify(parsed, null, 2);
+          }
+        }
+      } catch {
+        // parse a échoué → reste invalide
+      }
+    }
+
+    if (!checksumValid) {
+      // Ne pas marquer corrompu — laisser l'utilisateur décider
+      throw new Error(`Checksum invalide. Attendu: ${backup.checksum.substring(0, 16)}..., obtenu: ${computeChecksum(fileContent).substring(0, 16)}...`);
     }
 
     // 4. Parser le contenu
@@ -852,16 +871,36 @@ export class BackupService {
     const backup = await prisma.backup.findUnique({ where: { id: backupId } });
     if (!backup) return { valid: false, error: "Backup introuvable." };
 
+    // Lire le contenu (fichier ou raw_data)
+    let content: string | null = null;
     const filePath = backupPath(backup.storageKey);
-    if (!existsSync(filePath)) {
-      return { valid: false, error: "Fichier physique introuvable." };
+    if (existsSync(filePath)) {
+      content = await fs.readFile(filePath, "utf8");
+    } else {
+      content = await readRawData(backupId);
+    }
+
+    if (!content) {
+      return { valid: false, error: "Fichier et raw_data introuvables." };
     }
 
     try {
-      const content = await fs.readFile(filePath, "utf8");
-      const checksum = computeChecksum(content);
-      if (checksum !== backup.checksum) {
-        return { valid: false, error: `Checksum invalide. Attendu: ${backup.checksum}, Obtenu: ${checksum}` };
+      // Vérifier checksum (format ancien = strip checksum avant comparaison)
+      let checksumOk = computeChecksum(content) === backup.checksum;
+
+      if (!checksumOk) {
+        try {
+          const parsed = JSON.parse(content);
+          if (parsed.metadata) {
+            parsed.metadata.checksum = "";
+            const reserialized = JSON.stringify(parsed, null, 2);
+            checksumOk = computeChecksum(reserialized) === backup.checksum;
+          }
+        } catch { /* ignore */ }
+      }
+
+      if (!checksumOk) {
+        return { valid: false, error: "Checksum invalide." };
       }
 
       // Vérifier que le JSON est parseable
