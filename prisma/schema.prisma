@@ -752,7 +752,7 @@ model Backup {
   applicationVersion  String       @default("")      // Version de l'app (package.json)
   metadata            Json?        // recordCounts, compatibility info, etc.
   error               String?      // Message d'erreur si status = failed
-  raw_data            String?      // JSON complet backup (persistence Vercel — /tmp éphémère)
+  // raw_data TEXT en DB pour persistence Vercel — accès via SQL brut uniquement (pas Prisma)
 
   cree_par            Int?         // User ID
   cree_par_nom        String?      // Username (dénormalisé pour affichage)

@@ -24,6 +24,45 @@ const BACKUP_DIR = IS_VERCEL
 const BACKUP_VERSION = 1;
 const MAX_BACKUP_SIZE = 500 * 1024 * 1024; // 500 MB
 
+// ─── RAW DATA HELPERS (SQL brut — ne casse jamais si la colonne n'existe pas) ───
+
+/** Vérifier si la colonne raw_data existe */
+async function hasRawDataColumn(): Promise<boolean> {
+  try {
+    const r = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
+      `SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='backups' AND column_name='raw_data') AS exists`
+    );
+    return r[0]?.exists === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Écrire raw_data en DB via SQL brut (ignorer si colonne absente) */
+async function writeRawData(backupId: number, data: string): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE backups SET raw_data = $1 WHERE id = $2`,
+      data, backupId
+    );
+  } catch {
+    // Colonne pas encore migrée — pas grave
+  }
+}
+
+/** Lire raw_data en DB via SQL brut (retourne null si colonne absente ou vide) */
+async function readRawData(backupId: number): Promise<string | null> {
+  try {
+    const r = await prisma.$queryRawUnsafe<{ raw_data: string | null }[]>(
+      `SELECT raw_data FROM backups WHERE id = $1`,
+      backupId
+    );
+    return r[0]?.raw_data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── TYPES ───
 export interface BackupMetadata {
   backupVersion: number;
@@ -358,9 +397,13 @@ export class BackupService {
           size: fileSize,
           checksum,
           metadata: recordCounts as any,
-          ...(rawPayload ? { raw_data: rawPayload } : {}),
         },
       });
+
+      // 10b. Persister raw_data en DB via SQL brut (best-effort)
+      if (rawPayload) {
+        await writeRawData(backup.id, rawPayload);
+      }
 
       // 11. Logger
       await this.log(backup.id, "BACKUP_CREATED", options.userId, options.username,
@@ -424,23 +467,26 @@ export class BackupService {
     if (backup.status === "failed") throw new Error("Ce backup a échoué et ne peut pas être chargé.");
     if (backup.status === "corrupted") throw new Error("Ce backup est marqué comme corrompu.");
 
-    // 2. Lire le fichier (ou raw_data sur Vercel)
+    // 2. Lire le fichier (ou raw_data via SQL brut sur Vercel)
     let fileContent: string;
     const filePath = backupPath(backup.storageKey);
 
     if (existsSync(filePath)) {
       // Fichier sur disque (local ou /tmp encore présent)
       fileContent = await fs.readFile(filePath, "utf8");
-    } else if (backup.raw_data) {
-      // Vercel : fallback sur raw_data en DB
-      fileContent = backup.raw_data;
     } else {
-      // Ni fichier ni raw_data → corrompu
-      await prisma.backup.update({
-        where: { id: backupId },
-        data: { status: "corrupted", error: "Fichier physique et raw_data introuvables." },
-      });
-      throw new Error("Backup introuvable (ni fichier, ni raw_data). Marqué comme corrompu.");
+      // Essayer raw_data via SQL brut (la colonne peut ne pas exister)
+      const rawContent = await readRawData(backupId);
+      if (rawContent) {
+        fileContent = rawContent;
+      } else {
+        // Ni fichier ni raw_data → corrompu
+        await prisma.backup.update({
+          where: { id: backupId },
+          data: { status: "corrupted", error: "Fichier physique et raw_data introuvables." },
+        });
+        throw new Error("Backup introuvable (ni fichier, ni raw_data). Marqué comme corrompu.");
+      }
     }
 
     // 3. Vérifier le checksum
@@ -627,10 +673,11 @@ export class BackupService {
     }
 
     // Vercel : écrire raw_data dans un fichier temporaire pour le téléchargement
-    if (backup.raw_data) {
+    const rawContent = await readRawData(backupId);
+    if (rawContent) {
       ensureBackupDir();
       const tmpPath = backupPath(backup.storageKey);
-      await fs.writeFile(tmpPath, backup.raw_data, "utf8");
+      await fs.writeFile(tmpPath, rawContent, "utf8");
       return {
         filePath: tmpPath,
         filename: backup.filename,
@@ -748,9 +795,13 @@ export class BackupService {
           size: fileSize,
           checksum,
           metadata: { ...recordCounts, totalRecords } as any,
-          ...(rawPayload ? { raw_data: rawPayload } : {}),
         },
       });
+
+      // 9b. Persister raw_data en DB via SQL brut (best-effort)
+      if (rawPayload) {
+        await writeRawData(backup.id, rawPayload);
+      }
 
       // 10. Logger
       await this.log(backup.id, "BACKUP_IMPORT_COMPLETED", userId, username,
