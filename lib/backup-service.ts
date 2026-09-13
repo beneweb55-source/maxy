@@ -468,10 +468,10 @@ export class BackupService {
     const backup = await prisma.backup.findUnique({ where: { id: backupId } });
     if (!backup) throw new Error("Backup introuvable.");
     if (backup.status === "failed") throw new Error("Ce backup a échoué et ne peut pas être chargé.");
-    if (backup.status === "corrupted") throw new Error("Ce backup est marqué comme corrompu.");
+    // Ne plus rejeter les backups "corrupted" — on tente la récupération
 
     // 2. Lire le fichier (ou raw_data via SQL brut sur Vercel)
-    let fileContent: string;
+    let fileContent: string | null = null;
     const filePath = backupPath(backup.storageKey);
 
     if (existsSync(filePath)) {
@@ -479,17 +479,13 @@ export class BackupService {
       fileContent = await fs.readFile(filePath, "utf8");
     } else {
       // Essayer raw_data via SQL brut (la colonne peut ne pas exister)
-      const rawContent = await readRawData(backupId);
-      if (rawContent) {
-        fileContent = rawContent;
-      } else {
-        // Ni fichier ni raw_data → corrompu
-        await prisma.backup.update({
-          where: { id: backupId },
-          data: { status: "corrupted", error: "Fichier physique et raw_data introuvables." },
-        });
-        throw new Error("Backup introuvable (ni fichier, ni raw_data). Marqué comme corrompu.");
-      }
+      fileContent = await readRawData(backupId);
+    }
+
+    if (!fileContent) {
+      // Ni fichier ni raw_data — sur Vercel c'est normal si la colonne n'existe pas encore
+      // Ne PAS marquer corrompu, juste signaler l'erreur
+      throw new Error("Backup introuvable : le fichier n'est pas sur disque et la colonne raw_data est absente. Exécutez la migration raw_data sur la base de production.");
     }
 
     // 3. Vérifier le checksum
