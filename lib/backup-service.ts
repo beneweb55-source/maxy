@@ -366,15 +366,18 @@ export class BackupService {
       // Sur Vercel : persister dans la colonne raw_data
       const rawPayload = IS_VERCEL ? finalJson : null;
 
-      // 8. Vérifier que le fichier existe et correspond (ou raw_data sur Vercel)
+      // 8. Vérifier l'intégrité
+      // Note: checksum est calculé sur jsonString (sans checksum intégré).
+      // finalJson inclut metadata.checksum → hash différent. On vérifie sur jsonString.
+      const verifyChecksum = computeChecksum(jsonString);
+      if (verifyChecksum !== checksum) {
+        throw new Error("Échec de la vérification d'intégrité post-serialization");
+      }
+
       if (IS_VERCEL) {
-        // Vercel : vérifier raw_data
+        // Vercel : vérifier que rawPayload a la bonne taille
         if (!rawPayload || Buffer.byteLength(rawPayload, "utf8") !== fileSize) {
           throw new Error(`Taille raw_data incohérente: attendu ${fileSize}`);
-        }
-        const verifyChecksum = computeChecksum(rawPayload);
-        if (verifyChecksum !== checksum) {
-          throw new Error("Échec de la vérification d'intégrité raw_data");
         }
       } else {
         // Local : vérifier le fichier
