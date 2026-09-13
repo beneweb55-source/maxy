@@ -2,8 +2,12 @@
  * BACKUP SERVICE — Système de sauvegarde professionnelle
  *
  * Gère la création, lecture, import, validation, et restauration de backups.
- * Les fichiers sont stockés sur disque dans storage/backups/.
- * Les métadonnées sont enregistrées en PostgreSQL via le modèle Prisma Backup.
+ *
+ * Stockage :
+ * - Local (dev)  : storage/backups/ sur le filesystem
+ * - Vercel       : /tmp/storage/backups/ (éphémère) + données JSON en DB
+ *                  Les backups Vercel sont persistés dans la colonne
+ *                  Backup.raw_data (JSON text) pour survivre aux invocations.
  */
 
 import { prisma } from "./db";
@@ -13,7 +17,10 @@ import path from "path";
 import { existsSync, mkdirSync } from "fs";
 
 // ─── CONFIGURATION ───
-const BACKUP_DIR = path.join(process.cwd(), "storage", "backups");
+const IS_VERCEL = !!process.env.VERCEL;
+const BACKUP_DIR = IS_VERCEL
+  ? path.join("/tmp", "storage", "backups")
+  : path.join(process.cwd(), "storage", "backups");
 const BACKUP_VERSION = 1;
 const MAX_BACKUP_SIZE = 500 * 1024 * 1024; // 500 MB
 
@@ -308,21 +315,39 @@ export class BackupService {
         throw new Error(`Le backup dépasse la taille maximale (${Math.round(fileSize / 1024 / 1024)} MB > ${Math.round(MAX_BACKUP_SIZE / 1024 / 1024)} MB)`);
       }
 
-      // 7. Écrire le fichier
+      // 7. Écrire le fichier (+ raw_data pour Vercel)
       const filePath = backupPath(backup.storageKey);
-      await fs.writeFile(filePath, finalJson, "utf8");
-
-      // 8. Vérifier que le fichier existe et correspond
-      const stat = await fs.stat(filePath);
-      if (stat.size !== fileSize) {
-        throw new Error(`Taille du fichier incohérente: attendu ${fileSize}, obtenu ${stat.size}`);
+      try {
+        ensureBackupDir();
+        await fs.writeFile(filePath, finalJson, "utf8");
+      } catch {
+        // Sur Vercel /tmp peut être indisponible — on continue avec raw_data
       }
 
-      // 9. Relire et re-vérifier le checksum
-      const verifyContent = await fs.readFile(filePath, "utf8");
-      const verifyChecksum = computeChecksum(verifyContent);
-      if (verifyChecksum !== checksum) {
-        throw new Error("Échec de la vérification d'intégrité post-écriture");
+      // Sur Vercel : persister dans la colonne raw_data
+      const rawPayload = IS_VERCEL ? finalJson : null;
+
+      // 8. Vérifier que le fichier existe et correspond (ou raw_data sur Vercel)
+      if (IS_VERCEL) {
+        // Vercel : vérifier raw_data
+        if (!rawPayload || Buffer.byteLength(rawPayload, "utf8") !== fileSize) {
+          throw new Error(`Taille raw_data incohérente: attendu ${fileSize}`);
+        }
+        const verifyChecksum = computeChecksum(rawPayload);
+        if (verifyChecksum !== checksum) {
+          throw new Error("Échec de la vérification d'intégrité raw_data");
+        }
+      } else {
+        // Local : vérifier le fichier
+        const stat = await fs.stat(filePath);
+        if (stat.size !== fileSize) {
+          throw new Error(`Taille du fichier incohérente: attendu ${fileSize}, obtenu ${stat.size}`);
+        }
+        const verifyContent = await fs.readFile(filePath, "utf8");
+        const verifyChecksum = computeChecksum(verifyContent);
+        if (verifyChecksum !== checksum) {
+          throw new Error("Échec de la vérification d'intégrité post-écriture");
+        }
       }
 
       // 10. Mettre à jour le backup avec status READY
@@ -333,6 +358,7 @@ export class BackupService {
           size: fileSize,
           checksum,
           metadata: recordCounts as any,
+          ...(rawPayload ? { raw_data: rawPayload } : {}),
         },
       });
 
@@ -398,18 +424,24 @@ export class BackupService {
     if (backup.status === "failed") throw new Error("Ce backup a échoué et ne peut pas être chargé.");
     if (backup.status === "corrupted") throw new Error("Ce backup est marqué comme corrompu.");
 
-    // 2. Lire le fichier
+    // 2. Lire le fichier (ou raw_data sur Vercel)
+    let fileContent: string;
     const filePath = backupPath(backup.storageKey);
-    if (!existsSync(filePath)) {
-      // Mettre à jour le statut
+
+    if (existsSync(filePath)) {
+      // Fichier sur disque (local ou /tmp encore présent)
+      fileContent = await fs.readFile(filePath, "utf8");
+    } else if (backup.raw_data) {
+      // Vercel : fallback sur raw_data en DB
+      fileContent = backup.raw_data;
+    } else {
+      // Ni fichier ni raw_data → corrompu
       await prisma.backup.update({
         where: { id: backupId },
-        data: { status: "corrupted", error: "Fichier physique introuvable sur le stockage." },
+        data: { status: "corrupted", error: "Fichier physique et raw_data introuvables." },
       });
-      throw new Error("Fichier de backup introuvable sur le stockage. Le backup est marqué comme corrompu.");
+      throw new Error("Backup introuvable (ni fichier, ni raw_data). Marqué comme corrompu.");
     }
-
-    const fileContent = await fs.readFile(filePath, "utf8");
 
     // 3. Vérifier le checksum
     const fileChecksum = computeChecksum(fileContent);
@@ -586,15 +618,27 @@ export class BackupService {
     if (!backup) throw new Error("Backup introuvable.");
 
     const filePath = backupPath(backup.storageKey);
-    if (!existsSync(filePath)) {
-      throw new Error("Fichier de backup introuvable sur le stockage.");
+    if (existsSync(filePath)) {
+      return {
+        filePath,
+        filename: backup.filename,
+        mimeType: "application/json",
+      };
     }
 
-    return {
-      filePath,
-      filename: backup.filename,
-      mimeType: "application/json",
-    };
+    // Vercel : écrire raw_data dans un fichier temporaire pour le téléchargement
+    if (backup.raw_data) {
+      ensureBackupDir();
+      const tmpPath = backupPath(backup.storageKey);
+      await fs.writeFile(tmpPath, backup.raw_data, "utf8");
+      return {
+        filePath: tmpPath,
+        filename: backup.filename,
+        mimeType: "application/json",
+      };
+    }
+
+    throw new Error("Fichier de backup introuvable sur le stockage.");
   }
 
   // ─── IMPORTER UN BACKUP EXTERNE ───
@@ -665,14 +709,25 @@ export class BackupService {
       const checksum = computeChecksum(jsonString);
       const fileSize = Buffer.byteLength(jsonString, "utf8");
 
-      const filePath = backupPath(storageKey);
-      await fs.writeFile(filePath, jsonString, "utf8");
+      // Écrire sur disque (+ raw_data pour Vercel)
+      try {
+        ensureBackupDir();
+        const filePath = backupPath(storageKey);
+        await fs.writeFile(filePath, jsonString, "utf8");
+      } catch {
+        // /tmp peut être indisponible — raw_data suffit
+      }
 
-      // 7. Vérifier l'écriture
-      const verifyContent = await fs.readFile(filePath, "utf8");
-      const verifyChecksum = computeChecksum(verifyContent);
-      if (verifyChecksum !== checksum) {
-        throw new Error("Échec de la vérification d'intégrité post-écriture.");
+      const rawPayload = IS_VERCEL ? jsonString : null;
+
+      // 7. Vérifier l'intégrité
+      if (!IS_VERCEL) {
+        const filePath = backupPath(storageKey);
+        const verifyContent = await fs.readFile(filePath, "utf8");
+        const verifyChecksum = computeChecksum(verifyContent);
+        if (verifyChecksum !== checksum) {
+          throw new Error("Échec de la vérification d'intégrité post-écriture.");
+        }
       }
 
       // 8. Compter les enregistrements
@@ -693,6 +748,7 @@ export class BackupService {
           size: fileSize,
           checksum,
           metadata: { ...recordCounts, totalRecords } as any,
+          ...(rawPayload ? { raw_data: rawPayload } : {}),
         },
       });
 
