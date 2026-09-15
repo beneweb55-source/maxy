@@ -32,20 +32,11 @@ export async function GET(request: Request) {
     // Statuts qui retirent le produit du stock disponible
     const STATUTS_NON_DISPONIBLES = ["vendu", "hs"];
 
-    // Exclure les produits déjà attachés via BomEntry
-    const dejaAttaches = await prisma.bomEntry.findMany({
-      select: { produit_composant_id: true },
-    });
-    const idsAttaches = [...new Set(dejaAttaches.map((e) => e.produit_composant_id))];
-
     const where: any = {
       statut: { notIn: STATUTS_NON_DISPONIBLES },
       bom_role: { in: ["component", "both"] },
+      parent_id: null,
     };
-
-    if (idsAttaches.length > 0) {
-      where.id = { notIn: idsAttaches };
-    }
 
     if (q) {
       where.OR = [

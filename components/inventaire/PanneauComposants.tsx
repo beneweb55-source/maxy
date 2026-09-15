@@ -218,27 +218,7 @@ export default function PanneauComposants({
     }
   };
 
-  // 5. Modifier la quantité d'un composant
-  const modifierQuantite = async (composantId: number, nouvelleQuantite: number) => {
-    if (enAction) return;
-    setEnAction(true);
-    try {
-      const res = await fetch(`/api/produits/${produitId}/composants`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ composant_id: composantId, quantite: nouvelleQuantite }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur lors de la mise à jour.");
 
-      await chargerComposants();
-      if (onMiseAJour) onMiseAJour();
-    } catch (e: any) {
-      afficher(e?.message || "Erreur lors de la mise à jour.", "erreur");
-    } finally {
-      setEnAction(false);
-    }
-  };
 
   // Catégories uniques pour les filtres
   const categoriesUniques = [...new Set(composants.map((c) => c.categorie))].sort();
@@ -384,32 +364,7 @@ export default function PanneauComposants({
                           </div>
                         </div>
 
-                        {/* Contrôle quantité [-] N [+] */}
-                        {peutModifier && (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => modifierQuantite(c.id, (c.quantite || 1) - 1)}
-                              disabled={enAction || (c.quantite || 1) <= 1}
-                              className="w-6 h-6 rounded-md bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-danger/10 hover:text-danger flex items-center justify-center text-xs font-bold transition disabled:opacity-30"
-                              title="Retirer une unité"
-                            >
-                              -
-                            </button>
-                            <span className="w-6 text-center text-[11px] font-black text-brand-black dark:text-white">
-                              {c.quantite || 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => modifierQuantite(c.id, (c.quantite || 1) + 1)}
-                              disabled={enAction}
-                              className="w-6 h-6 rounded-md bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-emerald-100 hover:text-emerald-600 flex items-center justify-center text-xs font-bold transition disabled:opacity-30"
-                              title="Ajouter une unité"
-                            >
-                              +
-                            </button>
-                          </div>
-                        )}
+
 
                         {peutModifier && (
                           <button

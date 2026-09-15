@@ -4,17 +4,17 @@ import { erreur, exigerUtilisateur } from "@/lib/api";
 import { StockService } from "@/lib/stock-service";
 
 /**
- * API Produits Composés (BOM - Bill of Materials)
+ * API Produits Composés (Composants physiques)
  *
- * Uses the new bom_entries join table for proper quantity tracking.
+ * Utilise la relation native `parent_id` dans la table Produit.
+ * Chaque composant est une instance physique unique avec quantite = 1.
  *
- * GET    /api/produits/[id]/composants → Liste les composants + historique + stats
- * POST   /api/produits/[id]/composants → Attache un composant (crée ou incrémente BomEntry)
- * PATCH  /api/produits/[id]/composants → Modifier la quantité d'un composant
- * DELETE /api/produits/[id]/composants → Détache un composant
+ * GET    /api/produits/[id]/composants → Liste les composants physiques + historique + stats
+ * POST   /api/produits/[id]/composants → Attache un composant existant (set parent_id)
+ * PATCH  /api/produits/[id]/composants → Non supporté (quantite toujours 1)
+ * DELETE /api/produits/[id]/composants → Détache un composant (set parent_id = null)
  */
 
-/** Best-effort history write — never throws */
 async function tracerHistorique(data: {
   produit_id: number;
   produit_parent_id: number | null;
@@ -30,7 +30,7 @@ async function tracerHistorique(data: {
   }
 }
 
-// GET : Lister les composants d'un produit via bom_entries
+// GET : Lister les composants d'un produit (parent_id)
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -54,52 +54,38 @@ export async function GET(
       return erreur(404, "Produit introuvable.");
     }
 
-    // Composants via BomEntry
-    const entries = await prisma.bomEntry.findMany({
-      where: { produit_parent_id: produitId },
-      include: {
-        produit_composant: {
-          select: {
-            id: true,
-            code_interne: true,
-            reference: true,
-            categorie: true,
-            numero_serie: true,
-            grade: true,
-            statut: true,
-            prix_achat: true,
-            image_url: true,
-            modele: { select: { nom: true, categorie_id: true } },
-          },
-        },
+    // Composants physiques attachés
+    const composantsFiltres = await prisma.produit.findMany({
+      where: { parent_id: produitId },
+      select: {
+        id: true,
+        code_interne: true,
+        reference: true,
+        categorie: true,
+        numero_serie: true,
+        grade: true,
+        statut: true,
+        prix_achat: true,
+        image_url: true,
+        modele: { select: { nom: true, categorie_id: true } },
       },
       orderBy: { id: "asc" },
     });
 
-    const composants = entries.map((e) => ({
-      ...e.produit_composant,
-      quantite: e.quantite,
-      bom_entry_id: e.id,
+    const composants = composantsFiltres.map((c) => ({
+      ...c,
+      quantite: 1, // Fixe pour un produit physique
+      bom_entry_id: c.id, // Gardé pour compatibilité front temporaire (s'il l'utilise comme clé)
     }));
 
     // Stats
-    const stats = await prisma.bomEntry.aggregate({
-      where: { produit_parent_id: produitId },
-      _count: true,
-      _sum: { quantite: true },
-    });
-
-    const coutTotal = await prisma.bomEntry.findMany({
-      where: { produit_parent_id: produitId },
-      include: { produit_composant: { select: { prix_achat: true } } },
-    });
-    const sommePrix = coutTotal.reduce((s, e) => s + (e.produit_composant.prix_achat * e.quantite), 0);
+    const nb_composants = composants.length;
+    const coutTotal = composants.reduce((s, e) => s + (e.prix_achat || 0), 0);
 
     // Compter par catégorie
     const parCategorie: Record<string, number> = {};
-    for (const e of entries) {
-      const cat = e.produit_composant.categorie;
-      parCategorie[cat] = (parCategorie[cat] || 0) + e.quantite;
+    for (const c of composants) {
+      parCategorie[c.categorie] = (parCategorie[c.categorie] || 0) + 1;
     }
 
     // Historique
@@ -122,9 +108,9 @@ export async function GET(
       composants,
       historique,
       stats: {
-        nb_composants: stats._count,
-        quantite_totale: stats._sum.quantite || 0,
-        cout_total: sommePrix,
+        nb_composants: nb_composants,
+        quantite_totale: nb_composants,
+        cout_total: coutTotal,
         par_categorie: parCategorie,
       },
     });
@@ -134,7 +120,7 @@ export async function GET(
   }
 }
 
-// POST : Attacher un composant — crée BomEntry ou incrémente quantité
+// POST : Attacher un composant
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -157,7 +143,6 @@ export async function POST(
   }
 
   const composantId = Number((corps as any)?.composant_id);
-  const quantiteDemandee = Math.max(1, Number((corps as any)?.quantite) || 1);
 
   if (!Number.isInteger(composantId) || composantId <= 0) {
     return erreur(400, "Identifiant du composant invalide.");
@@ -176,9 +161,12 @@ export async function POST(
 
       const composant = await tx.produit.findUnique({
         where: { id: composantId },
-        select: { id: true, reference: true, statut: true, bom_role: true, modele_id: true },
+        select: { id: true, reference: true, statut: true, bom_role: true, modele_id: true, parent_id: true },
       });
       if (!composant) throw new Error("Composant introuvable.");
+      if (composant.parent_id !== null) {
+        throw new Error(`Ce composant est déjà affecté à un autre produit (parent_id: ${composant.parent_id}).`);
+      }
       if (composant.bom_role === "finished") {
         throw new Error(`"${composant.reference}" est un produit fini et ne peut pas être utilisé comme composant.`);
       }
@@ -189,58 +177,30 @@ export async function POST(
         throw new Error("Ce composant est hors-service.");
       }
 
-      // Upsert BomEntry — incrémente si existe déjà
-      const existingEntry = await tx.bomEntry.findUnique({
-        where: {
-          produit_parent_id_produit_composant_id: {
-            produit_parent_id: parentId,
-            produit_composant_id: composantId,
-          },
-        },
+      // Marquer le parent comme composé si nécessaire
+      if (!parent.est_compose) {
+        await tx.produit.update({
+          where: { id: parentId },
+          data: { est_compose: true },
+        });
+      }
+
+      // Attacher le composant et mettre à jour le statut
+      const ancienStatut = composant.statut;
+      await tx.produit.update({
+        where: { id: composantId },
+        data: { parent_id: parentId, statut: "assemble", en_vitrine: false },
       });
 
-      if (existingEntry) {
-        // Incrémenter la quantité
-        await tx.bomEntry.update({
-          where: { id: existingEntry.id },
-          data: { quantite: existingEntry.quantite + quantiteDemandee },
-        });
-      } else {
-        // Créer nouvelle entrée
-        await tx.bomEntry.create({
-          data: {
-            produit_parent_id: parentId,
-            produit_composant_id: composantId,
-            quantite: quantiteDemandee,
-          },
-        });
-
-        // Marquer le parent comme composé si nécessaire
-        if (!parent.est_compose) {
-          await tx.produit.update({
-            where: { id: parentId },
-            data: { est_compose: true },
-          });
-        }
-
-        // Mettre à jour le statut du composant (seulement pour la première attache)
-        if (composant.statut !== "assemble") {
-          const ancienStatut = composant.statut;
-          await tx.produit.update({
-            where: { id: composantId },
-            data: { statut: "assemble", en_vitrine: false },
-          });
-          await tx.historiqueStatut.create({
-            data: {
-              produit_id: composantId,
-              user_id: user.id,
-              statut_avant: ancienStatut,
-              statut_apres: "assemble",
-              note: `Intégré comme composant dans "${parent.reference}" (ID #${parentId})`,
-            },
-          });
-        }
-      }
+      await tx.historiqueStatut.create({
+        data: {
+          produit_id: composantId,
+          user_id: user.id,
+          statut_avant: ancienStatut,
+          statut_apres: "assemble",
+          note: `Intégré comme composant dans "${parent.reference}" (ID #${parentId})`,
+        },
+      });
 
       // Sync stock count
       if (composant.modele_id) {
@@ -250,13 +210,12 @@ export async function POST(
       return parent.reference;
     });
 
-    // History logging — best-effort
     await tracerHistorique({
       produit_id: composantId,
       produit_parent_id: parentId,
       user_id: user.id,
       action: "assemblage",
-      note: `Intégré dans "${result}" (x${quantiteDemandee})`,
+      note: `Intégré dans "${result}" (quantité: 1)`,
     });
 
     return NextResponse.json({ ok: true, message: "Composant intégré avec succès." });
@@ -266,81 +225,9 @@ export async function POST(
   }
 }
 
-// PATCH : Modifier la quantité d'un composant
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
-  if (acces.reponse) return acces.reponse;
-  const user = acces.user;
-
-  const { id } = await params;
-  const parentId = Number(id);
-  if (!Number.isInteger(parentId) || parentId <= 0) {
-    return erreur(400, "Identifiant de produit parent invalide.");
-  }
-
-  let corps: unknown;
-  try {
-    corps = await request.json();
-  } catch {
-    return erreur(400, "Requête invalide.");
-  }
-
-  const composantId = Number((corps as any)?.composant_id);
-  const nouvelleQuantite = Number((corps as any)?.quantite);
-
-  if (!Number.isInteger(composantId) || composantId <= 0) {
-    return erreur(400, "Identifiant du composant invalide.");
-  }
-  if (!Number.isInteger(nouvelleQuantite) || nouvelleQuantite < 0) {
-    return erreur(400, "La quantité doit être un entier positif.");
-  }
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      const entry = await tx.bomEntry.findUnique({
-        where: {
-          produit_parent_id_produit_composant_id: {
-            produit_parent_id: parentId,
-            produit_composant_id: composantId,
-          },
-        },
-      });
-      if (!entry) throw new Error("Ce composant n'est pas rattaché à ce produit.");
-
-      if (nouvelleQuantite === 0) {
-        // Supprimer l'entrée
-        await tx.bomEntry.delete({ where: { id: entry.id } });
-        // Remettre le composant au stock
-        await tx.produit.update({
-          where: { id: composantId },
-          data: { parent_id: null, statut: "ok" },
-        });
-        await tx.historiqueStatut.create({
-          data: {
-            produit_id: composantId,
-            user_id: user.id,
-            statut_avant: "assemble",
-            statut_apres: "ok",
-            note: `Retiré du produit composé (ID #${parentId}) — quantité mise à 0`,
-          },
-        });
-      } else {
-        // Mettre à jour la quantité
-        await tx.bomEntry.update({
-          where: { id: entry.id },
-          data: { quantite: nouvelleQuantite },
-        });
-      }
-    });
-
-    return NextResponse.json({ ok: true, message: "Quantité mise à jour." });
-  } catch (e: any) {
-    console.error("PATCH /api/produits/[id]/composants", e);
-    return erreur(400, e?.message || "Erreur lors de la mise à jour.");
-  }
+// PATCH : Modifier la quantité d'un composant n'a plus de sens (quantité toujours 1)
+export async function PATCH() {
+  return erreur(400, "La modification de quantité n'est plus supportée (chaque composant physique compte pour 1).");
 }
 
 // DELETE : Détacher un composant
@@ -372,18 +259,12 @@ export async function DELETE(
 
   try {
     await prisma.$transaction(async (tx) => {
-      const entry = await tx.bomEntry.findUnique({
-        where: {
-          produit_parent_id_produit_composant_id: {
-            produit_parent_id: parentId,
-            produit_composant_id: composantId,
-          },
-        },
+      const composant = await tx.produit.findUnique({
+        where: { id: composantId },
       });
-      if (!entry) throw new Error("Ce composant n'est pas rattaché à ce produit.");
-
-      // Supprimer l'entrée BOM
-      await tx.bomEntry.delete({ where: { id: entry.id } });
+      if (!composant || composant.parent_id !== parentId) {
+        throw new Error("Ce composant n'est pas rattaché à ce produit.");
+      }
 
       // Remettre le composant au stock
       await tx.produit.update({
@@ -400,6 +281,10 @@ export async function DELETE(
           note: `Retiré du produit composé (ID #${parentId}) — Retour en stock`,
         },
       });
+
+      if (composant.modele_id) {
+        await StockService.synchroniserCompteModele(composant.modele_id, tx);
+      }
     });
 
     await tracerHistorique({

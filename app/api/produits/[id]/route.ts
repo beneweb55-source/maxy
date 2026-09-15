@@ -138,9 +138,9 @@ export async function GET(
     });
     if (!p) return erreur(404, "Produit introuvable.");
 
-    // Compter les composants via BomEntry (source de truth)
-    const nbComposants = await prisma.bomEntry.count({
-      where: { produit_parent_id: p.id },
+    // Compter les composants via parent_id (source de vérité physique)
+    const nbComposants = await prisma.produit.count({
+      where: { parent_id: p.id },
     });
 
     // Couverture et galerie : URL publiques du CDN si les photos sont

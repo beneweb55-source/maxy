@@ -18,6 +18,7 @@ import type { CategorieNoeud } from "./types";
 import Modale from "@/components/Modale";
 import ChampPhotos from "@/components/ChampPhotos";
 import { useToast } from "@/components/toast";
+import NouveauComposantInline from "./NouveauComposantInline";
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -219,7 +220,7 @@ export default function FormulaireAjoutUnifie({
       const texte = (sn ?? etat.snInput).trim();
       if (!texte) return;
       if (etat.numeros_serie.includes(texte)) {
-        setErreur(`"${texte}" est deja dans la liste.`);
+        setErreur(`"${texte}" est déjà dans la liste.`);
         return;
       }
       setErreur(null);
@@ -230,12 +231,12 @@ export default function FormulaireAjoutUnifie({
           ...e,
           numeros_serie: nouveaux,
           snInput: "",
-          quantite: String(Math.max(quantiteNum, nouveaux.length)),
+          quantite: e.est_compose ? "1" : String(Math.max(quantiteNum, nouveaux.length)),
         };
       });
       setTimeout(() => refScan.current?.focus(), 0);
     },
-    [etat.snInput, etat.numeros_serie, etat.quantite],
+    [etat.snInput, etat.numeros_serie, etat.quantite, etat.est_compose],
   );
 
   const supprimerNumeroSerie = useCallback((index: number) => {
@@ -255,11 +256,15 @@ export default function FormulaireAjoutUnifie({
      ═══════════════════════════════════════════════════════════════ */
 
   useEffect(() => {
-    if (!etat.est_compose) {
+    if (etat.est_compose) {
+      setEtat((e) => ({ ...e, quantite: "1" }));
+    } else {
       setStockComposants([]);
       setFiltreComposant("");
-      return;
     }
+
+    if (!etat.est_compose) return;
+
     let annule = false;
     (async () => {
       setChargementStock(true);
@@ -309,13 +314,9 @@ export default function FormulaireAjoutUnifie({
     setEtat((e) => {
       const existant = e.composantsBom.find((x) => x.id === c.id);
       if (existant) {
-        // Deduplication : incrementer la quantite
-        return {
-          ...e,
-          composantsBom: e.composantsBom.map((x) =>
-            x.id === c.id ? { ...x, quantite: x.quantite + 1 } : x,
-          ),
-        };
+        // Erreur : un composant physique est unique (quantité=1)
+        setErreur(`Ce composant (${c.reference}) est déjà sélectionné. Il est unique.`);
+        return e;
       }
       return {
         ...e,
@@ -332,13 +333,7 @@ export default function FormulaireAjoutUnifie({
   }, []);
 
   const majQuantiteComposant = useCallback((id: number, qte: number) => {
-    const q = Math.max(1, Math.floor(qte));
-    setEtat((e) => ({
-      ...e,
-      composantsBom: e.composantsBom.map((c) =>
-        c.id === id ? { ...c, quantite: q } : c,
-      ),
-    }));
+    // OBSOLETE: Quantité est toujours 1
   }, []);
 
   /* ═══════════════════════════════════════════════════════════════
@@ -569,10 +564,14 @@ export default function FormulaireAjoutUnifie({
             <ChampTexte
               label="Quantite"
               valeur={etat.quantite}
-              onChange={(v) => maj("quantite", String(Math.max(1, Number(v) || 1)))}
+              onChange={(v) => {
+                if (etat.est_compose) return; // Fixé à 1 pour produit composé
+                maj("quantite", String(Math.max(1, Number(v) || 1)));
+              }}
               type="number"
               alignDroit
               styleNoir
+              disabled={etat.est_compose}
             />
 
             {/* Prix d'achat */}
@@ -651,10 +650,9 @@ export default function FormulaireAjoutUnifie({
             onFiltreChange={setFiltreComposant}
             onAjouterComposant={ajouterComposant}
             onRetirerComposant={retirerComposant}
-            onMajQuantite={majQuantiteComposant}
-            nbPiecesTotal={nbPiecesTotal}
             coutTotal={coutTotalBom}
             nbStockTotal={stockComposants.length}
+            categoriesTree={categoriesTree}
           />
 
           {/* ── Photos ── */}
@@ -862,10 +860,11 @@ const ChampTexte = React.forwardRef<
     alignDroit?: boolean;
     styleNoir?: boolean;
     monospace?: boolean;
+    disabled?: boolean;
   }
 >(
   (
-    { label, valeur, onChange, placeholder, requis, type = "text", alignDroit, styleNoir, monospace },
+    { label, valeur, onChange, placeholder, requis, type = "text", alignDroit, styleNoir, monospace, disabled },
     ref,
   ) => (
     <div>
@@ -878,8 +877,9 @@ const ChampTexte = React.forwardRef<
         value={valeur}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`champ ${alignDroit ? "text-right" : ""} ${styleNoir ? "font-black" : ""} ${monospace ? "font-mono" : ""}`}
+        className={`champ ${alignDroit ? "text-right" : ""} ${styleNoir ? "font-black" : ""} ${monospace ? "font-mono" : ""} ${disabled ? "opacity-50 cursor-not-allowed bg-brand-light-grey/50" : ""}`}
         autoComplete="off"
+        disabled={disabled}
       />
     </div>
   ),
@@ -1065,10 +1065,9 @@ function SectionBom({
   onFiltreChange,
   onAjouterComposant,
   onRetirerComposant,
-  onMajQuantite,
-  nbPiecesTotal,
   coutTotal,
   nbStockTotal,
+  categoriesTree,
 }: {
   estCompose: boolean;
   onToggleCompose: (v: boolean) => void;
@@ -1079,11 +1078,12 @@ function SectionBom({
   onFiltreChange: (v: string) => void;
   onAjouterComposant: (c: ComposantStock) => void;
   onRetirerComposant: (id: number) => void;
-  onMajQuantite: (id: number, qte: number) => void;
-  nbPiecesTotal: number;
   coutTotal: number;
   nbStockTotal: number;
+  categoriesTree: CategorieNoeud[];
 }) {
+  const [afficherInline, setAfficherInline] = useState(false);
+
   return (
     <div className="p-4 rounded-2xl bg-brand-paper dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 space-y-3">
       {/* En-tete + toggle */}
@@ -1119,6 +1119,28 @@ function SectionBom({
           <p className="text-[11px] text-brand-warm-grey">
             Activez ce mode pour assembler ce produit avec des composants du stock.
           </p>
+
+          <div className="flex items-center justify-between">
+            <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-brand-warm-grey">Stock Disponible</h4>
+            <button
+              type="button"
+              onClick={() => setAfficherInline(true)}
+              className="text-[11px] font-bold text-brand-orange hover:underline flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" /> Créer un composant
+            </button>
+          </div>
+
+          {afficherInline && (
+            <NouveauComposantInline
+              categoriesTree={categoriesTree}
+              onCree={(c) => {
+                onAjouterComposant(c);
+                setAfficherInline(false);
+              }}
+              onAnnuler={() => setAfficherInline(false)}
+            />
+          )}
 
           {/* Recherche / filtre */}
           <div className="relative">
@@ -1212,7 +1234,7 @@ function SectionBom({
               {/* Recapitulatif */}
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-extrabold uppercase text-brand-warm-grey">
-                  Integres ({nbPiecesTotal} piece{nbPiecesTotal > 1 ? "s" : ""})
+                  Integres ({composantsSelectionnes.length} piece{composantsSelectionnes.length > 1 ? "s" : ""})
                 </span>
                 {coutTotal > 0 && (
                   <span className="text-[10px] font-bold text-brand-orange">
@@ -1240,26 +1262,8 @@ function SectionBom({
                     </span>
                   </div>
 
-                  {/* Controles quantite */}
+                  {/* Controles quantite (Fixé à 1) */}
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => onMajQuantite(c.id, c.quantite - 1)}
-                      disabled={c.quantite <= 1}
-                      className="w-6 h-6 rounded-lg bg-white dark:bg-white/10 border border-brand-light-grey dark:border-white/10 flex items-center justify-center text-xs font-bold text-brand-black dark:text-white hover:bg-brand-light-grey/40 disabled:opacity-30 transition"
-                    >
-                      -
-                    </button>
-                    <span className="w-7 text-center text-[11px] font-mono font-black text-brand-orange">
-                      {c.quantite}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onMajQuantite(c.id, c.quantite + 1)}
-                      className="w-6 h-6 rounded-lg bg-brand-orange text-white flex items-center justify-center text-xs font-bold hover:bg-brand-orange/90 transition"
-                    >
-                      +
-                    </button>
                     <button
                       type="button"
                       onClick={() => onRetirerComposant(c.id)}
