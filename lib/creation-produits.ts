@@ -59,6 +59,7 @@ export async function creerProduitsGroupes(
         est_compose: ligne.est_compose ?? false,
         statut,
         en_vitrine: enVitrine,
+        bom_role: ligne.bom_role ? (ligne.bom_role as any) : "finished",
       })),
       select: { id: true, code_interne: true },
     });
