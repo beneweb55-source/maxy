@@ -967,8 +967,8 @@ export default function Inventaire({ role }: { role: Role }) {
 
     const searchLower = qLoc.trim().toLowerCase();
     const produitsFiltres = donnees.produits.filter(p => 
-      p.code_interne.toLowerCase().includes(searchLower) ||
-      p.reference.toLowerCase().includes(searchLower) ||
+      (p.code_interne && p.code_interne.toLowerCase().includes(searchLower)) ||
+      (p.reference && p.reference.toLowerCase().includes(searchLower)) ||
       (p.categorie && p.categorie.toLowerCase().includes(searchLower)) ||
       (p.fournisseur && p.fournisseur.toLowerCase().includes(searchLower)) ||
       (p.lot_id && String(p.lot_id).includes(searchLower))
