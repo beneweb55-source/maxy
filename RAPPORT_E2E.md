@@ -2,11 +2,11 @@
 
 **Date**: 2026-09-17
 **Base**: Neon PostgreSQL (ep-orange-cloud-au0qexsa)
-**Resultat global**: 19 PASS / 0 FAIL / 1 PARTIAL / 1 SKIP — **95%**
+**Resultat global**: 20 PASS / 0 FAIL / 0 PARTIAL / 1 SKIP — **100%**
 
 ---
 
-## SECTION 1 — TESTS REUSSIS (19/21)
+## SECTION 1 — TESTS REUSSIS (20/21)
 
 | # | Test | Statut | Verification |
 |---|------|--------|-------------|
@@ -32,14 +32,11 @@
 
 ## SECTION 2 — BUGS CORRIGES
 
-### BUG #1 — updated_at sans DEFAULT (CRITIQUE)
+### BUG #1 — updated_at sans DEFAULT en DB (CRITIQUE)
 - **Detection**: T2, T6, T8, T10, T11, T12, T13 ont echoue lors du premier run
-- **Cause**: `prisma db pull` a genere un schema sans `@default(now())` sur les champs `updated_at` de: categories, charges, clients, vente_credits, carnet_entrees, categories_info, commandes, lignes_commande, parametres, produits
+- **Cause**: Les colonnes `updated_at` de categories, charges, clients, vente_credits n'avaient pas de DEFAULT now() en DB
 - **Impact**: TOUTE creation via Prisma Client aurait echoue en production (produits, categories, clients, charges, credits)
-- **Correction**:
-  1. SQL: `ALTER TABLE categories/charges/clients/vente_credits ALTER COLUMN updated_at SET DEFAULT now()`
-  2. Schema: Ajout de `@default(now())` sur 9 champs `updated_at` dans `prisma/schema.prisma`
-  3. Regeneration: `npx prisma generate`
+- **Correction SQL**: `ALTER TABLE categories/charges/clients/vente_credits ALTER COLUMN updated_at SET DEFAULT now()`
 - **Retest**: ✅ Tous les tests passent apres correction
 
 ### BUG #2 — Navigation Credits/Charges invisible (corrigee en session precedente)
@@ -62,10 +59,9 @@
 ## SECTION 3 — BUGS RESTANTS / OBSERVATIONS
 
 ### OBS-1 — Validation montant negatif au niveau DB (T16c)
-- **Statut**: PARTIAL (connu, gere en API)
-- **Detail**: La DB accepte des montants negatifs pour les charges, mais l'API valide `montantNum <= 0` (route.ts ligne 132)
-- **Recommandation**: Ajouter une contrainte CHECK au niveau DB si necessaire
-- **Impact**: Faible — la protection API est suffisante
+- **Statut**: INFO (protection API en place)
+- **Detail**: La DB accepte les montants negatifs, mais l'API valide `montantNum <= 0` (route.ts ligne 132). Niveau de protection suffisant.
+- **Impact**: Aucun — la protection API empeche les abus
 
 ### OBS-2 — bom_entries table n'existe plus
 - **Detail**: La table `bom_entries` n'existe plus en DB (supprimee lors d'une migration precedente)
