@@ -1,38 +1,22 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { 
-  Layers, 
-  Sparkles, 
-  CheckCircle2, 
-  X, 
-  Tag, 
-  Coins, 
-  Laptop, 
-  Server, 
-  HardDrive, 
-  Cpu, 
-  Zap, 
-  Monitor, 
-  Printer, 
-  Image as ImageIcon,
-  ChevronRight,
-  SlidersHorizontal,
-  Info,
-  Building2,
+import {
+  X,
+  Coins,
   FolderTree,
   UploadCloud,
-  Trash2
+  CheckCircle2,
+  SlidersHorizontal,
+  Info,
 } from "lucide-react";
 import {
   determinerProfilEquipement,
   genererDesignationAutomatique,
-  MATRICE_EQUIPEMENTS,
-  type ProfilEquipement
+  type ProfilEquipement,
 } from "@/lib/matrice-specifications";
-import { devinerCategorie, type SuggestionCategorie } from "@/lib/category-guesser";
-import { getMarquesPourCategorie } from "@/lib/marques";
 
+// ─── Props ────────────────────────────────────────────────────────────────────
 interface FormulaireModeleProps {
   ouvert: boolean;
   onFermer: () => void;
@@ -50,12 +34,14 @@ interface FormulaireModeleProps {
   categorieIdDefaut?: number | null;
 }
 
-const MARQUES_FREQUENTES = [
+// ─── Marques principales ──────────────────────────────────────────────────────
+const MARQUES = [
   "Lenovo", "HP", "Dell", "Apple", "Asus", "Acer",
   "Samsung", "Intel", "AMD", "NVIDIA", "Kingston",
-  "Crucial", "Seagate", "Western Digital", "Cisco", "Epson", "Canon", "Autre"
+  "Crucial", "Seagate", "Western Digital", "Cisco", "Epson", "Canon", "Autre",
 ];
 
+// ─── Composant ────────────────────────────────────────────────────────────────
 export default function FormulaireModele({
   ouvert,
   onFermer,
@@ -64,222 +50,184 @@ export default function FormulaireModele({
   modeleInitial,
   categorieIdDefaut,
 }: FormulaireModeleProps) {
-  const [etape, setEtape] = useState<1 | 2>(1);
+  // Catégories
   const [categoriesArbre, setCategoriesArbre] = useState<any[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(false);
-
-  // Form State - Étape 1 : Infos Générales
-  const [nom, setNom] = useState("");
-  const [marque, setMarque] = useState("Lenovo");
   const [familleId, setFamilleId] = useState<number | null>(null);
   const [categorieId, setCategorieId] = useState<number | null>(null);
   const [sousCategorieId, setSousCategorieId] = useState<number | null>(null);
-  const [prixConseille, setPrixConseille] = useState<string>("");
-  const [imageUrl, setImageUrl] = useState("");
+
+  // Identité
+  const [nom, setNom] = useState("");
+  const [marque, setMarque] = useState("Lenovo");
   const [description, setDescription] = useState("");
 
-  // Auto-Catégorisation Intelligente
-  const [suggestionAuto, setSuggestionAuto] = useState<SuggestionCategorie | null>(null);
-  const [classificationManuelle, setClassificationManuelle] = useState(false);
-
-  // Form State - Étape 2 : Spécifications dynamiques
-  const [specs, setSpecs] = useState<Record<string, any>>({});
-  const [chargement, setChargement] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
-
-  // Upload Photo Drag & Drop
+  // Prix & Photo
+  const [prixConseille, setPrixConseille] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [enGlissement, setEnGlissement] = useState(false);
   const inputFichierRef = useRef<HTMLInputElement>(null);
 
-  const traiterFichier = (fichier: File) => {
-    if (!fichier.type.startsWith("image/")) {
-      setErreur("Veuillez sélectionner un fichier image valide (.jpg, .png, .webp).");
-      return;
-    }
-    if (fichier.size > 5 * 1024 * 1024) {
-      setErreur("L'image ne doit pas dépasser 5 Mo.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setImageUrl(dataUrl);
-    };
-    reader.readAsDataURL(fichier);
-  };
+  // Spécifications dynamiques
+  const [specs, setSpecs] = useState<Record<string, any>>({});
 
-  // Charger l'arbre des catégories et verrouillage scroll body
+  // UI
+  const [chargement, setChargement] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  // ─── Chargement catégories ────────────────────────────────────────────────
   useEffect(() => {
-    if (ouvert) {
-      setLoadingCategories(true);
-      fetch("/api/categories?tree=1")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) setCategoriesArbre(data);
-        })
-        .catch((err) => console.error("Erreur chargement catégories:", err))
-        .finally(() => setLoadingCategories(false));
+    if (!ouvert) return;
+    fetch("/api/categories?tree=1")
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setCategoriesArbre(d); })
+      .catch(() => {});
 
-      const orig = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = orig;
-      };
-    }
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = orig; };
   }, [ouvert]);
 
-  // Initialisation des données en mode édition ou création
+  // ─── Initialisation édition / création ────────────────────────────────────
   useEffect(() => {
-    if (ouvert) {
-      setErreur(null);
-      setEtape(1);
-      setClassificationManuelle(false);
-      if (modeleInitial) {
-        setNom(modeleInitial.nom || "");
-        setPrixConseille(modeleInitial.prix_vente_conseille ? String(modeleInitial.prix_vente_conseille) : "");
-        setImageUrl(modeleInitial.image_url || "");
-        setDescription(modeleInitial.description || "");
-        setSpecs(modeleInitial.attributs || {});
-        
-        // Retrouver la marque si possible
-        const marqueTrouvee = MARQUES_FREQUENTES.find((m) =>
-          modeleInitial.nom.toLowerCase().startsWith(m.toLowerCase())
-        );
-        if (marqueTrouvee) setMarque(marqueTrouvee);
+    if (!ouvert) return;
+    setErreur(null);
 
-        // Définir la catégorie
-        if (modeleInitial.categorie_id) {
-          setCategorieId(modeleInitial.categorie_id);
-        }
-      } else {
-        setNom("");
-        setMarque("Lenovo");
-        setPrixConseille("");
-        setImageUrl("");
-        setDescription("");
-        setSpecs({});
-        if (categorieIdDefaut) {
-          setCategorieId(categorieIdDefaut);
-        }
+    if (modeleInitial) {
+      setNom(modeleInitial.nom || "");
+      setImageUrl(modeleInitial.image_url || "");
+      setDescription(modeleInitial.description || "");
+      setSpecs(modeleInitial.attributs || {});
+      setPrixConseille(modeleInitial.prix_vente_conseille ? String(modeleInitial.prix_vente_conseille) : "");
+
+      const marqueTrouvee = MARQUES.find((m) =>
+        modeleInitial.nom.toLowerCase().startsWith(m.toLowerCase())
+      );
+      if (marqueTrouvee) setMarque(marqueTrouvee);
+
+      if (modeleInitial.categorie_id) {
+        setCategorieId(modeleInitial.categorie_id);
       }
+    } else {
+      setNom("");
+      setMarque("Lenovo");
+      setPrixConseille("");
+      setImageUrl("");
+      setDescription("");
+      setSpecs({});
+      setFamilleId(null);
+      setCategorieId(null);
+      setSousCategorieId(null);
+      if (categorieIdDefaut) setCategorieId(categorieIdDefaut);
     }
   }, [ouvert, modeleInitial, categorieIdDefaut]);
 
-  useEffect(() => {
-    if (modeleInitial || classificationManuelle) return;
-    const texte = `${marque} ${nom}`.trim();
-    if (texte.length < 3) {
-      setSuggestionAuto(null);
-      return;
-    }
+  // ─── Dérivées catégories ──────────────────────────────────────────────────
+  const familleObj = categoriesArbre.find((f) => f.id === familleId);
+  const catsDispo = familleObj?.enfants || [];
+  const catObj = catsDispo.find((c: any) => c.id === categorieId);
+  const sousCatsDispo = catObj?.enfants || [];
 
-    const sugg = devinerCategorie(texte);
-    if (sugg && categoriesArbre.length > 0) {
-      setSuggestionAuto(sugg);
-      const catCible = sugg.categorieNom.toLowerCase();
-      const famCible = sugg.familleNom.toLowerCase();
-
-      for (const f of categoriesArbre) {
-        const matchFamille = f.nom.toLowerCase().includes(famCible) || famCible.includes(f.nom.toLowerCase());
-        for (const c of f.enfants || []) {
-          const matchCat = c.nom.toLowerCase().includes(catCible) || catCible.includes(c.nom.toLowerCase());
-          if (matchCat || (matchFamille && c.nom.toLowerCase().includes(catCible))) {
-            setFamilleId(f.id);
-            setCategorieId(c.id);
-            if (c.enfants && c.enfants.length > 0) {
-              setSousCategorieId(c.enfants[0].id);
-            }
-            return;
-          }
-        }
-      }
-    }
-  }, [marque, nom, categoriesArbre, modeleInitial, classificationManuelle]);
-
-  // Déterminer la catégorie finale sélectionnée
   const categorieFinaleId = sousCategorieId || categorieId || familleId;
 
-  // Trouver l'objet catégorie sélectionné pour récupérer son nom
-  const categorieTrouvee = useMemo(() => {
+  // Trouver nom de la catégorie pour le profil
+  const categorieInfo = useMemo(() => {
     if (!categorieFinaleId || categoriesArbre.length === 0) return null;
-
     for (const fam of categoriesArbre) {
-      if (fam.id === categorieFinaleId) return { cat: fam, famNom: fam.nom };
+      if (fam.id === categorieFinaleId) return { nom: fam.nom, familleNom: fam.nom };
       for (const cat of fam.enfants || []) {
-        if (cat.id === categorieFinaleId) return { cat, famNom: fam.nom };
+        if (cat.id === categorieFinaleId) return { nom: cat.nom, familleNom: fam.nom };
         for (const sub of cat.enfants || []) {
-          if (sub.id === categorieFinaleId) return { cat: sub, famNom: fam.nom };
+          if (sub.id === categorieFinaleId) return { nom: sub.nom, familleNom: fam.nom };
         }
       }
     }
     return null;
   }, [categorieFinaleId, categoriesArbre]);
 
-  // Profil d'équipement dynamique déterminé par la catégorie
-  const profilEquipement: ProfilEquipement | null = useMemo(() => {
-    if (!categorieTrouvee) return null;
-    return determinerProfilEquipement(categorieTrouvee.cat.nom, categorieTrouvee.famNom);
-  }, [categorieTrouvee]);
+  // ─── Profil équipement ────────────────────────────────────────────────────
+  const profil: ProfilEquipement | null = useMemo(() => {
+    if (!categorieInfo) return null;
+    return determinerProfilEquipement(categorieInfo.nom, categorieInfo.familleNom);
+  }, [categorieInfo]);
 
-  // Familles / Catégories dérivées pour les sélecteurs en cascade
-  const familleSelectionneeObj = categoriesArbre.find((f) => f.id === familleId);
-  const categoriesDisponibles = familleSelectionneeObj?.enfants || [];
-  const categorieSelectionneeObj = categoriesDisponibles.find((c: any) => c.id === categorieId);
-  const sousCategoriesDisponibles = categorieSelectionneeObj?.enfants || [];
+  // ─── Auto-resoudre familleId depuis categorieIdDefaut ─────────────────────
+  useEffect(() => {
+    if (!categorieId || categoriesArbre.length === 0) return;
+    for (const fam of categoriesArbre) {
+      for (const cat of fam.enfants || []) {
+        if (cat.id === categorieId) {
+          setFamilleId(fam.id);
+          return;
+        }
+        for (const sub of cat.enfants || []) {
+          if (sub.id === categorieId) {
+            setFamilleId(fam.id);
+            setCategorieId(cat.id);
+            setSousCategorieId(sub.id);
+            return;
+          }
+        }
+      }
+    }
+  }, [categorieId, categoriesArbre]);
 
   if (!ouvert) return null;
 
-  const setSpecValeur = (cle: string, valeur: any) => {
-    setSpecs((prev) => ({ ...prev, [cle]: valeur }));
-  };
-
-  const genererNomAutomatique = () => {
-    const autoNom = genererDesignationAutomatique(profilEquipement, specs, marque, nom.replace(marque, "").trim());
-    if (autoNom) setNom(autoNom);
-  };
-
-  const validerEtSoumettre = async () => {
-    if (!nom.trim()) {
-      setErreur("Le nom commercial du modèle est obligatoire.");
-      setEtape(1);
+  // ─── Upload handler ──────────────────────────────────────────────────────
+  const traiterFichier = (fichier: File) => {
+    if (!fichier.type.startsWith("image/")) {
+      setErreur("Fichier image invalide (.jpg, .png, .webp).");
       return;
     }
-
-    if (!categorieFinaleId) {
-      setErreur("Veuillez sélectionner au moins une catégorie.");
-      setEtape(1);
+    if (fichier.size > 5 * 1024 * 1024) {
+      setErreur("Image trop lourde (max 5 Mo).");
       return;
     }
+    const reader = new FileReader();
+    reader.onload = (e) => setImageUrl(e.target?.result as string);
+    reader.readAsDataURL(fichier);
+  };
+
+  // ─── Specs ───────────────────────────────────────────────────────────────
+  const setSpec = (cle: string, val: any) => setSpecs((p) => ({ ...p, [cle]: val }));
+
+  const autoNom = () => {
+    const n = genererDesignationAutomatique(profil, specs, marque, nom.replace(marque, "").trim());
+    if (n) setNom(n);
+  };
+
+  // ─── Soumission ──────────────────────────────────────────────────────────
+  const soumettre = async () => {
+    if (!nom.trim()) { setErreur("Le nom du modèle est obligatoire."); return; }
+    if (!categorieFinaleId) { setErreur("Sélectionnez une catégorie."); return; }
 
     setChargement(true);
     setErreur(null);
 
-    const payload = {
-      nom: nom.trim(),
-      categorie_id: categorieFinaleId,
-      attributs: specs,
-      image_url: imageUrl.trim() || null,
-      description: description.trim() || null,
-      prix_vente_conseille: prixConseille ? Number(prixConseille) : null,
-    };
-
     try {
-      const url = modeleId ? `/api/modeles/${modeleId}` : "/api/modeles";
-      const methode = modeleId ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method: methode,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        modeleId ? `/api/modeles/${modeleId}` : "/api/modeles",
+        {
+          method: modeleId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nom: nom.trim(),
+            categorie_id: categorieFinaleId,
+            attributs: specs,
+            image_url: imageUrl.trim() || null,
+            description: description.trim() || null,
+            prix_vente_conseille: prixConseille ? Number(prixConseille) : null,
+          }),
+        }
+      );
 
       if (!res.ok) {
         const errJson = await res.json();
-        throw new Error(errJson.error || "Erreur lors de l'enregistrement du modèle");
+        throw new Error(errJson.error || "Erreur lors de l'enregistrement");
       }
 
-      const donneesResultat = await res.json();
-      onSucces(donneesResultat);
+      const donnees = await res.json();
+      onSucces(donnees);
       onFermer();
     } catch (err: any) {
       setErreur(err.message || "Une erreur est survenue.");
@@ -288,542 +236,350 @@ export default function FormulaireModele({
     }
   };
 
+  // ══════════════════════════════════════════════════════════════════════════
+  //  RENDU
+  // ══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
-      <div className="relative w-full max-w-[95vw] sm:max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl overflow-hidden text-brand-black dark:text-white">
-        
-        {/* Header de la Modale */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-brand-light-grey bg-brand-light-grey/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-brand-orange/15 text-brand-orange shrink-0">
-              <Laptop className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-black font-outfit text-brand-black dark:text-white">
-                {modeleId ? "Modifier le Modèle Commercial" : "Nouveau Modèle de Catalogue"}
-              </h2>
-              <p className="text-xs text-brand-warm-grey font-medium">
-                Définissez la fiche technique générique partagée par tous les exemplaires physiques
-              </p>
-            </div>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-sm animate-entree">
+      <div className="relative w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper sm:rounded-3xl rounded-t-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl overflow-hidden text-brand-black dark:text-white">
 
+        {/* ─── Header ────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-brand-light-grey/60 dark:border-white/10">
+          <h2 className="text-base font-black font-outfit">
+            {modeleId ? "Modifier le Modèle" : "Nouveau Modèle"}
+          </h2>
           <button
-            type="button"
             onClick={onFermer}
-            className="h-10 w-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/40 dark:hover:bg-white/5 transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-xl text-brand-warm-grey hover:text-brand-black dark:hover:text-white hover:bg-brand-light-grey/40 dark:hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Stepper / Onglets interactifs */}
-        <div className="flex border-b border-brand-light-grey/60 dark:border-white/10 px-4 sm:px-6 bg-brand-paper/50 dark:bg-white/[0.02] overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setEtape(1)}
-            className={`flex items-center gap-2.5 py-3.5 px-5 text-xs font-black border-b-[3px] transition-all ${
-              etape === 1
-                ? "border-brand-orange text-brand-orange"
-                : "border-transparent text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
-            }`}
-          >
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-colors ${
-              etape === 1
-                ? "bg-brand-orange text-white"
-                : "bg-brand-light-grey/40 dark:bg-white/10 text-brand-warm-grey"
-            }`}>
-              {etape === 1 ? <CheckCircle2 className="w-3.5 h-3.5" /> : "1"}
-            </span>
-            <span className="hidden sm:inline">Informations Générales & Catégorie</span>
-            <span className="sm:hidden">Infos</span>
-          </button>
+        {/* ─── Corps scrollable ──────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 scrollbar-fine">
 
-          <button
-            type="button"
-            onClick={() => setEtape(2)}
-            className={`flex items-center gap-2.5 py-3.5 px-5 text-xs font-black border-b-[3px] transition-all ${
-              etape === 2
-                ? "border-brand-orange text-brand-orange"
-                : "border-transparent text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
-            }`}
-          >
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-colors ${
-              etape === 2
-                ? "bg-brand-orange text-white"
-                : "bg-brand-light-grey/40 dark:bg-white/10 text-brand-warm-grey"
-            }`}>
-              {etape === 2 ? <CheckCircle2 className="w-3.5 h-3.5" /> : "2"}
-            </span>
-            <span className="hidden sm:inline">Spécifications Techniques</span>
-            <span className="sm:hidden">Specs</span>
-            {profilEquipement && (
-              <span className="text-[10px] font-bold bg-brand-orange/15 text-brand-orange px-2 py-0.5 rounded-full ml-1">
-                {profilEquipement.description.split(" ")[0]}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Corps du Formulaire */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 scrollbar-fine">
-          
+          {/* Erreur */}
           {erreur && (
-            <div className="rounded-2xl bg-danger/10 border border-danger/30 text-danger text-xs font-bold p-4 flex items-center gap-2">
+            <div className="rounded-2xl bg-danger/10 border border-danger/30 text-danger text-xs font-bold p-3 flex items-center gap-2">
               <Info className="w-4 h-4 shrink-0" />
               {erreur}
             </div>
           )}
 
-          {/* ===================== ÉTAPE 1 : INFOS GÉNÉRALES ===================== */}
-          {etape === 1 && (
-            <div className="space-y-5 animate-entree">
-              
-              {/* Arborescence Catégories */}
-              <div className="p-4 rounded-2xl bg-brand-light-grey/20 dark:bg-white/5 border border-brand-light-grey/50 dark:border-white/10 space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <FolderTree className="w-4 h-4 text-brand-orange" />
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-brand-orange">Classification</span>
-                  <div className="flex-1 h-px bg-brand-light-grey dark:bg-white/10" />
-                </div>
+          {/* ═══ SECTION: Catégorie ═══════════════════════════════════════ */}
+          <fieldset className="space-y-3">
+            <legend className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-brand-orange">
+              <FolderTree className="w-4 h-4" />
+              Catégorie
+            </legend>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Niveau 1 : Famille */}
-                  <div>
-                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
-                      1. Famille
-                    </label>
-                    <select
-                      value={familleId || ""}
-                      onChange={(e) => {
-                        setFamilleId(e.target.value ? Number(e.target.value) : null);
-                        setCategorieId(null);
-                        setSousCategorieId(null);
-                      }}
-                      className="champ"
-                    >
-                      <option value="">Sélectionner une famille...</option>
-                      {categoriesArbre.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.nom}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <select
+                value={familleId || ""}
+                onChange={(e) => {
+                  setFamilleId(e.target.value ? Number(e.target.value) : null);
+                  setCategorieId(null);
+                  setSousCategorieId(null);
+                }}
+                className="champ text-sm"
+              >
+                <option value="">Famille…</option>
+                {categoriesArbre.map((f) => (
+                  <option key={f.id} value={f.id}>{f.nom}</option>
+                ))}
+              </select>
 
-                  {/* Niveau 2 : Catégorie */}
-                  <div>
-                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
-                      2. Catégorie
-                    </label>
-                    <select
-                      value={categorieId || ""}
-                      disabled={!familleId || categoriesDisponibles.length === 0}
-                      onChange={(e) => {
-                        setCategorieId(e.target.value ? Number(e.target.value) : null);
-                        setSousCategorieId(null);
-                      }}
-                      className="champ"
-                    >
-                      <option value="">Sélectionner une catégorie...</option>
-                      {categoriesDisponibles.map((c: any) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nom}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <select
+                value={categorieId || ""}
+                disabled={!familleId}
+                onChange={(e) => {
+                  setCategorieId(e.target.value ? Number(e.target.value) : null);
+                  setSousCategorieId(null);
+                }}
+                className="champ text-sm"
+              >
+                <option value="">Catégorie…</option>
+                {catsDispo.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.nom}</option>
+                ))}
+              </select>
 
-                  {/* Niveau 3 : Sous-Catégorie */}
-                  <div>
-                    <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
-                      3. Sous-Catégorie (Optionnel)
-                    </label>
-                    <select
-                      value={sousCategorieId || ""}
-                      disabled={!categorieId || sousCategoriesDisponibles.length === 0}
-                      onChange={(e) => setSousCategorieId(e.target.value ? Number(e.target.value) : null)}
-                      className="champ"
-                    >
-                      <option value="">Aucune sous-catégorie</option>
-                      {sousCategoriesDisponibles.map((s: any) => (
-                        <option key={s.id} value={s.id}>
-                          {s.nom}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+              <select
+                value={sousCategorieId || ""}
+                disabled={!categorieId || sousCatsDispo.length === 0}
+                onChange={(e) => setSousCategorieId(e.target.value ? Number(e.target.value) : null)}
+                className="champ text-sm"
+              >
+                <option value="">Sous-catégorie…</option>
+                {sousCatsDispo.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.nom}</option>
+                ))}
+              </select>
+            </div>
+          </fieldset>
 
-                {suggestionAuto && (
-                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-black flex items-center gap-1.5 animate-entree">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Catégorie suggérée automatiquement : <strong>{suggestionAuto.categorieNom}</strong> ({suggestionAuto.familleNom})</span>
-                  </p>
-                )}
-              </div>
+          {/* ═══ SECTION: Identité ═══════════════════════════════════════ */}
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-extrabold uppercase tracking-wider text-brand-orange">
+              Identité
+            </legend>
 
-              {/* Sélection Rapide de la Marque */}
-              <div>
-                <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-2 block">
-                  Constructeur / Marque
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {MARQUES_FREQUENTES.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => {
-                        setMarque(m);
-                        if (!nom || MARQUES_FREQUENTES.some((prev) => nom.startsWith(prev))) {
-                          setNom(`${m} `);
-                        }
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        marque === m
-                          ? "bg-brand-black text-white dark:bg-white dark:text-brand-black shadow-xs scale-102"
-                          : "bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-brand-light-grey/60 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Nom Commercial du Modèle */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey">
-                    Nom Commercial du Modèle *
-                  </label>
-                  {profilEquipement && (
-                    <button
-                      type="button"
-                      onClick={genererNomAutomatique}
-                      className="text-[11px] font-bold text-brand-orange flex items-center gap-1 hover:underline"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" /> Normaliser automatiquement
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  value={nom}
-                  onChange={(e) => setNom(e.target.value)}
-                  placeholder="Ex: ThinkPad T480 Core i5 8th Gen 16Go RAM 256Go SSD..."
-                  className="champ h-12 font-bold"
-                />
-              </div>
-
-              {/* Prix de Vente Conseillé & URL Photo */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
-                    Prix de vente conseillé (DA)
-                  </label>
-                  <div className="relative">
-                    <Coins className="w-4 h-4 text-brand-orange absolute left-3.5 top-3.5" />
-                    <input
-                      type="number"
-                      min="0"
-                      value={prixConseille}
-                      onChange={(e) => setPrixConseille(e.target.value)}
-                      placeholder="Ex: 45000"
-                      className="champ pl-10 h-11"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
-                    Photo du Modèle
-                  </label>
-                  
-                  {imageUrl ? (
-                    <div className="relative rounded-2xl border-2 border-brand-orange/30 p-2.5 bg-brand-orange/5 flex items-center gap-3">
-                      <img
-                        src={imageUrl}
-                        alt="Aperçu du modèle"
-                        className="w-14 h-14 rounded-xl object-cover border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-brand-black dark:text-white truncate">
-                          Photo sélectionnée
-                        </p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <button
-                            type="button"
-                            onClick={() => inputFichierRef.current?.click()}
-                            className="btn btn-secondaire text-[11px] py-1 px-2.5 h-auto rounded-lg font-bold"
-                          >
-                            Remplacer
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setImageUrl("")}
-                            className="btn bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 hover:bg-red-100 text-[11px] py-1 px-2.5 h-auto rounded-lg font-bold"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Supprimer
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setEnGlissement(true);
-                      }}
-                      onDragLeave={() => setEnGlissement(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setEnGlissement(false);
-                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                          traiterFichier(e.dataTransfer.files[0]);
-                        }
-                      }}
-                      onClick={() => inputFichierRef.current?.click()}
-                      className={`border-2 border-dashed rounded-2xl p-3 text-center cursor-pointer transition-all ${
-                        enGlissement
-                          ? "border-brand-orange bg-brand-orange/10 scale-101"
-                          : "border-brand-light-grey dark:border-white/15 bg-brand-light-grey/10 dark:bg-white/2 hover:border-brand-orange hover:bg-brand-orange/5"
-                      }`}
-                    >
-                      <UploadCloud className="w-6 h-6 mx-auto text-brand-orange mb-1" />
-                      <p className="text-xs font-bold text-brand-black dark:text-white">
-                        Glissez une photo ou <span className="text-brand-orange underline">parcourez</span>
-                      </p>
-                      <p className="text-[10px] text-brand-warm-grey font-medium mt-0.5">
-                        PNG, JPG, WEBP jusqu'à 5 Mo
-                      </p>
-                    </div>
-                  )}
-
-                  <input
-                    ref={inputFichierRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        traiterFichier(e.target.files[0]);
+            {/* Marque — chips compactes */}
+            <div>
+              <label className="text-[11px] font-bold text-brand-warm-grey mb-1.5 block">Marque</label>
+              <div className="flex flex-wrap gap-1.5">
+                {MARQUES.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setMarque(m);
+                      if (!nom || MARQUES.some((prev) => nom.startsWith(prev))) {
+                        setNom(`${m} `);
                       }
                     }}
-                    className="hidden"
-                  />
-                </div>
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                      marque === m
+                        ? "bg-brand-orange text-white shadow-sm"
+                        : "bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-brand-light-grey/60 dark:hover:bg-white/10"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Description / Remarques */}
-              <div>
-                <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block">
-                  Description technique détaillée (Optionnel)
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Points forts, compatibilité, connectique spécifique..."
-                  rows={2}
-                  className="champ resize-none"
+            {/* Nom */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-brand-warm-grey">Nom du modèle *</label>
+                {profil && (
+                  <button type="button" onClick={autoNom} className="text-[11px] font-bold text-brand-orange hover:underline">
+                    Auto-générer
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                placeholder="Ex: ThinkPad T480 Core i5 16Go 256Go SSD"
+                className="champ h-11 font-bold"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="text-[11px] font-bold text-brand-warm-grey mb-1 block">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Points forts, compatibilité…"
+                rows={2}
+                className="champ resize-none text-sm"
+              />
+            </div>
+          </fieldset>
+
+          {/* ═══ SECTION: Prix & Photo ═══════════════════════════════════ */}
+          <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-brand-warm-grey block">Prix conseillé (DA)</label>
+              <div className="relative">
+                <Coins className="w-4 h-4 text-brand-warm-grey absolute left-3 top-2.5" />
+                <input
+                  type="number"
+                  min="0"
+                  value={prixConseille}
+                  onChange={(e) => setPrixConseille(e.target.value)}
+                  placeholder="45 000"
+                  className="champ pl-9 h-10 text-sm"
                 />
               </div>
-
             </div>
-          )}
 
-          {/* ===================== ÉTAPE 2 : SPÉCIFICATIONS TECHNIQUES ===================== */}
-          {etape === 2 && (
-            <div className="space-y-6 animate-entree">
-              
-              {!profilEquipement ? (
-                <div className="p-8 text-center rounded-2xl bg-brand-paper/50 dark:bg-white/[0.03] border border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey space-y-2">
-                  <SlidersHorizontal className="w-8 h-8 mx-auto opacity-40 text-brand-orange" />
-                  <p className="text-sm font-bold text-brand-black dark:text-white">
-                    Sélectionnez d'abord une catégorie à l'étape 1
-                  </p>
-                  <p className="text-xs">
-                    Les champs techniques spécialisés (Processeur, RAM, GPU, Puissance Watts...) s'adapteront automatiquement.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setEtape(1)}
-                    className="btn btn-secondaire text-xs mt-2"
-                  >
-                    Retourner à l'Étape 1
-                  </button>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-brand-warm-grey block">Photo</label>
+              {imageUrl ? (
+                <div className="relative rounded-2xl border border-brand-light-grey dark:border-white/10 p-2 flex items-center gap-3">
+                  <img
+                    src={imageUrl}
+                    alt="Aperçu"
+                    className="w-12 h-12 rounded-xl object-cover bg-white dark:bg-white/5 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">Photo chargée</p>
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => inputFichierRef.current?.click()}
+                        className="text-[11px] font-bold text-brand-orange hover:underline"
+                      >
+                        Remplacer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl("")}
+                        className="text-[11px] font-bold text-red-500 hover:underline"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-brand-orange/10 border border-brand-orange/20">
-                    <div className="flex items-center gap-2.5">
-                      <Sparkles className="w-5 h-5 text-brand-orange" />
-                      <div>
-                        <div className="text-xs font-black text-brand-orange">
-                          Profil Détecté : {profilEquipement.familleNom}
-                        </div>
-                        <div className="text-[11px] text-brand-warm-grey">
-                          {profilEquipement.description}
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={genererNomAutomatique}
-                      className="btn btn-primaire text-xs py-1.5 px-3 rounded-xl font-bold flex items-center gap-1.5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" /> Générer la désignation
-                    </button>
-                  </div>
-
-                  {/* Grille des attributs dynamiques */}
-                  <div className="space-y-5">
-                    {profilEquipement.attributs.map((attr) => {
-                      const valeurCourante = specs[attr.cle] || "";
-
-                      return (
-                        <div 
-                          key={attr.cle}
-                          className="p-4 rounded-2xl bg-brand-paper/50 dark:bg-white/[0.03] border border-brand-light-grey/50 dark:border-white/10 space-y-2.5"
-                        >
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey flex items-center gap-1.5">
-                              {attr.label}
-                              {attr.obligatoire && <span className="text-brand-orange">*</span>}
-                            </label>
-                            {attr.unite && (
-                              <span className="text-[10px] font-bold text-brand-warm-grey font-mono bg-brand-light-grey/30 dark:bg-white/5 px-2 py-0.5 rounded">
-                                {attr.unite}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Mode Pills (Sélection tactile rapide) */}
-                          {attr.type === "pills" && attr.options && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {attr.options.map((opt) => {
-                                const estSelectionne = valeurCourante === opt.valeur;
-                                return (
-                                  <button
-                                    key={opt.valeur}
-                                    type="button"
-                                    onClick={() => setSpecValeur(attr.cle, estSelectionne ? "" : opt.valeur)}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                                      estSelectionne
-                                        ? "bg-brand-orange text-white shadow-xs scale-102 font-black"
-                                        : "bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-brand-light-grey/60 dark:hover:bg-white/10 hover:text-brand-black dark:hover:text-white"
-                                    }`}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Mode Select */}
-                          {attr.type === "select" && attr.options && (
-                            <select
-                              value={valeurCourante}
-                              onChange={(e) => setSpecValeur(attr.cle, e.target.value)}
-                              className="champ"
-                            >
-                              <option value="">Sélectionner une option...</option>
-                              {attr.options.map((opt) => (
-                                <option key={opt.valeur} value={opt.valeur}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-
-                          {/* Mode Texte */}
-                          {attr.type === "text" && (
-                            <input
-                              type="text"
-                              value={valeurCourante}
-                              onChange={(e) => setSpecValeur(attr.cle, e.target.value)}
-                              placeholder={attr.placeholder || `Saisir ${attr.label.toLowerCase()}...`}
-                              className="champ"
-                            />
-                          )}
-
-                          {/* Mode Nombre */}
-                          {attr.type === "number" && (
-                            <input
-                              type="number"
-                              value={valeurCourante}
-                              onChange={(e) => setSpecValeur(attr.cle, e.target.value ? Number(e.target.value) : "")}
-                              placeholder={attr.placeholder || "0"}
-                              className="champ"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setEnGlissement(true); }}
+                  onDragLeave={() => setEnGlissement(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setEnGlissement(false);
+                    if (e.dataTransfer.files?.[0]) traiterFichier(e.dataTransfer.files[0]);
+                  }}
+                  onClick={() => inputFichierRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                    enGlissement
+                      ? "border-brand-orange bg-brand-orange/10"
+                      : "border-brand-light-grey dark:border-white/15 hover:border-brand-orange/50"
+                  }`}
+                >
+                  <UploadCloud className="w-5 h-5 mx-auto text-brand-warm-grey mb-1" />
+                  <p className="text-[11px] font-bold">
+                    Glisser ou <span className="text-brand-orange underline">parcourir</span>
+                  </p>
                 </div>
               )}
-
+              <input
+                ref={inputFichierRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => { if (e.target.files?.[0]) traiterFichier(e.target.files[0]); }}
+                className="hidden"
+              />
             </div>
+          </fieldset>
+
+          {/* ═══ SECTION: Spécifications techniques ══════════════════════ */}
+          {profil && (
+            <fieldset className="space-y-3">
+              <legend className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-brand-orange">
+                <SlidersHorizontal className="w-4 h-4" />
+                Spécifications — {profil.familleNom}
+              </legend>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {profil.attributs.map((attr) => {
+                  const val = specs[attr.cle] || "";
+                  return (
+                    <div
+                      key={attr.cle}
+                      className="rounded-xl border border-brand-light-grey/50 dark:border-white/10 bg-brand-paper/30 dark:bg-white/[0.02] p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-brand-warm-grey">
+                          {attr.label}
+                          {attr.obligatoire && <span className="text-brand-orange ml-0.5">*</span>}
+                        </label>
+                        {attr.unite && (
+                          <span className="text-[10px] font-mono font-bold text-brand-warm-grey bg-brand-light-grey/30 dark:bg-white/5 px-1.5 py-0.5 rounded">
+                            {attr.unite}
+                          </span>
+                        )}
+                      </div>
+
+                      {attr.type === "pills" && attr.options && (
+                        <div className="flex flex-wrap gap-1">
+                          {attr.options.map((opt) => (
+                            <button
+                              key={opt.valeur}
+                              type="button"
+                              onClick={() => setSpec(attr.cle, val === opt.valeur ? "" : opt.valeur)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                                val === opt.valeur
+                                  ? "bg-brand-orange text-white"
+                                  : "bg-brand-light-grey/30 dark:bg-white/5 text-brand-warm-grey hover:bg-brand-light-grey/60 dark:hover:bg-white/10"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {attr.type === "select" && attr.options && (
+                        <select
+                          value={val}
+                          onChange={(e) => setSpec(attr.cle, e.target.value)}
+                          className="champ text-sm"
+                        >
+                          <option value="">Choisir…</option>
+                          {attr.options.map((opt) => (
+                            <option key={opt.valeur} value={opt.valeur}>{opt.label}</option>
+                          ))}
+                        </select>
+                      )}
+
+                      {attr.type === "text" && (
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={(e) => setSpec(attr.cle, e.target.value)}
+                          placeholder={attr.placeholder || attr.label}
+                          className="champ text-sm"
+                        />
+                      )}
+
+                      {attr.type === "number" && (
+                        <input
+                          type="number"
+                          value={val}
+                          onChange={(e) => setSpec(attr.cle, e.target.value ? Number(e.target.value) : "")}
+                          placeholder={attr.placeholder || "0"}
+                          className="champ text-sm"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </fieldset>
           )}
 
+          {/* Message si pas de profil */}
+          {!profil && categorieFinaleId && (
+            <div className="text-center py-4 text-xs text-brand-warm-grey font-medium">
+              Aucun profil technique pour cette catégorie.
+            </div>
+          )}
         </div>
 
-        {/* Footer d'actions */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-t border-brand-light-grey/60 dark:border-white/10 bg-brand-paper/50 dark:bg-white/[0.02]">
-          <div>
-            {etape === 2 ? (
-              <button
-                type="button"
-                onClick={() => setEtape(1)}
-                className="btn btn-secondaire px-4 rounded-xl font-bold"
-              >
-                ← Étape précédente
-              </button>
+        {/* ─── Footer ────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-t border-brand-light-grey/60 dark:border-white/10 bg-brand-paper/50 dark:bg-white/[0.02]">
+          <button
+            type="button"
+            onClick={onFermer}
+            className="btn btn-secondaire px-4 py-2 rounded-xl text-sm font-bold"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={soumettre}
+            disabled={chargement}
+            className="btn btn-primaire px-5 py-2 rounded-xl text-sm font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
+          >
+            {chargement ? (
+              "Enregistrement…"
             ) : (
-              <button
-                type="button"
-                onClick={onFermer}
-                className="btn btn-secondaire px-4 rounded-xl font-bold"
-              >
-                Annuler
-              </button>
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                {modeleId ? "Enregistrer" : "Créer"}
+              </>
             )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            {etape === 1 ? (
-              <button
-                type="button"
-                onClick={() => setEtape(2)}
-                className="btn btn-primaire px-6 rounded-xl font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
-              >
-                Suivant : Spécifications →
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={validerEtSoumettre}
-                disabled={chargement}
-                className="btn btn-primaire px-6 rounded-xl font-black shadow-md shadow-brand-orange/20 flex items-center gap-2"
-              >
-                {chargement ? (
-                  <span>Enregistrement...</span>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    {modeleId ? "Enregistrer les modifications" : "Créer le modèle"}
-                  </>
-                )}
-              </button>
-            )}
-          </div>
+          </button>
         </div>
-
       </div>
     </div>
   );

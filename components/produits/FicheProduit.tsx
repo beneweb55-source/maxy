@@ -233,7 +233,12 @@ export default function FicheProduit({
     try {
       const res = await fetch(`/api/produits/${produitId}`);
       if (!res.ok) {
-        if (res.status === 404) throw new Error("Produit introuvable.");
+        if (res.status === 404) {
+          // Produit supprimé ou inexistant → rediriger vers l'inventaire
+          afficher("Ce produit n'existe plus.", "info");
+          router.push("/inventaire");
+          return;
+        }
         // Try to extract server error message for better diagnostics
         let msg = "Erreur lors du chargement des données.";
         try {
@@ -360,14 +365,20 @@ export default function FicheProduit({
         throw new Error(json.error || "Erreur de suppression");
       }
       afficher(`Exemplaire ${codeInterne} supprimé`, "succes");
-      if (uniteId === produitId && produit?.exemplaires && produit.exemplaires.length > 1) {
-        // Rediriger vers un autre exemplaire du modèle
+
+      const estExemplaireCourant = uniteId === produitId;
+      const nbExemplaires = produit?.exemplaires?.length ?? 0;
+
+      if (estExemplaireCourant && nbExemplaires > 1 && produit) {
+        // Il reste d'autres exemplaires → naviguer vers le suivant
         const autre = produit.exemplaires.find((e) => e.id !== uniteId);
-        if (autre) router.push(`/produits/${autre.id}`);
-        else router.push("/inventaire");
-      } else {
-        void chargerProduit();
+        if (autre) {
+          router.push(`/produits/${autre.id}`);
+          return;
+        }
       }
+      // Dernier exemplaire supprimé ou exemplaire non courant → retour inventaire
+      router.push("/inventaire");
     } catch (err: any) {
       afficher(err.message || "Erreur de suppression", "erreur");
     }

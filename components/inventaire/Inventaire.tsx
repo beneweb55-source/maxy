@@ -2418,6 +2418,13 @@ export default function Inventaire({ role }: { role: Role }) {
         onFermer={() => setModalAjoutTerrain(false)}
         categoriesTree={categoriesTree}
         lotsDisponibles={donnees?.lots || []}
+        categorieIdDefaut={
+          sousCategorieIdActif
+            ? Number(sousCategorieIdActif)
+            : categorieIdActif
+              ? Number(categorieIdActif)
+              : null
+        }
         onSucces={() => {
           afficher("Produit ajouté avec succès.");
           void charger();

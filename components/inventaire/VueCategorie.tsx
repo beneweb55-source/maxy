@@ -6,7 +6,7 @@ import {
   IconeChevronGauche,
   IconeChevronDroite,
   IconeArchive,
-  IconeAlerte
+  IconeAlerte,
 } from "@/components/icons";
 import { Package } from "lucide-react";
 
@@ -21,7 +21,6 @@ const SC_COLORS = [
   { bg: "bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300" },
   { bg: "bg-teal-500/10 text-teal-600 dark:bg-teal-400/15 dark:text-teal-300" },
 ];
-import BreadcrumbNavigation from "./BreadcrumbNavigation";
 
 interface SousCategorieDetail {
   id: number;
@@ -44,6 +43,11 @@ interface CategorieDetail {
     nom: string;
   } | null;
   sousCategories: SousCategorieDetail[];
+  _count?: {
+    produits?: number;
+    modeles?: number;
+    enfants?: number;
+  };
 }
 
 export default function VueCategorie({
@@ -58,6 +62,7 @@ export default function VueCategorie({
   const [categorie, setCategorie] = useState<CategorieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [redirige, setRedirige] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,8 +70,8 @@ export default function VueCategorie({
 
     setLoading(true);
     setErreur(null);
+    setRedirige(false);
 
-    // Charger directement les détails de la catégorie et ses sous-catégories
     fetch(`/api/categories/${categorieId}`, { signal })
       .then(async (res) => {
         if (!res.ok) throw new Error("Erreur lors du chargement de la catégorie");
@@ -75,13 +80,33 @@ export default function VueCategorie({
       .then((data: any) => {
         if (signal.aborted) return;
 
-        setCategorie({
+        const cat: CategorieDetail = {
           id: data.id,
           nom: data.nom || `Catégorie #${categorieId}`,
           parent_id: data.parent?.id || null,
           parent: data.parent ? { id: data.parent.id, nom: data.parent.nom } : null,
           sousCategories: data.enfants || [],
-        });
+          _count: data._count || {},
+        };
+
+        setCategorie(cat);
+
+        // ── Pas de sous-catégories ? → rediriger directement vers la grille produits ──
+        const nbSousCats = (cat.sousCategories || []).length;
+        if (nbSousCats === 0) {
+          setRedirige(true);
+          // Petit délai pour éviter une boucle infinie de render
+          setTimeout(() => {
+            majUrl({
+              vue: "tableau",
+              categorie_id: String(categorieId),
+              sous_categorie_id: null,
+              famille_id: cat.parent_id ? String(cat.parent_id) : null,
+            });
+          }, 0);
+          return;
+        }
+
         setLoading(false);
       })
       .catch((err) => {
@@ -94,13 +119,12 @@ export default function VueCategorie({
     return () => controller.abort();
   }, [categorieId]);
 
-  if (loading) {
+  // Afficher un loader pendant la redirection
+  if (loading || redirige) {
     return (
       <div className="space-y-6 animate-pulse p-2">
         <div className="h-10 w-72 bg-brand-light-grey/30 dark:bg-white/5 rounded-xl"></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
-          <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
           <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
           <div className="h-36 bg-brand-light-grey/30 dark:bg-white/5 rounded-2xl"></div>
         </div>
@@ -125,13 +149,15 @@ export default function VueCategorie({
     );
   }
 
-  // Filtrer les sous-catégories : afficher toutes les sous-catégories + filtre de recherche
+  // ── Ici on a forcément des sous-catégories (sinon on aurait redirigé) ──
   const sousCatsFiltrees = (categorie.sousCategories || []).filter((sc) => {
     if (!q.trim()) return true;
     return sc.nom.toLowerCase().includes(q.toLowerCase());
   });
 
-  const totalProduitsCat = (categorie.sousCategories || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
+  const totalProduitsSousCats = (categorie.sousCategories || []).reduce((acc, sc) => acc + (sc._count?.produits || 0), 0);
+  const totalProduitsDirects = categorie._count?.produits || 0;
+  const totalProduitsCat = totalProduitsDirects + totalProduitsSousCats;
 
   return (
     <div className="space-y-6 animate-entree">
@@ -142,7 +168,9 @@ export default function VueCategorie({
             {categorie.nom}
           </h2>
           <p className="text-xs text-brand-warm-grey">
-            Touchez un sous-type pour afficher immédiatement sa grille de produits
+            {sousCatsFiltrees.length > 0
+              ? "Touchez un sous-type pour afficher immédiatement sa grille de produits"
+              : `${totalProduitsDirects} produit${totalProduitsDirects !== 1 ? "s" : ""} dans cette catégorie`}
           </p>
         </div>
 
@@ -177,7 +205,7 @@ export default function VueCategorie({
                     vue: "tableau",
                     sous_categorie_id: String(sc.id),
                     categorie_id: String(categorieId),
-                    famille_id: categorie.parent_id ? String(categorie.parent_id) : null
+                    famille_id: categorie.parent_id ? String(categorie.parent_id) : null,
                   })}
                   className="carte group !p-5 border border-brand-light-grey/60 dark:border-white/10 bg-white dark:bg-brand-paper rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-[0.985] min-h-[130px] hover:border-brand-orange/60"
                 >

@@ -683,42 +683,52 @@ export async function DELETE(
     }
 
     await prisma.$transaction(async (tx) => {
-      // 1. Détacher les mouvements de caisse
+      // 1. Nettoyer installed_components (FK sur produit_id et produit_parent_id)
+      await tx.installedComponent.deleteMany({
+        where: { OR: [{ produit_id: produitId }, { produit_parent_id: produitId }] },
+      });
+
+      // 2. Nettoyer slot_definitions (FK sur produit_parent_id)
+      await tx.slotDefinition.deleteMany({
+        where: { produit_parent_id: produitId },
+      });
+
+      // 3. Détacher les mouvements de caisse
       await tx.mouvementCaisse.updateMany({
         where: { produit_id: produitId },
         data: { produit_id: null },
       });
 
-      // 2. Détacher les lignes de factures
+      // 4. Détacher les lignes de factures
       await tx.factureLigne.updateMany({
         where: { produit_id: produitId },
         data: { produit_id: null },
       });
 
-      // 3. Détacher les lignes de commande
+      // 5. Détacher les lignes de commande
       await tx.ligneCommande.updateMany({
         where: { produit_id: produitId },
         data: { produit_id: null },
       });
 
-      // 4. Détacher les composants assemblés
+      // 6. Détacher les composants assemblés
       await tx.produit.updateMany({
         where: { parent_id: produitId },
         data: { parent_id: null },
       });
 
-      // 5. Supprimer les ventes associées
+      // 7. Supprimer les ventes associées
       await tx.vente.deleteMany({
         where: { produit_id: produitId },
       });
 
-      // 6. Supprimer images, historiques et réparations
+      // 8. Supprimer images, historiques et réparations
       await tx.produitImage.deleteMany({ where: { produit_id: produitId } });
       await tx.historiqueStatut.deleteMany({ where: { produit_id: produitId } });
       // compositionHistorique deleted AFTER transaction (best-effort, avoids 25P02)
       await tx.reparation.deleteMany({ where: { produit_id: produitId } });
 
-      // 7. Supprimer le produit
+      // 9. Supprimer le produit
       await tx.produit.delete({ where: { id: produitId } });
 
       // 8. Resynchroniser le compteur du modèle parent (C-INV5)

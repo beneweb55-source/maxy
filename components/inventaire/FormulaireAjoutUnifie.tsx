@@ -35,6 +35,7 @@ interface FormulaireAjoutUnifieProps {
   onSucces: () => void;
   categoriesTree: CategorieNoeud[];
   lotsDisponibles?: LotDisponible[];
+  categorieIdDefaut?: number | null;
 }
 
 type EmplacementType = "reserve" | "vitrine";
@@ -181,6 +182,7 @@ export default function FormulaireAjoutUnifie({
   onSucces,
   categoriesTree,
   lotsDisponibles = [],
+  categorieIdDefaut,
 }: FormulaireAjoutUnifieProps) {
   const { afficher } = useToast();
   const refReference = useRef<HTMLInputElement>(null);
@@ -192,12 +194,25 @@ export default function FormulaireAjoutUnifie({
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  /* ── Catégories aplaties ── */
+  const categories = useMemo(() => aplatirCategories(categoriesTree), [categoriesTree]);
+
+  /* ── Réinitialisation + pré-sélection catégorie à l'ouverture ── */
+  useEffect(() => {
+    if (ouvert) {
+      setEtat({
+        ...ETAT_VIDE,
+        categorie_id: categorieIdDefaut ? String(categorieIdDefaut) : "",
+      });
+      setPhotos([]);
+      setErreur(null);
+    }
+  }, [ouvert, categorieIdDefaut]);
+
   /* ── BOM : composants disponibles en stock ── */
   const [stockComposants, setStockComposants] = useState<ComposantStock[]>([]);
   const [chargementStock, setChargementStock] = useState(false);
   const [filtreComposant, setFiltreComposant] = useState("");
-
-  const categories = useMemo(() => aplatirCategories(categoriesTree), [categoriesTree]);
 
   /* ═══════════════════════════════════════════════════════════════
      MISE A JOUR GENERIQUE DE L'ETAT
