@@ -143,6 +143,10 @@ export async function GET(request: NextRequest) {
     // Récupérer l'arborescence complète des 9 Familles avec leurs enfants
     let famillesArborescence: any[] = [];
     try {
+      // Filtre: ne compter que les modeles avec au moins un exemplaire actif
+      const filtreStatutActif = { statut: { notIn: ["vendu", "hs", "assemble"] as any } };
+      const modelesActifs = { where: { exemplaires: { some: filtreStatutActif } } };
+
       const famillesDb = await prisma.categorie.findMany({
         where: { parent_id: null },
         include: {
@@ -150,15 +154,15 @@ export async function GET(request: NextRequest) {
             include: {
               enfants: {
                 include: {
-                  _count: { select: { produits: true, modeles: true } },
+                  _count: { select: { produits: true, modeles: modelesActifs } },
                 },
                 orderBy: { ordre: "asc" },
               },
-              _count: { select: { produits: true, modeles: true } },
+              _count: { select: { produits: true, modeles: modelesActifs } },
             },
             orderBy: { ordre: "asc" },
           },
-          _count: { select: { produits: true, modeles: true } },
+          _count: { select: { produits: true, modeles: modelesActifs } },
         },
         orderBy: { ordre: "asc" },
       });

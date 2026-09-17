@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { exigerUtilisateur } from "@/lib/api";
 
+/** Filtre pour ne compter que les modeles ayant au moins un exemplaire actif */
+const FILTRE_STATUT_ACTIF = { statut: { notIn: ["vendu", "hs", "assemble"] as any } };
+const FILTRE_MODELES_ACTIFS = { where: { exemplaires: { some: FILTRE_STATUT_ACTIF } } };
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -27,8 +31,8 @@ export async function GET(
               include: {
                 _count: {
                   select: {
-                    modeles: true,
-                    produits: { where: { statut: { notIn: ["vendu", "hs", "assemble"] as any } } },
+                    modeles: FILTRE_MODELES_ACTIFS,
+                    produits: { where: FILTRE_STATUT_ACTIF },
                   },
                 },
               },
@@ -36,8 +40,8 @@ export async function GET(
             },
             _count: {
               select: {
-                modeles: true,
-                produits: { where: { statut: { notIn: ["vendu", "hs", "assemble"] as any } } },
+                modeles: FILTRE_MODELES_ACTIFS,
+                produits: { where: FILTRE_STATUT_ACTIF },
                 enfants: true,
               },
             },
@@ -46,8 +50,8 @@ export async function GET(
         },
         _count: {
           select: {
-            modeles: true,
-            produits: { where: { statut: { notIn: ["vendu", "hs", "assemble"] as any } } },
+            modeles: FILTRE_MODELES_ACTIFS,
+            produits: { where: FILTRE_STATUT_ACTIF },
             enfants: true,
           },
         },
