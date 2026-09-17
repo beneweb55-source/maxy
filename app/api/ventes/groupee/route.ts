@@ -343,6 +343,58 @@ export async function POST(request: NextRequest) {
         `Vente groupée : ${ordonnes.length} produits — ${formaterDA(prixTotal)} (${user.username})`,
         `/ventes`
       );
+
+      // ── Vente groupée à crédit : créer le client + crédit pour le total ──
+      const modePaiementStr = typeof mode_paiement === "string" ? mode_paiement : null;
+      if (modePaiementStr === "credit") {
+        const nomClient = typeof client_nom === "string" ? client_nom.trim() : "";
+        if (!nomClient) {
+          throw new Error("Le nom du client est obligatoire pour une vente à crédit.");
+        }
+
+        let client = null;
+        const telClient = typeof client_tel === "string" ? client_tel.trim() : null;
+        if (telClient) {
+          client = await tx.client.findFirst({
+            where: { nom: { equals: nomClient, mode: "insensitive" }, telephone: telClient },
+          });
+        }
+        if (!client) {
+          client = await tx.client.findFirst({
+            where: { nom: { equals: nomClient, mode: "insensitive" } },
+          });
+        }
+        if (!client) {
+          client = await tx.client.create({
+            data: {
+              nom: nomClient,
+              telephone: telClient || null,
+              adresse: typeof client_adresse === "string" ? client_adresse.trim() || null : null,
+              registre_commerce: typeof client_rc === "string" ? client_rc.trim() || null : null,
+              nif: typeof client_nif === "string" ? client_nif.trim() || null : null,
+              nis: typeof client_nis === "string" ? client_nis.trim() || null : null,
+              article_imposition: typeof client_ai === "string" ? client_ai.trim() || null : null,
+            },
+          });
+        }
+
+        // Créer UN crédit pour le total de la vente groupée
+        const premiereVenteId = cree[0];
+        if (!premiereVenteId) {
+          throw new Error("Aucune vente créée dans le groupe.");
+        }
+        await tx.venteCredit.create({
+          data: {
+            vente_id: premiereVenteId,
+            client_id: client.id,
+            montant_total: prixTotal,
+            montant_paye: 0,
+            montant_restant: prixTotal,
+            statut: "impaye",
+          },
+        });
+      }
+
       // Une seule facture pour toute la vente groupée (garantie incluse).
       const facture = await creerFacture(tx, {
         lignes: lignesFacture,

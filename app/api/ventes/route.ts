@@ -325,6 +325,54 @@ export async function POST(request: NextRequest) {
         description: `Vente ${produit.reference}${canalTexte ? ` — ${canalTexte}` : ""}`,
         caisse: typeVenteFinal === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE",
       });
+
+      // ── Vente à crédit : créer ou trouver le client + enregistrer le crédit ──
+      const modePaiementStr = typeof mode_paiement === "string" ? mode_paiement : null;
+      if (modePaiementStr === "credit") {
+        const nomClient = typeof client_nom === "string" ? client_nom.trim() : "";
+        if (!nomClient) {
+          throw new Error("Le nom du client est obligatoire pour une vente à crédit.");
+        }
+
+        // Chercher ou créer le client par nom + téléphone
+        let client = null;
+        const telClient = typeof client_tel === "string" ? client_tel.trim() : null;
+        if (telClient) {
+          client = await tx.client.findFirst({
+            where: { nom: { equals: nomClient, mode: "insensitive" }, telephone: telClient },
+          });
+        }
+        if (!client) {
+          client = await tx.client.findFirst({
+            where: { nom: { equals: nomClient, mode: "insensitive" } },
+          });
+        }
+        if (!client) {
+          client = await tx.client.create({
+            data: {
+              nom: nomClient,
+              telephone: telClient || null,
+              adresse: typeof client_adresse === "string" ? client_adresse.trim() || null : null,
+              registre_commerce: typeof client_rc === "string" ? client_rc.trim() || null : null,
+              nif: typeof client_nif === "string" ? client_nif.trim() || null : null,
+              nis: typeof client_nis === "string" ? client_nis.trim() || null : null,
+              article_imposition: typeof client_ai === "string" ? client_ai.trim() || null : null,
+            },
+          });
+        }
+
+        // Créer le crédit
+        await tx.venteCredit.create({
+          data: {
+            vente_id: vente.id,
+            client_id: client.id,
+            montant_total: prix,
+            montant_paye: 0,
+            montant_restant: prix,
+            statut: "impaye",
+          },
+        });
+      }
       const gerants = await idsParRole(tx, "gerant");
       await notifier(
         tx,
