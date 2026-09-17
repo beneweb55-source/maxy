@@ -52,9 +52,11 @@ enum BomRole {
 
 // Types de documents commerciaux légaux
 enum TypeDocument {
-  FACTURE_TVA  // Facture avec TVA (document fiscal)
-  PROFORMA     // Facture proforma (non définitive)
-  DEVIS        // Devis client (sans engagement)
+  FACTURE_TVA     // Facture avec TVA (document fiscal)
+  PROFORMA        // Facture proforma (non définitive)
+  DEVIS           // Devis client (sans engagement)
+  BON_LIVRAISON   // Bon de livraison
+  BON_ACHAT       // Bon d'achat fournisseur
 }
 
 enum TypeMouvement {
@@ -112,6 +114,8 @@ model User {
   journal       JournalActivite[]
   carnets       CarnetEntree[]
   composition_operations CompositionHistorique[]
+  paiements_credit PaiementCredit[]
+  charges       Charge[]
 
   @@map("users")
 }
@@ -302,6 +306,8 @@ model Vente {
 
   produit Produit @relation(fields: [produit_id], references: [id])
   vendeur User    @relation("ventes_effectuees", fields: [vendu_par], references: [id])
+
+  credit  VenteCredit?
 
   @@index([produit_id])
   @@index([date_vente])
@@ -621,6 +627,7 @@ model Client {
   updated_at          DateTime   @updatedAt
 
   commandes           Commande[]
+  ventes_credits      VenteCredit[]
 
   @@map("clients")
 }
@@ -765,4 +772,113 @@ model BackupLog {
   @@index([action])
   @@index([created_at])
   @@map("backup_logs")
+}
+
+// ══════════════════════════════════════════════════════════════
+// SYSTÈME DE CRÉDITS CLIENTS
+// ══════════════════════════════════════════════════════════════
+
+enum StatutCredit {
+  paye                  // Totalité payée
+  partiellement_paye    // Au moins un paiement, reste > 0
+  impaye                // Aucun paiement
+  en_retard             // Échéance dépassée, non payé
+}
+
+enum ModePaiement {
+  especes
+  virement
+  carte
+  cheque
+  autre
+}
+
+model VenteCredit {
+  id                  Int           @id @default(autoincrement())
+  vente_id            Int           @unique  // 1 vente = 1 credit max
+  client_id           Int
+  montant_total       Int           // Montant total de la vente
+  montant_paye        Int           @default(0)  // Somme des paiements
+  montant_restant     Int           // = montant_total - montant_paye
+  statut              StatutCredit  @default(impaye)
+  date_vente          DateTime      @default(now())
+  date_echeance       DateTime?     // Optionnel : échéance de paiement
+  notes               String?
+  created_at          DateTime      @default(now())
+  updated_at          DateTime      @updatedAt
+
+  vente               Vente         @relation(fields: [vente_id], references: [id])
+  client              Client        @relation(fields: [client_id], references: [id])
+  paiements           PaiementCredit[]
+
+  @@index([client_id])
+  @@index([statut])
+  @@index([date_echeance])
+  @@index([created_at])
+  @@map("vente_credits")
+}
+
+model PaiementCredit {
+  id                  Int           @id @default(autoincrement())
+  credit_id           Int
+  montant             Int           // Montant du paiement (positif)
+  mode_paiement       ModePaiement  @default(especes)
+  reference           String?       // Référence du chèque, virement, etc.
+  notes               String?
+  user_id             Int           // Utilisateur ayant enregistré le paiement
+  date_paiement       DateTime      @default(now())
+  created_at          DateTime      @default(now())
+
+  credit              VenteCredit   @relation(fields: [credit_id], references: [id], onDelete: Cascade)
+  user                User          @relation(fields: [user_id], references: [id])
+
+  @@index([credit_id])
+  @@index([date_paiement])
+  @@map("paiement_credits")
+}
+
+// ══════════════════════════════════════════════════════════════
+// SYSTÈME DE CHARGES / DÉPENSES
+// ══════════════════════════════════════════════════════════════
+
+enum CategorieCharge {
+  loyer
+  electricite
+  internet
+  telephone
+  salaires
+  transport
+  carburant
+  fournitures
+  maintenance
+  marketing
+  logiciels
+  taxes
+  bancaires
+  autre
+}
+
+model Charge {
+  id                  Int             @id @default(autoincrement())
+  categorie           CategorieCharge
+  libelle             String          // Titre de la charge (ex: "Loyer Septembre")
+  description         String?         // Description détaillée
+  montant             Int             // Montant en DA (entier)
+  date_charge         DateTime        @default(now())
+  mode_paiement       ModePaiement    @default(especes)
+  beneficiaire        String?         // Fournisseur ou bénéficiaire
+  reference           String?         // Référence du paiement
+  statut              String          @default("paye")  // paye | en_attente | annule
+  user_id             Int             // Utilisateur ayant enregistré
+  notes               String?
+  created_at          DateTime        @default(now())
+  updated_at          DateTime        @updatedAt
+
+  user                User            @relation(fields: [user_id], references: [id])
+
+  @@index([categorie])
+  @@index([date_charge])
+  @@index([statut])
+  @@index([created_at])
+  @@map("charges")
 }

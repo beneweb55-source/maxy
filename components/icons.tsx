@@ -608,3 +608,18 @@ export const IconeRecu = creerIcone(
   </>
 );
 
+export const IconeCredit = creerIcone(
+  "Credit",
+  <>
+    <rect width="20" height="14" x="2" y="5" rx="2" />
+    <line x1="2" x2="22" y1="10" y2="10" />
+  </>
+);
+
+export const IconeDepense = creerIcone(
+  "Depense",
+  <>
+    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </>
+);
+

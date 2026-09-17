@@ -161,7 +161,7 @@ export async function PATCH(
     client_nif?: string | null;
     client_ai?: string | null;
     client_nis?: string | null;
-    type_document?: "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+    type_document?: "FACTURE_TVA" | "PROFORMA" | "DEVIS" | "BON_LIVRAISON" | "BON_ACHAT";
     type_vente?: "COMPTOIR" | "YALIDINE";
     caisse_destination?: "CAISSE_PHYSIQUE" | "CAISSE_YALIDINE";
     canal_vente?: "COMPTOIR" | "YALIDINE";
@@ -190,12 +190,12 @@ export async function PATCH(
   // Gestion séparée du type de document (nouveau: type_document, legacy: type_facture)
   const typeDocumentBody = (corps as any)?.["type_document"] ?? (corps as any)?.["type_facture"];
   if (typeDocumentBody !== undefined) {
-    const typesValides = ["FACTURE_TVA", "PROFORMA", "DEVIS"];
+    const typesValides = ["FACTURE_TVA", "PROFORMA", "DEVIS", "BON_LIVRAISON", "BON_ACHAT"];
     const valStr = typeof typeDocumentBody === "string" ? typeDocumentBody.trim().toUpperCase() : null;
     if (!valStr || !typesValides.includes(valStr)) {
       return erreur(400, `Type de document invalide. Valeurs acceptées : ${typesValides.join(", ")}`);
     }
-    donnees.type_document = valStr as "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+    donnees.type_document = valStr as "FACTURE_TVA" | "PROFORMA" | "DEVIS" | "BON_LIVRAISON" | "BON_ACHAT";
   }
 
   // Gestion du type de vente (COMPTOIR ou YALIDINE) avec rééquilibrage de caisse

@@ -64,6 +64,8 @@ export const fr = {
     ventes: "Ventes",
     factures: "Factures",
     caisse: "Caisse",
+    credits: "Crédits",
+    charges: "Charges",
     administration: "Administration",
     notifications: "Notifications",
     carnet: "Carnet de travail",

@@ -80,6 +80,10 @@ function titreDocument(typeFacture: string | null): string {
       return "Facture Proforma";
     case "DEVIS":
       return "Devis";
+    case "BON_LIVRAISON":
+      return "Bon de Livraison";
+    case "BON_ACHAT":
+      return "Bon d'Achat";
     case "FACTURE_TVA":
     default:
       return "Facture";
@@ -386,24 +390,11 @@ export default function TemplateFactureA4({
         </div>
       </div>
 
-      {/* ── Cachet et signature ── */}
-      {showCachet && (
-        <div className="flex justify-between items-end pt-2 border-t border-slate-300 text-xs">
+      {/* ── Signature ── */}
+      {showCachet && facture.vendeur && (
+        <div className="pt-2 border-t border-slate-300 text-xs">
           <div>
-            {facture.vendeur && (
-              <div>
-                Émis par : <strong>{facture.vendeur}</strong>
-              </div>
-            )}
-          </div>
-          <div className="relative w-40 h-20">
-            {cachetSrc && (
-              <img
-                src={cachetSrc}
-                alt="Cachet"
-                className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
-              />
-            )}
+            Émis par : <strong>{facture.vendeur}</strong>
           </div>
         </div>
       )}

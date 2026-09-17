@@ -1,0 +1,2 @@
+-- Backup raw_data column — already applied via SQL
+-- This migration was applied manually via idempotent.sql

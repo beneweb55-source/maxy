@@ -25,13 +25,15 @@ const PREFIXES_DOCUMENT: Record<TypeDocumentLegal, string> = {
   FACTURE_TVA: "FA",
   PROFORMA: "PF",
   DEVIS: "DV",
+  BON_LIVRAISON: "BL",
+  BON_ACHAT: "BA",
 };
 
 /**
  * Type légal d'un document commercial.
  * Correspond à l'enum TypeDocument dans le schéma Prisma.
  */
-export type TypeDocumentLegal = "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+export type TypeDocumentLegal = "FACTURE_TVA" | "PROFORMA" | "DEVIS" | "BON_LIVRAISON" | "BON_ACHAT";
 
 /**
  * Numéro de document séquentiel par type et par année.
@@ -140,7 +142,7 @@ export async function creerFacture(
   // Résolution du type de document légal
   // typeDocument a la priorité sur le legacy typeFacture
   let typeDocumentFinal: TypeDocumentLegal = "FACTURE_TVA";
-  if (typeDocument && ["FACTURE_TVA", "PROFORMA", "DEVIS"].includes(typeDocument)) {
+  if (typeDocument && ["FACTURE_TVA", "PROFORMA", "DEVIS", "BON_LIVRAISON", "BON_ACHAT"].includes(typeDocument)) {
     typeDocumentFinal = typeDocument;
   } else if (typeFacture) {
     // Mapping legacy pour rétrocompatibilité

@@ -403,15 +403,8 @@ export default function FicheCommande({ commandeId }: FicheCommandeProps) {
             </div>
           </div>
 
-          {/* Cachet et signature */}
+          {/* Signature */}
           <div className="flex justify-end mr-12 mt-8 mb-16">
-            <div className="relative w-64 h-32">
-              <img
-                src={entreprise?.cachet || "/brand/cachet.png"}
-                alt="Cachet"
-                className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
-              />
-            </div>
           </div>
 
           {/* Pied de page */}

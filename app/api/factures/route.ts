@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     // Filtre par type de document : ?type=DEVIS ou ?type=FACTURE_TVA,PROFORMA
     const typeParam = params.get("type");
     if (typeParam) {
-      const typesValides = ["FACTURE_TVA", "PROFORMA", "DEVIS"] as const;
+      const typesValides = ["FACTURE_TVA", "PROFORMA", "DEVIS", "BON_LIVRAISON", "BON_ACHAT"] as const;
       type TypeDoc = typeof typesValides[number];
       const typesFiltres = typeParam
         .split(",")

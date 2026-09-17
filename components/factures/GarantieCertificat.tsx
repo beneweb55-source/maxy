@@ -399,7 +399,7 @@ export default function GarantieCertificat({
           </ol>
         </div>
 
-        {/* Cachet et signatures */}
+        {/* Signatures */}
         <div className="flex justify-between items-start mb-8 border-b-2 border-brand-black pb-4">
           <div className="text-center">
             <p className="text-xs font-bold mb-12 uppercase">
@@ -408,16 +408,6 @@ export default function GarantieCertificat({
             <div className="border-t border-black w-44 pt-1 text-[10px] text-brand-warm-grey">
               {t("garantie.luApprouve")}
             </div>
-          </div>
-
-          <div className="relative w-64 h-32">
-            {(facture.entreprise?.cachet || "/brand/cachet.png") && (
-              <img
-                src={facture.entreprise?.cachet || "/brand/cachet.png"}
-                alt="Cachet"
-                className="absolute inset-0 w-full h-full object-contain opacity-90 mix-blend-multiply"
-              />
-            )}
           </div>
         </div>
 

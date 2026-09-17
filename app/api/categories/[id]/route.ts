@@ -25,18 +25,31 @@ export async function GET(
           include: {
             enfants: {
               include: {
-                _count: { select: { modeles: true, produits: true } },
+                _count: {
+                  select: {
+                    modeles: true,
+                    produits: { where: { statut: { notIn: ["vendu", "hs", "assemble"] as any } } },
+                  },
+                },
               },
               orderBy: { ordre: "asc" },
             },
             _count: {
-              select: { modeles: true, produits: true, enfants: true },
+              select: {
+                modeles: true,
+                produits: { where: { statut: { notIn: ["vendu", "hs", "assemble"] as any } } },
+                enfants: true,
+              },
             },
           },
           orderBy: { ordre: "asc" },
         },
         _count: {
-          select: { modeles: true, produits: true, enfants: true },
+          select: {
+            modeles: true,
+            produits: { where: { statut: { notIn: ["vendu", "hs", "assemble"] as any } } },
+            enfants: true,
+          },
         },
       },
     });

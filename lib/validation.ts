@@ -62,6 +62,8 @@ export function validerLignesProduits(
     const ligne = brut[i] as {
       reference?: unknown;
       categorie?: unknown;
+      categorie_id?: unknown;
+      modele_id?: unknown;
       prix_achat?: unknown;
       prix_vente_fixe?: unknown;
       image_url?: unknown;
@@ -72,6 +74,8 @@ export function validerLignesProduits(
 
     const reference = typeof ligne?.reference === "string" ? ligne.reference.trim() : "";
     const categorie = typeof ligne?.categorie === "string" ? ligne.categorie.trim() : "";
+    const categorieId = typeof ligne?.categorie_id === "number" && ligne.categorie_id > 0 ? ligne.categorie_id : null;
+    const modeleId = typeof ligne?.modele_id === "number" && ligne.modele_id > 0 ? ligne.modele_id : null;
     const prix = ligne?.prix_achat;
     const prixVente = typeof ligne?.prix_vente_fixe === "number" ? ligne.prix_vente_fixe : null;
     const estCompose = ligne?.est_compose === true;
@@ -94,6 +98,8 @@ export function validerLignesProduits(
     produits.push({
       reference,
       categorie,
+      categorie_id: categorieId,
+      modele_id: modeleId,
       prix_achat: prix,
       prix_vente_fixe: prixVente,
       image_url: resImages.images[0],

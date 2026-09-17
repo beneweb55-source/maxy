@@ -10,6 +10,8 @@ export async function GET(request: Request) {
     const parentIdParam = searchParams.get("parent_id");
     const fullTree = searchParams.get("tree") === "1" || !parentIdParam;
 
+    const statutFilter = { statut: { notIn: ["vendu", "hs", "assemble"] as any } };
+
     if (!fullTree && parentIdParam) {
       const categories = await prisma.categorie.findMany({
         where: {
@@ -19,13 +21,13 @@ export async function GET(request: Request) {
           enfants: {
             include: {
               _count: {
-                select: { modeles: true, produits: true },
+                select: { modeles: true, produits: { where: statutFilter } },
               },
             },
             orderBy: { ordre: "asc" },
           },
           _count: {
-            select: { modeles: true, produits: true, enfants: true },
+            select: { modeles: true, produits: { where: statutFilter }, enfants: true },
           },
         },
         orderBy: {
@@ -45,19 +47,19 @@ export async function GET(request: Request) {
             enfants: {
               include: {
                 _count: {
-                  select: { modeles: true, produits: true },
+                  select: { modeles: true, produits: { where: statutFilter } },
                 },
               },
               orderBy: { ordre: "asc" },
             },
             _count: {
-              select: { modeles: true, produits: true, enfants: true },
+              select: { modeles: true, produits: { where: statutFilter }, enfants: true },
             },
           },
           orderBy: { ordre: "asc" },
         },
         _count: {
-          select: { modeles: true, produits: true, enfants: true },
+          select: { modeles: true, produits: { where: statutFilter }, enfants: true },
         },
       },
       orderBy: {

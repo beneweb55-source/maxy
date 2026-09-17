@@ -63,6 +63,8 @@ export const en = {
     ventes: "Sales",
     factures: "Invoices",
     caisse: "Cash register",
+    credits: "Credits",
+    charges: "Expenses",
     administration: "Administration",
     notifications: "Notifications",
     carnet: "Work Journal",

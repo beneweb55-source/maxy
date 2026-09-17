@@ -300,7 +300,6 @@ export default function FormulaireAjoutUnifie({
       (c) =>
         (c.reference && c.reference.toLowerCase().includes(q)) ||
         (c.categorie && c.categorie.toLowerCase().includes(q)) ||
-        (c.bom_role && c.bom_role.toLowerCase().includes(q)) ||
         (c.code_interne && c.code_interne.toLowerCase().includes(q)) ||
         (c.numero_serie && c.numero_serie.toLowerCase().includes(q)) ||
         (c.modele?.nom && c.modele.nom.toLowerCase().includes(q)),

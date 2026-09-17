@@ -35,6 +35,8 @@ import {
   IconeRecherche,
   IconeCloche,
   IconeNote,
+  IconeCredit,
+  IconeDepense,
   type ProprietesIcone,
 } from "./icons";
 
@@ -79,6 +81,18 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     href: "/caisse",
     cle: "nav.caisse",
     icone: IconePortefeuille,
+    sousChemins: [],
+  },
+  {
+    href: "/credits",
+    cle: "nav.credits",
+    icone: IconeCredit,
+    sousChemins: [],
+  },
+  {
+    href: "/charges",
+    cle: "nav.charges",
+    icone: IconeDepense,
     sousChemins: [],
   },
   { href: "/notifications", cle: "nav.notifications", icone: IconeCloche, sousChemins: [] },

@@ -363,8 +363,8 @@ export async function POST(request: NextRequest) {
         clientAi: typeof client_ai === "string" ? client_ai : null,
         clientNis: typeof client_nis === "string" ? client_nis : null,
         typeFacture: typeof type_facture === "string" ? type_facture : null,
-        typeDocument: typeof type_document === "string" && ["FACTURE_TVA", "PROFORMA", "DEVIS"].includes(type_document)
-          ? (type_document as "FACTURE_TVA" | "PROFORMA" | "DEVIS")
+        typeDocument: typeof type_document === "string" && ["FACTURE_TVA", "PROFORMA", "DEVIS", "BON_LIVRAISON", "BON_ACHAT"].includes(type_document)
+          ? (type_document as "FACTURE_TVA" | "PROFORMA" | "DEVIS" | "BON_LIVRAISON" | "BON_ACHAT")
           : null,
         numeroManuel: typeof numero_manuel === "string" && numero_manuel.trim() ? numero_manuel.trim() : null,
         modePaiement: typeof mode_paiement === "string" ? mode_paiement : null,

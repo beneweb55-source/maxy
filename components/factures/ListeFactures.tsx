@@ -33,8 +33,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-type TypeDocument = "FACTURE_TVA" | "PROFORMA" | "DEVIS";
-type OngletType = "tous" | "FACTURE_TVA" | "PROFORMA" | "DEVIS";
+type TypeDocument = "FACTURE_TVA" | "PROFORMA" | "DEVIS" | "BON_LIVRAISON" | "BON_ACHAT";
+type OngletType = "tous" | "FACTURE_TVA" | "PROFORMA" | "DEVIS" | "BON_LIVRAISON" | "BON_ACHAT";
 type FiltreTypeVente = "TOUTES" | "COMPTOIR" | "YALIDINE";
 
 interface LigneFactureListe {
@@ -100,6 +100,16 @@ function BadgeTypeDocument({ type }: { type: TypeDocument }) {
     DEVIS: {
       label: "Devis",
       cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+      Icon: ClipboardList,
+    },
+    BON_LIVRAISON: {
+      label: "Bon de livraison",
+      cls: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+      Icon: Truck,
+    },
+    BON_ACHAT: {
+      label: "Bon d'achat",
+      cls: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800",
       Icon: ClipboardList,
     },
   };
@@ -388,6 +398,8 @@ export default function ListeFactures({ role }: { role?: string }) {
               <option value="FACTURE_TVA">Factures TVA</option>
               <option value="PROFORMA">Proformas</option>
               <option value="DEVIS">Devis</option>
+              <option value="BON_LIVRAISON">Bons de livraison</option>
+              <option value="BON_ACHAT">Bons d&apos;achat</option>
             </select>
           </div>
 
@@ -463,7 +475,7 @@ export default function ListeFactures({ role }: { role?: string }) {
             {onglet !== "tous" && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-light-grey/30 dark:bg-white/5 text-brand-black dark:text-brand-warm-grey text-[11px] font-medium border border-brand-light-grey dark:border-white/10">
                 <FileText className="w-3 h-3 text-brand-orange" />
-                Document: {onglet === "FACTURE_TVA" ? "Facture TVA" : onglet === "PROFORMA" ? "Proforma" : "Devis"}
+                Document: {onglet === "FACTURE_TVA" ? "Facture TVA" : onglet === "PROFORMA" ? "Proforma" : onglet === "BON_LIVRAISON" ? "Bon de livraison" : onglet === "BON_ACHAT" ? "Bon d'achat" : "Devis"}
                 <button
                   type="button"
                   onClick={() => {

@@ -221,11 +221,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return erreur(400, "Requête invalide.");
   }
-  const { lot_id, reference, categorie, prix_achat, prix_vente_fixe, image_url, images, quantite, en_vitrine, est_compose } =
+  const { lot_id, reference, categorie, categorie_id, modele_id, prix_achat, prix_vente_fixe, image_url, images, quantite, en_vitrine, est_compose } =
     (corps ?? {}) as {
       lot_id?: unknown;
       reference?: unknown;
       categorie?: unknown;
+      categorie_id?: unknown;
+      modele_id?: unknown;
       prix_achat?: unknown;
       prix_vente_fixe?: unknown;
       image_url?: unknown;
@@ -237,7 +239,7 @@ export async function POST(request: NextRequest) {
 
   const lotId = lot_id ? Number(lot_id) : null;
   if (lot_id && !Number.isInteger(lotId)) return erreur(400, "Lot invalide.");
-  const validation = validerLignesProduits([{ reference, categorie, prix_achat, prix_vente_fixe, image_url, images, est_compose }]);
+  const validation = validerLignesProduits([{ reference, categorie, categorie_id: typeof categorie_id === "number" ? categorie_id : undefined, modele_id: typeof modele_id === "number" ? modele_id : undefined, prix_achat, prix_vente_fixe, image_url, images, est_compose }]);
   if (validation.erreur !== undefined) return erreur(400, validation.erreur);
   const ligne = validation.produits[0];
   if (!ligne) return erreur(400, "Produit invalide.");
