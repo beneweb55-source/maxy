@@ -196,16 +196,18 @@ function resolverThemeFamille(nomFamille: string): FamilleTheme {
   return THEME_DEFAUT;
 }
 
-export default function Cockpit({ 
-  majUrl, 
-  q = "", 
-  afficherFamilles, 
-  setAfficherFamilles 
-}: { 
-  majUrl: (modifs: Record<string, string | null>) => void; 
+export default function Cockpit({
+  majUrl,
+  q = "",
+  afficherFamilles,
+  setAfficherFamilles,
+  refreshKey = 0,
+}: {
+  majUrl: (modifs: Record<string, string | null>) => void;
   q?: string;
   afficherFamilles: boolean;
   setAfficherFamilles: (val: boolean) => void;
+  refreshKey?: number;
 }) {
   const t = useT();
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -243,7 +245,7 @@ export default function Cockpit({
       });
 
     return () => controller.abort();
-  }, [q]);
+  }, [q, refreshKey]);
 
   if (loading) {
     return (

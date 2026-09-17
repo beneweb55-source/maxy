@@ -60,9 +60,11 @@ interface FamilleDetail {
 export default function VueFamille({
   familleId,
   majUrl,
+  refreshKey = 0,
 }: {
   familleId: number;
   majUrl: (modifs: Record<string, string | null>) => void;
+  refreshKey?: number;
 }) {
   const searchParams = useSearchParams();
   const q = searchParams?.get("q") || "";
@@ -103,7 +105,7 @@ export default function VueFamille({
       });
 
     return () => controller.abort();
-  }, [familleId]);
+  }, [familleId, refreshKey]);
 
   if (loading) {
     return (

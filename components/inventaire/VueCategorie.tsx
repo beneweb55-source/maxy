@@ -53,9 +53,11 @@ interface CategorieDetail {
 export default function VueCategorie({
   categorieId,
   majUrl,
+  refreshKey = 0,
 }: {
   categorieId: number;
   majUrl: (modifs: Record<string, string | null>) => void;
+  refreshKey?: number;
 }) {
   const searchParams = useSearchParams();
   const q = searchParams?.get("q") || "";
@@ -117,7 +119,7 @@ export default function VueCategorie({
       });
 
     return () => controller.abort();
-  }, [categorieId]);
+  }, [categorieId, refreshKey]);
 
   // Afficher un loader pendant la redirection
   if (loading || redirige) {

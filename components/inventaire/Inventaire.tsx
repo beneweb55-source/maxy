@@ -99,6 +99,9 @@ export default function Inventaire({ role }: { role: Role }) {
 
   const [modalAjout, setModalAjout] = useState(searchParams?.get("ajouter") === "1");
   const [categoriesTree, setCategoriesTree] = useState<CategorieNoeud[]>([]);
+  // Clé de rafraîchissement pour forcer VueFamille / VueCategorie à re-fetch après mutation
+  const [refreshKey, setRefreshKey] = useState(0);
+  const rafraichir = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   const chargerCategories = useCallback(async () => {
     try {
@@ -329,6 +332,7 @@ export default function Inventaire({ role }: { role: Role }) {
       setStatutMasseNote("");
       setSelection([]);
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -551,6 +555,7 @@ export default function Inventaire({ role }: { role: Role }) {
       }
       afficher(enVitrine ? `${libelle} mis en vitrine.` : `${libelle} retiré de la vitrine.`);
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -577,9 +582,11 @@ export default function Inventaire({ role }: { role: Role }) {
       afficher(posteReseaux ? `${libelle} marqué comme posté (${corps?.modifies ?? ids.length} produit(s)).` : `${libelle} retiré des réseaux sociaux (${corps?.modifies ?? ids.length} produit(s)).`);
       // Double refresh pour s'assurer que les données sont à jour
       await charger();
+      rafraichir();
       // Petit délai puis re-refresh pour garantir la cohérence
       await new Promise(r => setTimeout(r, 300));
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -613,6 +620,7 @@ export default function Inventaire({ role }: { role: Role }) {
       );
       setModalEdition({ ...modalEdition, unites: modalEdition.unites.map(u => ({ ...u, en_vitrine: cible })) });
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -656,6 +664,7 @@ export default function Inventaire({ role }: { role: Role }) {
       setCibleStatut(null);
       setNoteStatut("");
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -687,6 +696,7 @@ export default function Inventaire({ role }: { role: Role }) {
       );
       setModalEdition({ ...modalEdition, unites: modalEdition.unites.map(u => ({ ...u, a_jeter: valeur })) });
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -743,6 +753,7 @@ export default function Inventaire({ role }: { role: Role }) {
         setProduitSourceDuplication(null);
       }
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -782,6 +793,7 @@ export default function Inventaire({ role }: { role: Role }) {
         setContexteNavigation(null);
       }
       await charger();
+      rafraichir();
       return true;
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -854,6 +866,7 @@ export default function Inventaire({ role }: { role: Role }) {
       );
       setModalSuppression(null);
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -882,6 +895,7 @@ export default function Inventaire({ role }: { role: Role }) {
       }
       afficher(`${ids.length} exemplaire(s) mis à jour → ${INFOS_STATUT[cible].libelle}`, "succes");
       await charger();
+      rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
     } finally {
@@ -946,6 +960,7 @@ export default function Inventaire({ role }: { role: Role }) {
         afficher(`1 exemplaire créé avec succès pour ${ref}${codeGenere} !`, "succes");
       }
       await charger();
+      rafraichir();
     } catch (err) {
       console.error("Erreur creation rapide exemplaire:", err);
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -1533,29 +1548,32 @@ export default function Inventaire({ role }: { role: Role }) {
 
       {vue === "cockpit" && (
         <div className="mb-8">
-          <Cockpit 
-            majUrl={majUrl} 
+          <Cockpit
+            majUrl={majUrl}
             q={q}
-            afficherFamilles={afficherFamilles} 
-            setAfficherFamilles={setAfficherFamilles} 
+            afficherFamilles={afficherFamilles}
+            setAfficherFamilles={setAfficherFamilles}
+            refreshKey={refreshKey}
           />
         </div>
       )}
       
       {vue === "famille" && searchParams?.get("famille_id") && (
         <div className="mb-8">
-          <VueFamille 
-            familleId={Number(searchParams.get("famille_id"))} 
-            majUrl={majUrl} 
+          <VueFamille
+            familleId={Number(searchParams.get("famille_id"))}
+            majUrl={majUrl}
+            refreshKey={refreshKey}
           />
         </div>
       )}
 
       {vue === "categorie" && searchParams?.get("categorie_id") && (
         <div className="mb-8">
-          <VueCategorie 
-            categorieId={Number(searchParams.get("categorie_id"))} 
-            majUrl={majUrl} 
+          <VueCategorie
+            categorieId={Number(searchParams.get("categorie_id"))}
+            majUrl={majUrl}
+            refreshKey={refreshKey}
           />
         </div>
       )}
