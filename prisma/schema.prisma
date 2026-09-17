@@ -114,6 +114,7 @@ model User {
   journal       JournalActivite[]
   carnets       CarnetEntree[]
   composition_operations CompositionHistorique[]
+  installed_components InstalledComponent[]
   paiements_credit PaiementCredit[]
   charges       Charge[]
 
@@ -252,6 +253,15 @@ model Produit {
   parent       Produit?             @relation("ComposantParent", fields: [parent_id], references: [id])
   composants   Produit[]            @relation("ComposantParent")
 
+  // === Template de composition (slots) ===
+  est_template         Boolean              @default(false)  // Ce produit définit un template de composition
+  template_parent_id   Int?                 // Template parent (pour composition imbriquée)
+  template_parent      Produit?             @relation("TemplateParent", fields: [template_parent_id], references: [id])
+  template_enfants     Produit[]            @relation("TemplateParent")
+  slot_definitions     SlotDefinition[]     @relation("TemplateSlots")
+  installed_in         InstalledComponent[] @relation("ProduitComposant")
+  composition_enfants  InstalledComponent[] @relation("ProduitParentComposition")
+
   lot         Lot?               @relation(fields: [lot_id], references: [id])
   modele      Modele?            @relation(fields: [modele_id], references: [id])
   categorie_rel Categorie?       @relation(fields: [categorie_id], references: [id])
@@ -274,6 +284,7 @@ model Produit {
   @@index([categorie])
   @@index([lot_id, reference, categorie])
   @@index([parent_id])
+  @@index([template_parent_id])
   @@map("produits")
 }
 
@@ -364,6 +375,49 @@ model CompositionHistorique {
   @@index([produit_parent_id])
   @@index([created_at])
   @@map("composition_historique")
+}
+
+// === SlotDefinition : Emplacement théorique dans un template de composition ===
+// Exemple: "RAM SO-DIMM 1" sur un modèle de PC portable
+model SlotDefinition {
+  id                  Int       @id @default(autoincrement())
+  produit_parent_id   Int       // Le produit qui définit le template (ex: un modèle de PC)
+  label               String    // Nom affiché du slot (ex: "RAM SO-DIMM 1", "NVMe M.2")
+  type_composant      String    // Catégorie du composant requis (ex: "ram", "stockage", "chargeur")
+  quantite            Int       @default(1)  // Nombre de composants dans ce slot
+  obligatoire         Boolean   @default(true)  // Slot obligatoire pour validité
+  attributs_requis    Json?     // Filtres de compatibilité: { generation: "DDR4", format: "SO-DIMM" }
+  created_at          DateTime  @default(now())
+
+  produit_parent      Produit   @relation("TemplateSlots", fields: [produit_parent_id], references: [id])
+  installed_components InstalledComponent[]
+
+  @@index([produit_parent_id])
+  @@index([type_composant])
+  @@map("slot_definitions")
+}
+
+// === InstalledComponent : Liaison physique composant → parent avec tracking ===
+model InstalledComponent {
+  id                    Int       @id @default(autoincrement())
+  produit_id            Int       // Le composant physique (ex: barrette RAM #1234)
+  produit_parent_id     Int       // Le parent assemblé (ex: PC #567)
+  slot_definition_id    Int?      // Dans quel slot est installé (null = libre)
+  installed_at          DateTime  @default(now())
+  removed_at            DateTime? // Null = encore installé
+  removed_reason        String?   // "remplacement", "maintenance", "vente"
+  installed_by          Int?      // Qui a fait l'assemblage
+
+  produit               Produit     @relation("ProduitComposant", fields: [produit_id], references: [id])
+  produit_parent        Produit     @relation("ProduitParentComposition", fields: [produit_parent_id], references: [id])
+  slot_definition       SlotDefinition? @relation(fields: [slot_definition_id], references: [id], onDelete: Restrict)
+  installer             User?       @relation(fields: [installed_by], references: [id])
+
+  @@index([produit_id])
+  @@index([produit_parent_id])
+  @@index([slot_definition_id])
+  @@unique([produit_id, produit_parent_id])
+  @@map("installed_components")
 }
 
 model MouvementCaisse {

@@ -30,12 +30,14 @@ export async function GET(request: Request) {
 
   try {
     // Statuts qui retirent le produit du stock disponible
-    const STATUTS_NON_DISPONIBLES = ["vendu", "hs"];
+    // Statuts qui rendent un produit indisponible comme composant
+    // - vendu: plus en stock
+    // - hs: hors service
+    // - assemble: déjà installé dans un autre produit
+    const STATUTS_NON_DISPONIBLES = ["vendu", "hs", "assemble"];
 
     const where: any = {
       statut: { notIn: STATUTS_NON_DISPONIBLES },
-      bom_role: { in: ["component", "both"] },
-      parent_id: null,
     };
 
     if (q) {

@@ -2,35 +2,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { StockService } from "@/lib/stock-service";
+import * as BomService from "@/lib/bom-service";
 
 /**
  * API Produits Composés (Composants physiques)
  *
- * Utilise la relation native `parent_id` dans la table Produit.
- * Chaque composant est une instance physique unique avec quantite = 1.
+ * Utilise BomService pour toute opération d'assemblage/détachement.
  *
- * GET    /api/produits/[id]/composants → Liste les composants physiques + historique + stats
- * POST   /api/produits/[id]/composants → Attache un composant existant (set parent_id)
- * PATCH  /api/produits/[id]/composants → Non supporté (quantite toujours 1)
- * DELETE /api/produits/[id]/composants → Détache un composant (set parent_id = null)
+ * GET    /api/produits/[id]/composants → Liste les composants installés + stats
+ * POST   /api/produits/[id]/composants → Attache un composant
+ * PATCH  → Non supporté
+ * DELETE /api/produits/[id]/composants → Détache un composant
  */
 
-async function tracerHistorique(data: {
-  produit_id: number;
-  produit_parent_id: number | null;
-  user_id: number;
-  action: string;
-  composant_remplace_id?: number | null;
-  note?: string;
-}) {
-  try {
-    await prisma.compositionHistorique.create({ data });
-  } catch (err: any) {
-    console.warn("compositionHistorique write skipped:", err.message);
-  }
-}
-
-// GET : Lister les composants d'un produit (parent_id)
+// GET : Lister les composants installés d'un produit
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -47,48 +32,16 @@ export async function GET(
   try {
     const produit = await prisma.produit.findUnique({
       where: { id: produitId },
-      select: { id: true, reference: true, est_compose: true },
+      select: { id: true, reference: true, est_compose: true, est_template: true },
     });
 
     if (!produit) {
       return erreur(404, "Produit introuvable.");
     }
 
-    // Composants physiques attachés
-    const composantsFiltres = await prisma.produit.findMany({
-      where: { parent_id: produitId },
-      select: {
-        id: true,
-        code_interne: true,
-        reference: true,
-        categorie: true,
-        numero_serie: true,
-        grade: true,
-        statut: true,
-        prix_achat: true,
-        image_url: true,
-        modele: { select: { nom: true, categorie_id: true } },
-      },
-      orderBy: { id: "asc" },
-    });
+    const { composants, stats } = await BomService.getComposition(prisma, produitId);
 
-    const composants = composantsFiltres.map((c) => ({
-      ...c,
-      quantite: 1, // Fixe pour un produit physique
-      bom_entry_id: c.id, // Gardé pour compatibilité front temporaire (s'il l'utilise comme clé)
-    }));
-
-    // Stats
-    const nb_composants = composants.length;
-    const coutTotal = composants.reduce((s, e) => s + (e.prix_achat || 0), 0);
-
-    // Compter par catégorie
-    const parCategorie: Record<string, number> = {};
-    for (const c of composants) {
-      parCategorie[c.categorie] = (parCategorie[c.categorie] || 0) + 1;
-    }
-
-    // Historique
+    // Historique des opérations BOM
     let historique: any[] = [];
     try {
       historique = await prisma.compositionHistorique.findMany({
@@ -98,20 +51,22 @@ export async function GET(
           user: { select: { username: true } },
         },
         orderBy: { created_at: "desc" },
-        take: 10,
+        take: 20,
       });
     } catch {
       // Table may not exist
     }
 
     return NextResponse.json({
-      composants,
+      composants: composants.map((c) => ({
+        ...c,
+        quantite: 1,
+        bom_entry_id: c.produit_id,
+      })),
       historique,
       stats: {
-        nb_composants: nb_composants,
-        quantite_totale: nb_composants,
-        cout_total: coutTotal,
-        par_categorie: parCategorie,
+        ...stats,
+        quantite_totale: stats.nb_composants,
       },
     });
   } catch (e) {
@@ -125,7 +80,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
+  const acces = await exigerUtilisateur(["gerant", "dev", "technicien"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 
@@ -143,91 +98,48 @@ export async function POST(
   }
 
   const composantId = Number((corps as any)?.composant_id);
+  const slotDefinitionId = (corps as any)?.slot_definition_id
+    ? Number((corps as any).slot_definition_id)
+    : null;
 
   if (!Number.isInteger(composantId) || composantId <= 0) {
     return erreur(400, "Identifiant du composant invalide.");
   }
-  if (composantId === parentId) {
-    return erreur(400, "Un produit ne peut pas être son propre composant.");
-  }
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const parent = await tx.produit.findUnique({
-        where: { id: parentId },
-        select: { id: true, reference: true, est_compose: true },
-      });
-      if (!parent) throw new Error("Produit parent introuvable.");
-
-      const composant = await tx.produit.findUnique({
-        where: { id: composantId },
-        select: { id: true, reference: true, statut: true, bom_role: true, modele_id: true, parent_id: true },
-      });
-      if (!composant) throw new Error("Composant introuvable.");
-      if (composant.parent_id !== null) {
-        throw new Error(`Ce composant est déjà affecté à un autre produit (parent_id: ${composant.parent_id}).`);
-      }
-      if (composant.bom_role === "finished") {
-        throw new Error(`"${composant.reference}" est un produit fini et ne peut pas être utilisé comme composant.`);
-      }
-      if (composant.statut === "vendu") {
-        throw new Error("Ce composant est déjà vendu.");
-      }
-      if (composant.statut === "hs") {
-        throw new Error("Ce composant est hors-service.");
-      }
-
-      // Marquer le parent comme composé si nécessaire
-      if (!parent.est_compose) {
-        await tx.produit.update({
-          where: { id: parentId },
-          data: { est_compose: true },
-        });
-      }
-
-      // Attacher le composant et mettre à jour le statut
-      const ancienStatut = composant.statut;
-      await tx.produit.update({
-        where: { id: composantId },
-        data: { parent_id: parentId, statut: "assemble", en_vitrine: false },
-      });
-
-      await tx.historiqueStatut.create({
-        data: {
-          produit_id: composantId,
-          user_id: user.id,
-          statut_avant: ancienStatut,
-          statut_apres: "assemble",
-          note: `Intégré comme composant dans "${parent.reference}" (ID #${parentId})`,
-        },
+      const res = await BomService.attacherComposant(tx, {
+        parentId,
+        composantId,
+        slotDefinitionId,
+        userId: user.id,
       });
 
       // Sync stock count
-      if (composant.modele_id) {
+      const composant = await tx.produit.findUnique({
+        where: { id: composantId },
+        select: { modele_id: true },
+      });
+      if (composant?.modele_id) {
         await StockService.synchroniserCompteModele(composant.modele_id, tx);
       }
 
-      return parent.reference;
+      return res;
     });
 
-    await tracerHistorique({
-      produit_id: composantId,
-      produit_parent_id: parentId,
-      user_id: user.id,
-      action: "assemblage",
-      note: `Intégré dans "${result}" (quantité: 1)`,
-    });
-
-    return NextResponse.json({ ok: true, message: "Composant intégré avec succès." });
+    return NextResponse.json(result);
   } catch (e: any) {
     console.error("POST /api/produits/[id]/composants", e);
     return erreur(400, e?.message || "Erreur lors de l'intégration du composant.");
   }
 }
 
-// PATCH : Modifier la quantité d'un composant n'a plus de sens (quantité toujours 1)
+// PATCH : Non supporté
 export async function PATCH() {
-  return erreur(400, "La modification de quantité n'est plus supportée (chaque composant physique compte pour 1).");
+  return erreur(
+    400,
+    "La modification de quantité n'est plus supportée (chaque composant physique compte pour 1)."
+  );
 }
 
 // DELETE : Détacher un composant
@@ -235,7 +147,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
+  const acces = await exigerUtilisateur(["gerant", "dev", "technicien"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 
@@ -259,40 +171,23 @@ export async function DELETE(
 
   try {
     await prisma.$transaction(async (tx) => {
+      const res = await BomService.detacherComposant(tx, {
+        parentId,
+        composantId,
+        userId: user.id,
+        reason: "retrait",
+      });
+
+      // Sync stock count
       const composant = await tx.produit.findUnique({
         where: { id: composantId },
+        select: { modele_id: true },
       });
-      if (!composant || composant.parent_id !== parentId) {
-        throw new Error("Ce composant n'est pas rattaché à ce produit.");
-      }
-
-      // Remettre le composant au stock
-      await tx.produit.update({
-        where: { id: composantId },
-        data: { parent_id: null, statut: "ok" },
-      });
-
-      await tx.historiqueStatut.create({
-        data: {
-          produit_id: composantId,
-          user_id: user.id,
-          statut_avant: "assemble",
-          statut_apres: "ok",
-          note: `Retiré du produit composé (ID #${parentId}) — Retour en stock`,
-        },
-      });
-
-      if (composant.modele_id) {
+      if (composant?.modele_id) {
         await StockService.synchroniserCompteModele(composant.modele_id, tx);
       }
-    });
 
-    await tracerHistorique({
-      produit_id: composantId,
-      produit_parent_id: parentId,
-      user_id: user.id,
-      action: "désassemblage",
-      note: `Retiré du composé (ID #${parentId}) — retour en stock`,
+      return res;
     });
 
     return NextResponse.json({ ok: true, message: "Composant retiré et remis en stock." });
