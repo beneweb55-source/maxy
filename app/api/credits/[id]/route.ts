@@ -3,8 +3,9 @@ import { prisma } from "@/lib/db";
 import { exigerUtilisateur, erreur } from "@/lib/api";
 
 /**
- * GET /api/credits/[id] — Détail d'un crédit
- * PATCH /api/credits/[id] — Modifier échéance / notes
+ * GET    /api/credits/[id] — Détail d'un crédit
+ * PATCH  /api/credits/[id] — Modifier échéance / notes
+ * DELETE /api/credits/[id] — Supprimer un crédit
  */
 
 export async function GET(
@@ -92,5 +93,41 @@ export async function PATCH(
   } catch (e: any) {
     console.error("PATCH /api/credits/[id]", e);
     return erreur(400, e?.message || "Erreur lors de la mise à jour.");
+  }
+}
+
+/**
+ * DELETE /api/credits/[id] — Supprimer un crédit et ses paiements associés
+ * La vente originale n'est PAS supprimée, seulement le suivi crédit.
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
+
+  const { id } = await params;
+  const creditId = Number(id);
+  if (!Number.isInteger(creditId) || creditId <= 0) return erreur(400, "Identifiant invalide.");
+
+  try {
+    const credit = await prisma.venteCredit.findUnique({
+      where: { id: creditId },
+      select: { id: true, vente_id: true, statut: true },
+    });
+    if (!credit) return erreur(404, "Crédit introuvable.");
+
+    await prisma.$transaction(async (tx) => {
+      // Supprimer les paiements associés
+      await tx.paiementCredit.deleteMany({ where: { credit_id: creditId } });
+      // Supprimer le crédit
+      await tx.venteCredit.delete({ where: { id: creditId } });
+    });
+
+    return NextResponse.json({ ok: true, message: "Crédit supprimé." });
+  } catch (e: any) {
+    console.error("DELETE /api/credits/[id]", e);
+    return erreur(500, e?.message || "Erreur lors de la suppression du crédit.");
   }
 }

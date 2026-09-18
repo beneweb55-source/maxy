@@ -47,6 +47,22 @@ export default function PageCredits() {
     void chargerCredits();
   };
 
+  const supprimerCredit = async (creditId: number) => {
+    if (!window.confirm("Supprimer ce crédit ?")) return;
+    try {
+      const res = await fetch(`/api/credits/${creditId}`, { method: "DELETE" });
+      if (res.ok) {
+        afficher("Crédit supprimé.", "succes");
+        void chargerCredits();
+      } else {
+        const err = await res.json();
+        afficher(err.error || "Erreur lors de la suppression.", "erreur");
+      }
+    } catch {
+      afficher("Erreur réseau.", "erreur");
+    }
+  };
+
   if (vue === "detail" && creditSelectionne !== null) {
     return (
       <DetailCredit
@@ -64,6 +80,7 @@ export default function PageCredits() {
         chargement={chargement}
         onOuvrir={ouvrirDetail}
         onRafraichir={chargerCredits}
+        onSupprimer={supprimerCredit}
       />
     </div>
   );

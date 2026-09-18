@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 
 interface CreditDetail {
@@ -84,6 +85,8 @@ export default function DetailCredit({
   const [referencePaiement, setReferencePaiement] = useState("");
   const [notesPaiement, setNotesPaiement] = useState("");
   const [enCours, setEnCours] = useState(false);
+  const [modaleSuppression, setModaleSuppression] = useState(false);
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false);
 
   const chargerCredit = useCallback(async () => {
     setChargement(true);
@@ -142,6 +145,25 @@ export default function DetailCredit({
       afficher("Erreur réseau.", "erreur");
     } finally {
       setEnCours(false);
+    }
+  };
+
+  const supprimerCredit = async () => {
+    setSuppressionEnCours(true);
+    try {
+      const res = await fetch(`/api/credits/${creditId}`, { method: "DELETE" });
+      if (res.ok) {
+        afficher("Crédit supprimé.", "succes");
+        onRetour();
+      } else {
+        const err = await res.json();
+        afficher(err.error || "Erreur lors de la suppression.", "erreur");
+      }
+    } catch {
+      afficher("Erreur réseau.", "erreur");
+    } finally {
+      setSuppressionEnCours(false);
+      setModaleSuppression(false);
     }
   };
 
@@ -254,16 +276,25 @@ export default function DetailCredit({
         </div>
       </div>
 
-      {/* Bouton paiement */}
-      {credit.statut !== "paye" && (
+      {/* Boutons d'action */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {credit.statut !== "paye" && (
+          <button
+            type="button"
+            onClick={() => setModalePaiement(true)}
+            className="btn btn-primaire text-xs py-2.5 px-5 rounded-2xl font-black flex items-center gap-2"
+          >
+            <CreditCard className="w-4 h-4" /> Enregistrer un paiement
+          </button>
+        )}
         <button
           type="button"
-          onClick={() => setModalePaiement(true)}
-          className="btn btn-primaire text-xs py-2.5 px-5 rounded-2xl font-black flex items-center gap-2"
+          onClick={() => setModaleSuppression(true)}
+          className="text-xs py-2.5 px-5 rounded-2xl font-bold border border-danger/30 text-danger hover:bg-danger/10 transition flex items-center gap-2"
         >
-          <CreditCard className="w-4 h-4" /> Enregistrer un paiement
+          <Trash2 className="w-4 h-4" /> Supprimer le crédit
         </button>
-      )}
+      </div>
 
       {/* Historique des paiements */}
       <div className="space-y-3">
@@ -406,6 +437,54 @@ export default function DetailCredit({
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" /> Valider
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modale>
+
+      {/* Modale de suppression */}
+      <Modale
+        titre="Supprimer le crédit"
+        ouverte={modaleSuppression}
+        onFermer={() => !suppressionEnCours && setModaleSuppression(false)}
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-brand-warm-grey">
+            Voulez-vous vraiment supprimer ce crédit ? Cette action est irréversible.
+          </p>
+          <div className="p-3 rounded-xl bg-danger/5 border border-danger/20">
+            <p className="text-xs font-bold text-danger">
+              {credit.client.nom} — {formaterDA(credit.montant_restant)} restant
+            </p>
+            <p className="text-[10px] text-brand-warm-grey mt-0.5">
+              La vente originale ne sera pas supprimée.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setModaleSuppression(false)}
+              disabled={suppressionEnCours}
+              className="btn btn-secondaire text-xs py-2.5 px-5 rounded-2xl font-bold"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={supprimerCredit}
+              disabled={suppressionEnCours}
+              className="text-xs py-2.5 px-6 rounded-2xl font-black bg-danger text-white hover:bg-danger/80 transition flex items-center gap-2 disabled:opacity-50"
+            >
+              {suppressionEnCours ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Suppression...
+                </span>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" /> Supprimer
                 </>
               )}
             </button>

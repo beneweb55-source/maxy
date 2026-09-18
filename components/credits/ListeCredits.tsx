@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formaterDA } from "@/lib/caisse";
-import { RefreshCw, Eye, Clock, AlertTriangle, CheckCircle2, MinusCircle } from "lucide-react";
+import { RefreshCw, Eye, Clock, AlertTriangle, CheckCircle2, MinusCircle, Trash2 } from "lucide-react";
 
 interface Credit {
   id: number;
@@ -70,11 +70,13 @@ export default function ListeCredits({
   chargement,
   onOuvrir,
   onRafraichir,
+  onSupprimer,
 }: {
   credits: Credit[];
   chargement: boolean;
   onOuvrir: (id: number) => void;
   onRafraichir: () => void;
+  onSupprimer?: (id: number) => void;
 }) {
   const [filtreStatut, setFiltreStatut] = useState("");
 
@@ -176,7 +178,19 @@ export default function ListeCredits({
                 <p className="text-[10px] text-brand-warm-grey">
                   / {formaterDA(c.montant_total)}
                 </p>
-                <Eye className="w-4 h-4 text-brand-warm-grey mt-1 ml-auto" />
+                <div className="flex items-center gap-1 mt-1 justify-end">
+                  {onSupprimer && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onSupprimer(c.id); }}
+                      className="p-1 rounded-lg hover:bg-danger/10 transition"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-danger" />
+                    </button>
+                  )}
+                  <Eye className="w-4 h-4 text-brand-warm-grey" />
+                </div>
               </div>
             </button>
           ))}
