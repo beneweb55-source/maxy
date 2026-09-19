@@ -220,8 +220,15 @@ export async function DELETE(
     const lot = await prisma.lot.findUnique({ where: { id: lotId } });
     if (!lot) return erreur(404, "Lot introuvable.");
 
+    // Collect all product IDs in this lot for orphan cleanup
+    const produitIdsDansLot = (
+      await prisma.produit.findMany({ where: { lot_id: lotId }, select: { id: true } })
+    ).map((p) => p.id);
+
     await prisma.$transaction([
       prisma.produitImage.deleteMany({ where: { produit: { lot_id: lotId } } }),
+      prisma.factureLigne.deleteMany({ where: { produit_id: { in: produitIdsDansLot } } }),
+      prisma.ligneCommande.deleteMany({ where: { produit_id: { in: produitIdsDansLot } } }),
       prisma.mouvementCaisse.deleteMany({ where: { OR: [{ lot_id: lotId }, { produit: { lot_id: lotId } }] } }),
       prisma.vente.deleteMany({ where: { produit: { lot_id: lotId } } }),
       prisma.historiqueStatut.deleteMany({ where: { produit: { lot_id: lotId } } }),

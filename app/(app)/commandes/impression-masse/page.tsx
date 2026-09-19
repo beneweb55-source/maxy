@@ -1,11 +1,16 @@
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { utilisateurCourant } from "@/lib/session";
 import ImpressionMasseCommandes from "@/components/commandes/ImpressionMasseCommandes";
 
 export const metadata = {
   title: "Impression en masse de commandes — Gestion Maxy",
 };
 
-export default function ImpressionMasseCommandesPage() {
+export default async function ImpressionMasseCommandesPage() {
+  const user = await utilisateurCourant();
+  if (!user) redirect("/connexion");
+
   return (
     <Suspense
       fallback={

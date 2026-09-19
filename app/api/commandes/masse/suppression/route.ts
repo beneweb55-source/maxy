@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { exigerUtilisateur, erreur } from "@/lib/api";
+import { ajouterMouvement } from "@/lib/caisse-db";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function POST(request: NextRequest) {
@@ -27,6 +28,8 @@ export async function POST(request: NextRequest) {
       for (const cmd of commandes) {
         // 1. Remise en stock si la commande n'était pas déjà annulée
         if (cmd.statut !== "ANNULEE") {
+          const produitIdsCmd = cmd.lignes.map((l) => l.produit_id).filter((p): p is number => p !== null);
+
           for (const ligne of cmd.lignes) {
             if (ligne.produit_id) {
               await tx.produit.update({
@@ -46,6 +49,27 @@ export async function POST(request: NextRequest) {
                   statut_apres: "en_vente",
                   note: `Remise en stock suite à la suppression en masse de la commande ${cmd.numero}`,
                 },
+              });
+            }
+          }
+
+          // 1b. Annuler les mouvements de caisse liés aux ventes de cette commande
+          if (produitIdsCmd.length > 0) {
+            const mouvementsVente = await tx.mouvementCaisse.findMany({
+              where: {
+                produit_id: { in: produitIdsCmd },
+                type: "vente",
+              },
+              select: { produit_id: true, montant: true, caisse: true },
+            });
+            for (const mv of mouvementsVente) {
+              await ajouterMouvement(tx, {
+                montant: mv.montant,
+                type: "annulation_vente",
+                user_id: user.id,
+                produit_id: mv.produit_id ?? undefined,
+                caisse: mv.caisse,
+                description: `Annulation vente — suppression en masse commande ${cmd.numero}`,
               });
             }
           }

@@ -52,13 +52,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Only transition products currently in "ok" status — skip others
+    const produitsOk = produits.filter((p) => p.statut === "ok");
+    const produitsIgnored = produits.filter((p) => p.statut !== "ok");
+
+    if (produitsOk.length === 0) {
+      return erreur(400, "Aucun produit éligible (statut « ok ») dans la sélection.");
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.produit.updateMany({
-        where: { id: { in: produitIds } },
+        where: { id: { in: produitsOk.map((p) => p.id) } },
         data: { prix_vente_fixe: prix, statut: "en_vente" },
       });
-      
-      const historiques = produits.map((p) => ({
+
+      const historiques = produitsOk.map((p) => ({
         produit_id: p.id,
         user_id: user.id,
         statut_avant: p.statut,
@@ -68,7 +76,12 @@ export async function POST(request: NextRequest) {
       await tx.historiqueStatut.createMany({ data: historiques });
     });
 
-    return NextResponse.json({ ok: true, ajournes: produitIds.length });
+    return NextResponse.json({
+      ok: true,
+      ajournes: produitsOk.length,
+      ignores: produitsIgnored.length,
+      ignores_details: produitsIgnored.map((p) => ({ id: p.id, code_interne: p.code_interne, statut: p.statut })),
+    });
   } catch (e) {
     console.error("POST /api/produits/masse/prix", e);
     return erreur(500, "Erreur lors de la fixation du prix en masse.");

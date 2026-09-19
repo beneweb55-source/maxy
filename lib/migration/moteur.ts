@@ -28,6 +28,38 @@ export function genererHashGroupe(categorie: string, reference: string): string 
   return crypto.createHash("sha256").update(`${categorie}|${reference}`).digest("hex");
 }
 
+// ─── Noms canoniques des catégories (niveau 2 dans l'arbre) ───
+// Ces noms correspondent EXACTEMENT aux catégories créées par le TREE dans classify/route.ts
+const CAT = {
+  PC_PORTABLES: "PC Portables",
+  PC_FIXES: "PC Fixes & Tout-en-un",
+  POS: "Matériel Point de Vente (POS)",
+  SERVEURS: "Serveurs",
+  ACCESSOIRES_CHASSIS: "Accessoires Châssis & Baies",
+  DISQUES_DURS: "Disques Durs Mécaniques (HDD)",
+  SSD: "Disques Flash (SSD)",
+  STOCKAGE_RESEAU: "Stockage Réseau & Baies (NAS / DAS)",
+  MEMOIRE_VIVE: "Mémoire Vive (RAM)",
+  PROCESSEURS: "Processeurs (CPU)",
+  CARTES_GRAPHIQUES: "Cartes Graphiques (GPU)",
+  REFROIDISSEMENT: "Refroidissement & Châssis",
+  CONTROLEURS: "Contrôleurs de Stockage",
+  CARTES_EXTENSION: "Cartes d'Extension Internes",
+  MONITEURS: "Moniteurs & Affichage",
+  PERIPH_SAISIE: "Périphériques de Saisie",
+  STATIONS_ACCUEIL: "Stations d'Accueil & Hubs",
+  SUPPORTS_ECRAN: "Accessoires Moniteurs",
+  VISIO: "Audio & Vidéo Professionnelle",
+  CABLES: "Câbles & Connectique",
+  ADAPTATEURS: "Adaptateurs & Convertisseurs",
+  CHARGEURS: "Chargeurs & Alimentation Externe",
+  ALIM_INTERNE: "Alimentations Internes",
+  ONDULEURS: "Protection Électrique & Onduleurs",
+  IMPRIMANTES: "Imprimantes & Scanners",
+  CONSOMMABLES: "Consommables d'Impression",
+  SWITCHES: "Commutateurs & Routage",
+} as const;
+
 export function analyserGroupe(categorieLegacy: string, referenceLegacy: string, nbProduits: number): AnalyseResultat {
   const raisons: string[] = [];
   let confiance = 0;
@@ -48,8 +80,8 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
 
   // 1. DÉTECTION ORDINATEURS (Laptops, Mini PC, PC Bureau)
   if (texteComplet.includes("laptop") || texteComplet.includes("notebook") || texteComplet.includes("thinkpad") || texteComplet.includes("latitude") || texteComplet.includes("macbook") || texteComplet.includes("vostro") || texteComplet.includes("elitebook") || texteComplet.includes("probook")) {
-    familleTrouvee = FAMILLES.INFORMATIQUE;   // "ORDINATEURS"
-    categorieTrouvee = "PC PORTABLES";
+    familleTrouvee = FAMILLES.INFORMATIQUE;
+    categorieTrouvee = CAT.PC_PORTABLES;
     raisons.push("✓ Type détecté : PC Portable");
     confiance += 50;
 
@@ -70,50 +102,50 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
     attributs["Details"] = referenceLegacy;
   }
   else if (texteComplet.includes("mini pc") || texteComplet.match(/\b(tiny|micro|ssf|sff)\b/)) {
-    familleTrouvee = FAMILLES.INFORMATIQUE;   // "ORDINATEURS"
-    categorieTrouvee = "MINI PC";
+    familleTrouvee = FAMILLES.INFORMATIQUE;
+    categorieTrouvee = CAT.PC_FIXES;
     confiance += 50;
     modeleNom = "Mini PC";
   }
   else if (texteComplet.includes("all in one") || texteComplet.includes("aio") || texteComplet.includes("tout en un")) {
-    familleTrouvee = FAMILLES.INFORMATIQUE;   // "ORDINATEURS"
-    categorieTrouvee = "ALL-IN-ONE";
+    familleTrouvee = FAMILLES.INFORMATIQUE;
+    categorieTrouvee = CAT.PC_FIXES;
     confiance += 50;
     modeleNom = "All-in-One";
   }
   else if (texteComplet.includes("station de travail")) {
-    familleTrouvee = FAMILLES.INFORMATIQUE;   // "ORDINATEURS"
-    categorieTrouvee = "STATIONS DE TRAVAIL";
+    familleTrouvee = FAMILLES.INFORMATIQUE;
+    categorieTrouvee = CAT.PC_FIXES;
     confiance += 50;
     modeleNom = "Station de travail";
   }
   else if (texteComplet.includes("pc bureau") || texteComplet.includes("desktop")) {
-    familleTrouvee = FAMILLES.INFORMATIQUE;   // "ORDINATEURS"
-    categorieTrouvee = "PC DE BUREAU";
+    familleTrouvee = FAMILLES.INFORMATIQUE;
+    categorieTrouvee = CAT.PC_FIXES;
     confiance += 50;
     modeleNom = "PC de Bureau";
   }
 
   // 2. DÉTECTION TERMINAUX POS
   else if (texteComplet.includes("pos") || texteComplet.includes("caisse") || texteComplet.includes("tiroir") || texteComplet.includes("douchette") || texteComplet.includes("ticket")) {
-    familleTrouvee = FAMILLES.INFORMATIQUE;   // "ORDINATEURS"
-    categorieTrouvee = "TERMINAUX POS";
+    familleTrouvee = FAMILLES.INFORMATIQUE;
+    categorieTrouvee = CAT.POS;
     confiance += 50;
     modeleNom = "Terminal POS";
   }
 
   // 3. DÉTECTION SERVEURS
   else if (texteComplet.includes("serveur") || texteComplet.includes("proliant") || texteComplet.includes("poweredge")) {
-    familleTrouvee = FAMILLES.SERVEURS;       // "SERVEURS"
+    familleTrouvee = FAMILLES.SERVEURS;
     confiance += 50;
     if (texteComplet.includes("rack") || texteComplet.includes("dl360") || texteComplet.includes("dl380") || texteComplet.includes("r630") || texteComplet.includes("r440") || texteComplet.includes("r2950")) {
-      categorieTrouvee = "SERVEURS RACK";
+      categorieTrouvee = CAT.SERVEURS;
       modeleNom = "Serveur Rack";
     } else if (texteComplet.includes("tour") || texteComplet.includes("ml350") || texteComplet.includes("t440") || texteComplet.includes("t430")) {
-      categorieTrouvee = "SERVEURS TOUR";
+      categorieTrouvee = CAT.SERVEURS;
       modeleNom = "Serveur Tour";
     } else {
-      categorieTrouvee = "SERVEURS RACK";
+      categorieTrouvee = CAT.SERVEURS;
       modeleNom = "Serveur";
       raisons.push("⚠ Type serveur non précisé, classé Rack par défaut");
     }
@@ -121,33 +153,30 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
 
   // 4. DÉTECTION STOCKAGE (SATA, SAS, NVMe, SSD, HDD, NAS)
   else if (texteComplet.match(/\b(ssd|hdd|sas|sata|nvme|nas)\b/)) {
-    familleTrouvee = FAMILLES.STOCKAGE;       // "STOCKAGE"
+    familleTrouvee = FAMILLES.STOCKAGE;
     confiance += 50;
 
     if (texteComplet.includes("nas") || texteComplet.includes("sauvegarde") || texteComplet.includes("das")) {
-      categorieTrouvee = "STOCKAGE RÉSEAU (NAS / DAS)";
+      categorieTrouvee = CAT.STOCKAGE_RESEAU;
       raisons.push("✓ Technologie : NAS/DAS");
     } else if (texteComplet.includes("ssd") || texteComplet.includes("nvme")) {
-      categorieTrouvee = "SSD";
+      categorieTrouvee = CAT.SSD;
       raisons.push("✓ Technologie : SSD");
-      // Sous-catégorie
       if (texteComplet.includes("nvme")) {
         attributs["sousCategorie"] = "NVMe";
       } else {
         attributs["sousCategorie"] = "SATA";
       }
     } else if (texteComplet.includes("hdd") || texteComplet.includes("7.2k") || texteComplet.includes("10k") || texteComplet.includes("15k") || texteComplet.includes("disque sas")) {
-      categorieTrouvee = "DISQUES DURS";
+      categorieTrouvee = CAT.DISQUES_DURS;
       raisons.push("✓ Technologie : Disque Dur (HDD)");
-      // Sous-catégorie
       if (texteComplet.includes("sas")) {
         attributs["sousCategorie"] = "SAS";
       } else {
         attributs["sousCategorie"] = "SATA";
       }
     } else {
-      // Ambigu
-      categorieTrouvee = "DISQUES DURS";
+      categorieTrouvee = CAT.DISQUES_DURS;
       confiance -= 20;
       raisons.push("⚠ HDD/SSD non précisé, classé HDD par défaut");
     }
@@ -174,17 +203,17 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
 
   // 5. DÉTECTION MÉMOIRE RAM (sous sa propre famille MÉMOIRE)
   else if (texteComplet.includes("ram ") || texteComplet.includes("ddr3") || texteComplet.includes("ddr4") || texteComplet.includes("ddr5") || texteComplet.includes("udimm") || texteComplet.includes("rdimm") || texteComplet.includes("ecc ") || texteComplet.includes("sodimm") || (categorieLegacy === "Samsung" && texteComplet.includes("gb")) || (categorieLegacy === "Kingston") || (categorieLegacy === "Micron") || texteComplet.includes("sk hynix")) {
-    familleTrouvee = FAMILLES.MEMOIRE;        // "MÉMOIRE"
+    familleTrouvee = FAMILLES.MEMOIRE;
     confiance += 50;
     raisons.push("✓ Type détecté : Mémoire RAM");
 
+    categorieTrouvee = CAT.MEMOIRE_VIVE;
     if (texteComplet.includes("sodimm") || texteComplet.includes("laptop ram")) {
-      categorieTrouvee = "RAM DESKTOP"; // SODIMM → RAM PORTABLE (sous-catégorie, le mapping classify gère le reste)
-      attributs["sousCategorie"] = "Mini PC & PC Portable (SODIMM)";
+      attributs["sousCategorie"] = "RAM PC Portable (SO-DIMM)";
     } else if (texteComplet.includes("rdimm") || texteComplet.includes("lrdimm") || texteComplet.includes("ecc reg")) {
-      categorieTrouvee = "RAM SERVEUR";
+      attributs["sousCategorie"] = "RAM Serveur (ECC Registered / RDIMM)";
     } else {
-      categorieTrouvee = "RAM DESKTOP";
+      attributs["sousCategorie"] = "RAM PC Fixe (UDIMM / Non-ECC)";
     }
 
     if (texteComplet.includes("ddr3")) attributs["Type"] = "DDR3";
@@ -200,8 +229,8 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
 
   // 6. DÉTECTION PROCESSEURS
   else if (texteComplet.includes("processeur") || texteComplet.includes("intel") || texteComplet.includes("amd ") || (texteComplet.includes(" i3 ") || texteComplet.includes(" i5 ") || texteComplet.includes(" i7 ") || texteComplet.includes(" i9 "))) {
-    familleTrouvee = FAMILLES.COMPOSANTS;     // "COMPOSANTS INTERNES"
-    categorieTrouvee = "PROCESSEURS";
+    familleTrouvee = FAMILLES.COMPOSANTS;
+    categorieTrouvee = CAT.PROCESSEURS;
     confiance += 50;
 
     if (texteComplet.includes("intel") || texteComplet.includes(" i3") || texteComplet.includes(" i5") || texteComplet.includes(" i7") || texteComplet.includes(" i9")) {
@@ -217,63 +246,63 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
 
   // 7. DÉTECTION CARTES GRAPHIQUES
   else if (texteComplet.includes("carte graphique") || texteComplet.includes("radeon") || texteComplet.includes("geforce") || texteComplet.includes("quadro") || texteComplet.includes("rtx ") || texteComplet.includes("gtx ") || texteComplet.includes("rx ")) {
-    familleTrouvee = FAMILLES.COMPOSANTS;     // "COMPOSANTS INTERNES"
-    categorieTrouvee = "CARTES GRAPHIQUES";
+    familleTrouvee = FAMILLES.COMPOSANTS;
+    categorieTrouvee = CAT.CARTES_GRAPHIQUES;
     confiance += 50;
     modeleNom = "Carte Graphique";
   }
 
   // 8. DÉTECTION IMPRIMANTES / CONSOMMABLES
   else if (texteComplet.includes("imprimante") || texteComplet.includes("toner") || texteComplet.includes("ink ") || texteComplet.includes("encre") || texteComplet.includes("cartridge") || texteComplet.includes("scanner")) {
-    familleTrouvee = FAMILLES.IMPRESSION;     // "IMPRESSION"
+    familleTrouvee = FAMILLES.IMPRESSION;
     confiance += 50;
     if (texteComplet.includes("toner") || texteComplet.includes("ink") || texteComplet.includes("encre") || texteComplet.includes("cartridge") || texteComplet.includes("consommable")) {
-      categorieTrouvee = "CONSOMMABLES";
+      categorieTrouvee = CAT.CONSOMMABLES;
       modeleNom = "Toner / Encre";
     } else {
-      categorieTrouvee = "IMPRIMANTES";
+      categorieTrouvee = CAT.IMPRIMANTES;
       modeleNom = "Imprimante";
     }
   }
 
   // 9. DÉTECTION ÉCRANS
   else if (texteComplet.includes("ecran") || texteComplet.includes("monitor") || texteComplet.includes("moniteur") || texteComplet.includes("ultrasharp") || texteComplet.includes("thinkvision")) {
-    familleTrouvee = FAMILLES.PERIPHERIQUES;  // "PÉRIPHÉRIQUES"
-    categorieTrouvee = "ÉCRANS";
+    familleTrouvee = FAMILLES.PERIPHERIQUES;
+    categorieTrouvee = CAT.MONITEURS;
     confiance += 50;
     modeleNom = "Écran";
   }
 
   // 10. DÉTECTION PÉRIPHÉRIQUES (Claviers, Souris, Stations d'accueil, Supports)
   else if (texteComplet.includes("clavier") || texteComplet.includes("keyboard") || texteComplet.includes("souris") || texteComplet.includes("mouse")) {
-    familleTrouvee = FAMILLES.PERIPHERIQUES;  // "PÉRIPHÉRIQUES"
-    categorieTrouvee = "CLAVIERS & SOURIS";
+    familleTrouvee = FAMILLES.PERIPHERIQUES;
+    categorieTrouvee = CAT.PERIPH_SAISIE;
     confiance += 50;
     modeleNom = "Clavier / Souris";
   }
   else if (texteComplet.includes("dock") || texteComplet.includes("station d'accueil") || texteComplet.includes("hub usb")) {
-    familleTrouvee = FAMILLES.PERIPHERIQUES;  // "PÉRIPHÉRIQUES"
-    categorieTrouvee = "STATIONS D'ACCUEIL";
+    familleTrouvee = FAMILLES.PERIPHERIQUES;
+    categorieTrouvee = CAT.STATIONS_ACCUEIL;
     confiance += 50;
     modeleNom = "Station d'accueil";
   }
   else if (texteComplet.includes("stand") || texteComplet.includes("support ecran") || texteComplet.includes("bras articulé")) {
-    familleTrouvee = FAMILLES.PERIPHERIQUES;  // "PÉRIPHÉRIQUES"
-    categorieTrouvee = "SUPPORTS ÉCRAN";
+    familleTrouvee = FAMILLES.PERIPHERIQUES;
+    categorieTrouvee = CAT.SUPPORTS_ECRAN;
     confiance += 50;
     modeleNom = "Support écran";
   }
   else if (texteComplet.includes("webcam") || texteComplet.includes("camera") || texteComplet.includes("visio")) {
-    familleTrouvee = FAMILLES.PERIPHERIQUES;  // "PÉRIPHÉRIQUES"
-    categorieTrouvee = "VISIOCONFÉRENCE";
+    familleTrouvee = FAMILLES.PERIPHERIQUES;
+    categorieTrouvee = CAT.VISIO;
     confiance += 50;
     modeleNom = "Webcam";
   }
 
   // 11. DÉTECTION CHARGEURS & CÂBLES
   else if (texteComplet.includes("chargeur") || texteComplet.includes("adapter") || texteComplet.match(/\b(\d+)w\b/)) {
-    familleTrouvee = FAMILLES.ALIMENTATION;   // "ALIMENTATION & CÂBLES"
-    categorieTrouvee = "CHARGEURS PC PORTABLE";
+    familleTrouvee = FAMILLES.ALIMENTATION;
+    categorieTrouvee = CAT.CHARGEURS;
     raisons.push("✓ Type détecté : Chargeur / Alimentation");
     confiance += 50;
 
@@ -288,70 +317,70 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
     }
   }
   else if (texteComplet.includes("onduleur") || texteComplet.includes("ups")) {
-    familleTrouvee = FAMILLES.ALIMENTATION;   // "ALIMENTATION & CÂBLES"
-    categorieTrouvee = "ONDULEURS (UPS)";
+    familleTrouvee = FAMILLES.ALIMENTATION;
+    categorieTrouvee = CAT.ONDULEURS;
     confiance += 50;
     modeleNom = "Onduleur";
   }
   else if (texteComplet.includes("cable") || texteComplet.includes("câble") || texteComplet.includes("hdmi") || texteComplet.includes("displayport") || texteComplet.includes("usb") || texteComplet.includes("ethernet") || texteComplet.includes("rj45")) {
-    familleTrouvee = FAMILLES.ALIMENTATION;   // "ALIMENTATION & CÂBLES"
-    categorieTrouvee = "CÂBLES";
+    familleTrouvee = FAMILLES.PERIPHERIQUES;
+    categorieTrouvee = CAT.CABLES;
     confiance += 50;
     modeleNom = "Câble";
   }
 
   // 12. DÉTECTION RESEAU (switch, routeur, access point)
   else if (texteComplet.includes("switch") || texteComplet.includes("routeur") || texteComplet.includes("firewall") || texteComplet.includes("access point") || texteComplet.includes("cisco") || texteComplet.includes("mikrotik") || texteComplet.includes("unifi") || texteComplet.includes("ubiquiti")) {
-    familleTrouvee = FAMILLES.RESEAU;         // "RÉSEAU & INFRASTRUCTURE"
-    categorieTrouvee = "SWITCHES";
+    familleTrouvee = FAMILLES.RESEAU;
+    categorieTrouvee = CAT.SWITCHES;
     confiance += 50;
     modeleNom = "Switch / Routeur";
   }
 
   // 13. DÉTECTION ALIMENTATIONS SERVEUR
   else if (texteComplet.includes("alimentation") && (texteComplet.includes("serveur") || texteComplet.includes("psu") || texteComplet.includes("hpe") || texteComplet.includes("dell"))) {
-    familleTrouvee = FAMILLES.COMPOSANTS;     // "COMPOSANTS INTERNES"
-    categorieTrouvee = "ALIMENTATIONS SERVEUR";
+    familleTrouvee = FAMILLES.ALIMENTATION;
+    categorieTrouvee = CAT.ALIM_INTERNE;
     confiance += 50;
     modeleNom = "Alimentation Serveur";
   }
 
   // 14. DÉTECTION CONTRÔLEURS RAID
   else if (texteComplet.includes("raid") || texteComplet.includes("hba") || texteComplet.includes("controlleur")) {
-    familleTrouvee = FAMILLES.COMPOSANTS;     // "COMPOSANTS INTERNES"
-    categorieTrouvee = "CONTRÔLEURS RAID / HBA";
+    familleTrouvee = FAMILLES.COMPOSANTS;
+    categorieTrouvee = CAT.CONTROLEURS;
     confiance += 50;
     modeleNom = "Contrôleur RAID";
   }
 
   // 15. DÉTECTION CARTES RÉSEAU
   else if (texteComplet.includes("carte reseau") || texteComplet.includes("carte réseau") || texteComplet.includes("network card")) {
-    familleTrouvee = FAMILLES.COMPOSANTS;     // "COMPOSANTS INTERNES"
-    categorieTrouvee = "CARTES RÉSEAU";
+    familleTrouvee = FAMILLES.COMPOSANTS;
+    categorieTrouvee = CAT.CARTES_EXTENSION;
     confiance += 50;
     modeleNom = "Carte Réseau";
   }
 
   // 16. DÉTECTION RISERS / ADAPTATEURS
   else if (texteComplet.includes("riser") || texteComplet.includes("adaptateur") || texteComplet.includes("dongle")) {
-    familleTrouvee = FAMILLES.COMPOSANTS;     // "COMPOSANTS INTERNES"
-    categorieTrouvee = "ADAPTATEURS & RISERS";
+    familleTrouvee = FAMILLES.PERIPHERIQUES;
+    categorieTrouvee = CAT.ADAPTATEURS;
     confiance += 50;
     modeleNom = "Adaptateur / Riser";
   }
 
   // 17. DÉTECTION REFROIDISSEMENT
   else if (texteComplet.includes("ventilateur") || texteComplet.includes("fan") || texteComplet.includes("refroidissement")) {
-    familleTrouvee = FAMILLES.COMPOSANTS;     // "COMPOSANTS INTERNES"
-    categorieTrouvee = "REFROIDISSEMENT SERVEUR";
+    familleTrouvee = FAMILLES.COMPOSANTS;
+    categorieTrouvee = CAT.REFROIDISSEMENT;
     confiance += 50;
     modeleNom = "Ventilateur";
   }
 
   // 18. DÉTECTION PDU
   else if (texteComplet.includes("pdu") || texteComplet.includes("power distribution")) {
-    familleTrouvee = FAMILLES.RESEAU;         // "RÉSEAU & INFRASTRUCTURE"
-    categorieTrouvee = "PDU & ACCESSOIRES RACK";
+    familleTrouvee = FAMILLES.SERVEURS;
+    categorieTrouvee = CAT.ACCESSOIRES_CHASSIS;
     confiance += 50;
     modeleNom = "PDU";
   }
@@ -405,7 +434,7 @@ export function analyserGroupe(categorieLegacy: string, referenceLegacy: string,
   }
 
   // Affinage du nom de modèle cible
-  if (categorieTrouvee === "CHARGEURS PC PORTABLE" && modeleNom.endsWith("W")) {
+  if (categorieTrouvee === CAT.CHARGEURS && modeleNom.endsWith("W")) {
     modeleNom = `${marqueTrouvee || "Générique"} ${modeleNom}`;
   }
 

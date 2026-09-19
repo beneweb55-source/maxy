@@ -8,7 +8,7 @@ import { seuilMargeMinimum } from "@/lib/finances";
 import { formaterDA } from "@/lib/caisse";
 
 export async function POST(request: NextRequest) {
-  const acces = await exigerUtilisateur(["gerant", "technicien", "dev", "social_media"]);
+  const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
   if (acces.reponse) return acces.reponse;
   const user = acces.user;
 

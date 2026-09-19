@@ -16,16 +16,20 @@ export interface NouveauMouvement {
 
 export async function ajouterMouvement(tx: Prisma.TransactionClient, m: NouveauMouvement) {
   const caisseCible = m.caisse ?? "CAISSE_PHYSIQUE";
-  const dernier = await tx.mouvementCaisse.findFirst({
-    where: { caisse: caisseCible },
-    orderBy: { id: "desc" },
-    select: { solde_apres: true },
-  });
+  // SELECT FOR UPDATE to prevent race conditions on concurrent balance reads
+  const derniers = await tx.$queryRaw<{ solde_apres: number }[]>`
+    SELECT solde_apres FROM mouvements_caisse
+    WHERE caisse = ${caisseCible}
+    ORDER BY id DESC LIMIT 1
+    FOR UPDATE
+  `;
+  const premier = derniers[0];
+  const soldePrecedent = premier ? Number(premier.solde_apres) : 0;
   return tx.mouvementCaisse.create({
     data: {
       ...m,
       caisse: caisseCible,
-      solde_apres: soldeApres(dernier?.solde_apres ?? 0, m.type, m.montant),
+      solde_apres: soldeApres(soldePrecedent, m.type, m.montant),
     },
   });
 }

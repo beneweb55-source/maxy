@@ -86,6 +86,8 @@ export async function POST() {
 }
 
 export async function GET() {
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
+  if (acces.reponse) return acces.reponse;
   try {
     const propositions = await prisma.propositionMigration.findMany({
       orderBy: [

@@ -210,6 +210,16 @@ async function main() {
   console.log(`${dbProducts.length} produits trouvés en base.`);
   let updatedCount = 0;
 
+  // ── CLS-03 : Regrouper par (reference, categorie cible) pour créer UN modèle par groupe ──
+  // 1. Classifier tous les produits et calculer la cible
+  interface ProduitClassifie {
+    db: typeof dbProducts[number];
+    classif: ReturnType<typeof classifyProduct>;
+    targetScId: number;
+  }
+  const classifies: ProduitClassifie[] = [];
+  const modelesParCle = new Map<string, { id: number }>(); // "ref|scId" → modele
+
   for (const p of dbProducts) {
     const originalCat = originalCategories.get(p.id) || p.categorie;
     const classif = classifyProduct({
@@ -220,38 +230,43 @@ async function main() {
 
     const targetScId = categoryMap.get(`${classif.famille}|${classif.categorie}|${classif.sousCategorie}`);
     if (!targetScId) {
-      throw new Error(`Catégorie introuvable pour ${classif.sousCategorie}`);
+      throw new Error(`Catégorie introuvable pour ${classif.famille}|${classif.categorie}|${classif.sousCategorie}`);
     }
 
-    let modele_id = p.modele_id;
-    if (modele_id && p.modele) {
-      // Update modele's category to match the product's new category
-      if (p.modele.categorie_id !== targetScId) {
-        await prisma.modele.update({
-          where: { id: modele_id },
-          data: { categorie_id: targetScId },
+    classifies.push({ db: p, classif, targetScId });
+  }
+
+  // 2. Regrouper par (reference, targetScId) et créer/résoudre les modèles
+  for (const pc of classifies) {
+    const cle = `${pc.db.reference}|${pc.targetScId}`;
+    if (!modelesParCle.has(cle)) {
+      // Chercher un modèle existant ou en créer un
+      let modele = await prisma.modele.findFirst({
+        where: { nom: pc.db.reference, categorie_id: pc.targetScId },
+        select: { id: true }
+      });
+      if (!modele) {
+        modele = await prisma.modele.create({
+          data: { nom: pc.db.reference, categorie_id: pc.targetScId },
           select: { id: true }
         });
       }
-    } else {
-      // Create a model if none exists (just in case)
-      const newModele = await prisma.modele.create({
-        data: {
-          nom: p.reference,
-          categorie_id: targetScId
-        },
-        select: { id: true }
-      });
-      modele_id = newModele.id;
+      modelesParCle.set(cle, modele);
     }
+  }
+
+  // 3. Appliquer les mises à jour
+  for (const pc of classifies) {
+    const modele_id = modelesParCle.get(`${pc.db.reference}|${pc.targetScId}`)!.id;
+    const nomFeuille = pc.classif.sousCategorie;
 
     // Update product
-    if (p.categorie_id !== targetScId || p.categorie !== classif.sousCategorie || p.modele_id !== modele_id) {
+    if (pc.db.categorie_id !== pc.targetScId || pc.db.categorie !== nomFeuille || pc.db.modele_id !== modele_id) {
       await prisma.produit.update({
-        where: { id: p.id },
+        where: { id: pc.db.id },
         data: {
-          categorie_id: targetScId,
-          categorie: classif.sousCategorie,
+          categorie_id: pc.targetScId,
+          categorie: nomFeuille,
           modele_id: modele_id
         },
         select: { id: true }

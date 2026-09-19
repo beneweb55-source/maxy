@@ -67,7 +67,8 @@ export async function POST(
         where: { vente_id: vente.id },
         select: { facture: { select: { caisse_destination: true } } },
       });
-      const caisseCible = ligneFacture?.facture?.caisse_destination ?? "CAISSE_PHYSIQUE";
+      const caisseCible = ligneFacture?.facture?.caisse_destination
+        ?? (vente.type_vente === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE");
 
       await ajouterMouvement(tx, {
         montant: vente.prix_vente_reel,

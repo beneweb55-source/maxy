@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Barcode from "react-barcode";
 import { IconeImprimante } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
@@ -18,11 +18,19 @@ interface EtiquetteData {
 
 export default function ImprimerEtiquettes() {
   const { t } = useLangue();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [etiquettes, setEtiquettes] = useState<EtiquetteData[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [aImprime, setAImprime] = useState(false);
   const [marquee, setMarquee] = useState(false);
+
+  // Auth guard — redirect if not logged in
+  useEffect(() => {
+    fetch("/api/auth/me").then((res) => {
+      if (!res.ok) router.replace("/connexion");
+    }).catch(() => router.replace("/connexion"));
+  }, [router]);
 
   useEffect(() => {
     const idsParams = searchParams?.get("ids");

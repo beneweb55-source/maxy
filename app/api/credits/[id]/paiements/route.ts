@@ -45,7 +45,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
+  const acces = await exigerUtilisateur(["gerant", "dev"]);
   if (acces.reponse) return acces.reponse;
 
   const { id } = await params;

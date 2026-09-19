@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
             ...(disponibles ? [{ statut: { in: ["en_vente", "ok"] as any } }] : []),
             {
               OR: [
-                { code_interne: { contains: q, mode: "insensitive" } },
-                { reference: { contains: q, mode: "insensitive" } },
-                { categorie: { contains: q, mode: "insensitive" } },
-                { notes: { contains: q, mode: "insensitive" } },
+                { code_interne: { contains: terme, mode: "insensitive" } },
+                { reference: { contains: terme, mode: "insensitive" } },
+                { categorie: { contains: terme, mode: "insensitive" } },
+                { notes: { contains: terme, mode: "insensitive" } },
               ],
             },
           ],
@@ -50,8 +50,8 @@ export async function GET(request: NextRequest) {
       prisma.lot.findMany({
         where: {
           OR: [
-            { fournisseur: { contains: q, mode: "insensitive" } },
-            { description: { contains: q, mode: "insensitive" } },
+            { fournisseur: { contains: terme, mode: "insensitive" } },
+            { description: { contains: terme, mode: "insensitive" } },
             ...(isFinite(Number(q)) ? [{ id: Number(q) }] : []),
           ],
         },
@@ -68,9 +68,9 @@ export async function GET(request: NextRequest) {
       prisma.facture.findMany({
         where: {
           OR: [
-            { numero: { contains: q, mode: "insensitive" } },
-            { client_nom: { contains: q, mode: "insensitive" } },
-            { client_tel: { contains: q, mode: "insensitive" } },
+            { numero: { contains: terme, mode: "insensitive" } },
+            { client_nom: { contains: terme, mode: "insensitive" } },
+            { client_tel: { contains: terme, mode: "insensitive" } },
           ],
         },
         select: {
@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
       prisma.commande.findMany({
         where: {
           OR: [
-            { numero: { contains: q, mode: "insensitive" } },
-            { client_nom: { contains: q, mode: "insensitive" } },
-            { client_tel: { contains: q, mode: "insensitive" } },
+            { numero: { contains: terme, mode: "insensitive" } },
+            { client_nom: { contains: terme, mode: "insensitive" } },
+            { client_tel: { contains: terme, mode: "insensitive" } },
           ],
         },
         select: {

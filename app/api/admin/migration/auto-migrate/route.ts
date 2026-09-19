@@ -68,8 +68,9 @@ export async function POST() {
           },
           data: {
             modele_id: modele.id,
-            // Lier aussi au nouvel arbre de catégories
+            // Lier aussi au nouvel arbre de catégories + synchroniser texte
             categorie_id: categorie.id,
+            categorie: modele.nom,
           }
         });
       });

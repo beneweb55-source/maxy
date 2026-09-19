@@ -57,7 +57,17 @@ export async function PATCH(
     if (!charge) return erreur(404, "Charge introuvable.");
 
     const data: any = {};
-    if (categorie !== undefined) data.categorie = categorie;
+    if (categorie !== undefined) {
+      const categoriesValides = [
+        "loyer", "electricite", "internet", "telephone", "salaires",
+        "transport", "carburant", "fournitures", "maintenance", "marketing",
+        "logiciels", "taxes", "bancaires", "autre",
+      ];
+      if (!categoriesValides.includes(categorie)) {
+        return erreur(400, `Catégorie invalide. Valeurs acceptées : ${categoriesValides.join(", ")}`);
+      }
+      data.categorie = categorie;
+    }
     if (libelle !== undefined) data.libelle = libelle.trim();
     if (description !== undefined) data.description = description?.trim() || null;
     if (montant !== undefined) {

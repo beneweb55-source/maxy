@@ -138,6 +138,13 @@ export async function PATCH(
   const acces = await exigerUtilisateur(["gerant", "dev", "social_media"]);
   if (acces.reponse) return acces.reponse;
 
+  // SEC-08: type_vente changes restricted to gerant/dev only
+  const corpsBrut = await request.clone().json().catch(() => ({}));
+  const typeVenteDemande = corpsBrut?.["type_vente"] ?? corpsBrut?.["saleType"];
+  if (typeVenteDemande !== undefined && !["gerant", "dev"].includes(acces.user.role)) {
+    return erreur(403, "Seuls les gérants et développeurs peuvent modifier le type de vente.");
+  }
+
   const { id } = await params;
   const factureId = Number(id);
   if (!Number.isInteger(factureId)) return erreur(400, "Identifiant de facture invalide.");
@@ -259,21 +266,44 @@ export async function PATCH(
             data: { type_vente: nouveauTypeVente },
           });
 
-          // 2. Mettre à jour les mouvements de caisse liés à ces produits
+          // 2. Trouver les mouvements de caisse liés à ces produits
           const produitIds = ancienneFacture.lignes
             .map((l) => l.produit_id)
             .filter((p): p is number => p !== null);
 
           if (produitIds.length > 0) {
-            await tx.mouvementCaisse.updateMany({
+            const mouvementsExistants = await tx.mouvementCaisse.findMany({
               where: {
                 produit_id: { in: produitIds },
                 type: "vente",
               },
-              data: {
-                caisse: nouveauTypeVente === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE",
-              },
+              select: { id: true, produit_id: true, montant: true, caisse: true },
             });
+
+            // 3. Annuler les mouvements dans l'ancienne caisse
+            for (const mv of mouvementsExistants) {
+              await ajouterMouvement(tx, {
+                montant: mv.montant,
+                type: "annulation_vente",
+                user_id: acces.user.id,
+                produit_id: mv.produit_id ?? undefined,
+                caisse: mv.caisse,
+                description: `Annulation — changement de type de vente de ${ancienneFacture.type_vente} vers ${nouveauTypeVente}`,
+              });
+            }
+
+            // 4. Créer de nouveaux mouvements dans la nouvelle caisse
+            const nouvelleCaisse = nouveauTypeVente === "YALIDINE" ? "CAISSE_YALIDINE" : "CAISSE_PHYSIQUE";
+            for (const mv of mouvementsExistants) {
+              await ajouterMouvement(tx, {
+                montant: mv.montant,
+                type: "vente",
+                user_id: acces.user.id,
+                produit_id: mv.produit_id ?? undefined,
+                caisse: nouvelleCaisse,
+                description: `Re-crédit — changement de type de vente vers ${nouveauTypeVente}`,
+              });
+            }
           }
         }
       }
