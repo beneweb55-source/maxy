@@ -6,11 +6,14 @@ import Barcode from "react-barcode";
 import { IconeImprimante } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
 import { formaterDA } from "@/lib/caisse";
+import { AFFICHER_CODE_BARRE_ETIQUETTE } from "@/lib/constantes";
 
 interface EtiquetteData {
   id: number;
   code_interne: string;
   reference: string;
+  designation?: string | null;
+  categorie?: string | null;
   numero_serie?: string | null;
   grade?: string | null;
   prix_vente: number | null;
@@ -34,28 +37,40 @@ export default function ImprimerEtiquettes() {
 
   useEffect(() => {
     const idsParams = searchParams?.get("ids");
-    if (!idsParams) {
+    const codesParams = searchParams?.get("codes");
+
+    // La sélection arrive soit par ids (inventaire, caisse, commandes),
+    // soit par codes internes (impression directe après création au terrain).
+    const requete = idsParams
+      ? `ids=${encodeURIComponent(idsParams)}`
+      : codesParams
+        ? `codes=${encodeURIComponent(codesParams)}`
+        : null;
+
+    if (!requete) {
       setErreur("Aucun identifiant fourni pour l'impression.");
       return;
     }
 
-    const ids = idsParams.split(",").map(Number).filter(id => !isNaN(id));
-
-    if (ids.length === 0) {
-      setErreur("Identifiants invalides.");
-      return;
-    }
-
     // Charger les détails des produits — SANS marquer comme imprimées
-    fetch(`/api/produits/masse/details?ids=${ids.join(",")}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Erreur de chargement");
+    fetch(`/api/produits/masse/details?${requete}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const corps = await res.json().catch(() => null);
+          throw new Error(corps?.error || "Erreur de chargement");
+        }
         return res.json();
       })
       .then((data: EtiquetteData[]) => {
+        if (!Array.isArray(data) || data.length === 0) {
+          setErreur("Aucun produit trouvé pour cette sélection.");
+          return;
+        }
         setEtiquettes(data);
       })
-      .catch(() => setErreur("Erreur lors du chargement des données d'impression."));
+      .catch((e: Error) =>
+        setErreur(e.message || "Erreur lors du chargement des données d'impression.")
+      );
   }, [searchParams]);
 
   function lancerImpression() {
@@ -64,10 +79,11 @@ export default function ImprimerEtiquettes() {
   }
 
   async function confirmerImpression() {
-    const idsParams = searchParams?.get("ids");
-    if (!idsParams) return;
-    const ids = idsParams.split(",").map(Number).filter(id => !isNaN(id));
-    
+    // On marque exactement les produits dont les étiquettes sont affichées,
+    // quel que soit le mode d'entrée (ids ou codes internes).
+    const ids = etiquettes.map((e) => e.id);
+    if (ids.length === 0) return;
+
     try {
       const res = await fetch("/api/produits/marquer-imprime", {
         method: "POST",
@@ -93,13 +109,16 @@ export default function ImprimerEtiquettes() {
           .no-print { display: none !important; }
           .etiquettes-grid {
             display: grid;
-            grid-template-columns: repeat(4, 58mm);
+            grid-template-columns: repeat(3, 58mm);
+            justify-content: center;
             gap: 0;
             page-break-after: auto;
           }
           .etiquette {
             page-break-inside: avoid;
             break-inside: avoid;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
           }
           @page {
             margin: 5mm;
@@ -132,14 +151,14 @@ export default function ImprimerEtiquettes() {
               Les étiquettes ont-elles bien été imprimées ?
             </p>
             <div className="flex gap-2 justify-center">
-              <button 
-                onClick={() => { setAImprime(false); window.close(); }} 
+              <button
+                onClick={() => { setAImprime(false); window.close(); }}
                 className="btn btn-secondaire"
               >
                 Non / Annuler
               </button>
-              <button 
-                onClick={() => void confirmerImpression()} 
+              <button
+                onClick={() => void confirmerImpression()}
                 className="btn bg-succes text-white hover:bg-succes/90 font-bold"
               >
                 Oui, étiquettes imprimées
@@ -161,39 +180,70 @@ export default function ImprimerEtiquettes() {
       {etiquettes.map((etiquette, index) => (
         <div
           key={`${etiquette.id}-${index}`}
-          className="etiquette flex flex-col items-center justify-between bg-white w-[58mm] h-[43mm] overflow-hidden p-1.5 text-center"
+          className="etiquette flex flex-col justify-between bg-white text-black w-[58mm] h-[43mm] overflow-hidden px-2 py-1.5"
         >
+          {/* 1. Identité produit : référence (nom du modèle), désignation, catégorie, grade */}
           <div className="w-full">
-            <div className="text-[10px] font-extrabold leading-tight truncate w-full px-1 text-brand-black">
+            <div className="text-[11px] font-black uppercase leading-[1.15] tracking-tight break-words line-clamp-2">
               {etiquette.reference || etiquette.code_interne}
             </div>
-            {etiquette.grade && (
-              <span className="text-[8px] font-bold text-brand-warm-grey uppercase tracking-wider">
-                {etiquette.grade}
-              </span>
+            {etiquette.designation && etiquette.designation !== etiquette.reference && (
+              <div className="mt-0.5 text-[8px] font-semibold leading-tight text-neutral-600 line-clamp-2">
+                {etiquette.designation}
+              </div>
+            )}
+            {(etiquette.categorie || etiquette.grade) && (
+              <div className="mt-0.5 flex items-center gap-1">
+                {etiquette.categorie && (
+                  <span className="max-w-[65%] truncate rounded border border-neutral-300 px-1 py-px text-[7px] font-bold uppercase tracking-wider text-neutral-700">
+                    {etiquette.categorie}
+                  </span>
+                )}
+                {etiquette.grade && (
+                  <span className="ml-auto shrink-0 rounded bg-neutral-900 px-1 py-px text-[7px] font-black uppercase tracking-wider text-white">
+                    {etiquette.grade}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
-          <Barcode 
-            value={etiquette.code_interne} 
-            width={1.6} 
-            height={36} 
-            fontSize={11}
-            margin={4}
-            displayValue={true}
-          />
+          {/* 2. Code-barres — masqué sur l'étiquette imprimée.
+              Interrupteur : AFFICHER_CODE_BARRE_ETIQUETTE (lib/constantes.ts).
+              Le système code-barres reste intact (données, /api/scan) ;
+              repasser la constante à `true` réaffiche ce bloc. */}
+          {AFFICHER_CODE_BARRE_ETIQUETTE && (
+            <Barcode
+              value={etiquette.code_interne}
+              width={1.6}
+              height={36}
+              fontSize={11}
+              margin={4}
+              displayValue={true}
+            />
+          )}
 
-          <div className="w-full flex items-center justify-between px-2 text-[10px] font-bold border-t border-brand-light-grey pt-0.5">
-            {etiquette.numero_serie ? (
-              <span className="font-mono text-[9px] text-brand-warm-grey truncate max-w-[55%]">
-                S/N: {etiquette.numero_serie}
+          {/* 3. Numéro de série — identifiant unique de l'exemplaire, s'il existe */}
+          {etiquette.numero_serie && (
+            <div className="w-full truncate font-mono text-[8px] font-semibold text-neutral-600">
+              S/N {etiquette.numero_serie}
+            </div>
+          )}
+
+          {/* 4. Prix — la seule information chiffrée de l'étiquette */}
+          <div className="flex w-full items-end justify-between border-t border-black/25 pt-0.5">
+            <span className="text-[7px] font-bold uppercase tracking-wider text-neutral-500">
+              Prix
+            </span>
+            {etiquette.prix_vente !== null &&
+            etiquette.prix_vente !== undefined &&
+            etiquette.prix_vente > 0 ? (
+              <span className="font-mono text-[14px] font-black leading-none">
+                {formaterDA(etiquette.prix_vente)}
               </span>
             ) : (
-              <span className="text-[8px] text-brand-warm-grey">Maxy POS</span>
-            )}
-            {etiquette.prix_vente !== null && etiquette.prix_vente !== undefined && (
-              <span className="font-mono font-black text-brand-black text-[11px]">
-                {formaterDA(etiquette.prix_vente)}
+              <span className="font-mono text-[10px] font-bold leading-none text-neutral-400">
+                Prix à définir
               </span>
             )}
           </div>

@@ -432,22 +432,22 @@ export default function ImpressionMasseCommandes() {
       {/* Styles Globaux d'Impression pour Gestion des Pages Multiples */}
       <style jsx global>{`
         @media print {
+          @page {
+            size: ${formatTicket ? "80mm auto" : "A4 portrait"};
+            margin: ${formatTicket ? "0" : "8mm 10mm"} !important;
+          }
           body {
             background-color: white !important;
             color: black !important;
             padding: 0 !important;
             margin: 0 !important;
           }
-          nav, header, aside, .print\\:hidden {
+          nav, header, aside, .no-print, .hide-on-print, .print-hidden {
             display: none !important;
           }
           .page-break-after-always {
             page-break-after: always !important;
             break-after: page !important;
-          }
-          @page {
-            size: A4;
-            margin: 10mm;
           }
         }
       `}</style>

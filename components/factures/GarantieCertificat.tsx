@@ -7,51 +7,7 @@ import {
   IconeFlecheGauche,
 } from "@/components/icons";
 import { useLangue } from "@/lib/i18n/contexte";
-
-interface LigneFactureDto {
-  id: number;
-  produit_id: number | null;
-  code_interne: string;
-  designation: string;
-  categorie: string | null;
-  prix: number;
-  garantie_fin: string;
-  annulee: boolean;
-}
-
-interface FactureDto {
-  id: number;
-  numero: string;
-  date_emission: string;
-  client_nom: string | null;
-  client_tel: string | null;
-  total: number;
-  total_net: number;
-  garantie_mois: number;
-  garantie_fin: string;
-  type_facture: string | null;
-  client_adresse: string | null;
-  client_rc: string | null;
-  client_nif: string | null;
-  client_ai: string | null;
-  client_nis: string | null;
-  canal: string | null;
-  mode_paiement: string | null;
-  annulee: boolean;
-  vendeur: string;
-  lignes: LigneFactureDto[];
-  entreprise?: {
-    nom: string;
-    adresse: string;
-    tel: string;
-    rc: string;
-    nif: string;
-    nis: string;
-    art: string;
-    rib: string | null;
-    cachet: string | null;
-  };
-}
+import type { FactureDto, LigneFactureDto } from "./FactureDetail";
 
 function dateFr(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -84,6 +40,8 @@ const DUREES_GARANTIE = [
   { valeur: 36, label: "36 mois (3 ans)" },
 ];
 
+import { useReactToPrint } from "react-to-print";
+
 export default function GarantieCertificat({
   facture,
   onRetour,
@@ -115,8 +73,32 @@ export default function GarantieCertificat({
     });
   }
 
+  const handlePrintGarantie = useReactToPrint({
+    contentRef: certRef,
+    documentTitle: `Certificat_Garantie_${facture.numero}`,
+    pageStyle: `
+      @page {
+        size: A4 portrait;
+        margin: 8mm 10mm !important;
+      }
+      @media print {
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `,
+  });
+
   function imprimerGarantie() {
-    window.print();
+    if (handlePrintGarantie) {
+      handlePrintGarantie();
+    } else {
+      window.print();
+    }
   }
 
   return (
@@ -216,7 +198,7 @@ export default function GarantieCertificat({
       {/* Document de garantie imprimable */}
       <div
         ref={certRef}
-        className="carte print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight"
+        className="carte page-a4 print-isolated print:border-0 print:p-0 print:shadow-none print:m-0 print:bg-white text-black text-[13px] leading-tight"
       >
         {/* En-tête du certificat */}
         <div className="flex justify-between items-start gap-4 mb-6">
