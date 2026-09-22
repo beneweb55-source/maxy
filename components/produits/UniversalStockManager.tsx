@@ -61,10 +61,14 @@ export default function UniversalStockManager({
   const { afficher } = useToast();
 
   const idModeleEffectif = cible?.modeleId ?? propModeleId ?? null;
-  const nomReferenceEffectif = cible?.reference ?? propModeleNom ?? "Article";
+  // Nom proposé par le modèle. L'utilisateur peut le modifier pour cet
+  // arrivage : le nom est porté par chaque exemplaire (Produit.reference) et
+  // c'est lui que l'étiquette imprime.
+  const nomReferencePropose = cible?.reference ?? propModeleNom ?? "";
   const categorieEffectif = cible?.categorie ?? "Matériel";
 
   // États du formulaire
+  const [nomExemplaire, setNomExemplaire] = useState<string>(nomReferencePropose);
   const [quantite, setQuantite] = useState<number>(1);
   const [statut, setStatut] = useState<StatutProduit>(statutDefaut);
   const [emplacement, setEmplacement] = useState<"reserve" | "vitrine">(
@@ -90,6 +94,7 @@ export default function UniversalStockManager({
   // Synchronisation lors de l'ouverture
   useEffect(() => {
     if (ouvert) {
+      setNomExemplaire(nomReferencePropose);
       setQuantite(1);
       setStatut(statutDefaut);
       setEmplacement(cible?.emplacement === "vitrine" ? "vitrine" : "reserve");
@@ -102,7 +107,7 @@ export default function UniversalStockManager({
       setErreur(null);
       setEnCours(false);
     }
-  }, [ouvert, cible, statutDefaut]);
+  }, [ouvert, cible, statutDefaut, nomReferencePropose]);
 
   if (!ouvert) return null;
 
@@ -142,7 +147,7 @@ export default function UniversalStockManager({
       const res = await actionCreateExemplaires({
         modeleId: idModeleEffectif,
         produitIdSource: cible?.produitId ?? null,
-        reference: nomReferenceEffectif,
+        reference: nomExemplaire.trim(),
         categorie: categorieEffectif,
         categorie_id: cible?.categorie_id ?? null,
         quantite: quantite,
@@ -193,7 +198,7 @@ export default function UniversalStockManager({
                 Ajouter des Exemplaires en Stock
               </h2>
               <p className="text-xs text-brand-warm-grey font-medium truncate max-w-[280px]">
-                {nomReferenceEffectif}
+                {nomExemplaire.trim() || "Nom à définir"}
               </p>
             </div>
           </div>
@@ -215,6 +220,33 @@ export default function UniversalStockManager({
               <span>{erreur}</span>
             </div>
           )}
+
+          {/* NOM DE L'EXEMPLAIRE — modifiable, c'est lui qui s'imprime */}
+          <div>
+            <label
+              htmlFor="input-nom-exemplaire"
+              className="text-xs font-extrabold uppercase tracking-wider text-brand-warm-grey mb-1.5 block"
+            >
+              Nom de l&apos;exemplaire
+            </label>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-warm-grey pointer-events-none" />
+              <input
+                id="input-nom-exemplaire"
+                type="text"
+                value={nomExemplaire}
+                disabled={enCours}
+                onChange={(e) => setNomExemplaire(e.target.value)}
+                placeholder="Ex. DELL LATITUDE 7420 i7 16GB"
+                className="champ w-full h-10 pl-9 pr-3 rounded-xl border border-brand-light-grey dark:border-white/10 bg-white dark:bg-white/5 text-xs font-bold text-brand-black dark:text-white focus:outline-none focus:border-brand-orange"
+              />
+            </div>
+            <p className="text-[11px] text-brand-warm-grey mt-1">
+              S&apos;applique aux {quantite} exemplaire{quantite > 1 ? "s" : ""} créé
+              {quantite > 1 ? "s" : ""} et s&apos;imprime sur l&apos;étiquette. Laissez
+              vide pour conserver le nom du modèle.
+            </p>
+          </div>
 
           {/* ZONE BULK CREATION CENTRALE (Quantité) */}
           <div className="rounded-2xl border-2 border-brand-orange/30 bg-brand-orange/5 dark:bg-brand-orange/10 p-4 space-y-3">

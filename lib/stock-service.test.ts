@@ -6,6 +6,7 @@ import {
   STATUTS_ELIGIBLES_DIMINUTION 
 } from "@/lib/stock-service";
 import { prisma } from "@/lib/db";
+import { creerProduitsGroupes } from "@/lib/creation-produits";
 
 // Mock des fonctions Prisma et helpers
 vi.mock("@/lib/db", () => ({
@@ -255,6 +256,65 @@ describe("StockService - Unification & Invariant Métier", () => {
         data: { quantite: { increment: 10 } },
         select: { quantite: true },
       });
+    });
+  });
+
+  describe("Nom de l'exemplaire (reference)", () => {
+    const modeleAvecNom = {
+      id: 50,
+      nom: "Modele Officiel",
+      quantite: 5,
+      prix_vente_conseille: 65000,
+      categorie: { id: 3, nom: "PC Portables" },
+    };
+
+    function mockTransaction() {
+      const mockTx = {
+        modele: {
+          findUnique: vi.fn().mockResolvedValue(modeleAvecNom),
+          update: vi.fn().mockResolvedValue({ id: 50, quantite: 6 }),
+        },
+      };
+      (prisma.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+      return mockTx;
+    }
+
+    /** Lignes transmises à l'insertion par paquets, pour le dernier appel. */
+    function lignesCreees(): Array<{ reference: string }> {
+      const appels = vi.mocked(creerProduitsGroupes).mock.calls;
+      return (appels[appels.length - 1]?.[1] as any).lignes;
+    }
+
+    it("le nom saisi par l'utilisateur prime sur le nom du modele", async () => {
+      mockTransaction();
+
+      await StockService.createExemplaires(1, {
+        modeleId: 50,
+        reference: "Dell Latitude 7420 i7 16GB",
+        categorie: "PC Portables",
+        quantite: 1,
+        statut: "en_vente",
+        prix_achat: 45000,
+        prix_vente_fixe: 65000,
+      });
+
+      expect(lignesCreees()[0]!.reference).toBe("Dell Latitude 7420 i7 16GB");
+    });
+
+    it("retombe sur le nom du modele quand aucun nom n'est saisi", async () => {
+      mockTransaction();
+
+      await StockService.createExemplaires(1, {
+        modeleId: 50,
+        reference: "",
+        categorie: "PC Portables",
+        quantite: 1,
+        statut: "en_vente",
+        prix_achat: 45000,
+        prix_vente_fixe: 65000,
+      });
+
+      expect(lignesCreees()[0]!.reference).toBe("Modele Officiel");
     });
   });
 });

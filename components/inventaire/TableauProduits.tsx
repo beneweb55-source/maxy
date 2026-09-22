@@ -424,6 +424,15 @@ export default function TableauProduits({
                                     </div>
                                   </div>
 
+                                  {/* Imprimer l'étiquette de CET exemplaire, sans
+                                      passer par la page produit. Hors du garde
+                                      peutModifier : imprimer ne modifie rien. */}
+                                  <BoutonImpression
+                                    ids={[p.id]}
+                                    dejaImprimee={p.etiquette_imprimee}
+                                    className="p-1 min-w-[32px] min-h-[32px] rounded-lg hover:bg-brand-light-grey/30 dark:hover:bg-white/5 font-bold cursor-pointer flex items-center justify-center"
+                                  />
+
                                   {peutModifier && (
                                     <div className="flex items-center gap-0.5 sm:gap-1">
                                       <button

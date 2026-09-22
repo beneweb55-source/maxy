@@ -104,7 +104,14 @@ export class StockService {
           }
         }
 
-        const refName = parentModele?.nom || options.reference?.trim();
+        // Le nom saisi par l'utilisateur gagne sur celui du modèle : c'est ce
+        // que l'étiquette affiche. Les appelants qui ne fournissent pas de nom
+        // (création au terrain, composants) envoient une chaîne vide et
+        // retombent donc sur le nom du modèle, comme avant.
+        const refName = options.reference?.trim() || parentModele?.nom;
+        // Nom de famille, pour le journal d'audit : il doit identifier le
+        // modèle même quand l'exemplaire a été renommé.
+        const nomModele = parentModele?.nom || refName;
         const catName = parentModele?.categorie?.nom || options.categorie?.trim();
         const catId = parentModele?.categorie_id || options.categorie_id || null;
 
@@ -176,7 +183,7 @@ export class StockService {
           options.lot_id ? Number(options.lot_id) : undefined,
           {
             modele_id: parentModele?.id,
-            reference: refName,
+            reference: nomModele,
             quantite: qty,
             codes,
           }
@@ -185,7 +192,7 @@ export class StockService {
         return {
           ok: true,
           modeleId: parentModele?.id ?? null,
-          modeleNom: refName,
+          modeleNom: nomModele,
           ancienneQuantite: ancienneQte,
           nouvelleQuantite: nouvelleQte,
           diff: qty,

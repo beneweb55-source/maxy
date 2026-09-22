@@ -7,6 +7,7 @@ import BadgeStatut from "@/components/BadgeStatut";
 import { formaterDA } from "@/lib/caisse";
 import { INFOS_STATUT } from "@/lib/statuts";
 import { IconeBillet, IconeCrayon, IconeVitrine } from "@/components/icons";
+import BoutonImpression from "@/components/BoutonImpression";
 import { Plus, Boxes, Hash, Share2 } from "lucide-react";
 import RubanVitrine from "./RubanVitrine";
 import type { GroupeProduits } from "./types";
@@ -300,7 +301,16 @@ export default function GrilleProduits({
                         </Link>
                         <span className="text-[10px] text-brand-warm-grey block">{u.numero_serie ? `S/N: ${u.numero_serie}` : "Sans S/N"}</span>
                       </div>
-                      <BadgeStatut statut={u.statut} aJeter={u.a_jeter} />
+                      {/* Imprimer l'étiquette de CET exemplaire, sans passer par
+                          la page produit. */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <BoutonImpression
+                          ids={[u.id]}
+                          dejaImprimee={u.etiquette_imprimee}
+                          className="p-1 rounded-lg text-brand-warm-grey hover:text-brand-black dark:hover:text-white"
+                        />
+                        <BadgeStatut statut={u.statut} aJeter={u.a_jeter} />
+                      </div>
                     </div>
                   ))}
                 </div>
