@@ -24,7 +24,7 @@ import { Download } from "lucide-react";
 import { telechargerElementEnPdf } from "@/lib/facture-pdf";
 import TemplateFactureA4 from "@/components/factures/TemplateFactureA4";
 
-interface LigneFactureDto {
+export interface LigneFactureDto {
   id: number;
   produit_id: number | null;
   code_interne: string;
@@ -35,7 +35,7 @@ interface LigneFactureDto {
   annulee: boolean;
 }
 
-interface FactureDto {
+export interface FactureDto {
   id: number;
   numero: string;
   date_emission: string;
