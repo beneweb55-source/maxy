@@ -105,14 +105,31 @@ export default function ImprimerEtiquettes() {
     <div className="print-container">
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
-          body { margin: 0; padding: 0; background: white; }
+          /* Le shell de l'application impose min-height: 100dvh à plusieurs
+             conteneurs (AppShell) et globals.css fait de même sur <body>. En
+             média paginé, 100dvh vaut la hauteur de la page : ces conteneurs
+             occupent toute la page et repoussent l'étiquette sur la suivante.
+             On neutralise ces hauteurs pour la seule impression. */
+          html, body {
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+          body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+          body div:not(.etiquette), body main, body section {
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+          main { padding: 0 !important; }
           .no-print { display: none !important; }
+          /* La grille s'adapte au support : une seule colonne sur une roulotte
+             de 58 mm (une étiquette par page), trois colonnes sur une feuille
+             A4. Centrer horizontalement ne coûte aucune hauteur. */
           .etiquettes-grid {
             display: grid;
-            grid-template-columns: repeat(3, 58mm);
+            grid-template-columns: repeat(auto-fill, 58mm);
             justify-content: center;
             gap: 0;
-            page-break-after: auto;
           }
           .etiquette {
             page-break-inside: avoid;
@@ -120,9 +137,16 @@ export default function ImprimerEtiquettes() {
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
           }
+          /* Aucune taille de page n'est imposée : sur une imprimante à
+             étiquettes, forcer A4 (297 mm de haut) allonge le travail alors que
+             le support ne mesure que 43 mm — le pilote avance jusqu'à
+             l'étiquette suivante et en gaspille une à chaque impression. La
+             taille de page vient donc du pilote, et la marge est nulle car
+             toute marge verticale réduit la zone imprimable sous les 43 mm de
+             l'étiquette, ce qui la ferait basculer sur une seconde page. */
           @page {
-            margin: 5mm;
-            size: A4;
+            size: auto;
+            margin: 0;
           }
         }
         @media screen {
