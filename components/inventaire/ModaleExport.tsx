@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Download,
   X,
@@ -8,55 +8,53 @@ import {
   Square,
   FileSpreadsheet,
   FileText,
-  SlidersHorizontal,
   Filter,
-  Layers,
   Sparkles,
-  Check
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/components/toast";
-import { PARAM_FORMAT_FICHIER } from "@/lib/export-inventaire";
+import {
+  COLONNES_DISPONIBLES,
+  MAX_IDS_SELECTION,
+  PARAM_FORMAT_FICHIER,
+  PARAM_IDS,
+  PARAM_SCOPE,
+  PRESETS_COLONNES,
+  type CategorieColonneExport,
+  type ScopeExport,
+} from "@/lib/export-inventaire";
 
-export interface ColonneExport {
-  id: string;
-  label: string;
-  categorie: "identification" | "financier" | "technique" | "logistique";
-  defaut: boolean;
-}
+/**
+ * Clés de l'URL de l'inventaire qui n'ont aucun sens dans un fichier exporté.
+ * `page` désigne une page de l'écran, pas un filtre : la laisser passer donnait
+ * un paramètre que rien ne lit, et un lecteur pressé pouvait croire que
+ * l'export n'exportait qu'une page.
+ */
+const CLES_URL_SANS_OBJET_A_L_EXPORT = ["page"] as const;
 
-export const COLONNES_DISPONIBLES: ColonneExport[] = [
-  // Identification
-  { id: "code_interne", label: "Code Interne (P-XXXX)", categorie: "identification", defaut: true },
-  { id: "reference", label: "Désignation / Modèle", categorie: "identification", defaut: true },
-  { id: "categorie", label: "Catégorie", categorie: "identification", defaut: true },
-  { id: "statut", label: "Statut (En vente, Reçu, etc.)", categorie: "identification", defaut: true },
-  { id: "en_vitrine", label: "Exposé en Vitrine", categorie: "identification", defaut: false },
-
-  // Technique
-  { id: "numero_serie", label: "Numéro de Série (S/N)", categorie: "technique", defaut: true },
-  { id: "grade", label: "Grade / État cosmétique", categorie: "technique", defaut: true },
-  { id: "emplacement", label: "Emplacement (Réserve/Vitrine)", categorie: "technique", defaut: true },
-  { id: "notes", label: "Notes & Commentaires", categorie: "technique", defaut: false },
-
-  // Financier
-  { id: "prix_achat", label: "Prix d'Achat (DA)", categorie: "financier", defaut: true },
-  { id: "prix_vente_fixe", label: "Prix de Vente Fixé (DA)", categorie: "financier", defaut: true },
-  { id: "marge_estimee", label: "Marge Brute Estimée (DA & %)", categorie: "financier", defaut: false },
-  { id: "reparations", label: "Frais de Réparations (DA)", categorie: "financier", defaut: false },
-  { id: "prix_vente_reel", label: "Prix Vente Réel (si vendu)", categorie: "financier", defaut: false },
-  { id: "date_vente", label: "Date de Vente", categorie: "financier", defaut: false },
-
-  // Logistique
-  { id: "lot_id", label: "N° Lot / Arrivage", categorie: "logistique", defaut: true },
-  { id: "fournisseur", label: "Fournisseur", categorie: "logistique", defaut: true },
-  { id: "date_entree", label: "Date d'Entrée en Stock", categorie: "logistique", defaut: true },
+/** L'ordre d'affichage des groupes, pour que la grille se lise comme la donnée. */
+const ORDRE_CATEGORIES: CategorieColonneExport[] = [
+  "identification",
+  "technique",
+  "financier",
+  "logistique",
 ];
+
+const TITRES_CATEGORIES: Record<CategorieColonneExport, string> = {
+  identification: "Identification",
+  technique: "Technique",
+  financier: "Financier",
+  logistique: "Logistique",
+};
 
 interface ModaleExportProps {
   ouverte: boolean;
   onFermer: () => void;
   searchParamsString: string;
   nbArticlesFiltres: number;
+  /** Les unités cochées dans l'inventaire, pour le périmètre « sélection ». */
+  selection?: number[];
 }
 
 export default function ModaleExport({
@@ -64,6 +62,7 @@ export default function ModaleExport({
   onFermer,
   searchParamsString,
   nbArticlesFiltres,
+  selection = [],
 }: ModaleExportProps) {
   const { afficher } = useToast();
 
@@ -71,8 +70,10 @@ export default function ModaleExport({
     COLONNES_DISPONIBLES.filter((c) => c.defaut).map((c) => c.id)
   );
   const [formatFichier, setFormatFichier] = useState<"csv_excel" | "csv_standard" | "xlsx">("csv_excel");
-  const [scopeExport, setScopeExport] = useState<"filtres" | "tous">("filtres");
+  const [scopeExport, setScopeExport] = useState<ScopeExport>("filtres");
   const [telechargementEnCours, setTelechargementEnCours] = useState(false);
+
+  const nbSelection = selection.length;
 
   useEffect(() => {
     if (ouverte) {
@@ -84,6 +85,15 @@ export default function ModaleExport({
     }
   }, [ouverte]);
 
+  // La sélection peut changer pendant que la modale est ouverte (une action
+  // groupée la consomme, ou l'utilisateur coche plus de lignes). Rester sur
+  // « sélection » enverrait alors une requête vide ou trop longue, que la route
+  // refuse — autant revenir d'office sur les filtres.
+  const selectionHorsLimite = nbSelection === 0 || nbSelection > MAX_IDS_SELECTION;
+  useEffect(() => {
+    if (selectionHorsLimite && scopeExport === "selection") setScopeExport("filtres");
+  }, [selectionHorsLimite, scopeExport]);
+
   if (!ouverte) return null;
 
   const toggleColonne = (id: string) => {
@@ -92,31 +102,36 @@ export default function ModaleExport({
     );
   };
 
-  // Presets rapides
-  const appliquerPreset = (preset: "pos" | "compta" | "public" | "tout" | "aucun") => {
-    switch (preset) {
-      case "pos":
-        setColonnesSelectionnees([
-          "code_interne", "reference", "categorie", "statut", "prix_vente_fixe", "numero_serie", "grade", "emplacement"
-        ]);
-        break;
-      case "compta":
-        setColonnesSelectionnees([
-          "code_interne", "reference", "lot_id", "fournisseur", "date_entree", "prix_achat", "reparations", "prix_vente_fixe", "marge_estimee"
-        ]);
-        break;
-      case "public":
-        setColonnesSelectionnees([
-          "reference", "categorie", "prix_vente_fixe", "grade", "numero_serie", "emplacement", "en_vitrine"
-        ]);
-        break;
-      case "tout":
-        setColonnesSelectionnees(COLONNES_DISPONIBLES.map((c) => c.id));
-        break;
-      case "aucun":
-        setColonnesSelectionnees([]);
-        break;
+  /**
+   * La requête que reçoit la route d'export.
+   *
+   * `tri` et `ordre` voyagent dans TOUS les périmètres. L'ancienne carte
+   * « tout le catalogue » jetait la chaîne de requête entière : le fichier
+   * sortait dans un ordre différent de l'écran sans que rien ne le dise.
+   */
+  const construireRequete = (): URLSearchParams => {
+    const source = new URLSearchParams(searchParamsString);
+    for (const cle of CLES_URL_SANS_OBJET_A_L_EXPORT) source.delete(cle);
+
+    const params = new URLSearchParams();
+
+    if (scopeExport === "filtres") {
+      // Les filtres de l'écran, transmis tels quels : ce que la liste honore,
+      // le fichier l'honore — les deux lisent le même constructeur côté serveur.
+      for (const [cle, valeur] of source.entries()) params.append(cle, valeur);
+    } else {
+      for (const cle of ["tri", "ordre"]) {
+        const valeur = source.get(cle);
+        if (valeur !== null) params.set(cle, valeur);
+      }
     }
+
+    if (scopeExport === "selection") params.set(PARAM_IDS, selection.join(","));
+
+    params.set("colonnes", colonnesSelectionnees.join(","));
+    params.set(PARAM_FORMAT_FICHIER, formatFichier);
+    params.set(PARAM_SCOPE, scopeExport);
+    return params;
   };
 
   const lancerExport = async () => {
@@ -128,19 +143,14 @@ export default function ModaleExport({
     setTelechargementEnCours(true);
 
     try {
-      const params = new URLSearchParams(scopeExport === "filtres" ? searchParamsString : "");
-      params.set("colonnes", colonnesSelectionnees.join(","));
-      // `format_fichier`, never `format`: `format` is a hardware-specification
-      // product filter of the inventory screen, and sending the file format
-      // under that name overwrote it and made the export match nothing.
-      params.set(PARAM_FORMAT_FICHIER, formatFichier);
-      params.set("scope", scopeExport);
+      const params = construireRequete();
+      const response = await fetch(`/api/produits/export?${params.toString()}`);
 
-      const url = `/api/produits/export?${params.toString()}`;
-
-      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error("Erreur lors de la génération du fichier d'export.");
+        // La route explique précisément ce qui manque (« Aucune ligne
+        // sélectionnée… ») : le message générique l'écrasait.
+        const corps = await response.json().catch(() => null);
+        throw new Error(corps?.error || "Erreur lors de la génération du fichier d'export.");
       }
 
       const blob = await response.blob();
@@ -148,8 +158,17 @@ export default function ModaleExport({
       const a = document.createElement("a");
       a.href = downloadUrl;
 
+      // Le serveur nomme déjà le fichier d'après le périmètre et le format
+      // réels. Le refabriquer ici pouvait mentir sur l'un comme sur l'autre.
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const nomServeur = /filename="([^"]+)"/.exec(disposition)?.[1];
       const extension = formatFichier === "xlsx" ? "xlsx" : "csv";
-      a.download = `inventaire_${scopeExport === "filtres" ? "filtre" : "complet"}_${new Date().toISOString().slice(0, 10)}.${extension}`;
+      a.download =
+        nomServeur ??
+        `inventaire_${scopeExport === "filtres" ? "filtre" : scopeExport}_${new Date()
+          .toISOString()
+          .slice(0, 10)}.${extension}`;
+
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -164,11 +183,39 @@ export default function ModaleExport({
     }
   };
 
+  const perimetres: { id: ScopeExport; titre: string; detail: string; desactive: boolean }[] = [
+    {
+      id: "filtres",
+      titre: "Filtres actuels uniquement",
+      detail: `${nbArticlesFiltres} article${nbArticlesFiltres > 1 ? "s" : ""} affiché${
+        nbArticlesFiltres > 1 ? "s" : ""
+      }`,
+      desactive: false,
+    },
+    {
+      id: "stock",
+      titre: "Tout le stock",
+      detail: "Tous les articles en stock — vendus, HS et assemblés exclus",
+      desactive: false,
+    },
+    {
+      id: "selection",
+      titre: "La sélection cochée",
+      detail:
+        nbSelection === 0
+          ? "Aucune ligne cochée dans l'inventaire"
+          : nbSelection > MAX_IDS_SELECTION
+            ? `${nbSelection} lignes : au-delà du plafond de ${MAX_IDS_SELECTION}. Filtrez plutôt l'inventaire.`
+            : `${nbSelection} ligne${nbSelection > 1 ? "s" : ""} cochée${nbSelection > 1 ? "s" : ""}`,
+      desactive: selectionHorsLimite,
+    },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
       <div className="relative w-11/12 max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-brand-paper rounded-3xl border border-brand-light-grey dark:border-white/10 shadow-2xl overflow-hidden">
 
-        {/* Header */}
+        {/* En-tête */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-brand-orange/15 text-brand-orange">
@@ -203,48 +250,49 @@ export default function ModaleExport({
               1. Périmètre des produits à exporter
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div
-                onClick={() => setScopeExport("filtres")}
-                className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                  scopeExport === "filtres"
-                    ? "border-brand-orange bg-brand-orange/10 shadow-xs"
-                    : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 hover:border-brand-light-grey dark:hover:border-white/20"
-                }`}
-              >
-                <div>
-                  <div className="text-xs font-bold text-brand-black dark:text-white">
-                    Filtres actuels uniquement
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {perimetres.map((p) => {
+                const actif = scopeExport === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      if (p.desactive) return;
+                      setScopeExport(p.id);
+                    }}
+                    aria-disabled={p.desactive}
+                    className={`p-3.5 rounded-2xl border transition-all flex items-start justify-between gap-2 ${
+                      p.desactive
+                        ? "border-brand-light-grey/40 dark:border-white/5 bg-brand-light-grey/10 dark:bg-white/2 opacity-50 cursor-not-allowed"
+                        : actif
+                          ? "border-brand-orange bg-brand-orange/10 shadow-xs cursor-pointer"
+                          : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 hover:border-brand-light-grey dark:hover:border-white/20 cursor-pointer"
+                    }`}
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-brand-black dark:text-white">
+                        {p.titre}
+                      </div>
+                      <div className="text-[11px] text-brand-warm-grey mt-0.5 leading-snug">
+                        {p.detail}
+                      </div>
+                    </div>
+                    {actif && <Check className="w-4 h-4 text-brand-orange shrink-0" />}
                   </div>
-                  <div className="text-[11px] text-brand-warm-grey mt-0.5">
-                    {nbArticlesFiltres} article{nbArticlesFiltres > 1 ? "s" : ""} affiché{nbArticlesFiltres > 1 ? "s" : ""}
-                  </div>
-                </div>
-                {scopeExport === "filtres" && <Check className="w-4 h-4 text-brand-orange" />}
-              </div>
-
-              <div
-                onClick={() => setScopeExport("tous")}
-                className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                  scopeExport === "tous"
-                    ? "border-brand-orange bg-brand-orange/10 shadow-xs"
-                    : "border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/15 dark:bg-white/3 hover:border-brand-light-grey dark:hover:border-white/20"
-                }`}
-              >
-                <div>
-                  <div className="text-xs font-bold text-brand-black dark:text-white">
-                    Tout le catalogue (Global)
-                  </div>
-                  <div className="text-[11px] text-brand-warm-grey mt-0.5">
-                    Tous les articles en stock
-                  </div>
-                </div>
-                {scopeExport === "tous" && <Check className="w-4 h-4 text-brand-orange" />}
-              </div>
+                );
+              })}
             </div>
+
+            {scopeExport === "stock" && (
+              <p className="flex items-start gap-1.5 text-[11px] text-brand-warm-grey font-medium pt-1">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-brand-orange" />
+                Cette option ignore volontairement vos filtres : le fichier contient tout
+                le stock. Elle conserve en revanche le tri de l'écran.
+              </p>
+            )}
           </div>
 
-          {/* 2. Préréglages Rapides (Presets) */}
+          {/* 2. Modèles de colonnes prêts à l'emploi */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-black uppercase tracking-wider text-brand-black dark:text-white flex items-center gap-1.5">
@@ -252,69 +300,77 @@ export default function ModaleExport({
                 2. Modèles de colonnes prêts à l'emploi
               </label>
               <span className="text-[11px] font-bold text-brand-orange">
-                {colonnesSelectionnees.length} / {COLONNES_DISPONIBLES.length} sélectionnée{colonnesSelectionnees.length > 1 ? "s" : ""}
+                {colonnesSelectionnees.length} / {COLONNES_DISPONIBLES.length} sélectionnée
+                {colonnesSelectionnees.length > 1 ? "s" : ""}
               </span>
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {PRESETS_COLONNES.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setColonnesSelectionnees(preset.colonnes)}
+                  className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
+                >
+                  {preset.emoji} {preset.label}
+                </button>
+              ))}
               <button
                 type="button"
-                onClick={() => appliquerPreset("pos")}
-                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
-              >
-                Standard POS
-              </button>
-              <button
-                type="button"
-                onClick={() => appliquerPreset("compta")}
-                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
-              >
-                💼 Comptabilité & Marge
-              </button>
-              <button
-                type="button"
-                onClick={() => appliquerPreset("public")}
-                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-brand-orange hover:text-brand-orange"
-              >
-                Public (Sans prix d'achat)
-              </button>
-              <button
-                type="button"
-                onClick={() => appliquerPreset("tout")}
+                onClick={() => setColonnesSelectionnees(COLONNES_DISPONIBLES.map((c) => c.id))}
                 className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30"
               >
                 ✓ Tout cocher
               </button>
+              <button
+                type="button"
+                onClick={() => setColonnesSelectionnees([])}
+                className="btn btn-secondaire text-xs py-1.5 px-3 rounded-xl font-bold bg-brand-light-grey/15 dark:bg-white/5 border border-brand-light-grey/60 dark:border-white/10 hover:border-danger hover:text-danger"
+              >
+                Aucune
+              </button>
             </div>
           </div>
 
-          {/* 3. Sélection des Colonnes (Checkboxes en Grille) */}
+          {/* 3. Choix des colonnes, groupées comme le catalogue */}
           <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-              {COLONNES_DISPONIBLES.map((col) => {
-                const estCoche = colonnesSelectionnees.includes(col.id);
-                return (
-                  <div
-                    key={col.id}
-                    onClick={() => toggleColonne(col.id)}
-                    className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2.5 cursor-pointer transition-all ${
-                      estCoche
-                        ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-brand-black dark:border-white shadow-xs"
-                        : "bg-brand-light-grey/15 dark:bg-white/3 border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
-                    }`}
-                  >
-                    <div className="shrink-0">
-                      {estCoche ? (
-                        <CheckSquare className="w-4 h-4 text-brand-orange" />
-                      ) : (
-                        <Square className="w-4 h-4 text-brand-warm-grey" />
-                      )}
-                    </div>
-                    <span className="truncate">{col.label}</span>
+            {ORDRE_CATEGORIES.map((categorie) => {
+              const colonnes = COLONNES_DISPONIBLES.filter((c) => c.categorie === categorie);
+              if (colonnes.length === 0) return null;
+              return (
+                <div key={categorie} className="space-y-1.5">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-brand-warm-grey">
+                    {TITRES_CATEGORIES[categorie]}
                   </div>
-                );
-              })}
-            </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                    {colonnes.map((col) => {
+                      const estCoche = colonnesSelectionnees.includes(col.id);
+                      return (
+                        <div
+                          key={col.id}
+                          onClick={() => toggleColonne(col.id)}
+                          className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2.5 cursor-pointer transition-all ${
+                            estCoche
+                              ? "bg-brand-black text-white dark:bg-white dark:text-brand-black border-brand-black dark:border-white shadow-xs"
+                              : "bg-brand-light-grey/15 dark:bg-white/3 border-brand-light-grey/60 dark:border-white/10 text-brand-warm-grey hover:border-brand-light-grey dark:hover:border-white/20"
+                          }`}
+                        >
+                          <div className="shrink-0">
+                            {estCoche ? (
+                              <CheckSquare className="w-4 h-4 text-brand-orange" />
+                            ) : (
+                              <Square className="w-4 h-4 text-brand-warm-grey" />
+                            )}
+                          </div>
+                          <span className="truncate">{col.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* 4. Format du fichier */}
@@ -351,7 +407,9 @@ export default function ModaleExport({
                 <FileSpreadsheet className="w-4 h-4 shrink-0" />
                 <div>
                   <div>Classeur Excel (.xlsx)</div>
-                  <div className="text-[10px] font-medium opacity-70">Format natif Microsoft</div>
+                  <div className="text-[10px] font-medium opacity-70">
+                    Largeurs, filtres et montants en DA
+                  </div>
                 </div>
               </div>
 
@@ -374,7 +432,7 @@ export default function ModaleExport({
 
         </div>
 
-        {/* Footer Actions */}
+        {/* Pied : actions */}
         <div className="flex justify-between items-center px-6 py-4 border-t border-brand-light-grey/40 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/3">
           <button
             type="button"

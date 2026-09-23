@@ -30,6 +30,7 @@
  * This module is pure so it can be tested without importing a route handler.
  */
 import { construireFiltresProduits } from "./filtres-produits";
+import { libelleStatut } from "./statuts";
 import type { Prisma } from "@prisma/client";
 
 /** The export's own file-format parameter. Deliberately NOT `format`. */
@@ -40,15 +41,64 @@ export type FormatFichier = (typeof FORMATS_FICHIER)[number];
 
 export const FORMAT_FICHIER_DEFAUT: FormatFichier = "csv_excel";
 
+/** Le périmètre de l'export. */
+export const PARAM_SCOPE = "scope";
+
+/**
+ * The scopes the export understands.
+ *
+ * `tous` was the old name for "the whole catalogue", and it meant it literally:
+ * `construireFiltresExport` returned `{}`, so the file contained the SOLD, HS
+ * and ASSEMBLED units too — 1684 rows instead of the 1616 really in stock. The
+ * card that sent it advertised "Tous les articles en stock", so the screen
+ * promised one thing and the file delivered another. A user who ticked it saw
+ * every filter they had set evaporate, which is the heart of "le filtre de
+ * l'export ne marche pas".
+ *
+ * The repair separates the two intentions that `tous` conflated:
+ *   - `stock`     — the whole IN-STOCK catalogue (sold / HS / assembled hidden),
+ *                   which is what the old label actually promised;
+ *   - `selection` — exactly the units the user ticked.
+ * The legacy value still resolves, to `stock`, so an old bookmark cannot keep
+ * silently exporting sold goods.
+ */
+export const SCOPES_EXPORT = ["filtres", "stock", "selection"] as const;
+export type ScopeExport = (typeof SCOPES_EXPORT)[number];
+
+export const SCOPE_EXPORT_DEFAUT: ScopeExport = "filtres";
+
+/** The units to export when `scope=selection`. */
+export const PARAM_IDS = "ids";
+
+/**
+ * Combien d'unités une sélection exportée peut porter.
+ *
+ * Les ids voyagent dans la CHAÎNE DE REQUÊTE, parce que l'export est un GET
+ * qu'on doit pouvoir déclencher depuis un lien. Une sélection large finit par
+ * dépasser la limite d'URL du proxy — et la requête échouait alors par un 414
+ * opaque, sans que rien ne dise à l'utilisateur que sa sélection était en
+ * cause. Ce plafond rend la limite VISIBLE : au-delà, la modale refuse la
+ * carte « sélection » et propose les filtres, qui n'ont pas de limite.
+ *
+ * 300 ids font environ 2 ko d'URL, très à l'abri des limites usuelles (8 ko).
+ */
+export const MAX_IDS_SELECTION = 300;
+
 /**
  * Parameters the export consumes for itself and that must never reach the
  * product filter.
  *
- * `colonnes` and `scope` happen not to collide with any filter name today, and
- * they are listed anyway: the point of the list is to be the single place where
- * a control parameter is declared, so that the next one cannot be forgotten.
+ * `colonnes`, `scope` and `ids` happen not to collide with any filter name
+ * today, and they are listed anyway: the point of the list is to be the single
+ * place where a control parameter is declared, so that the next one cannot be
+ * forgotten.
  */
-export const CLES_CONTROLE_EXPORT = [PARAM_FORMAT_FICHIER, "colonnes", "scope"] as const;
+export const CLES_CONTROLE_EXPORT = [
+  PARAM_FORMAT_FICHIER,
+  "colonnes",
+  PARAM_SCOPE,
+  PARAM_IDS,
+] as const;
 
 function estFormatFichier(valeur: string | null): valeur is FormatFichier {
   return valeur !== null && (FORMATS_FICHIER as readonly string[]).includes(valeur);
@@ -83,13 +133,373 @@ export function construireParametresProduit(params: URLSearchParams): URLSearchP
   return resultat;
 }
 
+function estScopeExport(valeur: string | null): valeur is ScopeExport {
+  return valeur !== null && (SCOPES_EXPORT as readonly string[]).includes(valeur);
+}
+
+/**
+ * The requested scope, or the default.
+ *
+ * The legacy value `tous` resolves to `stock`, not to a permissive fourth
+ * scope: the card that sent it promised "tous les articles en stock", and an
+ * old bookmark must not keep exporting sold goods behind the user's back.
+ */
+export function lireScope(params: URLSearchParams): ScopeExport {
+  const demande = params.get(PARAM_SCOPE);
+  if (demande === "tous") return "stock";
+  return estScopeExport(demande) ? demande : SCOPE_EXPORT_DEFAUT;
+}
+
+/** The ids to export, integers only. An absent parameter yields an empty list. */
+export function lireIds(params: URLSearchParams): number[] {
+  const brut = params.get(PARAM_IDS);
+  if (brut === null) return [];
+  return brut
+    .split(",")
+    .map((v) => Number(v.trim()))
+    .filter((n) => Number.isInteger(n) && n > 0);
+}
+
 /**
  * The product filter for an export.
  *
- * `scope=tous` means the whole catalogue and bypasses filtering entirely, which
- * is why it is settled before the filter is built rather than inside it.
+ * `scope` is settled before the filter is built rather than inside it, because
+ * it decides WHICH filter applies:
+ *   - `filtres`   — the caller's filters, exactly as the screen sends them;
+ *   - `stock`     — the default stock view: the caller's filters dropped, but
+ *                   the sold / HS / assembled mask KEPT;
+ *   - `selection` — the ticked units, and nothing else.
+ *
+ * `stock` is built by calling the product filter with NO parameters, which is
+ * exactly how the inventory screen defines its own default view — so the two
+ * cannot drift apart.
  */
 export function construireFiltresExport(params: URLSearchParams): Prisma.ProduitWhereInput {
-  if (params.get("scope") === "tous") return {};
-  return construireFiltresProduits(construireParametresProduit(params));
+  switch (lireScope(params)) {
+    case "stock":
+      return construireFiltresProduits(new URLSearchParams());
+    case "selection":
+      // An empty selection yields an unmatchable clause rather than the whole
+      // catalogue: "j'ai coché zéro ligne" must never mean "donne-moi tout".
+      return { id: { in: lireIds(params) } };
+    default:
+      return construireFiltresProduits(construireParametresProduit(params));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The columns
+// ---------------------------------------------------------------------------
+
+export interface ColonneExport {
+  label: string;
+  extracteur: (p: any) => any;
+}
+
+/**
+ * Every column the export can emit, in the order used when the caller asks for
+ * none in particular (`Object.keys` preserves this insertion order).
+ *
+ * This map lives here rather than in the route so the whole column surface can
+ * be exercised without importing a route handler — see the test of the same name.
+ * It moved unchanged; `app/api/produits/export/route.ts` now imports it.
+ */
+export const MAP_COLONNES: Record<string, ColonneExport> = {
+  code_interne: {
+    label: "Code Interne",
+    extracteur: (p) => p.code_interne,
+  },
+  reference: {
+    label: "Désignation / Modèle",
+    extracteur: (p) => p.reference,
+  },
+  categorie: {
+    label: "Catégorie",
+    extracteur: (p) => p.categorie,
+  },
+  statut: {
+    label: "Statut",
+    extracteur: (p) => libelleStatut(p.statut),
+  },
+  en_vitrine: {
+    label: "En Vitrine",
+    extracteur: (p) => (p.en_vitrine ? "Oui" : "Non"),
+  },
+  numero_serie: {
+    label: "Numéro de Série (S/N)",
+    extracteur: (p) => p.numero_serie || "—",
+  },
+  grade: {
+    label: "Grade / État",
+    extracteur: (p) => p.grade || "Grade A",
+  },
+  emplacement: {
+    label: "Emplacement",
+    extracteur: (p) => p.emplacement || "reserve",
+  },
+  prix_achat: {
+    label: "Prix d'Achat (DA)",
+    extracteur: (p) => p.prix_achat,
+  },
+  prix_vente_fixe: {
+    label: "Prix de Vente Conseillé (DA)",
+    extracteur: (p) => p.prix_vente_fixe ?? "—",
+  },
+  marge_estimee: {
+    label: "Marge Estimée (DA)",
+    // `prix_achat` is tested for TRUTHINESS on purpose: a zero purchase price is
+    // not a divisor, and `(pv - 0) / 0` would print "Infinity%".
+    extracteur: (p) =>
+      p.prix_vente_fixe && p.prix_achat
+        ? `${p.prix_vente_fixe - p.prix_achat} DA (${Math.round(((p.prix_vente_fixe - p.prix_achat) / p.prix_achat) * 100)}%)`
+        : "—",
+  },
+  reparations: {
+    label: "Frais Réparations (DA)",
+    extracteur: (p) => p.reparations?.reduce((acc: number, r: any) => acc + (r.cout || 0), 0) || 0,
+  },
+  prix_vente_reel: {
+    label: "Prix Vente Réel (DA)",
+    extracteur: (p) => p.prix_vente_reel ?? "—",
+  },
+  date_vente: {
+    label: "Date de Vente",
+    extracteur: (p) => (p.date_vente ? jourIso(p.date_vente) : "—"),
+  },
+  lot_id: {
+    label: "N° Arrivage / Lot",
+    extracteur: (p) => (p.lot ? `Lot #${p.lot.id}` : "Sans arrivage"),
+  },
+  fournisseur: {
+    label: "Fournisseur",
+    extracteur: (p) => p.lot?.fournisseur || "—",
+  },
+  date_entree: {
+    label: "Date d'Entrée",
+    extracteur: (p) => jourIso(p.lot?.date_entree || p.created_at),
+  },
+  notes: {
+    label: "Notes",
+    extracteur: (p) => p.notes || "",
+  },
+};
+
+/** The keys, in the order the route emits them when none are requested. */
+export const COLONNES_EXPORT_DEFAUT: string[] = Object.keys(MAP_COLONNES);
+
+/** A currency cell: displayed as money, stored as a real number. */
+export const FORMAT_MONNAIE = '#,##0" DA"';
+
+export type CategorieColonneExport =
+  | "identification"
+  | "technique"
+  | "financier"
+  | "logistique";
+
+/**
+ * What the modal needs to know about a column, and how the xlsx writer should
+ * lay it out. The IDs are not repeated here: they come from `MAP_COLONNES`,
+ * which owns them.
+ *
+ * WHY THIS EXISTS — the modal used to keep its own catalogue, with its own
+ * labels and its own defaults, over the same id space. A column added to one and
+ * not the other was either invisible in the modal, or requested by it and
+ * silently dropped by the route. Both lists are now derived from the same map,
+ * so that drift is no longer expressible.
+ */
+export const META_COLONNES: Record<
+  string,
+  {
+    labelModale: string;
+    categorie: CategorieColonneExport;
+    defaut: boolean;
+    largeur: number;
+    monnaie?: boolean;
+  }
+> = {
+  code_interne: { labelModale: "Code Interne (P-XXXX)", categorie: "identification", defaut: true, largeur: 16 },
+  reference: { labelModale: "Désignation / Modèle", categorie: "identification", defaut: true, largeur: 34 },
+  categorie: { labelModale: "Catégorie", categorie: "identification", defaut: true, largeur: 28 },
+  statut: { labelModale: "Statut (En vente, Reçu, etc.)", categorie: "identification", defaut: true, largeur: 18 },
+  en_vitrine: { labelModale: "Exposé en Vitrine", categorie: "identification", defaut: false, largeur: 12 },
+  numero_serie: { labelModale: "Numéro de Série (S/N)", categorie: "technique", defaut: true, largeur: 22 },
+  grade: { labelModale: "Grade / État cosmétique", categorie: "technique", defaut: true, largeur: 14 },
+  emplacement: { labelModale: "Emplacement (Réserve/Vitrine)", categorie: "technique", defaut: true, largeur: 15 },
+  notes: { labelModale: "Notes & Commentaires", categorie: "technique", defaut: false, largeur: 30 },
+  prix_achat: { labelModale: "Prix d'Achat (DA)", categorie: "financier", defaut: true, largeur: 18, monnaie: true },
+  prix_vente_fixe: { labelModale: "Prix de Vente Fixé (DA)", categorie: "financier", defaut: true, largeur: 26, monnaie: true },
+  marge_estimee: { labelModale: "Marge Brute Estimée (DA & %)", categorie: "financier", defaut: false, largeur: 24 },
+  reparations: { labelModale: "Frais de Réparations (DA)", categorie: "financier", defaut: false, largeur: 20, monnaie: true },
+  prix_vente_reel: { labelModale: "Prix Vente Réel (si vendu)", categorie: "financier", defaut: false, largeur: 20, monnaie: true },
+  date_vente: { labelModale: "Date de Vente", categorie: "financier", defaut: false, largeur: 14 },
+  lot_id: { labelModale: "N° Lot / Arrivage", categorie: "logistique", defaut: true, largeur: 16 },
+  fournisseur: { labelModale: "Fournisseur", categorie: "logistique", defaut: true, largeur: 20 },
+  date_entree: { labelModale: "Date d'Entrée en Stock", categorie: "logistique", defaut: true, largeur: 16 },
+};
+
+/** The modal's checkbox catalogue, derived from the columns that really exist. */
+export interface ColonneModale {
+  id: string;
+  label: string;
+  categorie: CategorieColonneExport;
+  defaut: boolean;
+}
+
+export const COLONNES_DISPONIBLES: ColonneModale[] = Object.keys(MAP_COLONNES).map((id) => {
+  const meta: (typeof META_COLONNES)[string] | undefined = META_COLONNES[id];
+  return {
+    id,
+    label: meta?.labelModale ?? MAP_COLONNES[id]!.label,
+    categorie: meta?.categorie ?? "technique",
+    defaut: meta?.defaut ?? false,
+  };
+});
+
+/** The widths for `!cols`, aligned with the keys actually emitted. */
+export function largeursColonnes(colonnesCles: string[]): { wch: number }[] {
+  return colonnesCles.map((k) => ({ wch: META_COLONNES[k]?.largeur ?? 18 }));
+}
+
+/** The positions, among the emitted columns, that hold a currency amount. */
+export function colonnesMonnaie(colonnesCles: string[]): number[] {
+  return colonnesCles
+    .map((k, i) => (META_COLONNES[k]?.monnaie ? i : -1))
+    .filter((i) => i >= 0);
+}
+
+/**
+ * Ready-made column sets, rendered by the modal.
+ *
+ * Their ids go through `lireColonnes`, which drops anything unknown — so a stale
+ * preset can only ever yield fewer columns, never a broken file.
+ */
+export const PRESETS_COLONNES: {
+  id: string;
+  label: string;
+  emoji: string;
+  colonnes: string[];
+}[] = [
+  {
+    id: "pos",
+    label: "Standard POS",
+    emoji: "🧾",
+    colonnes: ["code_interne", "reference", "categorie", "statut", "prix_vente_fixe", "numero_serie", "grade", "emplacement"],
+  },
+  {
+    id: "compta",
+    label: "Comptabilité & Marge",
+    emoji: "💼",
+    colonnes: ["code_interne", "reference", "lot_id", "fournisseur", "date_entree", "prix_achat", "reparations", "prix_vente_fixe", "marge_estimee"],
+  },
+  {
+    id: "public",
+    label: "Public (sans prix d'achat)",
+    emoji: "👁",
+    colonnes: ["reference", "categorie", "prix_vente_fixe", "grade", "numero_serie", "emplacement", "en_vitrine"],
+  },
+  {
+    id: "vitrine",
+    label: "Vitrine & étiquettes",
+    emoji: "🏷",
+    colonnes: ["code_interne", "reference", "categorie", "prix_vente_fixe", "grade", "emplacement", "en_vitrine"],
+  },
+  {
+    id: "sav",
+    label: "SAV & Réparations",
+    emoji: "🔧",
+    colonnes: ["code_interne", "reference", "statut", "grade", "reparations", "prix_achat", "prix_vente_fixe", "notes", "date_entree"],
+  },
+];
+
+/**
+ * A date as `AAAA-MM-JJ`, and never a thrown `RangeError`.
+ *
+ * `new Date(x).toISOString()` throws on an unparseable value, which would turn
+ * one malformed row into a 500 for the whole export. A cell reading `—` is a
+ * visible, survivable outcome; a failed export is not.
+ */
+function jourIso(valeur: unknown): string {
+  const d = new Date(valeur as any);
+  return Number.isNaN(d.getTime()) ? "—" : d.toISOString().slice(0, 10);
+}
+
+/**
+ * The requested columns, filtered to the ones that exist.
+ *
+ * An unknown key is dropped rather than throwing: the request comes from a form
+ * whose checkbox list is the source of truth, and a stale bookmark asking for a
+ * column that no longer exists should still produce a file.
+ *
+ * When the parameter is absent, every column is emitted. When it is present but
+ * names nothing valid, the result is EMPTY — the caller asked for a specific set
+ * and got none of it, which must be visible rather than silently widened to all.
+ */
+export function lireColonnes(params: URLSearchParams): string[] {
+  const demande = params.get("colonnes");
+  if (demande === null) return COLONNES_EXPORT_DEFAUT;
+  return demande.split(",").filter((k) => MAP_COLONNES[k]);
+}
+
+// ---------------------------------------------------------------------------
+// Serialisation
+// ---------------------------------------------------------------------------
+
+/** One CSV cell: quoted only when it would otherwise break the line. */
+export function champCsv(valeur: any, separateur = ";"): string {
+  if (valeur === null || valeur === undefined) return "";
+  const texte = String(valeur);
+  const regex = new RegExp(`[${separateur}"\n\r]`);
+  return regex.test(texte) ? `"${texte.replace(/"/g, '""')}"` : texte;
+}
+
+export interface TableauExport {
+  /** The column labels, in order. */
+  entetes: string[];
+  /** The rows, each aligned with `entetes`. */
+  lignes: any[][];
+  /** The same rows keyed by label, for the xlsx writer. */
+  objets: Record<string, any>[];
+  /** Which keys were requested. */
+  colonnesCles: string[];
+}
+
+/**
+ * Turn products into rows, once, for both the CSV and the xlsx writers.
+ *
+ * A single builder keeps the two formats from drifting: before this, the xlsx
+ * path and the CSV path each walked `colonnesCles` separately, so a change to one
+ * could silently miss the other.
+ */
+export function construireTableau(produits: any[], colonnesCles: string[]): TableauExport {
+  const valides = colonnesCles.filter((k) => MAP_COLONNES[k]);
+  const entetes = valides.map((k) => MAP_COLONNES[k]!.label);
+
+  return {
+    entetes,
+    colonnesCles: valides,
+    lignes: produits.map((p) => valides.map((k) => MAP_COLONNES[k]!.extracteur(p))),
+    objets: produits.map((p) => {
+      const row: Record<string, any> = {};
+      for (const k of valides) row[MAP_COLONNES[k]!.label] = MAP_COLONNES[k]!.extracteur(p);
+      return row;
+    }),
+  };
+}
+
+/**
+ * The CSV body, BOM included so Excel reads UTF-8 accents correctly.
+ *
+ * CRLF because Excel on Windows expects it; the BOM because without it Excel
+ * renders "Catégorie" as "CatÃ©gorie".
+ */
+export function serialiserCsv(tableau: TableauExport, separateur: string): string {
+  const corps = tableau.lignes.map((ligne) =>
+    ligne.map((cellule) => champCsv(cellule, separateur)).join(separateur)
+  );
+  return "﻿" + [tableau.entetes.join(separateur), ...corps].join("\r\n");
+}
+
+/** The separator for a format: only `csv_standard` uses a comma. */
+export function separateurPour(format: FormatFichier): string {
+  return format === "csv_standard" ? "," : ";";
 }

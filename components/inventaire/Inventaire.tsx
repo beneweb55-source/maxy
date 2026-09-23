@@ -2465,6 +2465,11 @@ export default function Inventaire({ role }: { role: Role }) {
         onFermer={() => setModalExport(false)}
         searchParamsString={searchParams?.toString() || ""}
         nbArticlesFiltres={donnees?.total || donnees?.produits?.length || 0}
+        // Sans cette prop, la modale ne pouvait pas proposer « exporter ce que
+        // j'ai coché » : les cases cochées à l'écran n'avaient aucun chemin
+        // jusqu'au fichier, et l'utilisateur devait re-filtrer pour retrouver
+        // à la main ce qu'il avait déjà désigné.
+        selection={selection}
       />
 
       {modalVenteUnites && (
