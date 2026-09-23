@@ -17,9 +17,17 @@ export interface NouveauMouvement {
 export async function ajouterMouvement(tx: Prisma.TransactionClient, m: NouveauMouvement) {
   const caisseCible = m.caisse ?? "CAISSE_PHYSIQUE";
   // SELECT FOR UPDATE to prevent race conditions on concurrent balance reads
+  //
+  // Le cast `::"CaisseDestination"` n'est pas décoratif : `caisse` est une
+  // colonne de type ENUM, et Prisma lie `${caisseCible}` en paramètre non typé,
+  // que Postgres résout en `text`. Or `enum = text` n'a pas d'opérateur — la
+  // requête levait `42883` avant même de lire une ligne, donc TOUT mouvement de
+  // caisse échouait (ventes, factures, commandes, lots, charges, répartition).
+  // Le cast force la comparaison dans le type de la colonne, ce qui laisse
+  // l'index `[caisse]` utilisable — un `caisse::text = $1` l'aurait perdu.
   const derniers = await tx.$queryRaw<{ solde_apres: number }[]>`
     SELECT solde_apres FROM mouvements_caisse
-    WHERE caisse = ${caisseCible}
+    WHERE caisse = ${caisseCible}::"CaisseDestination"
     ORDER BY id DESC LIMIT 1
     FOR UPDATE
   `;
