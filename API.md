@@ -45,7 +45,7 @@ Rôles : `gerant` (Imed) · `technicien` (Raouf) · `dev` (Samy, Louay). Ce docu
 | POST | `/api/produits/:id/reparations` | technicien, gerant | `{ cout, description }` — produit non vendu. |
 | POST | `/api/produits/:id/prix` | gerant | `{ prix_vente_fixe }` — produit `ok` → `en_vente`, historisé — une transaction. |
 | PATCH | `/api/produits/:id/notes` | tous connectés | Note libre — seule modification autorisée sur un produit vendu. |
-| GET | `/api/produits/export` | gerant | CSV de la vue filtrée (mêmes paramètres que GET /api/produits). |
+| GET | `/api/produits/export` | gerant | Export de la vue filtrée. Filtres produits : mêmes paramètres que GET /api/produits — `format` y reste le filtre de spécification matérielle. Paramètres propres à l'export : `format_fichier` (`csv_excel` \| `csv_standard` \| `xlsx`), `colonnes` (clés séparées par virgules), `scope` (`filtres` \| `tous`). |
 
 ## Ventes (Phase 7)
 

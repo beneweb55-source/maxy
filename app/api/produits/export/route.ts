@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
-import { construireFiltresProduits, construireTriProduits } from "@/lib/filtres-produits";
+import { construireTriProduits } from "@/lib/filtres-produits";
+import {
+  construireFiltresExport,
+  construireParametresProduit,
+  lireFormatFichier,
+} from "@/lib/export-inventaire";
 import { libelleStatut } from "@/lib/statuts";
 
 function champCsv(valeur: any, separateur = ";"): string {
@@ -95,16 +100,22 @@ export async function GET(request: NextRequest) {
 
   try {
     const params = request.nextUrl.searchParams;
-    const format = params.get("format") || "csv_excel";
-    const scope = params.get("scope") || "filtres";
+
+    // `format_fichier`, deliberately NOT `format`: `format` is a hardware
+    // specification filter of the inventory screen, so reading it here both
+    // destroyed that filter and fed "csv_excel" to the product search, which
+    // matched nothing. See lib/export-inventaire.ts for the measurement.
+    const format = lireFormatFichier(params);
     const colonnesParam = params.get("colonnes");
 
     const colonnesCles = colonnesParam
       ? colonnesParam.split(",").filter((k) => MAP_COLONNES[k])
       : Object.keys(MAP_COLONNES);
 
-    const whereClause = scope === "tous" ? {} : construireFiltresProduits(params);
-    const orderByClause = construireTriProduits(params);
+    // The export's own parameters are stripped before the product filter is
+    // built, so that no control parameter can be read as a search term.
+    const whereClause = construireFiltresExport(params);
+    const orderByClause = construireTriProduits(construireParametresProduit(params));
 
     const produits = await prisma.produit.findMany({
       where: whereClause,

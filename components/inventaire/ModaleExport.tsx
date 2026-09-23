@@ -15,6 +15,7 @@ import {
   Check
 } from "lucide-react";
 import { useToast } from "@/components/toast";
+import { PARAM_FORMAT_FICHIER } from "@/lib/export-inventaire";
 
 export interface ColonneExport {
   id: string;
@@ -129,7 +130,10 @@ export default function ModaleExport({
     try {
       const params = new URLSearchParams(scopeExport === "filtres" ? searchParamsString : "");
       params.set("colonnes", colonnesSelectionnees.join(","));
-      params.set("format", formatFichier);
+      // `format_fichier`, never `format`: `format` is a hardware-specification
+      // product filter of the inventory screen, and sending the file format
+      // under that name overwrote it and made the export match nothing.
+      params.set(PARAM_FORMAT_FICHIER, formatFichier);
       params.set("scope", scopeExport);
 
       const url = `/api/produits/export?${params.toString()}`;
