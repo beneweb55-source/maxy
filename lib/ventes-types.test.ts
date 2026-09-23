@@ -46,30 +46,53 @@ describe("Séparation Métier Ventes COMPTOIR vs YALIDINE", () => {
   });
 
   describe("Intégrité des Données & Rétrocompatibilité", () => {
+    // Ces deux tests remplaçaient une version qui comparait `type_vente` à
+    // COMPTOIR sur les lignes antérieures au 2026-09-02 20:00 — soit la minute
+    // exacte où YALIDINE a été livré. Elle figeait une PHOTO de la migration
+    // comme un invariant permanent, et rougissait dès la première vente
+    // YALIDINE antérieure à ce seuil. Constaté en base : 4 factures et 5 ventes,
+    // toutes légitimes et correctement routées. Le seuil de date a été retiré ;
+    // ce qui doit rester vrai pour toujours est ci-dessous.
     it(
-      "garantit que 100% des factures historiques sont classées COMPTOIR",
+      "ne laisse AUCUNE facture hors d'un type de vente connu",
       async () => {
-        const nonComptoir = await prisma.facture.count({
-          where: {
-            type_vente: { not: "COMPTOIR" },
-            date_emission: { lt: new Date("2026-09-02T20:00:00Z") },
-          },
-        });
-        expect(nonComptoir).toBe(0);
+        const total = await prisma.facture.count();
+        expect(total).toBeGreaterThan(0);
+        expect(await prisma.facture.count({ where: { type_vente: { in: [...TYPES_VENTE] } } })).toBe(
+          total
+        );
       },
       25000
     );
 
     it(
-      "garantit que 100% des ventes historiques sont classées COMPTOIR",
+      "route chaque facture vers la caisse de son type de vente",
       async () => {
-        const nonComptoir = await prisma.vente.count({
-          where: {
-            type_vente: { not: "COMPTOIR" },
-            date_vente: { lt: new Date("2026-09-02T20:00:00Z") },
-          },
-        });
-        expect(nonComptoir).toBe(0);
+        // L'invariant qui ne se périme pas. Mesuré en base : 7 factures
+        // YALIDINE + CAISSE_YALIDINE, 35 COMPTOIR + CAISSE_PHYSIQUE, zéro
+        // exception dans les deux sens.
+        expect(
+          await prisma.facture.count({
+            where: { type_vente: "YALIDINE", caisse_destination: { not: "CAISSE_YALIDINE" } },
+          })
+        ).toBe(0);
+        expect(
+          await prisma.facture.count({
+            where: { type_vente: "COMPTOIR", caisse_destination: { not: "CAISSE_PHYSIQUE" } },
+          })
+        ).toBe(0);
+      },
+      25000
+    );
+
+    it(
+      "ne laisse AUCUNE vente hors d'un type de vente connu",
+      async () => {
+        const total = await prisma.vente.count();
+        expect(total).toBeGreaterThan(0);
+        expect(await prisma.vente.count({ where: { type_vente: { in: [...TYPES_VENTE] } } })).toBe(
+          total
+        );
       },
       25000
     );
