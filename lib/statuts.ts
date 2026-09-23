@@ -55,5 +55,10 @@ export function estFonctionnel(statut: StatutProduit): boolean {
 export const BADGE_A_JETER = "bg-red-900 text-white dark:bg-red-500 dark:text-red-950";
 
 export function libelleStatut(statut: StatutProduit): string {
-  return INFOS_STATUT[statut].libelle;
+  // La base peut porter un statut qu'une version antérieure du schéma
+  // connaissait et que celle-ci a retiré. Sans ce garde-fou, un seul
+  // enregistrement exotique faisait échouer TOUT l'export (500, aucune ligne
+  // téléchargée) au lieu de produire une cellule simplement lisible.
+  const info = INFOS_STATUT[statut] as InfosStatut | undefined;
+  return info?.libelle ?? String(statut);
 }

@@ -4,6 +4,31 @@ import { decodeBase64Url } from "./base64url";
 
 const JOUR_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Les clés de spécification que le serveur lit RÉELLEMENT.
+ *
+ * SOURCE DE VÉRITÉ UNIQUE, et non une liste parmi d'autres : `FilterDrawer`
+ * rend les attributs de la matrice métier marqués `filtre: true`, mais dix
+ * d'entre eux ne figurent pas ici — `cpu_gamme`, `cpu_generation`, `ram_taille`,
+ * `stockage_principal`, `taille_ecran_aio`, `clavier_layout`,
+ * `generation_serveur`, `taille_ecran_pos`, `cpu_modele`, `fonctions`. La
+ * pastille s'allumait, la liste ne bougeait pas, aucun badge ne s'affichait et
+ * l'export ne les voyait pas : c'est le gros de « des filtres ne marchent pas ».
+ *
+ * Mesuré avant de décider : cinq de ces clés ne ramèneraient AUCUNE ligne, et
+ * quatre ramèneraient du bruit (`ram_taille` → 610 lignes pour un simple
+ * `contains "8"`, `taille_ecran_pos` → 480). Les câbler serait donc pire que
+ * les ignorer, puisqu'elles auraient l'air de fonctionner. Le tiroir s'appuie
+ * sur cette liste pour n'afficher que des facettes qui agissent vraiment.
+ */
+export const CHAMPS_MATRICE_FILTRES = [
+  "marque", "format", "cpu", "ram", "stockage", "format_cible", "type_specifique",
+  "generation", "frequence_mhz", "type_disque", "interface", "format_physique",
+  "capacite", "capacite_disque", "taille_ecran", "taille_pouces", "resolution",
+  "frequence_hz", "type_dalle", "puissance_w", "type_connecteur", "fondeur",
+  "gamme", "vram_taille", "type_consommable", "couleur", "technologie", "format_serveur",
+] as const;
+
 export function construireFiltresProduits(
   params: URLSearchParams,
   options?: { ignorerStatuts?: boolean }
@@ -60,15 +85,7 @@ export function construireFiltresProduits(
   }
 
   // Filtres de spécifications matérielles adaptatives (Matrice Unifiée)
-  const champsMatrice = [
-    "marque", "format", "cpu", "ram", "stockage", "format_cible", "type_specifique",
-    "generation", "frequence_mhz", "type_disque", "interface", "format_physique",
-    "capacite", "capacite_disque", "taille_ecran", "taille_pouces", "resolution",
-    "frequence_hz", "type_dalle", "puissance_w", "type_connecteur", "fondeur",
-    "gamme", "vram_taille", "type_consommable", "couleur", "technologie", "format_serveur"
-  ];
-
-  for (const cle of champsMatrice) {
+  for (const cle of CHAMPS_MATRICE_FILTRES) {
     const val = params.get(cle)?.trim();
     if (val) {
       // Nettoyer les suffixes comme "Go", "W", "Hz", "pouces" pour une recherche large et précise
@@ -104,16 +121,31 @@ export function construireFiltresProduits(
   }
 
   if (!options?.ignorerStatuts) {
-    const statuts = (params.get("statuts") ?? "")
+    // « À jeter » est un sous-ensemble de `hs`. Quand il est demandé, `hs` ne
+    // peut plus être masqué par défaut : les deux clauses se contredisaient et
+    // le filtre ne rendait jamais rien — mesuré à 0 ligne alors que 3 produits
+    // portent réellement le drapeau, tous en statut `hs`.
+    const statutsMasques: StatutProduit[] =
+      params.get("a_jeter") === "1" ? ["vendu", "assemble"] : ["vendu", "hs", "assemble"];
+
+    const statutsBruts = params.get("statuts");
+    const statuts = (statutsBruts ?? "")
       .split(",")
       .map((s) => s.trim())
       .filter((s): s is StatutProduit => (STATUTS_PRODUIT as readonly string[]).includes(s));
-    
+
     if (statuts.length > 0) {
       clauses.push({ statut: { in: statuts } });
+    } else if (statutsBruts !== null && statutsBruts.trim() !== "") {
+      // Le paramètre est présent et ne nomme AUCUN statut connu : l'appelant a
+      // demandé quelque chose qu'on ne peut pas lui donner. Retomber sur le
+      // masquage par défaut faisait passer une faute de frappe pour un résultat
+      // légitime — la liste semblait filtrée alors qu'elle ne l'était pas.
+      clauses.push({ statut: { in: [] } });
     } else {
-      // Si aucun statut spécifique n'est demandé, on masque les vendus, jetés et composants assemblés par défaut
-      clauses.push({ statut: { notIn: ["vendu", "hs", "assemble"] } });
+      // Si aucun statut spécifique n'est demandé, on masque les vendus, jetés
+      // et composants assemblés par défaut
+      clauses.push({ statut: { notIn: statutsMasques } });
     }
   }
 
@@ -196,6 +228,8 @@ export function construireFiltresProduits(
   }
 
   if (params.get("a_jeter") === "1") {
+    // Le masquage de `hs` a été levé plus haut (bloc `statuts`) pour que cette
+    // clause puisse aboutir.
     clauses.push({ statut: "hs", a_jeter: true });
   }
 
