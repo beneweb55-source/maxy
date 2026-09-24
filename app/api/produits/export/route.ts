@@ -115,10 +115,10 @@ export async function GET(request: NextRequest) {
 
       // Amounts stay NUMBERS (so they remain summable in Excel) and are only
       // DISPLAYED as dinars. The community build of SheetJS can write number
-      // formats, column widths and an autofilter; it cannot write fonts, fills
-      // or frozen panes — `write_ws_xml_cell` carries a `/* TODO: cell style */`
-      // and only the READER handles `pane`. Promising a frozen header here would
-      // be promising something the file cannot contain.
+      // formats and column widths; it cannot write fonts, fills or frozen panes —
+      // `write_ws_xml_cell` carries a `/* TODO: cell style */` and only the
+      // READER handles `pane`. Promising a frozen header here would be promising
+      // something the file cannot contain.
       for (const c of colonnesMonnaie(tableau.colonnesCles)) {
         for (let r = 1; r <= tableau.objets.length; r++) {
           const cellule = worksheet[XLSX.utils.encode_cell({ r, c })];
@@ -127,14 +127,14 @@ export async function GET(request: NextRequest) {
       }
 
       worksheet["!cols"] = largeursColonnes(tableau.colonnesCles);
-      // The filter dropdowns travel with the header row, which is the closest
-      // the community writer gets to a pinned header.
-      worksheet["!autofilter"] = {
-        ref: XLSX.utils.encode_range({
-          s: { r: 0, c: 0 },
-          e: { r: tableau.objets.length, c: tableau.colonnesCles.length - 1 },
-        }),
-      };
+      // NO `!autofilter`, deliberately. It was added as "the closest the
+      // community writer gets to a pinned header", and that was the wrong trade:
+      // it puts a dropdown arrow on all 18 headers, which is visual noise on a
+      // file meant to be read, and a filter row that hides rows is a trap when
+      // the file is also used as a stock listing. Excel offers its own filter in
+      // one click (Data ▸ Filter) for anyone who wants it; the file no longer
+      // imposes it. `lib/export-inventaire.test.ts` holds this, so restoring the
+      // line without a decision will fail the suite.
 
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Inventaire");

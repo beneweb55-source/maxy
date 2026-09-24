@@ -372,7 +372,18 @@ export const META_COLONNES: Record<
   }
 > = {
   code_interne: { labelModale: "Code Interne (P-XXXX)", categorie: "identification", defaut: true, largeur: 16 },
-  reference: { labelModale: "Désignation / Modèle", categorie: "identification", defaut: true, largeur: 34 },
+  // 67 = le 90ᵉ centile des désignations réelles, mesuré sur les 1684 lignes de
+  // production (p50 = 30, p75 = 43, p90 = 67, p95 = 78). L'ancienne largeur de 34
+  // coupait 632 d'entre elles — 37 % du catalogue, dont la moyenne fait pourtant
+  // 34 caractères : la médiane et la moyenne mentaient sur la queue de
+  // distribution. 67 laisse donc 9 noms sur 10 se lire en entier, et la colonne
+  // reste la plus large du fichier (le test « la désignation est la colonne la
+  // plus large » tient cet invariant).
+  //
+  // Le reste de la queue est hors d'atteinte : 55 désignations dépassent 80
+  // caractères et la plus longue en fait 358 — une colonne assez large pour
+  // celle-là rendrait le tableau inutilisable, on préfère la laisser se couper.
+  reference: { labelModale: "Désignation / Modèle", categorie: "identification", defaut: true, largeur: 67 },
   categorie: { labelModale: "Catégorie", categorie: "identification", defaut: true, largeur: 28 },
   statut: { labelModale: "Statut (En vente, Reçu, etc.)", categorie: "identification", defaut: true, largeur: 18 },
   en_vitrine: { labelModale: "Exposé en Vitrine", categorie: "identification", defaut: false, largeur: 12 },

@@ -398,6 +398,12 @@ describe("colonnes d'export", () => {
       .map(([, m]) => m.largeur);
     expect(META_COLONNES.reference!.largeur).toBeGreaterThan(Math.max(...autres));
     expect(Math.min(...designations)).toBeGreaterThan(20);
+
+    // Seuil, pas valeur figée : on ne teste pas « 67 » mais la PROMESSE qu'il
+    // porte. Mesuré sur les 1684 désignations de production : p50 = 30, p90 = 67.
+    // L'ancienne largeur de 34 en coupait 632 (37 %), et rien dans la suite ne
+    // s'en apercevait — cette assertion-là l'aurait vu.
+    expect(META_COLONNES.reference!.largeur).toBeGreaterThanOrEqual(60);
   });
 
   it("colonnesMonnaie ne désigne QUE les colonnes marquées `monnaie`", () => {
@@ -616,7 +622,7 @@ describe("classeur xlsx", () => {
  * La mise en page du classeur, reproduite À L'IDENTIQUE depuis
  * `app/api/produits/export/route.ts`. Ces tests existent pour que la route et
  * son test ne puissent pas diverger en silence : si la route cesse d'écrire une
- * largeur ou un filtre, l'un d'eux rougit.
+ * largeur — ou se remet à écrire un filtre — l'un d'eux rougit.
  */
 describe("mise en page du classeur xlsx", () => {
   function feuilleRoute(colonnesCles: string[], produits: any[] = [PRODUIT]) {
@@ -631,12 +637,6 @@ describe("mise en page du classeur xlsx", () => {
     }
 
     ws["!cols"] = largeursColonnes(tableau.colonnesCles);
-    ws["!autofilter"] = {
-      ref: XLSX.utils.encode_range({
-        s: { r: 0, c: 0 },
-        e: { r: tableau.objets.length, c: tableau.colonnesCles.length - 1 },
-      }),
-    };
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Inventaire");
@@ -672,17 +672,19 @@ describe("mise en page du classeur xlsx", () => {
     expect(largeurs[iDesignation]).toBe(Math.max(...largeurs));
   });
 
-  it("pose un filtre automatique sur toute la plage, en-tête compris", () => {
+  it("n'écrit AUCUN filtre automatique : un tableau à lire, pas à masquer", () => {
+    // Le fichier a porté un `!autofilter` — une flèche de filtre sur chacun des
+    // 18 en-têtes. C'est du bruit sur un tableau destiné à la lecture, et un
+    // filtre qui masque des lignes est un piège quand le fichier sert aussi
+    // d'état de stock : deux personnes ne lisent alors pas le même tableau.
     const { buffer, tableau } = feuilleRoute(COLONNES_EXPORT_DEFAUT);
     const wb = XLSX.read(buffer, { type: "buffer", cellStyles: true });
     const ws = wb.Sheets[wb.SheetNames[0]!]!;
-    const attendu = XLSX.utils.encode_range({
-      s: { r: 0, c: 0 },
-      e: { r: tableau.objets.length, c: tableau.colonnesCles.length - 1 },
-    });
-    expect(ws["!autofilter"]).toEqual({ ref: attendu });
-    // 18 colonnes de A à R, l'en-tête plus une ligne de donnée : A1:R2.
-    expect(attendu).toBe("A1:R2");
+    expect(ws["!autofilter"]).toBeUndefined();
+    // Le lecteur pourrait ignorer un `<autoFilter>` orphelin : on interroge
+    // aussi le XML réellement écrit, qui ne laisse aucune place au doute.
+    expect(buffer.toString("latin1")).not.toContain("<autoFilter");
+    expect(tableau.colonnesCles).toHaveLength(18);
   });
 
   it("affiche les montants en DA sans les transformer en texte", () => {
@@ -717,10 +719,10 @@ describe("mise en page du classeur xlsx", () => {
     expect(ws["A2"]!.z).toBeUndefined();
   });
 
-  it("un classeur vide garde ses largeurs et son filtre d'en-tête", () => {
+  it("un classeur vide garde ses largeurs et ne pose aucun filtre", () => {
     const { ws, buffer } = feuilleRoute(["code_interne", "reference"], []);
     expect(ws["!cols"]).toHaveLength(2);
-    expect(ws["!autofilter"]).toEqual({ ref: "A1:B1" });
+    expect(ws["!autofilter"]).toBeUndefined();
     // Aucune ligne de donnée : la boucle des montants ne doit pas déborder.
     expect(() => buffer.toString("latin1")).not.toThrow();
   });
