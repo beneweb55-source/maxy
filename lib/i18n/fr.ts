@@ -68,7 +68,6 @@ export const fr = {
     charges: "Charges",
     administration: "Administration",
     notifications: "Notifications",
-    carnet: "Carnet de travail",
   },
   dashboard: {
     erreurChargement: "Erreur lors du chargement du tableau de bord.",

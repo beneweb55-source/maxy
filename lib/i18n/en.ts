@@ -67,7 +67,6 @@ export const en = {
     charges: "Expenses",
     administration: "Administration",
     notifications: "Notifications",
-    carnet: "Work Journal",
   },
   dashboard: {
     erreurChargement: "Error loading dashboard.",

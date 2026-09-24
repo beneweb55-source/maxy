@@ -1046,3 +1046,15 @@ ALTER TABLE "paiement_credits" ADD CONSTRAINT "paiement_credits_user_id_fkey" FO
 -- AddForeignKey
 ALTER TABLE "charges" ADD CONSTRAINT "charges_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+
+-- ============================================
+-- Migration: 20260924093000_remove_carnet
+-- ============================================
+-- Retrait du « Carnet de travail » (décision explicite de l'utilisateur :
+-- « tout, données comprises »). Cette section est AJOUTÉE à la suite de
+-- l'historique : les sections précédentes ne sont jamais réécrites, sans quoi
+-- ce script cesserait de décrire ce qui a réellement été appliqué.
+DROP TABLE IF EXISTS "carnet_pieces_jointes";
+DROP TABLE IF EXISTS "carnet_entrees";
+DROP TYPE IF EXISTS "CarnetCategorie";
+

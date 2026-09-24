@@ -112,8 +112,6 @@ const TABLE_LABELS: Record<string, string> = {
   journal_activite: "Journal activité",
   push_subscriptions: "Push subscriptions",
   fcm_tokens: "Tokens FCM",
-  carnet_entrees: "Carnet entrées",
-  carnet_pieces_jointes: "Pièces jointes",
 };
 
 // ─── COMPOSANT PRINCIPAL ───

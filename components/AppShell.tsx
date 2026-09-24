@@ -34,7 +34,6 @@ import {
   IconeVitrine,
   IconeRecherche,
   IconeCloche,
-  IconeNote,
   IconeCredit,
   IconeDepense,
   type ProprietesIcone,
@@ -96,7 +95,6 @@ const NAVIGATION: readonly EntreeNavigation[] = [
     sousChemins: [],
   },
   { href: "/notifications", cle: "nav.notifications", icone: IconeCloche, sousChemins: [] },
-  { href: "/carnet", cle: "nav.carnet", icone: IconeNote, sousChemins: [] },
 
   {
     href: "/administration",

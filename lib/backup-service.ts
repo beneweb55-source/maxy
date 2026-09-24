@@ -183,8 +183,6 @@ const BACKUP_TABLES = [
   { key: "journal_activite", model: "journalActivite" },
   { key: "push_subscriptions", model: "pushSubscription" },
   { key: "fcm_tokens", model: "fcmToken" },
-  { key: "carnet_entrees", model: "carnetEntree" },
-  { key: "carnet_pieces_jointes", model: "carnetPieceJointe" },
 ] as const;
 
 // ─── ORDRE DE RESTAURATION (inverse de la création) ───
@@ -194,7 +192,7 @@ const RESTORE_ORDER = [
   "ventes", "reparations", "historique_statuts", "composition_historique",
   "mouvements_caisse", "commandes", "lignes_commande", "factures",
   "facture_lignes", "notifications", "journal_activite", "push_subscriptions",
-  "fcm_tokens", "carnet_entrees", "carnet_pieces_jointes",
+  "fcm_tokens",
 ];
 
 // Tables avec TRUNCATE explicite (FK non CASCADE)
@@ -206,7 +204,6 @@ const TRUNCATE_TABLES = [
   "famille_info", "categorie_info", "modele", "categorie",
   "parametres", "user",
   "push_subscription", "fcm_token", "journal_activite",
-  "carnet_piece_jointe", "carnet_entree",
 ];
 
 // ─── NOMS DE TABLES PRISMA → NOMS SQL ───
@@ -234,8 +231,6 @@ const TABLE_NAME_MAP: Record<string, string> = {
   journal_activite: "journal_activite",
   push_subscriptions: "push_subscriptions",
   fcm_tokens: "fcm_tokens",
-  carnet_entrees: "carnet_entrees",
-  carnet_pieces_jointes: "carnet_pieces_jointes",
 };
 
 // ─── NOMS PRISMA → NOMS CLÉS DE TABLE ───
@@ -263,8 +258,6 @@ const PRISMA_KEY_MAP: Record<string, string> = {
   journalActivite: "journal_activite",
   pushSubscription: "push_subscriptions",
   fcmToken: "fcm_tokens",
-  carnetEntree: "carnet_entrees",
-  carnetPieceJointe: "carnet_pieces_jointes",
 };
 
 // ============================================================
