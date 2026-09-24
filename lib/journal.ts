@@ -57,6 +57,7 @@ export const ACTIONS_JOURNAL = {
   // Caisse
   CAISSE_MOUVEMENT: "caisse.mouvement",
   CAISSE_REPARTITION: "caisse.repartition",
+  CAISSE_PURGE_HISTORIQUE: "caisse.purge_historique",
 
   // Rapports
   RAPPORT_DECISION: "rapport.decision",

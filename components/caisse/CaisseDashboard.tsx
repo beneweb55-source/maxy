@@ -11,6 +11,7 @@ import {
   IconeChevronGauche,
   IconeChevronDroite,
   IconeCocheCercle,
+  IconeCorbeille,
   IconeTelechargement,
   IconeStore,
 } from "@/components/icons";
@@ -26,6 +27,14 @@ interface MouvementDto {
   description: string | null;
   par: string;
   caisse?: "CAISSE_PHYSIQUE" | "CAISSE_YALIDINE";
+}
+
+interface ApercuHistorique {
+  total: number;
+  physique: number;
+  yalidine: number;
+  premier: string | null;
+  dernier: string | null;
 }
 
 interface ReponseCaisse {
@@ -80,6 +89,10 @@ export default function CaisseDashboard({ role }: { role: Role }) {
   const [pctParts, setPctParts] = useState(20);
   const [pctFrais, setPctFrais] = useState(10);
 
+  const [modalVidageHistorique, setModalVidageHistorique] = useState(false);
+  const [confirmationVidage, setConfirmationVidage] = useState("");
+  const [apercuHistorique, setApercuHistorique] = useState<ApercuHistorique | null>(null);
+
   const estGerant = role === "gerant";
 
   const rafraichir = useCallback(async () => {
@@ -116,6 +129,29 @@ export default function CaisseDashboard({ role }: { role: Role }) {
   useEffect(() => {
     void rafraichir();
   }, [rafraichir]);
+
+  // Le périmètre réel du vidage, demandé au serveur à l'ouverture de la modale.
+  // La page ne peut pas le fournir : `donnees.total` compte la caisse filtrée
+  // par les onglets, alors que le vidage emporte les deux caisses.
+  useEffect(() => {
+    if (!modalVidageHistorique) return;
+    const controleur = new AbortController();
+    setApercuHistorique(null);
+    void (async () => {
+      try {
+        const res = await fetch("/api/caisse/historique", {
+          cache: "no-store",
+          signal: controleur.signal,
+        });
+        if (!res.ok) return;
+        setApercuHistorique((await res.json()) as ApercuHistorique);
+      } catch {
+        // Silence : la modale garde son texte de repli, et la confirmation par
+        // mot-clé reste exigée même sans le compte exact.
+      }
+    })();
+    return () => controleur.abort();
+  }, [modalVidageHistorique]);
 
   async function enregistrerMouvement(confirmer: boolean) {
     setEnvoi(true);
@@ -193,6 +229,37 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           : "Répartition mensuelle appliquée (4 mouvements créés)."
       );
       setConfirmationRepartition(null);
+      await rafraichir();
+    } catch {
+      afficher("Impossible de joindre le serveur.", "erreur");
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  async function viderHistorique() {
+    setEnvoi(true);
+    try {
+      const res = await fetch("/api/caisse/historique", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: confirmationVidage }),
+      });
+      const corps = (await res.json().catch(() => null)) as
+        | { ok?: boolean; supprimes?: number; message?: string; error?: string; backup?: unknown }
+        | null;
+      if (!res.ok) {
+        afficher(corps?.error ?? "Erreur lors du vidage de l'historique.", "erreur");
+        return;
+      }
+      // La sauvegarde part sur le disque AVANT que la modale ne se ferme : une
+      // copie qui reste dans une variable est une copie perdue.
+      telechargerSauvegardeHistorique(corps?.backup);
+      afficher(corps?.message ?? "Historique vidé.");
+      setModalVidageHistorique(false);
+      setConfirmationVidage("");
+      // Sans cela, on resterait sur une page 5 d'un historique devenu vide.
+      setPage(1);
       await rafraichir();
     } catch {
       afficher("Impossible de joindre le serveur.", "erreur");
@@ -685,7 +752,7 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           </h2>
 
           {/* Onglets Filtres de Caisse */}
-          <div className="inline-flex rounded-xl bg-brand-light-grey/30 dark:bg-white/5 p-1 border border-brand-light-grey dark:border-white/10 text-xs font-bold">
+          <div className="ml-auto inline-flex rounded-xl bg-brand-light-grey/30 dark:bg-white/5 p-1 border border-brand-light-grey dark:border-white/10 text-xs font-bold">
             <button
               type="button"
               onClick={() => { setFiltreCaisse("TOUTES"); setPage(1); }}
@@ -722,6 +789,22 @@ export default function CaisseDashboard({ role }: { role: Role }) {
               Caisse Yalidine
             </button>
           </div>
+
+          {/* Le gérant seul : l'API refuse tout autre rôle, le bouton ne doit
+              donc pas apparaître pour un rôle qui se ferait refuser. */}
+          {estGerant && (
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmationVidage("");
+                setModalVidageHistorique(true);
+              }}
+              className="btn btn-danger"
+            >
+              <IconeCorbeille taille={15} />
+              Vider l'historique
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -938,8 +1021,104 @@ export default function CaisseDashboard({ role }: { role: Role }) {
           </button>
         </div>
       </Modale>
+
+      <Modale
+        titre="Vider l'historique de la caisse"
+        ouverte={modalVidageHistorique}
+        onFermer={() => {
+          setModalVidageHistorique(false);
+          setConfirmationVidage("");
+        }}
+      >
+        <div className="space-y-3 text-sm text-brand-smooth">
+          <p className="flex items-start gap-2">
+            <IconeAlerte taille={16} className="mt-0.5 shrink-0 text-danger" />
+            <span>
+              <strong className="text-brand-black dark:text-white">
+                {apercuHistorique
+                  ? `${apercuHistorique.total} mouvement${apercuHistorique.total > 1 ? "s" : ""}`
+                  : "Tous les mouvements de caisse"}
+              </strong>{" "}
+              {apercuHistorique
+                ? `seront supprimés définitivement (${apercuHistorique.physique} magasin, ${apercuHistorique.yalidine} Yalidine).`
+                : "seront supprimés définitivement, toutes caisses confondues."}
+            </span>
+          </p>
+
+          {apercuHistorique?.premier && apercuHistorique.dernier && (
+            <p className="text-xs text-brand-warm-grey">
+              Période concernée : du{" "}
+              {new Date(apercuHistorique.premier).toLocaleDateString("fr-FR")} au{" "}
+              {new Date(apercuHistorique.dernier).toLocaleDateString("fr-FR")}.
+            </p>
+          )}
+
+          <p className="text-xs text-brand-warm-grey">
+            Les soldes et les courbes de la caisse repartiront de zéro. Les ventes, les
+            lots, les factures et les produits ne sont pas touchés. Une sauvegarde JSON de
+            l'historique sera téléchargée automatiquement.
+          </p>
+
+          <label className="block space-y-1">
+            <span className="libelle text-brand-smooth">
+              Saisissez{" "}
+              <span className="font-mono font-bold text-danger">VIDER</span> pour confirmer
+            </span>
+            <input
+              type="text"
+              value={confirmationVidage}
+              onChange={(e) => setConfirmationVidage(e.target.value)}
+              autoFocus
+              autoComplete="off"
+              className="champ mt-2"
+            />
+          </label>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setModalVidageHistorique(false);
+              setConfirmationVidage("");
+            }}
+            className="btn btn-secondaire"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            disabled={envoi || confirmationVidage !== "VIDER"}
+            onClick={() => void viderHistorique()}
+            className="btn btn-danger"
+          >
+            <IconeCorbeille taille={15} />
+            Télécharger puis vider
+          </button>
+        </div>
+      </Modale>
     </div>
   );
+}
+
+/**
+ * Rend la sauvegarde renvoyée par `DELETE /api/caisse/historique` téléchargeable.
+ * L'écran de réinitialisation de l'administration, lui, reçoit sa sauvegarde et
+ * la laisse dans la réponse : personne ne la lit jamais. Ici la copie part sur
+ * le disque de l'utilisateur, sinon supprimer un historique financier ne
+ * laisserait aucune trace exploitable.
+ */
+function telechargerSauvegardeHistorique(sauvegarde: unknown) {
+  if (!sauvegarde) return;
+  const contenu = JSON.stringify(sauvegarde, null, 2);
+  const blob = new Blob([contenu], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = `sauvegarde-historique-caisse-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  URL.revokeObjectURL(url);
 }
 
 function formatLabel(cle: string, granularite: 'jour' | 'mois' | 'an'): string {

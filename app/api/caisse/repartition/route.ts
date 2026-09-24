@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { formaterDA } from "@/lib/caisse";
-import { ajouterMouvement, beneficeDuMois, soldesCaisse } from "@/lib/caisse-db";
+import { ajouterMouvement, beneficeDuMois, repartitionDejaAppliquee, soldesCaisse } from "@/lib/caisse-db";
 import { enregistrerActivite, ACTIONS_JOURNAL } from "@/lib/journal";
 
 export async function POST(request: NextRequest) {
@@ -31,11 +31,10 @@ export async function POST(request: NextRequest) {
     const cleMois = `${annee}-${String(mois).padStart(2, "0")}`;
     const marqueur = `repartition:${cleMois}`;
 
-    const dejaFaite = await prisma.mouvementCaisse.findFirst({
-      where: { type: "reinvest", description: { contains: marqueur } },
-      select: { id: true },
-    });
-    if (dejaFaite) {
+    // Le journal compte autant que le mouvement : c'est lui qui survit à un
+    // vidage de l'historique de caisse, et il est le seul à empêcher un second
+    // versement de la même répartition après ce vidage.
+    if (await repartitionDejaAppliquee(prisma, cleMois)) {
       return erreur(409, `La répartition de ${cleMois} a déjà été appliquée.`);
     }
 

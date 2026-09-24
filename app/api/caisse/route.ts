@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { erreur, exigerUtilisateur } from "@/lib/api";
 import { calculerSoldes } from "@/lib/caisse";
-import { beneficeDuMois } from "@/lib/caisse-db";
+import { beneficeDuMois, repartitionDejaAppliquee } from "@/lib/caisse-db";
 
 const PAR_PAGE = 50;
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       whereMouvementsPage.caisse = caisseFilter;
     }
 
-    const [tous, totalFiltre, pageMouvements, parametres, repartitionFaite] = await Promise.all([
+    const [tous, totalFiltre, pageMouvements, parametres, repartitionDejaFaite] = await Promise.all([
       prisma.mouvementCaisse.findMany({
         orderBy: { id: "asc" },
         select: { type: true, montant: true, date: true, solde_apres: true, caisse: true },
@@ -39,10 +39,10 @@ export async function GET(request: NextRequest) {
         include: { user: { select: { username: true } } },
       }),
       prisma.parametres.findUnique({ where: { id: 1 } }),
-      prisma.mouvementCaisse.findFirst({
-        where: { type: "reinvest", description: { contains: `repartition:${moisCourant}` } },
-        select: { id: true },
-      }),
+      // Le journal compte aussi : il survit à un vidage de l'historique de
+      // caisse. Sans lui, l'écran afficherait « répartition à appliquer » après
+      // un vidage, alors que le POST la refuserait en 409.
+      repartitionDejaAppliquee(prisma, moisCourant),
     ]);
 
     const mvtsPhysique = tous.filter((m) => m.caisse !== "CAISSE_YALIDINE");
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
       graphique_soldes,
       repartition: {
         mois: moisCourant,
-        deja_appliquee: repartitionFaite !== null,
+        deja_appliquee: repartitionDejaFaite,
         benefice_mois: benefice,
       },
       page,
