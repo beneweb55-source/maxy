@@ -63,6 +63,24 @@ describe("caisse — sens et solde", () => {
     expect(impactSolde("vente", 0)).toBe(0);
   });
 
+  it("arrondit au centime au lieu de hacher les décimales", () => {
+    // Le séparateur de milliers est une espace insécable (U+00A0) : on l'écrit
+    // en échappement plutôt que de la laisser invisible dans le fichier.
+    const nbsp = " ";
+
+    // Les deux moyennes qui s'affichaient hachées sur le tableau de bord :
+    // « 9 384.615 384 615 385 DA » et « 184 444.44 444 444 444 DA ».
+    expect(formaterDA(9_384.615384615385)).toBe(`9${nbsp}384.62${nbsp}DA`);
+    expect(formaterDA(184_444.44444444444)).toBe(`184${nbsp}444.44${nbsp}DA`);
+
+    // Un montant rond ne gagne pas de décimales.
+    expect(formaterDA(2)).toBe(`2${nbsp}DA`);
+    expect(formaterDA(1.5)).toBe(`1.5${nbsp}DA`);
+
+    // Arrondi à zéro : pas de signe négatif orphelin.
+    expect(formaterDA(-0.001)).toBe(`0${nbsp}DA`);
+  });
+
   it("formate les montants en DZD lisibles", () => {
     expect(formaterDA(12_500)).toBe("12 500 DA");
     expect(formaterDA(-3_000)).toBe("-3 000 DA");

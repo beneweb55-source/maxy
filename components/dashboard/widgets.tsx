@@ -61,10 +61,17 @@ export function RenduWidget({
   }
 }
 
+// Toutes les cellules numériques de ces tableaux sont alignées à droite, et
+// c'est le contrat qu'exploite la règle posée sur le <table> : un montant ne
+// doit JAMAIS se couper en deux au milieu. « 184 444.44 444 444 444 DA » se
+// repliait sur la ligne suivante et débordait sur la colonne voisine ; la carte
+// préfère désormais défiler horizontalement (overflow-x-auto ci-dessus) plutôt
+// que de casser un nombre. Une seule règle ici couvre les six tableaux, y
+// compris ceux qu'on ajoutera plus tard.
 function CadreTableau({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-3 overflow-x-auto">
-      <table className="w-full min-w-[480px] text-sm">{children}</table>
+      <table className="w-full min-w-[480px] text-sm [&_.text-right]:whitespace-nowrap">{children}</table>
     </div>
   );
 }
@@ -150,6 +157,15 @@ function BlocKpis({
 }) {
   const t = useT();
   const visibles = cles.filter((c) => kpis[c] !== undefined);
+  // Cinq cartes sur une ligne tiennent, mais écrasent chacune à ~215 px : le
+  // montant « 16 986 000 DA » en gras 30 px y mesure ~208 px pour ~168 px de
+  // largeur utile, et se faisait donc COUPER (le « A » manquant sur la capture).
+  // Réduire le nombre de colonnes ne suffit pas — la valeur la plus longue
+  // dépasserait encore sur un écran plus étroit. C'est donc la taille du texte
+  // qui suit la largeur de la carte : la carte est un conteneur de requête et la
+  // valeur se dimensionne en `cqw`. `min-w-0` est indispensable au passage : sans
+  // lui un item de grille refuse de descendre sous la largeur de son contenu, et
+  // la carte déborde au lieu de rétrécir.
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {visibles.map((cle) => {
@@ -162,10 +178,16 @@ function BlocKpis({
         const positive = v !== null && (inverse ? v < 0 : v > 0);
         const negative = v !== null && (inverse ? v > 0 : v < 0);
         return (
-          <div key={cle} className="carte relative overflow-hidden group/kpi">
+          <div
+            key={cle}
+            className="carte relative overflow-hidden group/kpi min-w-0 [container-type:inline-size]"
+          >
             <div className="absolute -inset-4 bg-gradient-to-tr from-brand-orange/5 to-transparent opacity-0 group-hover/kpi:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
             <p className="libelle text-brand-warm-grey/80 relative z-10">{t(def.libelle)}</p>
-            <p className="mt-3 text-3xl font-extrabold tracking-tight text-brand-black font-outfit relative z-10">
+            {/* 12 % de la largeur de la carte, borné en haut par l'ancienne taille
+                (`text-3xl` = 1,875 rem) pour ne rien rapetisser sur les grandes
+                cartes, et en bas par 1,05 rem pour rester lisible. */}
+            <p className="mt-3 [font-size:clamp(1.05rem,12cqw,1.875rem)] leading-tight font-extrabold tracking-tight text-brand-black font-outfit relative z-10">
               {valeurFormatee(cle, kpi.valeur)}
             </p>
             {comparaison && (

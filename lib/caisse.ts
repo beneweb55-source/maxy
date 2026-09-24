@@ -95,8 +95,16 @@ export function calculerSoldes(
 }
 
 export function formaterDA(montant: number): string {
-  const signe = montant < 0 ? "-" : "";
-  const abs = Math.abs(montant)
+  // Arrondi au centime AVANT le groupement. Sans lui, une moyenne comme
+  // 9384.615384615385 sortait « 9 384.615 384 615 385 DA » : la regex
+  // ci-dessous ne sait pas distinguer le point décimal et hachait les
+  // décimales en paquets de trois, à l'écran comme dans un fichier exporté.
+  // L'arrondi rend ce hachage impossible — il ne reste jamais trois chiffres
+  // après le point. Les montants entiers, eux, sortent inchangés.
+  const arrondi = Math.round(Math.abs(montant) * 100) / 100;
+  // Le signe se décide APRÈS l'arrondi : -0,001 DA vaut 0 DA, pas « -0 DA ».
+  const signe = montant < 0 && arrondi !== 0 ? "-" : "";
+  const abs = arrondi
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   return `${signe}${abs} DA`;
