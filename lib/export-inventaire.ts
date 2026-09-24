@@ -100,6 +100,29 @@ export const MAX_IDS_SELECTION = 300;
 export const PARAM_COMPTE = "compte";
 
 /**
+ * Le filtre « Exposé en vitrine » de la modale.
+ *
+ * C'est la clé de filtre produit STANDARD — `lib/filtres-produits.ts` la lit
+ * depuis toujours — et c'est délibéré : la modale qui demande « seulement les
+ * produits exposés » pose exactement la question que le tiroir de filtres de
+ * l'inventaire, donc les deux ne peuvent pas diverger sur son sens. Un nom
+ * dédié aurait créé une seconde définition de « en vitrine », libre de dériver.
+ */
+export const PARAM_VITRINE = "en_vitrine";
+
+/**
+ * La colonne dont la case gouverne ce filtre.
+ *
+ * Une même case fait donc deux choses : elle écrit la colonne dans le fichier et
+ * elle restreint les lignes exportées. C'est une décision assumée, pas un effet
+ * de bord oublié — elle répond au défaut mesuré (une modale annonçant
+ * « 1616 articles à exporter » pour une vitrine qui en compte 181). Pour que ce
+ * ne soit jamais silencieux, la modale l'annonce deux fois : une pastille
+ * « filtre » sur la case, et une phrase sous les périmètres quand il est actif.
+ */
+export const COLONNE_FILTRE_VITRINE = "en_vitrine";
+
+/**
  * Parameters the export consumes for itself and that must never reach the
  * product filter.
  *
@@ -191,16 +214,31 @@ export function lireIds(params: URLSearchParams): number[] {
  * cannot drift apart.
  */
 export function construireFiltresExport(params: URLSearchParams): Prisma.ProduitWhereInput {
-  switch (lireScope(params)) {
-    case "stock":
-      return construireFiltresProduits(new URLSearchParams());
-    case "selection":
-      // An empty selection yields an unmatchable clause rather than the whole
-      // catalogue: "j'ai coché zéro ligne" must never mean "donne-moi tout".
-      return { id: { in: lireIds(params) } };
-    default:
-      return construireFiltresProduits(construireParametresProduit(params));
+  const perimetre = ((): Prisma.ProduitWhereInput => {
+    switch (lireScope(params)) {
+      case "stock":
+        return construireFiltresProduits(new URLSearchParams());
+      case "selection":
+        // An empty selection yields an unmatchable clause rather than the whole
+        // catalogue: "j'ai coché zéro ligne" must never mean "donne-moi tout".
+        return { id: { in: lireIds(params) } };
+      default:
+        return construireFiltresProduits(construireParametresProduit(params));
+    }
+  })();
+
+  // « Exposé en vitrine » se pose APRÈS le périmètre et vaut pour TOUS les
+  // périmètres. C'est nécessaire, pas décoratif : `stock` et `selection`
+  // écartent volontairement les paramètres de l'écran, si bien qu'un filtre lu
+  // par `construireFiltresProduits` y serait purement perdu — la case cochée
+  // n'aurait alors rien filtré dès qu'on change de périmètre, exactement le
+  // genre d'incohérence qu'on cherche à fermer ici. La clause est identique à
+  // celle du filtre d'écran, donc « en vitrine » n'a qu'une définition.
+  if (params.get(PARAM_VITRINE) === "1") {
+    return { AND: [perimetre, { en_vitrine: true }] };
   }
+
+  return perimetre;
 }
 
 // ---------------------------------------------------------------------------

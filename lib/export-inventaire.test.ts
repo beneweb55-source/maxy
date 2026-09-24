@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as XLSX from "xlsx";
 import {
   CLES_CONTROLE_EXPORT,
+  COLONNE_FILTRE_VITRINE,
   COLONNES_DISPONIBLES,
   COLONNES_EXPORT_DEFAUT,
   FORMATS_FICHIER,
@@ -13,6 +14,7 @@ import {
   PARAM_FORMAT_FICHIER,
   PARAM_IDS,
   PARAM_SCOPE,
+  PARAM_VITRINE,
   PRESETS_COLONNES,
   SCOPES_EXPORT,
   SCOPE_EXPORT_DEFAUT,
@@ -159,6 +161,68 @@ describe("export inventaire — contrat des paramètres", () => {
         SCOPE_EXPORT_DEFAUT
       );
       expect(lireScope(new URLSearchParams())).toBe(SCOPE_EXPORT_DEFAUT);
+    });
+  });
+
+  /**
+   * Le défaut d'origine : la carte annonçait le total du STOCK (1616, mesuré en
+   * base) alors que la vitrine en compte 181. La case « Exposé en Vitrine » ne
+   * remplissait qu'une colonne ; elle restreint désormais le fichier aussi.
+   */
+  describe("le filtre « Exposé en vitrine »", () => {
+    /** Le filtre tel que la modale le pose : la case cochée, tous périmètres. */
+    function avecVitrine(scope: string, ids?: string) {
+      const params = paramsModale("csv_excel", scope);
+      params.set(PARAM_VITRINE, "1");
+      if (ids) params.set(PARAM_IDS, ids);
+      return construireFiltresExport(params);
+    }
+
+    it("restreint « filtres » aux produits exposés, sans perdre les filtres de l'écran", () => {
+      const params = paramsModale("csv_excel");
+      params.set(PARAM_VITRINE, "1");
+      params.set("q", "ssd");
+      const json = JSON.stringify(construireFiltresExport(params));
+      expect(json).toContain("en_vitrine");
+      expect(json).toContain("ssd");
+    });
+
+    it("s'applique AUSSI à `stock`, qui écarte pourtant les filtres de l'écran", () => {
+      // Sans clause reposée après le périmètre, la case cochée n'aurait rien
+      // filtré ici : le fichier aurait contenu les 1616 lignes du stock.
+      expect(JSON.stringify(avecVitrine("stock"))).toContain("en_vitrine");
+    });
+
+    it("s'applique AUSSI à `selection` : cocher la case écarte des lignes cochées", () => {
+      const json = JSON.stringify(avecVitrine("selection", "12,34"));
+      expect(json).toContain("en_vitrine");
+      expect(json).toContain("[12,34]");
+    });
+
+    it("ne pose AUCUNE clause vitrine quand la case n'est pas cochée", () => {
+      for (const scope of SCOPES_EXPORT) {
+        const json = JSON.stringify(construireFiltresExport(paramsModale("csv_excel", scope)));
+        expect(json).not.toContain("en_vitrine");
+      }
+    });
+
+    it("n'a qu'UNE définition de « en vitrine » : celle du filtre d'écran", () => {
+      // Le paramètre est la clé produit standard : la clause posée par l'export
+      // doit être LITTÉRALEMENT une de celles que le tiroir de filtres envoie à
+      // la base, pas une seconde définition qui pourrait dériver.
+      expect(PARAM_VITRINE).toBe("en_vitrine");
+      const parEcran = construireFiltresProduits(new URLSearchParams({ [PARAM_VITRINE]: "1" }));
+      const parExport = avecVitrine("stock") as { AND: unknown[] };
+
+      expect(parExport.AND).toHaveLength(2);
+      expect(parExport.AND[1]).toEqual({ en_vitrine: true });
+      expect((parEcran as { AND: unknown[] }).AND).toContainEqual(parExport.AND[1]);
+    });
+
+    it("la case qui porte le filtre est une colonne réelle de l'export", () => {
+      // Un identifiant renommé d'un côté désactiverait le filtre en silence.
+      expect(MAP_COLONNES[COLONNE_FILTRE_VITRINE]).toBeDefined();
+      expect(COLONNES_DISPONIBLES.some((c) => c.id === COLONNE_FILTRE_VITRINE)).toBe(true);
     });
   });
 

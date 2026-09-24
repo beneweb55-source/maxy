@@ -15,12 +15,14 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/toast";
 import {
+  COLONNE_FILTRE_VITRINE,
   COLONNES_DISPONIBLES,
   MAX_IDS_SELECTION,
   PARAM_COMPTE,
   PARAM_FORMAT_FICHIER,
   PARAM_IDS,
   PARAM_SCOPE,
+  PARAM_VITRINE,
   PRESETS_COLONNES,
   type CategorieColonneExport,
   type ScopeExport,
@@ -33,6 +35,15 @@ import {
  * l'export n'exportait qu'une page.
  */
 const CLES_URL_SANS_OBJET_A_L_EXPORT = ["page"] as const;
+
+/**
+ * Les périmètres dont la modale annonce le nombre de lignes.
+ *
+ * Tous : chacun est un `where` que le serveur sait compter, et chacun peut
+ * mentir à sa façon si on se contente du nombre de cases cochées ou d'une
+ * description figée. L'ordre suit celui de l'écran.
+ */
+const SCOPES_COMPTABLES: ScopeExport[] = ["filtres", "stock", "selection"];
 
 /** L'ordre d'affichage des groupes, pour que la grille se lise comme la donnée. */
 const ORDRE_CATEGORIES: CategorieColonneExport[] = [
@@ -75,6 +86,33 @@ export default function ModaleExport({
   const nbSelection = selection.length;
 
   /**
+   * Les ids cochés en une CHAÎNE stable.
+   *
+   * `selection` est un tableau : le mettre en dépendance d'un `useCallback` ou
+   * d'un `useEffect` relancerait le comptage à chaque rendu, y compris quand
+   * rien n'a changé — la chaîne, elle, ne change que si les cases changent.
+   */
+  const idsSelection = selection.join(",");
+
+  /**
+   * La sélection peut changer pendant que la modale est ouverte (une action
+   * groupée la consomme, ou l'utilisateur coche plus de lignes). Rester sur
+   * « sélection » enverrait alors une requête vide ou trop longue, que la route
+   * refuse — autant revenir d'office sur les filtres.
+   */
+  const selectionHorsLimite = nbSelection === 0 || nbSelection > MAX_IDS_SELECTION;
+
+  /**
+   * La case « Exposé en Vitrine » ne choisit pas qu'une colonne : elle restreint
+   * aussi l'export aux produits réellement exposés (voir
+   * `COLONNE_FILTRE_VITRINE`). Sans elle, la carte « Filtres actuels uniquement »
+   * annonçait 1616 articles — tout le stock non vendu — pour une vitrine qui en
+   * compte 181. La règle vaut pour tous les périmètres (voir
+   * `construireFiltresExport`), et la modale l'affiche pour ne pas surprendre.
+   */
+  const filtreVitrine = colonnesSelectionnees.includes(COLONNE_FILTRE_VITRINE);
+
+  /**
    * Les paramètres de l'écran qui définissent chaque périmètre.
    *
    * Extrait de `construireRequete` pour que le COMPTAGE et le TÉLÉCHARGEMENT
@@ -104,38 +142,79 @@ export default function ModaleExport({
   );
 
   /**
-   * Combien de lignes le fichier contiendrait, pour le périmètre « filtres ».
+   * Les paramètres que reçoivent le COMPTAGE et le TÉLÉCHARGEMENT.
    *
-   * La carte lisait auparavant le total de `donnees` — la dernière liste
-   * chargée par l'écran. Ce n'est pas le périmètre de l'export, et cette liste
-   * n'est même pas chargée dans les vues famille et catégorie, où elle reste
-   * donc figée sur la vue précédente. Mesuré sur
+   * Une seule source pour les deux : le nombre affiché et le fichier ne peuvent
+   * donc pas diverger — c'est exactement le défaut réparé ici (une carte
+   * annonçant 1616 articles pour un fichier qui en contenait 181).
+   *
+   * Le filtre « Exposé en vitrine » est reposé EXPLICITEMENT : `stock` et
+   * `sélection` écartent volontairement les filtres de l'écran, si bien qu'il ne
+   * peut pas compter sur eux pour voyager jusqu'au serveur.
+   */
+  const parametresAvecFiltres = useCallback(
+    (scope: ScopeExport): URLSearchParams => {
+      const params = parametresDePerimetre(scope);
+      if (scope === "selection") params.set(PARAM_IDS, idsSelection);
+      if (filtreVitrine) params.set(PARAM_VITRINE, "1");
+      return params;
+    },
+    [parametresDePerimetre, idsSelection, filtreVitrine]
+  );
+
+  /**
+   * Combien de lignes CHAQUE périmètre contiendrait.
+   *
+   * La carte lisait auparavant le total de `donnees` — la dernière liste chargée
+   * par l'écran. Ce n'est pas le périmètre de l'export, et cette liste n'est même
+   * pas chargée dans les vues famille et catégorie, où elle reste donc figée sur
+   * la vue précédente. Mesuré sur
    * `?vue=famille&famille_id=16&en_vitrine=1` : la carte annonçait 1616
    * articles, le fichier en aurait contenu 57. Seul le serveur construit le
    * `where` du fichier : c'est donc lui qui répond.
+   *
+   * Les trois périmètres sont comptés, pas seulement « filtres » : la sélection
+   * peut perdre des lignes (le filtre vitrine, mais aussi une ligne supprimée
+   * ailleurs), et « Tout le stock » ne dit plus rien de vrai dès que la case
+   * « Exposé en Vitrine » est cochée. `null` = le calcul est en cours ; une clé
+   * absente = le serveur n'a pas répondu, la carte le dira.
    */
-  const [nbFiltres, setNbFiltres] = useState<number | null>(null);
+  const [comptes, setComptes] = useState<Partial<Record<ScopeExport, number>> | null>(null);
   useEffect(() => {
     if (!ouverte) return;
     const controleur = new AbortController();
-    // Revenir au calcul en cours plutôt que de garder le chiffre précédent :
+    // Revenir au calcul en cours plutôt que de garder les chiffres précédents :
     // entre deux filtres, un ancien total est un mensonge, pas une
     // approximation.
-    setNbFiltres(null);
-
-    const params = parametresDePerimetre("filtres");
-    params.set(PARAM_SCOPE, "filtres");
-    params.set(PARAM_COMPTE, "1");
+    setComptes(null);
 
     void (async () => {
       try {
-        const res = await fetch(`/api/produits/export?${params.toString()}`, {
-          cache: "no-store",
-          signal: controleur.signal,
-        });
-        if (!res.ok) return;
-        const corps = (await res.json()) as { total?: unknown };
-        if (typeof corps.total === "number") setNbFiltres(corps.total);
+        const resultats = await Promise.all(
+          SCOPES_COMPTABLES.map(async (scope) => {
+            if (scope === "selection" && selectionHorsLimite) return null;
+
+            const params = parametresAvecFiltres(scope);
+            params.set(PARAM_SCOPE, scope);
+            params.set(PARAM_COMPTE, "1");
+
+            const res = await fetch(`/api/produits/export?${params.toString()}`, {
+              cache: "no-store",
+              signal: controleur.signal,
+            });
+            if (!res.ok) return null;
+            const corps = (await res.json()) as { total?: unknown };
+            return typeof corps.total === "number"
+              ? ([scope, corps.total] as [ScopeExport, number])
+              : null;
+          })
+        );
+
+        const connus: Partial<Record<ScopeExport, number>> = {};
+        for (const resultat of resultats) {
+          if (resultat) connus[resultat[0]] = resultat[1];
+        }
+        setComptes(connus);
       } catch {
         // Silence volontaire : on reste sur « Calcul en cours… ». Un comptage
         // qui échoue ne doit pas se transformer en un chiffre inventé.
@@ -143,7 +222,20 @@ export default function ModaleExport({
     })();
 
     return () => controleur.abort();
-  }, [ouverte, parametresDePerimetre]);
+  }, [ouverte, parametresAvecFiltres, selectionHorsLimite]);
+
+  /**
+   * L'état du comptage d'un périmètre, en trois états distincts.
+   *
+   * « indisponible » n'est pas « en cours » : afficher « Calcul en cours… »
+   * indéfiniment pour un comptage qui a échoué ferait attendre l'utilisateur
+   * pour rien.
+   */
+  const compteDe = (scope: ScopeExport): { etat: "attente" } | { etat: "indisponible" } | { etat: "connu"; total: number } => {
+    if (comptes === null) return { etat: "attente" };
+    const total = comptes[scope];
+    return typeof total === "number" ? { etat: "connu", total } : { etat: "indisponible" };
+  };
 
   useEffect(() => {
     if (ouverte) {
@@ -156,10 +248,10 @@ export default function ModaleExport({
   }, [ouverte]);
 
   // La sélection peut changer pendant que la modale est ouverte (une action
-  // groupée la consomme, ou l'utilisateur coche plus de lignes). Rester sur
+  // groupée la consomme, ou l'utilisateur coche plus de lignes) : `selectionHorsLimite`
+  // est déclaré plus haut, avec le comptage qui en dépend. Rester sur
   // « sélection » enverrait alors une requête vide ou trop longue, que la route
   // refuse — autant revenir d'office sur les filtres.
-  const selectionHorsLimite = nbSelection === 0 || nbSelection > MAX_IDS_SELECTION;
   useEffect(() => {
     if (selectionHorsLimite && scopeExport === "selection") setScopeExport("filtres");
   }, [selectionHorsLimite, scopeExport]);
@@ -180,12 +272,12 @@ export default function ModaleExport({
    * sortait dans un ordre différent de l'écran sans que rien ne le dise.
    */
   const construireRequete = (): URLSearchParams => {
-    // Les filtres de l'écran, transmis tels quels : ce que la liste honore, le
-    // fichier l'honore — les deux lisent le même constructeur côté serveur. Et
-    // le comptage lit la même source, donc il ne peut pas annoncer autre chose.
-    const params = parametresDePerimetre(scopeExport);
-
-    if (scopeExport === "selection") params.set(PARAM_IDS, selection.join(","));
+    // Les filtres de l'écran, transmis tels quels, plus le filtre vitrine porté
+    // par la case « Exposé en Vitrine » : ce que la liste honore, le fichier
+    // l'honore — les deux lisent le même constructeur côté serveur. Et le
+    // comptage lit la même source (`parametresAvecFiltres`), donc il ne peut pas
+    // annoncer autre chose que ce que le fichier contiendra.
+    const params = parametresAvecFiltres(scopeExport);
 
     params.set("colonnes", colonnesSelectionnees.join(","));
     params.set(PARAM_FORMAT_FICHIER, formatFichier);
@@ -242,34 +334,69 @@ export default function ModaleExport({
     }
   };
 
+  /** « 1 ligne », « 181 articles » : le pluriel ne se décide pas à la main. */
+  const mot = (n: number, nom: "article" | "ligne") => `${n} ${nom}${n > 1 ? "s" : ""}`;
+
+  /**
+   * La phrase de comptage d'un périmètre, en trois états.
+   *
+   * « indisponible » n'est pas « en cours » : laisser « Calcul en cours… »
+   * indéfiniment sur un comptage qui a échoué ferait attendre pour rien.
+   */
+  const phraseCompte = (scope: ScopeExport, nom: "article" | "ligne", suite = ""): string => {
+    const compte = compteDe(scope);
+    if (compte.etat === "attente") return "Calcul en cours…";
+    if (compte.etat === "indisponible") return "Comptage indisponible";
+    const nombre = mot(compte.total, nom);
+    return suite ? `${nombre} ${suite}` : nombre;
+  };
+
+  /**
+   * Ce que la carte « sélection » peut annoncer.
+   *
+   * Le nombre de lignes du fichier vient du même comptage serveur que les autres
+   * périmètres : lui seul sait combien des cases cochées passent le filtre
+   * « Exposé en vitrine ». Annoncer les cases cochées quand une partie est
+   * écartée serait le même mensonge qu'annoncer 1616 pour une vitrine de 181,
+   * en plus discret.
+   */
+  const detailSelection = (() => {
+    if (nbSelection === 0) return "Aucune ligne cochée dans l'inventaire";
+    if (nbSelection > MAX_IDS_SELECTION) {
+      return `${nbSelection} lignes : au-delà du plafond de ${MAX_IDS_SELECTION}. Filtrez plutôt l'inventaire.`;
+    }
+    const compte = compteDe("selection");
+    if (compte.etat === "attente") return `${mot(nbSelection, "ligne")} cochée${nbSelection > 1 ? "s" : ""} — comptage…`;
+    if (compte.etat === "indisponible") {
+      return `${mot(nbSelection, "ligne")} cochée${nbSelection > 1 ? "s" : ""} — comptage indisponible`;
+    }
+    if (compte.total === nbSelection) return `${mot(nbSelection, "ligne")} cochée${nbSelection > 1 ? "s" : ""}`;
+    return `${mot(compte.total, "ligne")} sur ${nbSelection} cochée${nbSelection > 1 ? "s" : ""} : le reste est écarté par le filtre`;
+  })();
+
   const perimetres: { id: ScopeExport; titre: string; detail: string; desactive: boolean }[] = [
     {
       id: "filtres",
       titre: "Filtres actuels uniquement",
       // Le nombre est celui du périmètre, mesuré par le serveur avec le `where`
       // du fichier — jamais celui de la liste affichée, qui peut être plus
-      // vieille, paginée, ou pas chargée du tout.
-      detail:
-        nbFiltres === null
-          ? "Calcul en cours…"
-          : `${nbFiltres} article${nbFiltres > 1 ? "s" : ""} à exporter`,
+      // vieille, paginée, ou pas chargée du tout. Il inclut le filtre « Exposé
+      // en vitrine » quand la case est cochée : c'est ce que le fichier contient.
+      detail: phraseCompte("filtres", "article", "à exporter"),
       desactive: false,
     },
     {
       id: "stock",
       titre: "Tout le stock",
-      detail: "Tous les articles en stock — vendus, HS et assemblés exclus",
+      detail: `${phraseCompte("stock", "article", "à exporter")} — ${
+        filtreVitrine ? "le stock exposé en vitrine" : "tout le stock"
+      }, vendus, HS et assemblés exclus`,
       desactive: false,
     },
     {
       id: "selection",
       titre: "La sélection cochée",
-      detail:
-        nbSelection === 0
-          ? "Aucune ligne cochée dans l'inventaire"
-          : nbSelection > MAX_IDS_SELECTION
-            ? `${nbSelection} lignes : au-delà du plafond de ${MAX_IDS_SELECTION}. Filtrez plutôt l'inventaire.`
-            : `${nbSelection} ligne${nbSelection > 1 ? "s" : ""} cochée${nbSelection > 1 ? "s" : ""}`,
+      detail: detailSelection,
       desactive: selectionHorsLimite,
     },
   ];
@@ -349,8 +476,18 @@ export default function ModaleExport({
             {scopeExport === "stock" && (
               <p className="flex items-start gap-1.5 text-[11px] text-brand-warm-grey font-medium pt-1">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-brand-orange" />
-                Cette option ignore volontairement vos filtres : le fichier contient tout
-                le stock. Elle conserve en revanche le tri de l'écran.
+                Cette option ignore volontairement vos filtres d'écran : le fichier contient
+                tout le stock. Elle conserve en revanche le tri de l'écran
+                {filtreVitrine ? ", et le filtre « Exposé en vitrine » coché plus bas" : ""}.
+              </p>
+            )}
+
+            {filtreVitrine && (
+              <p className="flex items-start gap-1.5 text-[11px] text-brand-warm-grey font-medium pt-1">
+                <Filter className="w-3.5 h-3.5 shrink-0 mt-0.5 text-brand-orange" />
+                Filtre « Exposé en vitrine » actif : la case cochée dans les colonnes ci-dessous
+                restreint le fichier aux produits exposés, sur <b>tous</b> les périmètres. Décochez-la
+                pour exporter les produits non exposés.
               </p>
             )}
           </div>
@@ -427,6 +564,14 @@ export default function ModaleExport({
                             )}
                           </div>
                           <span className="truncate">{col.label}</span>
+                          {col.id === COLONNE_FILTRE_VITRINE && (
+                            <span
+                              title="Cette case ne fait pas que remplir une colonne : elle restreint l'export aux produits exposés en vitrine."
+                              className="ml-auto shrink-0 rounded-md bg-brand-orange/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-brand-orange"
+                            >
+                              filtre
+                            </span>
+                          )}
                         </div>
                       );
                     })}
