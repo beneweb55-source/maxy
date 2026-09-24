@@ -427,10 +427,16 @@ export default function Inventaire({ role }: { role: Role }) {
     const vueActuelle = searchParams?.get("vue") || "cockpit";
     const qActuel = searchParams?.get("q")?.trim() || "";
 
-    // Ne pas charger la liste complète si l'utilisateur est sur la vue famille ou catégorie (qui ont leurs propres chargements dédiés)
+    // Ne pas charger la liste complète si l'utilisateur est sur la vue famille ou catégorie (qui ont leurs propres chargements dédiés).
+    // La liste précédente est VIDÉE en sortant : la garder faisait survivre le
+    // total de la vue d'avant — le badge du fil d'Ariane annonçait « 1616 » sur
+    // la page d'une famille qui en compte 57, et la modale d'export y lisait le
+    // même chiffre. Ces vues ne chargent pas de liste : `null` dit « on ne sait
+    // pas », ce qui est la vérité, plutôt qu'un nombre qui n'est plus le sujet.
     if ((vueActuelle === "famille" && !qActuel) || (vueActuelle === "categorie" && !qActuel)) {
       setChargement(false);
       setErreur(null);
+      setDonnees(null);
       return;
     }
 
@@ -2464,7 +2470,10 @@ export default function Inventaire({ role }: { role: Role }) {
         ouverte={modalExport}
         onFermer={() => setModalExport(false)}
         searchParamsString={searchParams?.toString() || ""}
-        nbArticlesFiltres={donnees?.total || donnees?.produits?.length || 0}
+        // Le nombre d'articles du périmètre « filtres actuels » n'est plus
+        // transmis : la modale le demande au serveur, qui seul construit le
+        // `where` du fichier. Le total de la liste affichée n'est pas le
+        // périmètre de l'export (mesuré : 1616 annoncés contre 57 exportés).
         // Sans cette prop, la modale ne pouvait pas proposer « exporter ce que
         // j'ai coché » : les cases cochées à l'écran n'avaient aucun chemin
         // jusqu'au fichier, et l'utilisateur devait re-filtrer pour retrouver

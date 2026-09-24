@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Download,
   X,
@@ -17,6 +17,7 @@ import { useToast } from "@/components/toast";
 import {
   COLONNES_DISPONIBLES,
   MAX_IDS_SELECTION,
+  PARAM_COMPTE,
   PARAM_FORMAT_FICHIER,
   PARAM_IDS,
   PARAM_SCOPE,
@@ -52,7 +53,6 @@ interface ModaleExportProps {
   ouverte: boolean;
   onFermer: () => void;
   searchParamsString: string;
-  nbArticlesFiltres: number;
   /** Les unités cochées dans l'inventaire, pour le périmètre « sélection ». */
   selection?: number[];
 }
@@ -61,7 +61,6 @@ export default function ModaleExport({
   ouverte,
   onFermer,
   searchParamsString,
-  nbArticlesFiltres,
   selection = [],
 }: ModaleExportProps) {
   const { afficher } = useToast();
@@ -74,6 +73,77 @@ export default function ModaleExport({
   const [telechargementEnCours, setTelechargementEnCours] = useState(false);
 
   const nbSelection = selection.length;
+
+  /**
+   * Les paramètres de l'écran qui définissent chaque périmètre.
+   *
+   * Extrait de `construireRequete` pour que le COMPTAGE et le TÉLÉCHARGEMENT
+   * soient bâtis sur la même source : la carte « Filtres actuels » ne peut
+   * alors annoncer qu'un nombre que la route calcule avec le `where` exact du
+   * fichier. `page` désigne une page de l'écran, pas un filtre : il est retiré
+   * ici, donc pour les deux.
+   */
+  const parametresDePerimetre = useCallback(
+    (scope: ScopeExport): URLSearchParams => {
+      const source = new URLSearchParams(searchParamsString);
+      for (const cle of CLES_URL_SANS_OBJET_A_L_EXPORT) source.delete(cle);
+
+      if (scope === "filtres") return source;
+
+      // « stock » et « sélection » ignorent les filtres de l'écran ; `tri` et
+      // `ordre` voyagent quand même, pour que le fichier se lise dans le même
+      // ordre que l'écran.
+      const params = new URLSearchParams();
+      for (const cle of ["tri", "ordre"]) {
+        const valeur = source.get(cle);
+        if (valeur !== null) params.set(cle, valeur);
+      }
+      return params;
+    },
+    [searchParamsString]
+  );
+
+  /**
+   * Combien de lignes le fichier contiendrait, pour le périmètre « filtres ».
+   *
+   * La carte lisait auparavant le total de `donnees` — la dernière liste
+   * chargée par l'écran. Ce n'est pas le périmètre de l'export, et cette liste
+   * n'est même pas chargée dans les vues famille et catégorie, où elle reste
+   * donc figée sur la vue précédente. Mesuré sur
+   * `?vue=famille&famille_id=16&en_vitrine=1` : la carte annonçait 1616
+   * articles, le fichier en aurait contenu 57. Seul le serveur construit le
+   * `where` du fichier : c'est donc lui qui répond.
+   */
+  const [nbFiltres, setNbFiltres] = useState<number | null>(null);
+  useEffect(() => {
+    if (!ouverte) return;
+    const controleur = new AbortController();
+    // Revenir au calcul en cours plutôt que de garder le chiffre précédent :
+    // entre deux filtres, un ancien total est un mensonge, pas une
+    // approximation.
+    setNbFiltres(null);
+
+    const params = parametresDePerimetre("filtres");
+    params.set(PARAM_SCOPE, "filtres");
+    params.set(PARAM_COMPTE, "1");
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/produits/export?${params.toString()}`, {
+          cache: "no-store",
+          signal: controleur.signal,
+        });
+        if (!res.ok) return;
+        const corps = (await res.json()) as { total?: unknown };
+        if (typeof corps.total === "number") setNbFiltres(corps.total);
+      } catch {
+        // Silence volontaire : on reste sur « Calcul en cours… ». Un comptage
+        // qui échoue ne doit pas se transformer en un chiffre inventé.
+      }
+    })();
+
+    return () => controleur.abort();
+  }, [ouverte, parametresDePerimetre]);
 
   useEffect(() => {
     if (ouverte) {
@@ -110,21 +180,10 @@ export default function ModaleExport({
    * sortait dans un ordre différent de l'écran sans que rien ne le dise.
    */
   const construireRequete = (): URLSearchParams => {
-    const source = new URLSearchParams(searchParamsString);
-    for (const cle of CLES_URL_SANS_OBJET_A_L_EXPORT) source.delete(cle);
-
-    const params = new URLSearchParams();
-
-    if (scopeExport === "filtres") {
-      // Les filtres de l'écran, transmis tels quels : ce que la liste honore,
-      // le fichier l'honore — les deux lisent le même constructeur côté serveur.
-      for (const [cle, valeur] of source.entries()) params.append(cle, valeur);
-    } else {
-      for (const cle of ["tri", "ordre"]) {
-        const valeur = source.get(cle);
-        if (valeur !== null) params.set(cle, valeur);
-      }
-    }
+    // Les filtres de l'écran, transmis tels quels : ce que la liste honore, le
+    // fichier l'honore — les deux lisent le même constructeur côté serveur. Et
+    // le comptage lit la même source, donc il ne peut pas annoncer autre chose.
+    const params = parametresDePerimetre(scopeExport);
 
     if (scopeExport === "selection") params.set(PARAM_IDS, selection.join(","));
 
@@ -187,9 +246,13 @@ export default function ModaleExport({
     {
       id: "filtres",
       titre: "Filtres actuels uniquement",
-      detail: `${nbArticlesFiltres} article${nbArticlesFiltres > 1 ? "s" : ""} affiché${
-        nbArticlesFiltres > 1 ? "s" : ""
-      }`,
+      // Le nombre est celui du périmètre, mesuré par le serveur avec le `where`
+      // du fichier — jamais celui de la liste affichée, qui peut être plus
+      // vieille, paginée, ou pas chargée du tout.
+      detail:
+        nbFiltres === null
+          ? "Calcul en cours…"
+          : `${nbFiltres} article${nbFiltres > 1 ? "s" : ""} à exporter`,
       desactive: false,
     },
     {

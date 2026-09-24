@@ -5,6 +5,7 @@ import { construireTriProduits } from "@/lib/filtres-produits";
 import {
   FORMAT_MONNAIE,
   MAX_IDS_SELECTION,
+  PARAM_COMPTE,
   colonnesMonnaie,
   construireFiltresExport,
   construireParametresProduit,
@@ -33,14 +34,6 @@ export async function GET(request: NextRequest) {
     const colonnesCles = lireColonnes(params);
     const scope = lireScope(params);
 
-    // A request that names only unknown columns is an ERROR, not "all columns".
-    // Without this refusal, `colonnes=nimportequoi` produced a file with an
-    // empty header row — indistinguishable from a successful export, and the
-    // reason a broken request could look like a broken filter.
-    if (colonnesCles.length === 0) {
-      return erreur(400, "Aucune colonne valide demandée. Sélectionnez au moins une colonne.");
-    }
-
     // Ticking nothing is not "everything": it is an empty request. And a
     // selection too wide for the query string is refused HERE, with a message
     // naming the cause, rather than by the proxy with an opaque 414.
@@ -56,6 +49,28 @@ export async function GET(request: NextRequest) {
             `Filtrez l'inventaire puis exportez le périmètre « Filtres actuels ».`
         );
       }
+    }
+
+    // Le COMPTAGE du périmètre — ce que la carte « Filtres actuels uniquement »
+    // annonce avant d'écrire quoi que ce soit. Le nombre vient d'ici, du même
+    // `construireFiltresExport` que le fichier, donc il ne peut pas le
+    // contredire. Il est calculé après les contrôles de périmètre ci-dessus
+    // (une sélection vide reste refusée) et AVANT celui des colonnes : un
+    // comptage ne produit aucun fichier, la liste des colonnes ne le concerne
+    // pas. C'est la seule inversion d'ordre introduite ici, et elle ne change
+    // qu'un cas : une requête à la fois sans colonne et sans sélection reçoit
+    // désormais le refus de sélection, tout aussi exact.
+    if (params.get(PARAM_COMPTE) === "1") {
+      const total = await prisma.produit.count({ where: construireFiltresExport(params) });
+      return NextResponse.json({ total });
+    }
+
+    // A request that names only unknown columns is an ERROR, not "all columns".
+    // Without this refusal, `colonnes=nimportequoi` produced a file with an
+    // empty header row — indistinguishable from a successful export, and the
+    // reason a broken request could look like a broken filter.
+    if (colonnesCles.length === 0) {
+      return erreur(400, "Aucune colonne valide demandée. Sélectionnez au moins une colonne.");
     }
 
     // The export's own parameters are stripped before the product filter is

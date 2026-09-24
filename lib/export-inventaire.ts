@@ -85,6 +85,21 @@ export const PARAM_IDS = "ids";
 export const MAX_IDS_SELECTION = 300;
 
 /**
+ * Ask the route for the SIZE of the perimeter instead of the file itself:
+ * `compte=1` answers `{ total }` and writes nothing.
+ *
+ * The modal's card « Filtres actuels uniquement » announced a number it took
+ * from the screen's last loaded list, which is not the same thing as the export
+ * perimeter. Measured on `?vue=famille&famille_id=16&en_vitrine=1`: the card
+ * said 1616, the file would have held 57. The screen's list is paginated and
+ * sometimes not loaded at all (famille/catégorie views), so no client-side
+ * number can be trusted for this — only the server that builds the file's
+ * `where` knows. Hence a count request, and a number that cannot disagree with
+ * the download.
+ */
+export const PARAM_COMPTE = "compte";
+
+/**
  * Parameters the export consumes for itself and that must never reach the
  * product filter.
  *
@@ -98,6 +113,7 @@ export const CLES_CONTROLE_EXPORT = [
   "colonnes",
   PARAM_SCOPE,
   PARAM_IDS,
+  PARAM_COMPTE,
 ] as const;
 
 function estFormatFichier(valeur: string | null): valeur is FormatFichier {
