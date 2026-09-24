@@ -111,6 +111,24 @@ export const PARAM_COMPTE = "compte";
 export const PARAM_VITRINE = "en_vitrine";
 
 /**
+ * « Et les exemplaires aussi » : le second sens de « en vitrine ».
+ *
+ * La vitrine raisonne par MODÈLE — une carte par référence exposée, portant la
+ * quantité en stock (voir `app/api/vitrine/route.ts`). Les unités de ce modèle
+ * qui ne portent pas `en_vitrine` sont donc absentes d'un export filtré sur
+ * `en_vitrine = true`. Mesuré sur la production : 123 modèles exposés, 181
+ * unités marquées, 325 exemplaires non vendus. Cette clé ouvre le choix — quand
+ * elle vaut "1", le filtre vitrine retient ces exemplaires au lieu des 181
+ * unités marquées, soit 322 lignes : les 3 exemplaires restants sont en `hs`
+ * (les unités marquées « à jeter »), que le masquage du stock écarte déjà.
+ *
+ * Elle n'a de sens QU'AVEC le filtre vitrine : sans lui aucun modèle n'est
+ * exposé, et il n'y a pas d'exemplaires à ajouter. `construireFiltresExport`
+ * l'ignore donc dans ce cas plutôt que de retomber sur une clause vide.
+ */
+export const PARAM_EXEMPLAIRES = "exemplaires";
+
+/**
  * La colonne dont la case gouverne ce filtre.
  *
  * Une même case fait donc deux choses : elle écrit la colonne dans le fichier et
@@ -137,6 +155,7 @@ export const CLES_CONTROLE_EXPORT = [
   PARAM_SCOPE,
   PARAM_IDS,
   PARAM_COMPTE,
+  PARAM_EXEMPLAIRES,
 ] as const;
 
 function estFormatFichier(valeur: string | null): valeur is FormatFichier {
@@ -212,8 +231,72 @@ export function lireIds(params: URLSearchParams): number[] {
  * `stock` is built by calling the product filter with NO parameters, which is
  * exactly how the inventory screen defines its own default view — so the two
  * cannot drift apart.
+ *
+ * `pairesExposees` porte la réponse à « quels modèles sont exposés », que seul
+ * un appelant capable d'interroger la base peut fournir. Elle n'est lue que si
+ * le filtre vitrine ET le choix « exemplaires » sont demandés ; laissée vide
+ * dans ce cas, elle rend une clause vide plutôt que les 181 unités marquées —
+ * un export ne devine pas, il refuse.
  */
-export function construireFiltresExport(params: URLSearchParams): Prisma.ProduitWhereInput {
+/**
+ * Un modèle, tel que la vitrine le nomme : (référence, catégorie).
+ *
+ * C'est la clé de regroupement de `app/api/vitrine/route.ts`, reprise telle
+ * quelle plutôt que réinventée — il ne doit pas exister deux définitions de
+ * « le même modèle ».
+ */
+export interface PaireModele {
+  reference: string;
+  categorie: string;
+}
+
+/**
+ * Les exemplaires des modèles exposés, tels que la vitrine les compte.
+ *
+ * Une « paire » est la clé de regroupement de la vitrine — référence et
+ * catégorie — et l'ensemble des exemplaires est celui qu'une carte de vitrine
+ * additionne dans sa quantité : les unités non vendues de ce modèle, exposées
+ * ou non.
+ *
+ * Mesuré sur la production : la somme des quantités des 123 cartes vaut 325, et
+ * un `where` en égalité stricte sur ces paires en rend exactement 325 — les deux
+ * comptes coïncident paire par paire, la normalisation `trim().toLowerCase()` de
+ * la vitrine étant sans effet sur les données réelles. L'égalité stricte est
+ * donc la bonne lecture : elle ne peut pas contredire le nombre qu'une carte de
+ * vitrine affiche.
+ *
+ * `statut: { not: "vendu" }` est délibérément MINIMAL : c'est mot pour mot la
+ * définition dont la vitrine se sert pour compter sa quantité. Le reste du
+ * masquage (hors-service, assemblés) appartient au périmètre, qui l'applique ou
+ * non selon le scope — sur les 325 exemplaires, 3 sont en `hs` et le fichier en
+ * contient donc 322. Les exclure est voulu : une unité marquée « à jeter » n'est
+ * pas un exemplaire disponible. Les répéter ici créerait une seconde définition
+ * du masquage, libre de diverger de `lib/filtres-produits.ts`.
+ *
+ * Une liste vide rend une clause qui ne peut RIEN atteindre, jamais « tout » :
+ * c'est la règle de la sélection vide. Un export qui ne sait pas quels modèles
+ * sont exposés doit sortir vide et le dire, pas sortir le catalogue.
+ */
+export function construireFiltresExemplaires(paires: PaireModele[]): Prisma.ProduitWhereInput {
+  if (paires.length === 0) return { id: { in: [] } };
+  return {
+    // « Exemplaire » au sens de la vitrine : une unité encore en stock. La carte
+    // annonce sa quantité ainsi, un vendu n'en fait donc pas partie.
+    statut: { not: "vendu" },
+    OR: paires.map((p) => ({ reference: p.reference, categorie: p.categorie })),
+  };
+}
+
+export function construireFiltresExport(
+  params: URLSearchParams,
+  pairesExposees: PaireModele[] = []
+): Prisma.ProduitWhereInput {
+  // Les exemplaires des modèles exposés, et non les unités marquées : c'est un
+  // second SENS du filtre, décidé une fois ici pour que le périmètre et la
+  // clause posée plus bas ne puissent pas se contredire.
+  const parModeles =
+    params.get(PARAM_VITRINE) === "1" && params.get(PARAM_EXEMPLAIRES) === "1";
+
   const perimetre = ((): Prisma.ProduitWhereInput => {
     switch (lireScope(params)) {
       case "stock":
@@ -222,8 +305,18 @@ export function construireFiltresExport(params: URLSearchParams): Prisma.Produit
         // An empty selection yields an unmatchable clause rather than the whole
         // catalogue: "j'ai coché zéro ligne" must never mean "donne-moi tout".
         return { id: { in: lireIds(params) } };
-      default:
-        return construireFiltresProduits(construireParametresProduit(params));
+      default: {
+        const filtres = construireParametresProduit(params);
+        // Piège mesuré : pour le périmètre « filtres », les paramètres de
+        // l'écran atteignent AUSSI `construireFiltresProduits`, où `en_vitrine`
+        // veut dire « unité marquée ». Une URL d'écran portant déjà
+        // `en_vitrine=1` aurait alors croisé les 325 exemplaires avec les 181
+        // unités marquées, et rendu 181 — le choix aurait été sans effet, sans
+        // que rien ne le dise. Quand on demande les exemplaires, c'est la clause
+        // de modèle, et elle seule, qui décide de la vitrine.
+        if (parModeles) filtres.delete(PARAM_VITRINE);
+        return construireFiltresProduits(filtres);
+      }
     }
   })();
 
@@ -235,6 +328,12 @@ export function construireFiltresExport(params: URLSearchParams): Prisma.Produit
   // genre d'incohérence qu'on cherche à fermer ici. La clause est identique à
   // celle du filtre d'écran, donc « en vitrine » n'a qu'une définition.
   if (params.get(PARAM_VITRINE) === "1") {
+    // Le choix « et les exemplaires aussi » remplace la clause d'unité marquée
+    // par celles des modèles exposés. `pairesExposees` vient de l'appelant, qui
+    // seul peut interroger la base : cette fonction reste pure et synchrone.
+    if (params.get(PARAM_EXEMPLAIRES) === "1") {
+      return { AND: [perimetre, construireFiltresExemplaires(pairesExposees)] };
+    }
     return { AND: [perimetre, { en_vitrine: true }] };
   }
 

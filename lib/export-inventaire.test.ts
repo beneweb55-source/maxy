@@ -11,6 +11,7 @@ import {
   MAP_COLONNES,
   MAX_IDS_SELECTION,
   META_COLONNES,
+  PARAM_EXEMPLAIRES,
   PARAM_FORMAT_FICHIER,
   PARAM_IDS,
   PARAM_SCOPE,
@@ -20,6 +21,7 @@ import {
   SCOPE_EXPORT_DEFAUT,
   champCsv,
   colonnesMonnaie,
+  construireFiltresExemplaires,
   construireFiltresExport,
   construireParametresProduit,
   construireTableau,
@@ -223,6 +225,130 @@ describe("export inventaire — contrat des paramètres", () => {
       // Un identifiant renommé d'un côté désactiverait le filtre en silence.
       expect(MAP_COLONNES[COLONNE_FILTRE_VITRINE]).toBeDefined();
       expect(COLONNES_DISPONIBLES.some((c) => c.id === COLONNE_FILTRE_VITRINE)).toBe(true);
+    });
+  });
+
+  /**
+   * Le second sens de « en vitrine ».
+   *
+   * La vitrine expose un MODÈLE : une carte par référence, portant la quantité
+   * en stock. Mesuré en production : 123 modèles exposés, 181 unités marquées,
+   * 325 exemplaires non vendus, dont 3 en `hs` — donc 322 lignes dans le fichier.
+   * Les unités qui ne portent pas la case n'étaient dans aucun export : c'est ce
+   * que ce choix ouvre.
+   */
+  describe("le choix « tous les exemplaires »", () => {
+    const PAIRES = [
+      { reference: "A16", categorie: "Cartes Dédiées" },
+      { reference: "B07", categorie: "Consoles" },
+    ];
+
+    function avecExemplaires(scope: string, paires = PAIRES, vitrine = true) {
+      const params = paramsModale("csv_excel", scope);
+      if (vitrine) params.set(PARAM_VITRINE, "1");
+      params.set(PARAM_EXEMPLAIRES, "1");
+      return construireFiltresExport(params, paires);
+    }
+
+    it("remplace la clause d'unité marquée par celles des modèles exposés", () => {
+      const where = avecExemplaires("stock") as { AND: unknown[] };
+      expect(where.AND).toHaveLength(2);
+      const modele = where.AND[1] as { OR: { reference: string }[] };
+      expect(modele.OR).toHaveLength(PAIRES.length);
+      // Une paire peut n'avoir AUCUNE unité marquée : c'est exactement le cas
+      // que le choix doit couvrir, donc `en_vitrine` ne le définit plus.
+      expect(JSON.stringify(where.AND[1])).not.toContain('"en_vitrine":true');
+    });
+
+    it("ne retient que les exemplaires ENCORE EN STOCK de ces modèles", () => {
+      // La carte de vitrine compte sa quantité ainsi : un vendu n'est pas un
+      // exemplaire disponible. L'inclure ferait diverger le chiffre de la modale
+      // de celui de la carte, c'est-à-dire exactement ce qu'on répare.
+      expect(JSON.stringify(avecExemplaires("filtres"))).toContain('"statut":{"not":"vendu"}');
+    });
+
+    it("couvre chaque paire exposée, et rien d'autre", () => {
+      const where = avecExemplaires("filtres") as { AND: unknown[] };
+      expect(where.AND[1]).toEqual({
+        statut: { not: "vendu" },
+        OR: [
+          { reference: "A16", categorie: "Cartes Dédiées" },
+          { reference: "B07", categorie: "Consoles" },
+        ],
+      });
+    });
+
+    it("sans le filtre vitrine, le choix est SANS EFFET", () => {
+      // « Les exemplaires de quel modèle exposé ? » n'a pas de réponse quand
+      // aucun modèle n'est exposé : la clé seule ne doit rien ajouter. Comparé à
+      // la requête privée du paramètre, plutôt qu'à une forme devinée.
+      const params = paramsModale("csv_excel");
+      params.set(PARAM_EXEMPLAIRES, "1");
+      expect(construireFiltresExport(params, PAIRES)).toEqual(
+        construireFiltresExport(paramsModale("csv_excel"), PAIRES)
+      );
+    });
+
+    it("des paires vides rendent une clause VIDE, jamais les 181 unités marquées", () => {
+      // Un appelant qui n'a pas su nommer les modèles exposés ne doit pas
+      // recevoir en silence l'ancien périmètre : ce serait un chiffre faux qui a
+      // l'air juste. Vide est bruyant, faux ne l'est pas.
+      const where = avecExemplaires("filtres", []) as { AND: unknown[] };
+      expect(where.AND).toHaveLength(2);
+      expect(where.AND[1]).toEqual({ id: { in: [] } });
+    });
+
+    it("ne se laisse pas rétrécir par un `en_vitrine=1` déjà présent dans l'écran", () => {
+      // Le piège : pour le périmètre « filtres », les paramètres de l'écran
+      // atteignent aussi `construireFiltresProduits`, où `en_vitrine` veut dire
+      // « unité marquée ». Sans le retrait, l'intersection ramenait les 325
+      // exemplaires à 181 — le choix devenait sans effet, en silence.
+      const params = paramsModale("csv_excel");
+      params.set(PARAM_VITRINE, "1");
+      params.set(PARAM_EXEMPLAIRES, "1");
+      const where = construireFiltresExport(params, PAIRES) as { AND: unknown[] };
+
+      expect(where.AND).toHaveLength(2);
+      expect(where.AND[1]).toEqual({
+        statut: { not: "vendu" },
+        OR: [
+          { reference: "A16", categorie: "Cartes Dédiées" },
+          { reference: "B07", categorie: "Consoles" },
+        ],
+      });
+      // `en_vitrine` ne doit plus subsister dans le périmètre : la seule clause
+      // vitrine est celle des modèles.
+      expect(JSON.stringify(where.AND[0])).not.toContain("en_vitrine");
+    });
+
+    it("les autres filtres de l'écran continuent de s'appliquer", () => {
+      // Élargir aux exemplaires ne doit pas jeter le reste : c'est le périmètre
+      // de l'écran, élargi — pas un périmètre neuf.
+      const params = paramsModale("csv_excel");
+      params.set(PARAM_VITRINE, "1");
+      params.set(PARAM_EXEMPLAIRES, "1");
+      params.set("q", "ssd");
+      expect(JSON.stringify(construireFiltresExport(params, PAIRES))).toContain("ssd");
+    });
+
+    it("la clé du choix ne peut pas atteindre le filtre produit", () => {
+      // Elle n'est pas un filtre produit : la laisser passer la ferait lire
+      // comme un terme de recherche — le défaut du `format` d'origine, dont le
+      // nom collisionnait avec le filtre matériel de l'écran.
+      expect(CLES_CONTROLE_EXPORT).toContain(PARAM_EXEMPLAIRES);
+      const params = paramsModale("csv_excel");
+      params.set(PARAM_VITRINE, "1");
+      params.set(PARAM_EXEMPLAIRES, "1");
+      expect(JSON.stringify(construireFiltresExport(params, PAIRES))).not.toContain("exemplaires");
+    });
+
+    it("construireFiltresExemplaires ne laisse jamais passer « tout »", () => {
+      expect(construireFiltresExemplaires(PAIRES)).toEqual({
+        statut: { not: "vendu" },
+        OR: PAIRES.map((p) => ({ reference: p.reference, categorie: p.categorie })),
+      });
+      expect(construireFiltresExemplaires([])).toEqual({ id: { in: [] } });
+      expect(construireFiltresExemplaires([])).not.toEqual({});
     });
   });
 

@@ -6,6 +6,8 @@ import {
   FORMAT_MONNAIE,
   MAX_IDS_SELECTION,
   PARAM_COMPTE,
+  PARAM_EXEMPLAIRES,
+  PARAM_VITRINE,
   colonnesMonnaie,
   construireFiltresExport,
   construireParametresProduit,
@@ -17,7 +19,58 @@ import {
   lireScope,
   separateurPour,
   serialiserCsv,
+  type PaireModele,
 } from "@/lib/export-inventaire";
+
+/**
+ * Les modèles exposés, réduits à la clé qui les définit — (référence,
+ * catégorie).
+ *
+ * Le `select` est volontairement minimal : deux chaînes par unité exposée (181
+ * en production), et la déduplication se fait ici. C'est la même clé, au même
+ * endroit de la logique, que `app/api/vitrine/route.ts` : il ne doit exister
+ * qu'une définition de « le même modèle ».
+ */
+async function resoudrePairesExposees(): Promise<PaireModele[]> {
+  const exposes = await prisma.produit.findMany({
+    where: { en_vitrine: true },
+    select: { reference: true, categorie: true },
+  });
+
+  const vues = new Set<string>();
+  const paires: PaireModele[] = [];
+  for (const p of exposes) {
+    const cle = `${p.reference.trim().toLowerCase()}|${p.categorie.trim().toLowerCase()}`;
+    if (vues.has(cle)) continue;
+    vues.add(cle);
+    paires.push({ reference: p.reference, categorie: p.categorie });
+  }
+  return paires;
+}
+
+/**
+ * Le choix « et les exemplaires des modèles exposés aussi » est-il demandé ?
+ *
+ * Les deux paramètres sont exigés ensemble : sans le filtre vitrine aucun
+ * modèle n'est exposé, et la clé seule ne veut rien dire.
+ */
+function exemplairesDemandes(params: URLSearchParams): boolean {
+  return params.get(PARAM_VITRINE) === "1" && params.get(PARAM_EXEMPLAIRES) === "1";
+}
+
+/**
+ * Le `where` de l'export, résolu.
+ *
+ * Une seule fabrique pour le COMPTAGE et pour le FICHIER : le nombre annoncé par
+ * la modale et les lignes réellement écrites ne peuvent donc pas diverger —
+ * c'est exactement l'invariant que cette route défend. La lecture en base n'a
+ * lieu que si le choix « exemplaires » la rend nécessaire ; tout autre export
+ * garde sa requête unique.
+ */
+async function construireWhereExport(params: URLSearchParams) {
+  const pairesExposees = exemplairesDemandes(params) ? await resoudrePairesExposees() : [];
+  return construireFiltresExport(params, pairesExposees);
+}
 
 export async function GET(request: NextRequest) {
   const acces = await exigerUtilisateur(["gerant", "technicien", "dev"]);
@@ -61,7 +114,7 @@ export async function GET(request: NextRequest) {
     // qu'un cas : une requête à la fois sans colonne et sans sélection reçoit
     // désormais le refus de sélection, tout aussi exact.
     if (params.get(PARAM_COMPTE) === "1") {
-      const total = await prisma.produit.count({ where: construireFiltresExport(params) });
+      const total = await prisma.produit.count({ where: await construireWhereExport(params) });
       return NextResponse.json({ total });
     }
 
@@ -75,7 +128,7 @@ export async function GET(request: NextRequest) {
 
     // The export's own parameters are stripped before the product filter is
     // built, so that no control parameter can be read as a search term.
-    const whereClause = construireFiltresExport(params);
+    const whereClause = await construireWhereExport(params);
     const orderByClause = construireTriProduits(construireParametresProduit(params));
 
     const produits = await prisma.produit.findMany({
@@ -105,7 +158,12 @@ export async function GET(request: NextRequest) {
     // One pass over the rows, shared by both writers, so the CSV and the xlsx
     // cannot drift apart.
     const tableau = construireTableau(produits, colonnesCles);
-    const nomFichier = `inventaire-${scope}-${new Date().toISOString().slice(0, 10)}`;
+    // Le nom dit ce que le fichier contient : deux exports du même périmètre, à
+    // 181 et à 325 lignes, ne doivent pas porter le même nom dans un dossier de
+    // téléchargements.
+    const nomFichier = `inventaire-${scope}${exemplairesDemandes(params) ? "-exemplaires" : ""}-${new Date()
+      .toISOString()
+      .slice(0, 10)}`;
 
     // 1. Export XLSX (Excel Natif)
     if (format === "xlsx") {

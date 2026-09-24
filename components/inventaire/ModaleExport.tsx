@@ -19,6 +19,7 @@ import {
   COLONNES_DISPONIBLES,
   MAX_IDS_SELECTION,
   PARAM_COMPTE,
+  PARAM_EXEMPLAIRES,
   PARAM_FORMAT_FICHIER,
   PARAM_IDS,
   PARAM_SCOPE,
@@ -81,6 +82,17 @@ export default function ModaleExport({
   );
   const [formatFichier, setFormatFichier] = useState<"csv_excel" | "csv_standard" | "xlsx">("csv_excel");
   const [scopeExport, setScopeExport] = useState<ScopeExport>("filtres");
+
+  /**
+   * « Et les exemplaires des modèles exposés aussi ».
+   *
+   * Le choix est conservé même quand le filtre vitrine n'est pas actif : la case
+   * « Exposé en Vitrine » peut être décochée puis recochée, et l'utilisateur ne
+   * doit pas avoir à refaire son choix. `modeExemplaires` est le SEUL
+   * interrupteur lu par le reste de la modale, donc un état conservé mais
+   * inactif ne peut rien changer ni à l'écran ni à la requête.
+   */
+  const [exemplairesAussi, setExemplairesAussi] = useState(false);
   const [telechargementEnCours, setTelechargementEnCours] = useState(false);
 
   const nbSelection = selection.length;
@@ -111,6 +123,13 @@ export default function ModaleExport({
    * `construireFiltresExport`), et la modale l'affiche pour ne pas surprendre.
    */
   const filtreVitrine = colonnesSelectionnees.includes(COLONNE_FILTRE_VITRINE);
+
+  /**
+   * Le choix « exemplaires » n'a de sens qu'avec le filtre vitrine : sans lui,
+   * aucun modèle n'est exposé et il n'y a pas d'exemplaires à ajouter. La route
+   * applique la même règle de son côté, donc les deux ne peuvent pas diverger.
+   */
+  const modeExemplaires = filtreVitrine && exemplairesAussi;
 
   /**
    * Les paramètres de l'écran qui définissent chaque périmètre.
@@ -153,10 +172,16 @@ export default function ModaleExport({
    * peut pas compter sur eux pour voyager jusqu'au serveur.
    */
   const parametresAvecFiltres = useCallback(
-    (scope: ScopeExport): URLSearchParams => {
+    (scope: ScopeExport, exemplaires: boolean): URLSearchParams => {
       const params = parametresDePerimetre(scope);
       if (scope === "selection") params.set(PARAM_IDS, idsSelection);
-      if (filtreVitrine) params.set(PARAM_VITRINE, "1");
+      if (filtreVitrine) {
+        params.set(PARAM_VITRINE, "1");
+        // Le COMPTAGE et le TÉLÉCHARGEMENT bâtissent leurs paramètres ici, tous
+        // les deux : le nombre annoncé ne peut pas décrire un autre fichier que
+        // celui qui sera écrit.
+        if (exemplaires) params.set(PARAM_EXEMPLAIRES, "1");
+      }
       return params;
     },
     [parametresDePerimetre, idsSelection, filtreVitrine]
@@ -180,6 +205,19 @@ export default function ModaleExport({
    * absente = le serveur n'a pas répondu, la carte le dira.
    */
   const [comptes, setComptes] = useState<Partial<Record<ScopeExport, number>> | null>(null);
+
+  /**
+   * Les mêmes périmètres, comptés avec TOUS les exemplaires des modèles exposés.
+   *
+   * La modale doit pouvoir montrer les deux nombres EN MÊME TEMPS : sinon
+   * l'utilisateur choisit à l'aveugle, ne découvre le vrai chiffre qu'après
+   * avoir coché, et « 181 » face à « 325 » devient une devinette. D'où ce second
+   * comptage, demandé seulement quand le filtre vitrine est actif.
+   */
+  const [comptesExemplaires, setComptesExemplaires] = useState<
+    Partial<Record<ScopeExport, number>> | null
+  >(null);
+
   useEffect(() => {
     if (!ouverte) return;
     const controleur = new AbortController();
@@ -187,6 +225,17 @@ export default function ModaleExport({
     // entre deux filtres, un ancien total est un mensonge, pas une
     // approximation.
     setComptes(null);
+    setComptesExemplaires(null);
+
+    const compter = async (params: URLSearchParams): Promise<number | null> => {
+      const res = await fetch(`/api/produits/export?${params.toString()}`, {
+        cache: "no-store",
+        signal: controleur.signal,
+      });
+      if (!res.ok) return null;
+      const corps = (await res.json()) as { total?: unknown };
+      return typeof corps.total === "number" ? corps.total : null;
+    };
 
     void (async () => {
       try {
@@ -194,27 +243,33 @@ export default function ModaleExport({
           SCOPES_COMPTABLES.map(async (scope) => {
             if (scope === "selection" && selectionHorsLimite) return null;
 
-            const params = parametresAvecFiltres(scope);
-            params.set(PARAM_SCOPE, scope);
-            params.set(PARAM_COMPTE, "1");
+            // Les deux lectures ne diffèrent que par `exemplaires` : les
+            // paramètres du périmètre sont bâtis par la même fonction, donc le
+            // chiffre affiché et le fichier téléchargé ne peuvent pas décrire
+            // deux ensembles différents.
+            const communs = (exemplaires: boolean) => {
+              const params = parametresAvecFiltres(scope, exemplaires);
+              params.set(PARAM_SCOPE, scope);
+              params.set(PARAM_COMPTE, "1");
+              return params;
+            };
 
-            const res = await fetch(`/api/produits/export?${params.toString()}`, {
-              cache: "no-store",
-              signal: controleur.signal,
-            });
-            if (!res.ok) return null;
-            const corps = (await res.json()) as { total?: unknown };
-            return typeof corps.total === "number"
-              ? ([scope, corps.total] as [ScopeExport, number])
-              : null;
+            const base = await compter(communs(false));
+            const etendu = filtreVitrine ? await compter(communs(true)) : null;
+            return [scope, base, etendu] as const;
           })
         );
 
         const connus: Partial<Record<ScopeExport, number>> = {};
+        const connusEtendus: Partial<Record<ScopeExport, number>> = {};
         for (const resultat of resultats) {
-          if (resultat) connus[resultat[0]] = resultat[1];
+          if (!resultat) continue;
+          const [scope, base, etendu] = resultat;
+          if (typeof base === "number") connus[scope] = base;
+          if (typeof etendu === "number") connusEtendus[scope] = etendu;
         }
         setComptes(connus);
+        setComptesExemplaires(connusEtendus);
       } catch {
         // Silence volontaire : on reste sur « Calcul en cours… ». Un comptage
         // qui échoue ne doit pas se transformer en un chiffre inventé.
@@ -222,7 +277,7 @@ export default function ModaleExport({
     })();
 
     return () => controleur.abort();
-  }, [ouverte, parametresAvecFiltres, selectionHorsLimite]);
+  }, [ouverte, parametresAvecFiltres, selectionHorsLimite, filtreVitrine]);
 
   /**
    * L'état du comptage d'un périmètre, en trois états distincts.
@@ -231,11 +286,18 @@ export default function ModaleExport({
    * indéfiniment pour un comptage qui a échoué ferait attendre l'utilisateur
    * pour rien.
    */
-  const compteDe = (scope: ScopeExport): { etat: "attente" } | { etat: "indisponible" } | { etat: "connu"; total: number } => {
-    if (comptes === null) return { etat: "attente" };
-    const total = comptes[scope];
+  const etatCompte = (
+    scope: ScopeExport,
+    exemplaires: boolean
+  ): { etat: "attente" } | { etat: "indisponible" } | { etat: "connu"; total: number } => {
+    const source = exemplaires ? comptesExemplaires : comptes;
+    if (source === null) return { etat: "attente" };
+    const total = source[scope];
     return typeof total === "number" ? { etat: "connu", total } : { etat: "indisponible" };
   };
+
+  /** L'état du comptage tel que le périmètre CHOISI le lit. */
+  const compteDe = (scope: ScopeExport) => etatCompte(scope, modeExemplaires);
 
   useEffect(() => {
     if (ouverte) {
@@ -277,7 +339,7 @@ export default function ModaleExport({
     // l'honore — les deux lisent le même constructeur côté serveur. Et le
     // comptage lit la même source (`parametresAvecFiltres`), donc il ne peut pas
     // annoncer autre chose que ce que le fichier contiendra.
-    const params = parametresAvecFiltres(scopeExport);
+    const params = parametresAvecFiltres(scopeExport, modeExemplaires);
 
     params.set("colonnes", colonnesSelectionnees.join(","));
     params.set(PARAM_FORMAT_FICHIER, formatFichier);
@@ -343,13 +405,22 @@ export default function ModaleExport({
    * « indisponible » n'est pas « en cours » : laisser « Calcul en cours… »
    * indéfiniment sur un comptage qui a échoué ferait attendre pour rien.
    */
-  const phraseCompte = (scope: ScopeExport, nom: "article" | "ligne", suite = ""): string => {
-    const compte = compteDe(scope);
+  const phraseComptage = (
+    scope: ScopeExport,
+    exemplaires: boolean,
+    nom: "article" | "ligne",
+    suite = ""
+  ): string => {
+    const compte = etatCompte(scope, exemplaires);
     if (compte.etat === "attente") return "Calcul en cours…";
     if (compte.etat === "indisponible") return "Comptage indisponible";
     const nombre = mot(compte.total, nom);
     return suite ? `${nombre} ${suite}` : nombre;
   };
+
+  /** La phrase du périmètre, dans la lecture que l'utilisateur a choisie. */
+  const phraseCompte = (scope: ScopeExport, nom: "article" | "ligne", suite = ""): string =>
+    phraseComptage(scope, modeExemplaires, nom, suite);
 
   /**
    * Ce que la carte « sélection » peut annoncer.
@@ -371,7 +442,14 @@ export default function ModaleExport({
       return `${mot(nbSelection, "ligne")} cochée${nbSelection > 1 ? "s" : ""} — comptage indisponible`;
     }
     if (compte.total === nbSelection) return `${mot(nbSelection, "ligne")} cochée${nbSelection > 1 ? "s" : ""}`;
-    return `${mot(compte.total, "ligne")} sur ${nbSelection} cochée${nbSelection > 1 ? "s" : ""} : le reste est écarté par le filtre`;
+    if (compte.total < nbSelection) {
+      return `${mot(compte.total, "ligne")} sur ${nbSelection} cochée${nbSelection > 1 ? "s" : ""} : le reste est écarté par le filtre`;
+    }
+    // Le compte peut aussi DÉPASSER les cases cochées : avec « tous les
+    // exemplaires », les unités des modèles cochés s'ajoutent à la sélection.
+    // « X sur N cochées » se lirait alors comme un sous-ensemble, ce qu'il n'est
+    // plus.
+    return `${mot(compte.total, "ligne")} : les exemplaires des modèles cochés, en plus des ${nbSelection} cochée${nbSelection > 1 ? "s" : ""}`;
   })();
 
   const perimetres: { id: ScopeExport; titre: string; detail: string; desactive: boolean }[] = [
@@ -389,7 +467,11 @@ export default function ModaleExport({
       id: "stock",
       titre: "Tout le stock",
       detail: `${phraseCompte("stock", "article", "à exporter")} — ${
-        filtreVitrine ? "le stock exposé en vitrine" : "tout le stock"
+        filtreVitrine
+          ? modeExemplaires
+            ? "les exemplaires des modèles exposés"
+            : "le stock exposé en vitrine"
+          : "tout le stock"
       }, vendus, HS et assemblés exclus`,
       desactive: false,
     },
@@ -400,6 +482,9 @@ export default function ModaleExport({
       desactive: selectionHorsLimite,
     },
   ];
+
+  /** Le périmètre actif, nommé là où ses deux comptages sont proposés. */
+  const titrePerimetre = perimetres.find((p) => p.id === scopeExport)?.titre ?? "";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm animate-entree">
@@ -483,12 +568,81 @@ export default function ModaleExport({
             )}
 
             {filtreVitrine && (
-              <p className="flex items-start gap-1.5 text-[11px] text-brand-warm-grey font-medium pt-1">
-                <Filter className="w-3.5 h-3.5 shrink-0 mt-0.5 text-brand-orange" />
-                Filtre « Exposé en vitrine » actif : la case cochée dans les colonnes ci-dessous
-                restreint le fichier aux produits exposés, sur <b>tous</b> les périmètres. Décochez-la
-                pour exporter les produits non exposés.
-              </p>
+              <div className="space-y-2 pt-1">
+                <p className="flex items-start gap-1.5 text-[11px] text-brand-warm-grey font-medium">
+                  <Filter className="w-3.5 h-3.5 shrink-0 mt-0.5 text-brand-orange" />
+                  Filtre « Exposé en vitrine » actif : la case cochée dans les colonnes ci-dessous
+                  restreint le fichier aux produits exposés, sur <b>tous</b> les périmètres. Décochez-la
+                  pour exporter les produits non exposés.
+                </p>
+
+                {/* Le choix, avec ses deux nombres. La vitrine expose un MODÈLE,
+                    pas chaque unité : les exemplaires identiques encore en stock
+                    mais non cochés « en vitrine » n'apparaissaient donc dans
+                    aucun export. Les deux comptes viennent du serveur, qui bâtit
+                    le `where` du fichier — le nombre lu ici est celui du fichier
+                    qu'on téléchargera, sur le périmètre choisi. */}
+                <div className="rounded-2xl border border-brand-light-grey/60 dark:border-white/10 bg-brand-light-grey/10 dark:bg-white/3 p-3 space-y-2">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-brand-warm-grey">
+                    Exemplaires inclus — {titrePerimetre}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExemplairesAussi(false)}
+                      aria-pressed={!modeExemplaires}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        !modeExemplaires
+                          ? "border-brand-orange bg-brand-orange/10"
+                          : "border-brand-light-grey/60 dark:border-white/10 bg-white/40 dark:bg-white/3 hover:border-brand-light-grey dark:hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="text-xs font-bold text-brand-black dark:text-white">
+                            Unités exposées seulement
+                          </div>
+                          <div className="text-[11px] text-brand-warm-grey mt-0.5">
+                            {phraseComptage(scopeExport, false, "article")}
+                          </div>
+                        </div>
+                        {!modeExemplaires && <Check className="w-4 h-4 text-brand-orange shrink-0" />}
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setExemplairesAussi(true)}
+                      aria-pressed={modeExemplaires}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        modeExemplaires
+                          ? "border-brand-orange bg-brand-orange/10"
+                          : "border-brand-light-grey/60 dark:border-white/10 bg-white/40 dark:bg-white/3 hover:border-brand-light-grey dark:hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="text-xs font-bold text-brand-black dark:text-white">
+                            Tous les exemplaires des modèles exposés
+                          </div>
+                          <div className="text-[11px] text-brand-warm-grey mt-0.5">
+                            {phraseComptage(scopeExport, true, "article")}
+                          </div>
+                        </div>
+                        {modeExemplaires && <Check className="w-4 h-4 text-brand-orange shrink-0" />}
+                      </div>
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] font-medium text-brand-warm-grey leading-snug">
+                    La vitrine expose un modèle entier, pas une unité : les exemplaires identiques
+                    encore en stock mais non cochés « en vitrine » ne figurent que dans la seconde
+                    option. Les vendus sont exclus dans les deux cas ; le hors-service et les
+                    assemblés restent soumis au masquage habituel de l'export.
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 
